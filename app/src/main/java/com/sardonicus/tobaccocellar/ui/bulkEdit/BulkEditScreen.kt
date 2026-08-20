@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +79,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -147,7 +148,9 @@ fun BulkEditScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             BulkEditBody(
                 saveIndicator = saveIndicator,
@@ -166,7 +169,9 @@ fun BulkEditScreen(
                 autoComps = bulkEditUiState.autoComps,
                 autoFlavor = bulkEditUiState.autoFlavor,
                 focusManager = focusManager,
-                modifier = modifier.padding(0.dp).fillMaxSize(),
+                modifier = modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
             )
         }
     }
@@ -213,7 +218,9 @@ fun BulkEditBody(
     }
 
     Column(
-        modifier = modifier.fillMaxSize().onFocusChanged { anythingFocused = it.hasFocus },
+        modifier = modifier
+            .fillMaxSize()
+            .onFocusChanged { anythingFocused = it.hasFocus },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
@@ -233,14 +240,10 @@ fun BulkEditBody(
                                 .onFocusChanged { if (it.hasFocus && tabIndex == 1) tabIndex = 0 }
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 1) {
-                                        awaitPointerEventScope {
-                                            while (true) {
-                                                val event =
-                                                    awaitPointerEvent(pass = PointerEventPass.Initial)
-                                                if (event.changes.any { it.changedToDown() }) {
-                                                    tabIndex = 0
-                                                }
-                                            }
+                                        awaitEachGesture {
+                                            val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                                            if (anythingFocused) { focusManager.clearFocus(); down.consume() }
+                                            else tabIndex = 0
                                         }
                                     }
                                 }
@@ -263,14 +266,9 @@ fun BulkEditBody(
                                 .onFocusChanged { if (it.hasFocus && tabIndex == 0) tabIndex = 1 }
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 0) {
-                                        awaitPointerEventScope {
-                                            while (true) {
-                                                val event =
-                                                    awaitPointerEvent(pass = PointerEventPass.Initial)
-                                                if (event.changes.any { it.changedToDown() }) {
-                                                    tabIndex = 1
-                                                }
-                                            }
+                                        awaitEachGesture {
+                                            awaitFirstDown(pass = PointerEventPass.Initial)
+                                            tabIndex = 1
                                         }
                                     }
                                 }
@@ -345,7 +343,9 @@ fun BulkEditBody(
                         verticalAlignment = Alignment.Top
                     ) { targetIndex ->
                         Column(
-                            modifier = Modifier.padding(0.dp).fillMaxSize(),
+                            modifier = Modifier
+                                .padding(0.dp)
+                                .fillMaxSize(),
                         ) {
                             when (targetIndex) {
                                 0 ->
@@ -444,7 +444,9 @@ fun BulkSelections(
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp),
             contentPadding = PaddingValues(0.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -499,7 +501,9 @@ fun BulkEditing(
             ) {
                 if (isLargeScreen) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {

@@ -107,9 +107,11 @@ fun BlendDetailsScreen(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .pointerInput(selectionFocused) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Main)
-                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
+                if (selectionFocused) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                        selectionKey++; selectionFocused = false; down.consume()
+                    }
                 }
             },
         topBar = {
@@ -150,7 +152,9 @@ fun BlendDetailsScreen(
                     enter = EnterTransition.None,
                     exit = fadeOut(tween(250)),
                     modifier = Modifier.fillMaxSize()
-                ) { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) }
+                ) { Box(Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)) }
             }
         }
     }
@@ -179,7 +183,9 @@ private fun BlendDetailsBody(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.Top),
         state = columnState,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
     ) {
         // Header
         item {
@@ -268,7 +274,11 @@ private fun BlendDetailsBody(
                     verticalArrangement = Arrangement.Top,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            RoundedCornerShape(8.dp)
+                        )
                         .background(LocalCustomColors.current.darkNeutral, RoundedCornerShape(8.dp))
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {

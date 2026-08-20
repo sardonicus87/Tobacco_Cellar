@@ -96,9 +96,11 @@ fun DatesScreen(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
             .pointerInput(selectionFocused) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Main)
-                    if (selectionFocused) { selectionKey++; selectionFocused = false; down.consume() }
+                if (selectionFocused) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                        selectionKey++; selectionFocused = false; down.consume()
+                    }
                 }
             },
         topBar = {

@@ -2,6 +2,8 @@ package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +44,6 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -169,14 +170,9 @@ fun ItemInputForm(
                                 }
                                 .pointerInput(currentLeftTab, selectedTabIndex) {
                                     if (selectedTabIndex == 2) {
-                                        awaitPointerEventScope {
-                                            while (true) {
-                                                val event =
-                                                    awaitPointerEvent(pass = PointerEventPass.Initial)
-                                                if (event.changes.any { it.changedToDown() }) {
-                                                    updateSelectedTab(currentLeftTab)
-                                                }
-                                            }
+                                        awaitEachGesture {
+                                            awaitFirstDown(pass = PointerEventPass.Initial)
+                                            updateSelectedTab(currentLeftTab)
                                         }
                                     }
                                 }
@@ -220,14 +216,9 @@ fun ItemInputForm(
                             }
                             .pointerInput(selectedTabIndex) {
                                 if (selectedTabIndex != 2) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val event =
-                                                awaitPointerEvent(pass = PointerEventPass.Initial)
-                                            if (event.changes.any { it.changedToDown() }) {
-                                                updateSelectedTab(2)
-                                            }
-                                        }
+                                    awaitEachGesture {
+                                        awaitFirstDown(pass = PointerEventPass.Initial)
+                                        updateSelectedTab(2)
                                     }
                                 }
                             }
