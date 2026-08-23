@@ -249,41 +249,41 @@ class SettingsViewModel(
     /** Display Settings **/
 
     fun saveThemeSetting(setting: String) {
-        viewModelScope.launch { preferencesRepo.saveThemeSetting(setting) }
+        viewModelScope.launch { preferencesRepo.saveTheme(setting) }
     }
 
     fun saveQuantityOption(option: String) {
-        viewModelScope.launch { preferencesRepo.saveQuantityPreference(option) }
+        viewModelScope.launch { preferencesRepo.saveQuantity(option) }
     }
 
     fun saveShowRatingOption(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveShowRatingOption(option) }
+        viewModelScope.launch { preferencesRepo.saveShowRating(option) }
     }
 
     fun saveTypeGenreOption(option: String) {
-        viewModelScope.launch { preferencesRepo.saveTypeGenreOption(option) }
+        viewModelScope.launch { preferencesRepo.saveTypeGenre(option) }
     }
 
     fun saveParseLinksOption(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveParseLinksOption(option) }
+        viewModelScope.launch { preferencesRepo.saveParseLinks(option) }
     }
 
     fun saveGlobalTwoPane(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveGlobalTwoPane(option) }
+        viewModelScope.launch { preferencesRepo.saveGlobalTP(option) }
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveLandscapeTwoPane(option) }
+        viewModelScope.launch { preferencesRepo.saveLandscape(option) }
     }
 
     fun saveTwoColumnTabs(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveTwoColumnTabs(option) }
+        viewModelScope.launch { preferencesRepo.saveTwoColumn(option) }
     }
 
 
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
-        viewModelScope.launch { preferencesRepo.saveCrossDeviceAcknowledged(true) }
+        viewModelScope.launch { preferencesRepo.saveCDAcknowledge(true) }
     }
 
     fun saveCrossDeviceSync(enable: Boolean) {
@@ -304,7 +304,7 @@ class SettingsViewModel(
     }
 
     fun saveAllowMobileData(enable: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveAllowMobileData(enable) }
+        viewModelScope.launch { preferencesRepo.saveAllowMobile(enable) }
     }
 
     fun manualSync() {
@@ -440,8 +440,8 @@ class SettingsViewModel(
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
         viewModelScope.launch {
-            preferencesRepo.setTinOzConversionRate(ozRate)
-            preferencesRepo.setTinGramsConversionRate(gramsRate)
+            preferencesRepo.setOzRate(ozRate)
+            preferencesRepo.setGramRate(gramsRate)
 
             updateTinSync(ozRate, gramsRate)
         }
@@ -1156,30 +1156,30 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
     if (version >= 4) {
         val backup = Json.decodeFromString<SettingsBackup>(settingsText)
         with(preferencesRepo) {
-            saveViewPreference(backup.tableView)
+            saveView(backup.tableView)
             saveTableColumnsHidden(backup.tableColumnsHidden)
-            saveQuantityPreference(backup.quantityOption)
-            saveThemeSetting(backup.themeSetting)
-            setTinOzConversionRate(backup.tinOzConversionRate)
-            setTinGramsConversionRate(backup.tinGramsConversionRate)
-            setPlaintextFormatString(backup.plaintextFormatString)
-            setPlaintextDelimiter(backup.plaintextDelimiter)
+            saveQuantity(backup.quantityOption)
+            saveTheme(backup.themeSetting)
+            setOzRate(backup.tinOzConversionRate)
+            setGramRate(backup.tinGramsConversionRate)
+            setPtFormat(backup.plaintextFormatString)
+            setPtDelimiter(backup.plaintextDelimiter)
             backup.plaintextPresets.forEach {
-                preferencesRepo.savePlaintextPreset(it.slot, it.formatString, it.delimiter)
+                preferencesRepo.savePtPreset(it.slot, it.formatString, it.delimiter)
             }
-            setPlaintextPrintOptions(backup.plaintextPrintFontSize, backup.plaintextPrintMargin)
-            saveShowRatingOption(backup.showRatingOption)
-            saveTypeGenreOption(backup.typeGenreOption)
+            setPtPrintOptions(backup.plaintextPrintFontSize, backup.plaintextPrintMargin)
+            saveShowRating(backup.showRatingOption)
+            saveTypeGenre(backup.typeGenreOption)
             saveExportRating(backup.exportRating.maxRating, backup.exportRating.rounding)
             saveDefaultSyncOption(backup.defaultSyncTinsOption)
             saveTableColumnsHidden(backup.columnVisibility)
-            saveParseLinksOption(backup.parseLinksOption)
-            saveCrossDeviceAcknowledged(backup.syncAcknowledgement)
+            saveParseLinks(backup.parseLinksOption)
+            saveCDAcknowledge(backup.syncAcknowledgement)
             saveProcessedSyncFiles(backup.processedSync)
             setDatesSeen(backup.datesLastSeen)
-            saveGlobalTwoPane(backup.globalTwoPane)
-            saveTwoColumnTabs(backup.twoColumnTabs)
-            saveLandscapeTwoPane(backup.landscapeTwoPane)
+            saveGlobalTP(backup.globalTwoPane)
+            saveTwoColumn(backup.twoColumnTabs)
+            saveLandscape(backup.landscapeTwoPane)
         }
     } else {
         val lines = settingsText.lines()
@@ -1190,20 +1190,20 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                 val value = parts[1].trim()
 
                 when (key) {
-                    "tableView" -> preferencesRepo.saveViewPreference(value.toBoolean())
+                    "tableView" -> preferencesRepo.saveView(value.toBoolean())
                     "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(
                         Json.decodeFromString<Set<String>>(value)
                     )
-                    "quantityOption" -> preferencesRepo.saveQuantityPreference(value)
-                    "themeSetting" -> preferencesRepo.saveThemeSetting(value)
-                    "tinOzConversionRate" -> preferencesRepo.setTinOzConversionRate(value.toDouble())
-                    "tinGramsConversionRate" -> preferencesRepo.setTinGramsConversionRate(value.toDouble())
-                    "plaintextFormatString" -> preferencesRepo.setPlaintextFormatString(value)
-                    "plaintextDelimiter" -> preferencesRepo.setPlaintextDelimiter(value)
+                    "quantityOption" -> preferencesRepo.saveQuantity(value)
+                    "themeSetting" -> preferencesRepo.saveTheme(value)
+                    "tinOzConversionRate" -> preferencesRepo.setOzRate(value.toDouble())
+                    "tinGramsConversionRate" -> preferencesRepo.setGramRate(value.toDouble())
+                    "plaintextFormatString" -> preferencesRepo.setPtFormat(value)
+                    "plaintextDelimiter" -> preferencesRepo.setPtDelimiter(value)
                     "plaintextPresets" -> {
                         val presets = Json.decodeFromString<List<PlaintextPreset>>(value)
                         presets.forEach {
-                            preferencesRepo.savePlaintextPreset(
+                            preferencesRepo.savePtPreset(
                                 it.slot,
                                 it.formatString,
                                 it.delimiter
@@ -1214,10 +1214,10 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                         val options = value.split(", ")
                         val font = options.first().toFloat()
                         val margin = options.last().toDouble()
-                        preferencesRepo.setPlaintextPrintOptions(font, margin)
+                        preferencesRepo.setPtPrintOptions(font, margin)
                     }
-                    "showRatingOption" -> preferencesRepo.saveShowRatingOption(value.toBoolean())
-                    "typeGenreOption" -> preferencesRepo.saveTypeGenreOption(value)
+                    "showRatingOption" -> preferencesRepo.saveShowRating(value.toBoolean())
+                    "typeGenreOption" -> preferencesRepo.saveTypeGenre(value)
                     "exportRating" -> {
                         val options = Json.decodeFromString<ExportRating>(value)
                         preferencesRepo.saveExportRating(options.maxRating, options.rounding)
@@ -1227,16 +1227,16 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                         val columns = value.split(", ").toSet()
                         preferencesRepo.saveTableColumnsHidden(columns)
                     }
-                    "parseLinksOption" -> preferencesRepo.saveParseLinksOption(value.toBoolean())
-                    "syncAcknowledgement" -> preferencesRepo.saveCrossDeviceAcknowledged(value.toBoolean())
+                    "parseLinksOption" -> preferencesRepo.saveParseLinks(value.toBoolean())
+                    "syncAcknowledgement" -> preferencesRepo.saveCDAcknowledge(value.toBoolean())
                     "processedSync" -> {
                         val files = value.split(", ").toSet()
                         preferencesRepo.saveProcessedSyncFiles(files)
                     }
                     "datesLastSeen" -> preferencesRepo.setDatesSeen(value)
-                    "globalTwoPane" -> preferencesRepo.saveGlobalTwoPane(value.toBoolean())
-                    "twoColumnTabs" -> preferencesRepo.saveTwoColumnTabs(value.toBoolean())
-                    "landscapeTwoPane" -> preferencesRepo.saveLandscapeTwoPane(value.toBoolean())
+                    "globalTwoPane" -> preferencesRepo.saveGlobalTP(value.toBoolean())
+                    "twoColumnTabs" -> preferencesRepo.saveTwoColumn(value.toBoolean())
+                    "landscapeTwoPane" -> preferencesRepo.saveLandscape(value.toBoolean())
                 }
             }
         }
