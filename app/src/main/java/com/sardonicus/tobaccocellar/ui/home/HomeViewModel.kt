@@ -211,7 +211,7 @@ class HomeViewModel(
                         val enabled = enablement[option] ?: true
                         if (enabled) option else TypeGenreOption.TYPE
                     }.collectLatest {
-                        preferencesRepo.saveTypeGenreOption(it.value)
+                        preferencesRepo.saveTypeGenre(it.value)
                     }
                 }
             }
@@ -604,7 +604,7 @@ class HomeViewModel(
     fun saveReleaseNotesSeen() {
         viewModelScope.launch(Dispatchers.Default) {
             _releaseNotesState.value = _releaseNotesState.value.copy(show = false)
-            preferencesRepo.saveReleaseNotesSeen(BuildConfig.VERSION_CODE)
+            preferencesRepo.saveReleaseNotes(BuildConfig.VERSION_CODE)
         }
     }
 
@@ -861,7 +861,7 @@ class HomeViewModel(
     /** UI functions **/
     fun selectView() {
         viewModelScope.launch(Dispatchers.Default) {
-            preferencesRepo.saveViewPreference(!_isTableView.value)
+            preferencesRepo.saveView(!_isTableView.value)
         }
     }
 
@@ -894,7 +894,7 @@ class HomeViewModel(
         _tableTableSorting.value = newTableSorting
 
         viewModelScope.launch {
-            preferencesRepo.saveTableSortingPreferences(
+            preferencesRepo.saveTableSorting(
                 newTableSorting.columnIndex, newTableSorting.sortAscending
             )
         }

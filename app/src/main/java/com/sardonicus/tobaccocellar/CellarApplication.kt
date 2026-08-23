@@ -168,7 +168,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
     private suspend fun resetSyncState() {
         preferencesRepo.saveCrossDeviceSync(false)
-        preferencesRepo.clearLoginState()
+        preferencesRepo.clearLogin()
 
         val workManager = WorkManager.getInstance(this@CellarApplication)
         workManager.cancelUniqueWork("download_sync_work")
