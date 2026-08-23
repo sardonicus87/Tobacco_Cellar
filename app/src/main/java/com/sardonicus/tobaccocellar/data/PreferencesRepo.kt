@@ -13,7 +13,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSortOption
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
-import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextSortOption
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextSorting
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
@@ -97,18 +97,10 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading new user preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[NEW_USER]
-        }
+            } else { throw it }
+        }.map { it[NEW_USER] }
 
-    suspend fun updateToExistingUser() {
-        dataStore.edit {
-            it[NEW_USER] = false
-        }
-    }
+    suspend fun updateToExistingUser() { dataStore.edit { it[NEW_USER] = false } }
 
 
     val releaseNotesSeen: Flow<Int?> = dataStore.data
@@ -116,67 +108,38 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading release notes preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[RELEASE_NOTES]
-        }
+            } else { throw it }
+        }.map { it[RELEASE_NOTES] }
 
-    suspend fun saveReleaseNotesSeen(appVersion: Int) {
-        dataStore.edit {
-            it[RELEASE_NOTES] = appVersion
-        }
-    }
+    suspend fun saveReleaseNotes(version: Int) { dataStore.edit { it[RELEASE_NOTES] = version } }
 
     val lastAlertFlow: Flow<Int> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading alert preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LAST_ALERT_SHOWN] ?: 1
-        }
+            } else { throw it }
+        }.map { it[LAST_ALERT_SHOWN] ?: 1 }
 
-    suspend fun saveAlertShown(alertId: Int) {
-        dataStore.edit {
-            it[LAST_ALERT_SHOWN] = alertId
-        }
-    }
+    suspend fun saveAlertShown(alertId: Int) { dataStore.edit { it[LAST_ALERT_SHOWN] = alertId } }
 
     val datesSeen: StateFlow<String> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading dates indicator preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[DATES_SEEN_LIST] ?: ""
-        }.stateIn (
-            scope = applicationScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
-        )
+            } else { throw it }
+        }.map { it[DATES_SEEN_LIST] ?: "" }
+        .stateIn (applicationScope, SharingStarted.WhileSubscribed(5000), "")
 
-    suspend fun setDatesSeen(seen: String) {
-        dataStore.edit {
-            it[DATES_SEEN_LIST] = seen
-        }
-    }
+    suspend fun setDatesSeen(seen: String) { dataStore.edit { it[DATES_SEEN_LIST] = seen } }
 
     val searchSetting: Flow<SearchSetting> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading search preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }.map {
             when (it[SEARCH_SETTING]) {
                 SearchSetting.Blend.value -> SearchSetting.Blend
@@ -186,20 +149,14 @@ class PreferencesRepo(
             }
         }
 
-    suspend fun setSearchSetting(setting: String) {
-        dataStore.edit {
-            it[SEARCH_SETTING] = setting
-        }
-    }
+    suspend fun setSearchSetting(setting: String) { dataStore.edit { it[SEARCH_SETTING] = setting } }
 
     val exportRating: Flow<ExportRating> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading rating preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }.map {
             val maxRating = it[MAX_RATING] ?: 5
             val rounding = it[RATING_ROUND] ?: 2
@@ -208,9 +165,7 @@ class PreferencesRepo(
 
     suspend fun saveExportRating(rating: Int, rounding: Int) {
         dataStore.edit {
-            it[MAX_RATING] = rating
-            it[RATING_ROUND] = rounding
-            ExportRating(rating, rounding)
+            it[MAX_RATING] = rating; it[RATING_ROUND] = rounding; ExportRating(rating, rounding)
         }
     }
 
@@ -221,18 +176,10 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading view preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[IS_TABLE_VIEW] ?: false
-        }
+            } else { throw it }
+        }.map { it[IS_TABLE_VIEW] ?: false }
 
-    suspend fun saveViewPreference(isTableView: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[IS_TABLE_VIEW] = isTableView
-        }
-    }
+    suspend fun saveView(tableView: Boolean) { dataStore.edit { it[IS_TABLE_VIEW] = tableView } }
 
     // Cellar table view specific options //
     val tableColumnsHidden: Flow<Set<String>> = dataStore.data
@@ -240,17 +187,11 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet()
-        }
+            } else { throw it }
+        }.map { it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet() }
 
     suspend fun saveTableColumnsHidden(columnsHidden: Set<String>) {
-        dataStore.edit {
-            it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",")
-        }
+        dataStore.edit { it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",") }
     }
 
     val sortColumnIndex: Flow<Int> = dataStore.data
@@ -258,30 +199,19 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[SORT_COLUMN_INDEX] ?: -1
-        }
+            } else { throw it }
+        }.map { it[SORT_COLUMN_INDEX] ?: -1 }
 
     val sortAscending: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[SORT_ASCENDING] ?: true
-        }
+            } else { throw it }
+        }.map { it[SORT_ASCENDING] ?: true }
 
-    suspend fun saveTableSortingPreferences(columnIndex: Int, ascending: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SORT_COLUMN_INDEX] = columnIndex
-            preferences[SORT_ASCENDING] = ascending
-        }
+    suspend fun saveTableSorting(index: Int, ascending: Boolean) {
+        dataStore.edit { it[SORT_COLUMN_INDEX] = index; it[SORT_ASCENDING] = ascending }
     }
 
     // Cellar list view specific options //
@@ -290,30 +220,19 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading list sort preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LIST_SORTING] ?: ListSortOption.DEFAULT.value
-        }
+            } else { throw it }
+        }.map { it[LIST_SORTING] ?: ListSortOption.DEFAULT.value }
 
     val listAscending: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading list sort preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LIST_ASCENDING] ?: true
-        }
+            } else { throw it }
+        }.map { it[LIST_ASCENDING] ?: true }
 
     suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
-        dataStore.edit {
-            it[LIST_SORTING] = listSorting
-            it[LIST_ASCENDING] = ascending
-        }
+        dataStore.edit { it[LIST_SORTING] = listSorting; it[LIST_ASCENDING] = ascending }
     }
 
 
@@ -323,9 +242,7 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading theme preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }.map {
             val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
             when (savedValue) {
@@ -334,65 +251,41 @@ class PreferencesRepo(
                 ThemeSetting.SYSTEM.value -> ThemeSetting.SYSTEM
                 else -> ThemeSetting.SYSTEM
             }
-        }.stateIn(
-            scope = applicationScope,
-            started = SharingStarted.Eagerly,
-            initialValue = ThemeSetting.SYSTEM
-        )
+        }.stateIn(applicationScope, SharingStarted.Eagerly, ThemeSetting.SYSTEM)
 
-    suspend fun saveThemeSetting(themeSetting: String) {
-        dataStore.edit { preferences ->
-            preferences[THEME_SETTING] = themeSetting
-        }
-    }
+    suspend fun saveTheme(theme: String) { dataStore.edit { it[THEME_SETTING] = theme } }
 
     val showRating: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading rating preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[SHOW_RATING] ?: true
-        }
+            } else { throw it }
+        }.map { it[SHOW_RATING] ?: true }
 
-    suspend fun saveShowRatingOption(showRating: Boolean) {
-        dataStore.edit {
-            it[SHOW_RATING] = showRating
-        }
-    }
+    suspend fun saveShowRating(show: Boolean) { dataStore.edit { it[SHOW_RATING] = show } }
 
     val typeGenreOption: Flow<TypeGenreOption> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading genre preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            val savedValue = preferences[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
+            } else { throw it }
+        }.map { setting ->
+            val savedValue = setting[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
             TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
         }
 
-    suspend fun saveTypeGenreOption(option: String) {
-        dataStore.edit {
-            it[TYPE_GENRE_OPTION] = option
-        }
-    }
+    suspend fun saveTypeGenre(option: String) { dataStore.edit { it[TYPE_GENRE_OPTION] = option } }
 
     val quantityOption: Flow<QuantityOption> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading quantity preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            val savedValue = preferences[QUANTITY_OPTION] ?: QuantityOption.TINS.value
+            } else { throw it }
+        }.map {
+            val savedValue = it[QUANTITY_OPTION] ?: QuantityOption.TINS.value
             when (savedValue) {
                 QuantityOption.TINS.value -> QuantityOption.TINS
                 QuantityOption.OUNCES.value -> QuantityOption.OUNCES
@@ -401,94 +294,49 @@ class PreferencesRepo(
             }
         }
 
-    suspend fun saveQuantityPreference(option: String) {
-        dataStore.edit { preferences ->
-            preferences[QUANTITY_OPTION] = option
-        }
-    }
+    suspend fun saveQuantity(option: String) { dataStore.edit { it[QUANTITY_OPTION] = option } }
 
     val parseLinks: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading link preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PARSE_LINKS] ?: true
-        }
+            } else { throw it }
+        }.map { it[PARSE_LINKS] ?: true }
 
-    suspend fun saveParseLinksOption(parseLinks: Boolean) {
-        dataStore.edit {
-            it[PARSE_LINKS] = parseLinks
-        }
-    }
+    suspend fun saveParseLinks(parse: Boolean) { dataStore.edit { it[PARSE_LINKS] = parse } }
 
     val globalTwoPane: StateFlow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading two-pane preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[GLOBAL_TWO_PANE] ?: true
-        }.stateIn(
-            scope = applicationScope,
-            started = SharingStarted.Eagerly,
-            initialValue = true
-        )
+            } else { throw it }
+        }.map { it[GLOBAL_TWO_PANE] ?: true }
+        .stateIn(applicationScope, SharingStarted.Eagerly, true)
 
     val twoColumnTabs: StateFlow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading two-pane preferences.", it)
-            } else {
-                throw it
-            }
-        }.map {
-            it[TWO_COLUMN_TABS] ?: true
-        }.stateIn(
-            scope = applicationScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = true
-        )
+            } else { throw it }
+        }.map { it[TWO_COLUMN_TABS] ?: true }
+        .stateIn(applicationScope, SharingStarted.WhileSubscribed(5000), true)
 
     val landscapeTwoPane: StateFlow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading two-pane preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[LANDSCAPE_TWO_PANE] ?: false
-        }.stateIn(
-            scope = applicationScope,
-            started = SharingStarted.Eagerly,
-            initialValue = false
-        )
+            } else { throw it }
+        }.map { it[LANDSCAPE_TWO_PANE] ?: false }
+        .stateIn(applicationScope, SharingStarted.Eagerly, false)
 
-    suspend fun saveGlobalTwoPane(enabled: Boolean) {
-        dataStore.edit {
-            it[GLOBAL_TWO_PANE] = enabled
-        }
-    }
+    suspend fun saveGlobalTP(enabled: Boolean) { dataStore.edit { it[GLOBAL_TWO_PANE] = enabled } }
 
-    suspend fun saveTwoColumnTabs(enabled: Boolean) {
-        dataStore.edit {
-            it[TWO_COLUMN_TABS] = enabled
-        }
-    }
+    suspend fun saveTwoColumn(enabled: Boolean) { dataStore.edit { it[TWO_COLUMN_TABS] = enabled } }
 
-    suspend fun saveLandscapeTwoPane(enabled: Boolean) {
-        dataStore.edit {
-            it[LANDSCAPE_TWO_PANE] = enabled
-        }
-    }
+    suspend fun saveLandscape(enabled: Boolean) { dataStore.edit { it[LANDSCAPE_TWO_PANE] = enabled } }
 
 
 
@@ -499,91 +347,53 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[CROSS_DEVICE_ACKNOWLEDGED] ?: false
-        }
+            } else { throw it }
+        }.map { it[CROSS_DEVICE_ACKNOWLEDGED] ?: false }
 
-    suspend fun saveCrossDeviceAcknowledged(acknowledged: Boolean) {
-        dataStore.edit {
-            it[CROSS_DEVICE_ACKNOWLEDGED] = acknowledged
-        }
-    }
+    suspend fun saveCDAcknowledge(yes: Boolean) { dataStore.edit { it[CROSS_DEVICE_ACKNOWLEDGED] = yes } }
 
     val crossDeviceSync: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[CROSS_DEVICE_SYNC] ?: false
-        }
+            } else { throw it }
+        }.map { it[CROSS_DEVICE_SYNC] ?: false }
 
-    suspend fun saveCrossDeviceSync(sync: Boolean) {
-        dataStore.edit {
-            it[CROSS_DEVICE_SYNC] = sync
-        }
-    }
+    suspend fun saveCrossDeviceSync(sync: Boolean) { dataStore.edit { it[CROSS_DEVICE_SYNC] = sync } }
 
     val allowMobileData: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[ALLOW_MOBILE_DATA] ?: false
-        }
+            } else { throw it }
+        }.map { it[ALLOW_MOBILE_DATA] ?: false }
 
-    suspend fun saveAllowMobileData(allow: Boolean) {
-        dataStore.edit {
-            it[ALLOW_MOBILE_DATA] = allow
-        }
-    }
+    suspend fun saveAllowMobile(allow: Boolean) { dataStore.edit { it[ALLOW_MOBILE_DATA] = allow } }
 
     val signedInUserEmail: Flow<String?> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[SIGNED_IN_ACCOUNT]
-        }
+            } else { throw it }
+        }.map { it[SIGNED_IN_ACCOUNT] }
 
     val hasDriveScope: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[HAS_DRIVE_SCOPE] ?: false
-        }
+            } else { throw it }
+        }.map { it[HAS_DRIVE_SCOPE] ?: false }
 
     suspend fun saveLoginState(email: String, hasDriveScope: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SIGNED_IN_ACCOUNT] = email
-            preferences[HAS_DRIVE_SCOPE] = hasDriveScope
-        }
+        dataStore.edit { it[SIGNED_IN_ACCOUNT] = email; it[HAS_DRIVE_SCOPE] = hasDriveScope }
     }
 
-    suspend fun clearLoginState() {
-        dataStore.edit { preferences ->
-            preferences.remove(SIGNED_IN_ACCOUNT)
-            preferences.remove(HAS_DRIVE_SCOPE)
-        }
+    suspend fun clearLogin() {
+        dataStore.edit { it.remove(SIGNED_IN_ACCOUNT); it.remove(HAS_DRIVE_SCOPE) }
     }
 
     val processedSyncFiles: Flow<Set<String>> = dataStore.data
@@ -591,17 +401,11 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PROCESSED_SYNC_FILES]?.split(",")?.toSet() ?: emptySet()
-        }
+            } else { throw it }
+        }.map { it[PROCESSED_SYNC_FILES]?.split(",")?.toSet() ?: emptySet() }
 
     suspend fun saveProcessedSyncFiles(filesIds: Set<String>) {
-        dataStore.edit { preferences ->
-            preferences[PROCESSED_SYNC_FILES] = filesIds.joinToString(",")
-        }
+        dataStore.edit { it[PROCESSED_SYNC_FILES] = filesIds.joinToString(",") }
     }
 
     val tinOzConversionRate: Flow<Double> = dataStore.data
@@ -609,54 +413,31 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading conversion preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[TIN_OZ_CONVERSION_RATE] ?: 1.75
-        }
+            } else { throw it }
+        }.map { it[TIN_OZ_CONVERSION_RATE] ?: 1.75 }
 
-    suspend fun setTinOzConversionRate(rate: Double) {
-        dataStore.edit { preferences ->
-            preferences[TIN_OZ_CONVERSION_RATE] = rate
-        }
-    }
+    suspend fun setOzRate(rate: Double) { dataStore.edit { it[TIN_OZ_CONVERSION_RATE] = rate } }
 
     val tinGramsConversionRate: Flow<Double> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading conversion preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { preferences ->
-            preferences[TIN_GRAMS_CONVERSION_RATE] ?: 50.0
-        }
+            } else { throw it }
+        }.map { it[TIN_GRAMS_CONVERSION_RATE] ?: 50.0 }
 
-    suspend fun setTinGramsConversionRate(rate: Double) {
-        dataStore.edit { preferences ->
-            preferences[TIN_GRAMS_CONVERSION_RATE] = rate
-        }
-    }
+    suspend fun setGramRate(rate: Double) { dataStore.edit { it[TIN_GRAMS_CONVERSION_RATE] = rate } }
 
     val defaultSyncOption: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[DEFAULT_SYNC] ?: false
-        }
+            } else { throw it }
+        }.map { it[DEFAULT_SYNC] ?: false }
 
-    suspend fun saveDefaultSyncOption(sync: Boolean) {
-        dataStore.edit {
-            it[DEFAULT_SYNC] = sync
-        }
-    }
+    suspend fun saveDefaultSyncOption(sync: Boolean) { dataStore.edit { it[DEFAULT_SYNC] = sync } }
+
 
 
     /** Plaintext Options **/
@@ -665,59 +446,30 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_FORMAT_STRING] ?: ""
-        }
+            } else { throw it }
+        }.map { it[PLAINTEXT_FORMAT_STRING] ?: "" }
 
-    suspend fun setPlaintextFormatString(format: String) {
-        dataStore.edit {
-            it[PLAINTEXT_FORMAT_STRING] = format
-        }
-    }
+    suspend fun setPtFormat(format: String) { dataStore.edit { it[PLAINTEXT_FORMAT_STRING] = format } }
 
     val plaintextDelimiter: Flow<String> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_DELIMITER] ?: ""
-        }
+            } else { throw it }
+        }.map { it[PLAINTEXT_DELIMITER] ?: "" }
 
-    suspend fun setPlaintextDelimiter(delimiter: String) {
-        dataStore.edit {
-            it[PLAINTEXT_DELIMITER] = delimiter
-        }
-    }
+    suspend fun setPtDelimiter(delim: String) { dataStore.edit { it[PLAINTEXT_DELIMITER] = delim } }
+
 
     val plaintextSorting: Flow<String> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }.map {
-            it[PLAINTEXT_SORTING] ?: PlaintextSortOption.DEFAULT.value
-        }
-
-    val plaintextSortAscending: Flow<Boolean> = dataStore.data
-        .catch{
-            if (it is IOException) {
-                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
-                emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_SORT_ASCENDING] ?: true
+            it[PLAINTEXT_SORTING] ?: PlaintextSorting.DEFAULT.value
         }
 
     val plaintextSubSorting: Flow<String> = dataStore.data
@@ -725,37 +477,30 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_SUBSORTING] ?: ""
-        }
+            } else { throw it }
+        }.map { it[PLAINTEXT_SUBSORTING] ?: "" }
 
-    suspend fun setPlaintextSorting(sorting: String, ascending: Boolean) {
-        dataStore.edit {
-            it[PLAINTEXT_SORTING] = sorting
-            it[PLAINTEXT_SORT_ASCENDING] = ascending
-        }
+    val plaintextSortAscending: Flow<Boolean> = dataStore.data
+        .catch{
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[PLAINTEXT_SORT_ASCENDING] ?: true }
+
+    suspend fun setPtSort(sort: String, ascend: Boolean) {
+        dataStore.edit { it[PLAINTEXT_SORTING] = sort; it[PLAINTEXT_SORT_ASCENDING] = ascend }
     }
 
-    suspend fun setPlaintextSubSorting(subSorting: String) {
-        dataStore.edit {
-            it[PLAINTEXT_SUBSORTING] = subSorting
-        }
-    }
+    suspend fun setPtSubSort(subSort: String) { dataStore.edit { it[PLAINTEXT_SUBSORTING] = subSort } }
 
     val plaintextPrintFontSize: Flow<Float> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-            it[PLAINTEXT_PRINT_FONT] ?: 12f
-        }
+            } else { throw it }
+        }.map { it[PLAINTEXT_PRINT_FONT] ?: 12f }
 
     val plaintextPrintMargin: Flow<Double> = dataStore.data
         .catch {
@@ -769,11 +514,8 @@ class PreferencesRepo(
             it[PLAINTEXT_PRINT_MARGIN] ?: 1.0
         }
 
-    suspend fun setPlaintextPrintOptions(font: Float, margin: Double) {
-        dataStore.edit {
-            it[PLAINTEXT_PRINT_FONT] = font
-            it[PLAINTEXT_PRINT_MARGIN] = margin
-        }
+    suspend fun setPtPrintOptions(font: Float, margin: Double) {
+        dataStore.edit { it[PLAINTEXT_PRINT_FONT] = font; it[PLAINTEXT_PRINT_MARGIN] = margin }
     }
 
     val plaintextPresetsFlow: Flow<List<PlaintextPreset>> = dataStore.data
@@ -781,29 +523,22 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }.map { preferences ->
             (0..4).map {
-                val format = preferences[plaintextPresetFormatKey(it)] ?: ""
-                val delimiter = preferences[plaintextPresetDelimiterKey(it)] ?: ""
                 PlaintextPreset(
                     slot = it,
-                    formatString = format,
-                    delimiter = delimiter
+                    formatString = preferences[ptFormatKey(it)] ?: "",
+                    delimiter = preferences[ptDelimiterKey(it)] ?: ""
                 )
             }
         }
 
-    suspend fun savePlaintextPreset(slot: Int, format: String, delimiter: String) {
-        dataStore.edit {
-            it[plaintextPresetFormatKey(slot)] = format
-            it[plaintextPresetDelimiterKey(slot)] = delimiter
-        }
+    suspend fun savePtPreset(slot: Int, format: String, delimiter: String) {
+        dataStore.edit { it[ptFormatKey(slot)] = format; it[ptDelimiterKey(slot)] = delimiter }
     }
 
-    private fun plaintextPresetFormatKey(slot: Int): Preferences.Key<String> {
+    private fun ptFormatKey(slot: Int): Preferences.Key<String> {
         return when (slot) {
             0 -> PLAINTEXT_PRESET_FORMAT1
             1 -> PLAINTEXT_PRESET_FORMAT2
@@ -814,7 +549,7 @@ class PreferencesRepo(
         }
     }
 
-    private fun plaintextPresetDelimiterKey(slot: Int): Preferences.Key<String> {
+    private fun ptDelimiterKey(slot: Int): Preferences.Key<String> {
         return when (slot) {
             0 -> PLAINTEXT_PRESET_DELIMITER1
             1 -> PLAINTEXT_PRESET_DELIMITER2
@@ -832,28 +567,18 @@ class PreferencesRepo(
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
+            } else { throw it }
         }
-        .map { preferences ->
-            preferences[itemsSyncKey(itemId)] ?: false
-        }
+        .map { it[itemsSyncKey(itemId)] ?: false }
 
     val syncSettingsMigrated: Flow<Boolean> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map {
-        it[SYNC_SETTINGS_MIGRATED] ?: false
-    }
+            } else { throw it }
+        }.map { it[SYNC_SETTINGS_MIGRATED] ?: false }
 
-    suspend fun setSyncSettingsMigrated() {
-        dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true }
-    }
+    suspend fun setSyncSettingsMigrated() { dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true } }
 
 }
