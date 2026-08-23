@@ -96,7 +96,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun CellarApp(
     isGestureNav: Boolean,
-    largeScreen: Boolean,
     twoPaneAllowed: Boolean,
     twoColumnTabs: Boolean,
     navigationState: NavigationState = rememberNavigationState(
@@ -116,7 +115,7 @@ fun CellarApp(
         filterViewModel = filterViewModel
     )
 
-    FilterSheet(filterViewModel, largeScreen)
+    FilterSheet(filterViewModel)
 }
 
 

@@ -222,7 +222,6 @@ class MainActivity : ComponentActivity() {
 
                         CellarApp(
                             isGestureNav = isGestureNav,
-                            largeScreen = isLarge,
                             twoPaneAllowed = twoPaneAllowed,
                             twoColumnTabs = twoColumnTabs
                         )
@@ -337,7 +336,7 @@ class MainActivity : ComponentActivity() {
             try {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
                 preferencesRepo.saveCrossDeviceSync(false)
-                preferencesRepo.clearLoginState()
+                preferencesRepo.clearLogin()
                 Toast.makeText(this@MainActivity, "Logged out.", Toast.LENGTH_SHORT).show()
             }
             catch (_: Exception) {
@@ -374,7 +373,7 @@ class MainActivity : ComponentActivity() {
             .addOnFailureListener { _ ->
                 lifecycleScope.launch {
                     preferencesRepo.saveCrossDeviceSync(false)
-                    preferencesRepo.clearLoginState()
+                    preferencesRepo.clearLogin()
                     Toast.makeText(this@MainActivity, "Could not get Drive permission", Toast.LENGTH_SHORT).show()
                 }
             }
