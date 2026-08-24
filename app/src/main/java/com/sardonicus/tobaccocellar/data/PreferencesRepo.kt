@@ -478,7 +478,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_SUBSORTING] ?: "" }
+        }.map { it[PLAINTEXT_SUBSORTING] ?: PlaintextSorting.DEFAULT.value }
 
     val plaintextSortAscending: Flow<Boolean> = dataStore.data
         .catch{
