@@ -104,7 +104,6 @@ object OneTimeAlerts {
 fun ImportantAlertDialog(
     importantAlertState: ImportantAlertState,
     viewModel: HomeViewModel,
-    modifier: Modifier = Modifier
 ) {
     val alert = importantAlertState.alertToDisplay!!
     val isCurrent = importantAlertState.isCurrentAlert
@@ -122,7 +121,6 @@ fun ImportantAlertDialog(
             dismissOnBackPress = false,
             dismissOnClickOutside = false
         ),
-        modifier = modifier,
         containerColor = LocalCustomColors.current.darkNeutral,
         title = {
             Text(

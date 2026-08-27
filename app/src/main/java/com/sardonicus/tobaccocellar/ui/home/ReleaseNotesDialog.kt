@@ -41,8 +41,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 fun ReleaseNotesDialog(
     releaseNotesState: ReleaseNotesState,
     viewModel: HomeViewModel,
-    onNavigateToChangelog: (Int?) -> Unit,
-    modifier: Modifier = Modifier
+    onNavigateToChangelog: (Int?) -> Unit
 ) {
     val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val divisor = if (landscape) .9f else .5f
@@ -57,7 +56,7 @@ fun ReleaseNotesDialog(
             dismissOnClickOutside = true,
             usePlatformDefaultWidth = !landscape
         ),
-        modifier = modifier.heightIn(max = maxHeight).widthIn(minWidth, maxWidth),
+        modifier = Modifier.heightIn(max = maxHeight).widthIn(minWidth, maxWidth),
         containerColor = LocalCustomColors.current.darkNeutral,
         shape = RoundedCornerShape(8.dp),
         tonalElevation = 4.dp,
