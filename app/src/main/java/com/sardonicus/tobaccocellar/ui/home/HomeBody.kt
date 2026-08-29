@@ -23,9 +23,9 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -40,7 +40,6 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -49,11 +48,11 @@ import kotlinx.coroutines.launch
 fun HomeBody(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
-    showLoading: () -> Boolean,
-    isTableView: () -> Boolean,
-    columnMenu: () -> Boolean,
+    showLoading: Boolean,
+    isTableView: Boolean,
+    columnMenu: Boolean,
+    searchFocused: Boolean,
     showColumnMenuToggle: () -> Unit,
-    coroutineScope: () -> CoroutineScope,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     shouldScrollUp: () -> Unit,
@@ -62,7 +61,7 @@ fun HomeBody(
     val columnState = rememberLazyListState()
     val sortedItems by viewModel.itemsListState.collectAsState()
     val itemsCount by viewModel.itemsCount.collectAsState()
-    val showColumnMenu = columnMenu()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(columnState) {
         snapshotFlow { columnState.layoutInfo.visibleItemsInfo.isNotEmpty() }
@@ -70,12 +69,12 @@ fun HomeBody(
     }
 
     Box {
-        BodyContent(viewModel, filterViewModel, isTableView, columnState, sortedItems,
+        BodyContent(viewModel, filterViewModel, isTableView, columnState, sortedItems, searchFocused,
             onDetailsClick, onEditClick, shouldScrollUp, modifier)
 
-        if (showLoading()) { LoadingIndicator() }
+        if (showLoading) { LoadingIndicator() }
 
-        if (showColumnMenu) {
+        if (columnMenu) {
             ColumnVisibilityPopup(
                 viewModel = viewModel,
                 onVisibilityChange = viewModel::updateColumnVisibility,
@@ -88,13 +87,13 @@ fun HomeBody(
         // jump to button
         JumpToButton(
             columnState = columnState,
-            itemCountPass = { itemsCountPass },
-            onScrollToTop = { coroutineScope().launch { columnState.scrollToItem(0) } },
-            onScrollToBottom = { coroutineScope().launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
+            itemCountPass = itemsCountPass,
+            onScrollToTop = { coroutineScope.launch { columnState.scrollToItem(0) } },
+            onScrollToBottom = { coroutineScope.launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
             modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp)
         )
 
-        HomeScrollHandler(columnState, sortedItems, { itemsCount }, filterViewModel, isTableView())
+        HomeScrollHandler(columnState, sortedItems, itemsCount, filterViewModel, isTableView)
     }
 }
 
@@ -103,9 +102,10 @@ fun HomeBody(
 private fun BodyContent(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
-    isTableView: () -> Boolean,
+    isTableView: Boolean,
     columnState: LazyListState,
     sortedItems: ItemsList,
+    searchFocused: Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     shouldScrollUp: () -> Unit,
@@ -114,21 +114,15 @@ private fun BodyContent(
     val tableLayoutData by viewModel.tableLayoutData.collectAsState()
     val tableSorting by viewModel.tableSorting.collectAsState()
 
-    val currentView = isTableView()
-    val lastView = remember { mutableStateOf(currentView) }
+    val lastView = remember { mutableStateOf(isTableView) }
 
-    LaunchedEffect(currentView) {
-        if (lastView.value != currentView) { columnState.scrollToItem(0) }
-        lastView.value = currentView
+    LaunchedEffect(isTableView) {
+        if (lastView.value != isTableView) { columnState.scrollToItem(0) }
+        lastView.value = isTableView
     }
 
-    var listShadow by remember { mutableStateOf (0.dp) }
-    var tableShadow by remember { mutableFloatStateOf(0f) }
-
-    SideEffect(columnState.canScrollBackward) {
-        listShadow = if (columnState.canScrollBackward) 3.dp else 0.dp
-        tableShadow = if (columnState.canScrollBackward) 0.15f else 0f
-    }
+    var shadow by remember { mutableStateOf(columnState.canScrollBackward) }
+    SideEffect(columnState.canScrollBackward) { shadow = columnState.canScrollBackward }
 
     if (sortedItems.list.isEmpty()) {
         Column(
@@ -149,15 +143,16 @@ private fun BodyContent(
             Spacer(Modifier.weight(1.25f))
         }
     } else {
-        if (isTableView()) {
+        if (isTableView) {
             TableViewMode(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
                 sortedItems = sortedItems,
                 columnState = columnState,
-                shadowAlpha = { tableShadow },
+                shadow = shadow,
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
+                searchFocused = searchFocused,
                 updateSorting = viewModel::updateTableSorting,
                 onDetailsClick = onDetailsClick,
                 onEditClick = onEditClick,
@@ -169,13 +164,14 @@ private fun BodyContent(
         } else {
             GlowBox(
                 color = GlowColor(Color.Black.copy(alpha = 0.3f)),
-                size = GlowSize(top =  listShadow)
+                size = GlowSize(top = if (shadow) 3.dp else 0.dp)
             ) {
                 ListViewMode(
                     viewModel = viewModel,
                     filterViewModel = filterViewModel,
                     sortedItems = sortedItems,
                     columnState = columnState,
+                    searchFocused = searchFocused,
                     onDetailsClick = onDetailsClick,
                     onEditClick = onEditClick,
                     onShowMenu = viewModel::onShowMenu,
@@ -192,7 +188,7 @@ private fun BodyContent(
 private fun HomeScrollHandler(
     columnState: LazyListState,
     sortedItems: ItemsList,
-    itemsCount: () -> Int,
+    itemsCount: Int,
     filterViewModel: FilterViewModel,
     isTableView: Boolean
 ) {
@@ -208,18 +204,15 @@ private fun HomeScrollHandler(
         snapshotFlow { columnState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
 
         if (savedItemIndex != -1) {
-            if (savedItemIndex > 0 && savedItemIndex < (itemsCount() - 1)) {
+            if (savedItemIndex > 0 && savedItemIndex < (itemsCount - 1)) {
                 val offset = (columnState.layoutInfo.visibleItemsInfo[1].size / 2) * -1
                 columnState.scrollToItem(savedItemIndex, offset)
-            } else {
-                columnState.scrollToItem(savedItemIndex)
-            }
+            } else { columnState.scrollToItem(savedItemIndex) }
             filterViewModel.resetScroll()
         }
 
         if (scrollState.shouldScrollUp) {
-            columnState.scrollToItem(0)
-            filterViewModel.resetScroll()
+            columnState.scrollToItem(0); filterViewModel.resetScroll()
         }
 
         if (scrollState.shouldReturn && !searchPerformed && !scrollState.shouldScrollUp) {
@@ -237,9 +230,9 @@ private fun HomeScrollHandler(
     LaunchedEffect(scrollState.getPosition) {
         if (scrollState.getPosition > 0 && !searchPerformed) {
             val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem = if (isTableView){
-                layoutInfo.visibleItemsInfo.firstOrNull { it.index > 0 }
-            } else layoutInfo.visibleItemsInfo.firstOrNull()
+            val firstVisibleItem =
+                if (isTableView) { layoutInfo.visibleItemsInfo.firstOrNull { it.index > 0 } }
+                else layoutInfo.visibleItemsInfo.firstOrNull()
 
             if (firstVisibleItem != null) {
                 filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
@@ -253,8 +246,7 @@ private fun HomeScrollHandler(
 private fun ColumnVisibilityPopup(
     viewModel: HomeViewModel,
     onVisibilityChange: (TableColumn, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
     val columns = TableColumn.entries.filter { it != TableColumn.BRAND && it != TableColumn.BLEND }
     val visibilityMap by viewModel.tableColumnVisibility.collectAsState()
@@ -266,14 +258,11 @@ private fun ColumnVisibilityPopup(
             LazyColumn (
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
                 contentPadding = PaddingValues(0.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
                 items(columns) { column ->
                     Row (
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
+                        modifier = Modifier.padding(0.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start,
                     ) {
@@ -284,22 +273,15 @@ private fun ColumnVisibilityPopup(
                                 val visible = visibilityMap[column] ?: true
                                 onVisibilityChange(column, !visible)
                             },
-                            enabled = columnVisibilityEnablement[column] ?: true,
-                            modifier = Modifier
+                            enabled = columnVisibilityEnablement[column] ?: true
                         )
                     }
                 }
             }
         },
-        modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        confirmButton = {
-            TextButton(onClick = { onDismiss() }
-            ) {
-                Text("Done")
-            }
-        }
+        confirmButton = { TextButton({ onDismiss() }) { Text("Done") } }
     )
 }

@@ -54,11 +54,11 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
 ) {
     val focusManager = LocalFocusManager.current
-    val coroutineScope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val homeUiState by viewModel.homeUiState.collectAsState()
     var showColumnMenu by remember { mutableStateOf(false) }
+    var searchFocused by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -67,38 +67,31 @@ fun HomeScreen(
         }
     }
 
-    HomeBackHandler(viewModel, filterViewModel, showColumnMenu) { showColumnMenu = false }
+    HomeBackHandler(
+        viewModel = viewModel,
+        filterViewModel = filterViewModel,
+        showColumnMenu = showColumnMenu,
+        searchFocused = searchFocused,
+        dismissColumnMenu = { showColumnMenu = false },
+        clearFocus = { focusManager.clearFocus() }
+    )
 
     // Important Alert stuff
     val importantAlertState by viewModel.importantAlertState.collectAsState()
-    if (importantAlertState.show) {
-        ImportantAlertDialog(
-            importantAlertState = importantAlertState,
-            viewModel = viewModel
-        )
-    }
+    if (importantAlertState.show) { ImportantAlertDialog(importantAlertState, viewModel) }
 
     // Release Notes
     val releaseNotesState by viewModel.releaseNotesState.collectAsState()
-
     if (releaseNotesState.show && !importantAlertState.show) {
-        ReleaseNotesDialog(
-            releaseNotesState = releaseNotesState,
-            viewModel = viewModel,
-            onNavigateToChangelog = {
-                viewModel.saveReleaseNotesSeen()
-                navigateToChangelog(it)
-            }
-        )
+        ReleaseNotesDialog(releaseNotesState, viewModel) { viewModel.saveReleaseNotesSeen()
+            navigateToChangelog(it) }
     }
 
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) {
-                focusManager.clearFocus(); viewModel.onDismissMenu()
-            },
+            .clickable(null, null) { focusManager.clearFocus(); viewModel.onDismissMenu() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.home_title),
@@ -112,35 +105,29 @@ fun HomeScreen(
                 navigateToSettings = navigateToSettings,
                 showMenu = true,
                 currentDestination = HomeDestination,
-                exportCsvHandler = viewModel,
+                exportCsvHandler = viewModel
             )
         },
         bottomBar = {
             CellarBottomAppBar(
-                modifier = Modifier,
                 navigateToDates = navigateToDates,
                 navigateToStats = navigateToStats,
                 navigateToAddEntry = navigateToAddEntry,
-                currentDestination = HomeDestination,
+                currentDestination = HomeDestination
             )
         }
     ) { innerPadding ->
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
             HomeHeader(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
-                updateSearchText = filterViewModel::updateSearchText,
                 onSearch = { viewModel.onDismissMenu(); filterViewModel.onSearch(it) },
-                updateSearchFocused = filterViewModel::updateSearchFocused,
+                updateSearchFocused = { searchFocused = it },
                 getPositionTrigger = filterViewModel::getPositionTrigger,
-                saveSearchSetting = filterViewModel::saveSearchSetting,
-                onExpandSearchMenu = filterViewModel::setSearchMenuExpanded,
                 onShowColumnPop = { showColumnMenu = !showColumnMenu },
                 saveListSorting = viewModel::saveListSorting,
                 shouldScrollUp = filterViewModel::shouldScrollUp,
@@ -149,11 +136,11 @@ fun HomeScreen(
             HomeBody(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
-                showLoading = { homeUiState.isLoading },
-                isTableView = { homeUiState.isTableView },
-                columnMenu = { showColumnMenu },
+                showLoading = homeUiState.isLoading,
+                isTableView = homeUiState.isTableView,
+                columnMenu = showColumnMenu,
+                searchFocused = searchFocused,
                 showColumnMenuToggle = { showColumnMenu = !showColumnMenu },
-                coroutineScope = { coroutineScope },
                 onDetailsClick = navigateToBlendDetails,
                 onEditClick = navigateToEditEntry,
                 shouldScrollUp = filterViewModel::shouldScrollUp,
@@ -171,25 +158,25 @@ private fun HomeBackHandler(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
     showColumnMenu: Boolean,
-    dismissColumnMenu: () -> Unit
+    searchFocused: Boolean,
+    dismissColumnMenu: () -> Unit,
+    clearFocus: () -> Unit,
 ) {
     val menuState by viewModel.menuState.collectAsState()
     val searchState by filterViewModel.searchState.collectAsState()
-    val focusManager = LocalFocusManager.current
     val coroutineScope = rememberCoroutineScope()
 
-    BackHandler(menuState.activeMenuId != null) { viewModel.onDismissMenu() }
-
-    BackHandler(searchState.searchFocused || searchState.searchPerformed) {
-        if (searchState.searchFocused) {
-            focusManager.clearFocus(); filterViewModel.updateSearchFocused(false)
-        } else {
+    BackHandler(searchFocused || searchState.searchPerformed) {
+        if (searchFocused) { clearFocus() }
+        else {
             filterViewModel.updateSearchText(""); filterViewModel.onSearch("")
             if (searchState.searchPerformed) {
                 coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
             }
         }
     }
+
+    BackHandler(menuState.activeMenuId != null) { viewModel.onDismissMenu() }
 
     BackHandler(showColumnMenu) { dismissColumnMenu() }
 }

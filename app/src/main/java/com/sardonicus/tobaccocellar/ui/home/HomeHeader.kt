@@ -68,12 +68,9 @@ import kotlin.time.Duration.Companion.milliseconds
 fun HomeHeader(
     viewModel: HomeViewModel,
     filterViewModel: FilterViewModel,
-    updateSearchText: (String) -> Unit,
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
     getPositionTrigger: () -> Unit,
-    saveSearchSetting: (String) -> Unit,
-    onExpandSearchMenu: (Boolean) -> Unit,
     onShowColumnPop: () -> Unit,
     saveListSorting: (ListSortOption) -> Unit,
     shouldScrollUp: () -> Unit,
@@ -99,12 +96,11 @@ fun HomeHeader(
         ) {
             SearchField(
                 filterViewModel = filterViewModel,
-                updateSearchText = updateSearchText,
+                updateSearchText = filterViewModel::updateSearchText,
                 onSearch = onSearch,
                 updateSearchFocused = updateSearchFocused,
                 getPositionTrigger = getPositionTrigger,
-                saveSearchSetting = saveSearchSetting,
-                onExpandSearchMenu = onExpandSearchMenu
+                saveSearchSetting = filterViewModel::saveSearchSetting
             )
         }
 
@@ -171,17 +167,17 @@ private fun SearchField (
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
     getPositionTrigger: () -> Unit,
-    saveSearchSetting: (String) -> Unit,
-    onExpandSearchMenu: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
+    saveSearchSetting: (String) -> Unit
 ) {
     val state by filterViewModel.searchState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    var searchMenuExpanded by remember { mutableStateOf(false) }
+    val iconOpacity = if (state.searchPerformed) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
 
     CustomBlendSearch(
-        value = { state.searchText },
+        value = state.searchText,
         onValueChange = { updateSearchText(it); if (it.isEmpty()) { onSearch(it) } },
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .onFocusChanged {
                 if (it.isFocused) updateSearchFocused(true)
@@ -205,13 +201,13 @@ private fun SearchField (
                         enabled = state.settingsEnabled && !state.emptyDatabase,
                         indication = LocalIndication.current,
                         interactionSource = null
-                    ) { onExpandSearchMenu(!state.searchMenuExpanded) }
+                    ) { searchMenuExpanded = !searchMenuExpanded }
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = null,
                     modifier = Modifier.padding(end = 2.dp).size(20.dp),
-                    tint = LocalContentColor.current.copy(alpha = state.searchIconOpacity)
+                    tint = LocalContentColor.current.copy(alpha = iconOpacity)
                 )
                 Icon(
                     painter = painterResource(id = R.drawable.triangle_arrow_down),
@@ -221,12 +217,12 @@ private fun SearchField (
                         .offset(x = 7.dp, y = 0.dp)
                         .padding(0.dp)
                         .size(16.dp),
-                    tint = if (state.settingsEnabled && !state.emptyDatabase) LocalContentColor.current.copy(alpha = state.searchIconOpacity) else Color.Transparent
+                    tint = if (state.settingsEnabled && !state.emptyDatabase) LocalContentColor.current.copy(alpha = iconOpacity) else Color.Transparent
                 )
             }
             DropdownMenu(
-                expanded = state.searchMenuExpanded,
-                onDismissRequest = { onExpandSearchMenu(false) },
+                expanded = searchMenuExpanded,
+                onDismissRequest = { searchMenuExpanded = false },
                 containerColor = LocalCustomColors.current.textField,
                 shadowElevation = 4.dp,
                 offset = DpOffset((-2).dp, 2.dp)
@@ -234,7 +230,7 @@ private fun SearchField (
                 state.settingsList.settings.forEach {
                     DropdownMenuItem(
                         text = { Text(it.value) },
-                        onClick = { saveSearchSetting(it.value); onExpandSearchMenu(false) },
+                        onClick = { saveSearchSetting(it.value); searchMenuExpanded = false },
                         modifier = Modifier.padding(0.dp),
                         enabled = true
                     )
@@ -382,7 +378,7 @@ data object SearchPerformedEvent
 
 @Composable
 private fun CustomBlendSearch(
-    value: () -> String,
+    value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "Blend Search",
@@ -395,7 +391,7 @@ private fun CustomBlendSearch(
     val focusManager = LocalFocusManager.current
 
     BasicTextField(
-        value = value(),
+        value = value,
         onValueChange = onValueChange,
         modifier = modifier
             .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
@@ -431,7 +427,7 @@ private fun CustomBlendSearch(
                 leadingIcon()
                 Spacer(modifier = Modifier.width(12.dp))
                 Box(Modifier.weight(1f), Alignment.CenterStart) {
-                    if (value().isEmpty() && !hasFocus) {
+                    if (value.isEmpty() && !hasFocus) {
                         Text(
                             text = placeholder,
                             style = LocalTextStyle.current.copy(

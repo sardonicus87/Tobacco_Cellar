@@ -88,10 +88,9 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun ItemMenu(
     viewModel: HomeViewModel,
-    activeItemId: () -> Int,
+    activeItemId: Int,
     onEditClick: () -> Unit,
-    onMenuDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onMenuDismiss: () -> Unit
 ) {
     val quickEditState by viewModel.quickEditState.collectAsState()
     val originalState by viewModel.originalState.collectAsState()
@@ -105,7 +104,7 @@ fun ItemMenu(
 
     LaunchedEffect(Unit) {
         delay(150.milliseconds)
-        viewModel.setQuickEditItem(activeItemId())
+        viewModel.setQuickEditItem(activeItemId)
     }
 
     BackHandler(quickEdit) { if (quickEdit) { quickEdit = false } }
@@ -113,7 +112,7 @@ fun ItemMenu(
     AnimatedContent(
         targetState = quickEdit,
         transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(LocalCustomColors.current.listMenuScrim)
     ) { quickMenu ->
@@ -123,10 +122,7 @@ fun ItemMenu(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (!quickMenu) {
-                TextButton(
-                    onClick = { onEditClick(); onMenuDismiss() },
-                    modifier = Modifier
-                ) {
+                TextButton({ onEditClick(); onMenuDismiss() }) {
                     Text(
                         text = "Edit Item",
                         modifier = Modifier
@@ -203,7 +199,6 @@ fun ItemMenu(
                                 Text(
                                     text = rating.ifBlank { "-.-" },
                                     autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
-                                    modifier = Modifier,
                                     fontWeight = FontWeight.SemiBold,
                                     lineHeight = 1.em
                                 )
@@ -229,7 +224,6 @@ fun ItemMenu(
                                     onCheckedChange = viewModel::updateQuickFavorite,
                                     checkedIcon = R.drawable.heart_filled_24,
                                     uncheckedIcon = R.drawable.heart_outline_24,
-                                    modifier = Modifier,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.favHeart,
                                     )
@@ -242,7 +236,6 @@ fun ItemMenu(
                                     onCheckedChange = viewModel::updateQuickDislike,
                                     checkedIcon = R.drawable.heartbroken_filled_24,
                                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                                    modifier = Modifier,
                                     colors = IconButtonDefaults.iconToggleButtonColors(
                                         checkedContentColor = LocalCustomColors.current.disHeart,
                                     )
@@ -285,7 +278,6 @@ fun ItemMenu(
                                     Text(
                                         text = "Qty: ${quickEditState.quantity}",
                                         autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
-                                        modifier = Modifier,
                                         fontWeight = FontWeight.SemiBold,
                                         lineHeight = 1.em
                                     )
@@ -368,13 +360,9 @@ fun ItemMenu(
 @Composable
 private fun QuickOption(
     edited: Boolean,
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Box (
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-    ) {
+    Box (contentAlignment = Alignment.Center) {
         if (edited) {
             Box(
                 Modifier
@@ -396,8 +384,7 @@ private fun EditRatingPop(
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
-    onRatingEdited: (Double?) -> Unit,
-    modifier: Modifier = Modifier
+    onRatingEdited: (Double?) -> Unit
 ) {
     var parsedDouble by remember { mutableStateOf<Double?>(null) }
     val updateParsedDouble: (Double?) -> Unit = { parsedDouble = it }
@@ -427,7 +414,7 @@ private fun EditRatingPop(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier.wrapContentHeight(),
+        modifier = Modifier.wrapContentHeight(),
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -521,12 +508,11 @@ private fun EditNotePop(
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
-    onNoteEdited: (String) -> Unit,
-    modifier: Modifier = Modifier
+    onNoteEdited: (String) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier.wrapContentHeight(),
+        modifier = Modifier.wrapContentHeight(),
         properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -603,12 +589,11 @@ private fun EditQuantityPop(
     updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
-    onQtyEdited: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    onQtyEdited: (Int) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier.wrapContentHeight().width(280.dp),
+        modifier = Modifier.wrapContentHeight().width(280.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,

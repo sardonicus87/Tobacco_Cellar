@@ -29,7 +29,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun JumpToButton(
     columnState: LazyListState,
-    itemCountPass: () -> Boolean,
+    itemCountPass: Boolean,
     onScrollToTop: () -> Unit,
     onScrollToBottom: () -> Unit,
     modifier: Modifier = Modifier,
@@ -37,7 +37,7 @@ fun JumpToButton(
     val jumpToState = rememberJumpToState(columnState)
 
     AnimatedVisibility(
-        visible = jumpToState.first.value && itemCountPass(),
+        visible = jumpToState.first.value && itemCountPass,
         enter = fadeIn(animationSpec = tween(150)),
         exit = fadeOut(animationSpec = tween(150)),
         modifier = modifier

@@ -71,9 +71,10 @@ fun TableViewMode(
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
-    shadowAlpha: () -> Float,
+    shadow: Boolean,
     tableLayoutData: TableLayoutData,
     sorting: TableSorting,
+    searchFocused: Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onShowMenu: (Int) -> Unit,
@@ -94,7 +95,7 @@ fun TableViewMode(
 
     val onClick = remember {
         { itemId: Int ->
-            if (filterViewModel.searchFocused.value) { focusManager.clearFocus() }
+            if (searchFocused) { focusManager.clearFocus() }
             else {
                 when {
                     activeMenuId == itemId -> { }
@@ -130,11 +131,11 @@ fun TableViewMode(
         ) {
             stickyHeader {
                 TableHeaderRow(
-                    filterViewModel = filterViewModel,
                     layoutData = tableLayoutData,
-                    activeMenuId = { activeMenuId },
+                    activeMenuId = activeMenuId,
                     updateSorting = updateSorting,
                     sorting = sorting,
+                    searchFocused = searchFocused,
                     shouldScrollUp = shouldScrollUp,
                     onDismissMenu = onDismissMenu,
                     modifier = Modifier
@@ -146,7 +147,7 @@ fun TableViewMode(
                                 radius = 3.dp,
                                 spread = 1.dp,
                                 offset = DpOffset(0.dp, 3.dp),
-                                alpha = shadowAlpha()
+                                alpha = if (shadow) 0.15f else 0f
                             )
                         )
                 )
@@ -174,10 +175,7 @@ fun TableViewMode(
                             )
                     )
 
-                    Box (
-                        modifier = Modifier
-                            .matchParentSize()
-                    ) {
+                    Box (Modifier.matchParentSize()) {
                         AnimatedVisibility(
                             visible = openMenu,
                             modifier = Modifier
@@ -189,10 +187,9 @@ fun TableViewMode(
                         ) {
                             ItemMenu(
                                 viewModel = viewModel,
-                                activeItemId = { item.itemId },
+                                activeItemId = item.itemId,
                                 onMenuDismiss = onDismissMenu,
-                                onEditClick = { onEditClick(item.itemId) },
-                                modifier = Modifier,
+                                onEditClick = { onEditClick(item.itemId) }
                             )
                         }
                     }
@@ -220,10 +217,8 @@ private fun TableItem(
     modifier: Modifier = Modifier
 ) {
     // item
-    Box(Modifier) {
-        Row(
-            modifier = modifier.background(MaterialTheme.colorScheme.secondaryContainer)
-        ) {
+    Box {
+        Row(modifier = modifier.background(MaterialTheme.colorScheme.secondaryContainer)) {
             for (columnIndex in layoutData.columnMinWidths.values.indices) {
                 Box(
                     modifier = Modifier
@@ -249,8 +244,7 @@ private fun TableItem(
                                 Image(
                                     painter = painterResource(if (favDisValue == 1) R.drawable.heart_filled_24 else R.drawable.heartbroken_filled_24),
                                     contentDescription = null,
-                                    modifier = Modifier
-                                        .size(20.dp),
+                                    modifier = Modifier.size(20.dp),
                                     colorFilter = ColorFilter.tint(if (favDisValue == 1) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart)
                                 )
                             }
@@ -260,8 +254,7 @@ private fun TableItem(
                                 Image(
                                     painter = painterResource(id = R.drawable.notes_24),
                                     contentDescription = null,
-                                    modifier = Modifier
-                                        .size(20.dp),
+                                    modifier = Modifier.size(20.dp),
                                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
                                 )
                             }
@@ -277,7 +270,6 @@ private fun TableItem(
                         else -> {
                             Text(
                                 text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
-                                modifier = Modifier,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -291,11 +283,11 @@ private fun TableItem(
 
 @Composable
 private fun TableHeaderRow(
-    filterViewModel: FilterViewModel,
     layoutData: TableLayoutData,
-    activeMenuId: () -> Int?,
+    activeMenuId: Int?,
     updateSorting: (Int) -> Unit,
     sorting: TableSorting,
+    searchFocused: Boolean,
     shouldScrollUp: () -> Unit,
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
@@ -304,9 +296,9 @@ private fun TableHeaderRow(
 
     val onClick = remember {
         { columnIndex: Int ->
-            if (filterViewModel.searchFocused.value) { focusManager.clearFocus() }
+            if (searchFocused) { focusManager.clearFocus() }
             else {
-                if (activeMenuId() != null) { onDismissMenu() }
+                if (activeMenuId != null) { onDismissMenu() }
                 else { updateSorting(columnIndex); shouldScrollUp() }
             }
         }
@@ -331,11 +323,7 @@ private fun TableHeaderRow(
                     0, 1, 2, 3, 7, 8 -> { // brand, blend, type, subgenre, quantity, last modified
                         Box(
                             modifier = Modifier
-                                .clickable(
-                                    onClick = { onClick(columnIndex) },
-                                    indication = null,
-                                    interactionSource = null
-                                )
+                                .clickable(null, null) { onClick(columnIndex) }
                                 .matchParentSize(),
                             contentAlignment = layoutData.alignment.values[columnIndex]
                         ) {
@@ -362,11 +350,7 @@ private fun TableHeaderRow(
                     4 -> { // rating
                         Box(
                             modifier = Modifier
-                                .clickable(
-                                    onClick = { onClick(columnIndex) },
-                                    indication = null,
-                                    interactionSource = null
-                                )
+                                .clickable(null, null) { onClick(columnIndex) }
                                 .matchParentSize(),
                             contentAlignment = layoutData.alignment.values[columnIndex]
                         ) {
@@ -398,15 +382,13 @@ private fun TableHeaderRow(
                                 painter = painterResource(id = R.drawable.heart_filled_24),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(LocalCustomColors.current.favHeart),
-                                modifier = Modifier
-                                    .size(20.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                             Image(
                                 painter = painterResource(id = R.drawable.question_mark_24),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(Color.Black),
-                                modifier = Modifier
-                                    .size(12.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                         }
                     }
@@ -414,7 +396,6 @@ private fun TableHeaderRow(
                         Box(contentAlignment = layoutData.alignment.values[columnIndex]) {
                             Text(
                                 text = layoutData.headerText.values[columnIndex],
-                                modifier = Modifier,
                                 fontWeight = FontWeight.Bold,
                             )
                         }
@@ -453,7 +434,6 @@ private fun TableTinsList(
                 ) {
                     Text(
                         text = it.tinLabel,
-                        modifier = Modifier,
                         fontWeight = FontWeight.Medium,
                         fontSize = 13.sp
                     )

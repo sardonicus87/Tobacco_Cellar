@@ -60,6 +60,7 @@ fun ListViewMode(
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
+    searchFocused: Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onShowMenu: (Int) -> Unit,
@@ -73,9 +74,8 @@ fun ListViewMode(
 
     val onClick = remember {
         { itemId: Int ->
-            if (filterViewModel.searchFocused.value) {
-                focusManager.clearFocus()
-            } else {
+            if (searchFocused) { focusManager.clearFocus() }
+            else {
                 when {
                     (activeMenuId == itemId) -> { }
                     (activeMenuId != null) -> { onDismissMenu() }
@@ -113,24 +113,22 @@ fun ListViewMode(
 
                 Box {
                     ListItem(
-                        brand = { item.item.items.brand },
-                        blend = { item.item.items.blend },
-                        favorite = { item.item.items.favorite },
-                        disliked = { item.item.items.disliked },
-                        notes = { item.item.items.notes },
-                        typeGenreText = { item.formattedTypeGenre },
-                        formattedQuantity = { item.formattedQuantity },
-                        outOfStock = { item.outOfStock },
-                        rating = { item.rating },
+                        brand = item.item.items.brand,
+                        blend = item.item.items.blend,
+                        favorite = item.item.items.favorite,
+                        disliked = item.item.items.disliked,
+                        notes = item.item.items.notes,
+                        typeGenreText = item.formattedTypeGenre,
+                        formattedQuantity = item.formattedQuantity,
+                        outOfStock = item.outOfStock,
+                        rating = item.rating,
                         modifier = Modifier
-                            .combinedClickable(
+                            .combinedClickable(null, null,
                                 onClick = { onClick(item.itemId) },
                                 onLongClick = {
                                     view.isHapticFeedbackEnabled = !openMenu
                                     onLongClick(item.itemId)
-                                },
-                                indication = null,
-                                interactionSource = null
+                                }
                             ),
                     )
 
@@ -142,21 +140,21 @@ fun ListViewMode(
                     ) {
                         ItemMenu(
                             viewModel = viewModel,
-                            activeItemId = { item.itemId },
+                            activeItemId = item.itemId,
                             onMenuDismiss = onDismissMenu,
-                            onEditClick = { onEditClick(item.itemId) },
-                            modifier = Modifier
+                            onEditClick = { onEditClick(item.itemId) }
                         )
                     }
                 }
                 if (item.tins.tins.isNotEmpty()) {
                     GlowBox(
                         color = GlowColor(Color.Black.copy(alpha = .25f)),
-                        size = GlowSize(top = 3.dp),
-                        modifier = Modifier
+                        size = GlowSize(top = 3.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 12.dp),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.Top
                         ) { TinList(item.tins) }
@@ -170,68 +168,65 @@ fun ListViewMode(
 
 @Composable
 private fun ListItem(
-    brand: () -> String,
-    blend: () -> String,
-    favorite: () -> Boolean,
-    disliked: () -> Boolean,
-    notes: () -> String,
-    typeGenreText: () -> String,
-    formattedQuantity: () -> String,
-    outOfStock: () -> Boolean,
-    rating: () -> String,
-    modifier: Modifier = Modifier,
+    brand: String,
+    blend: String,
+    favorite: Boolean,
+    disliked: Boolean,
+    notes: String,
+    typeGenreText: String,
+    formattedQuantity: String,
+    outOfStock: Boolean,
+    rating: String,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.fillMaxWidth().padding(bottom = 1.dp)
+    // main details
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 1.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // main details
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.secondaryContainer)
-                .padding(start = 8.dp, top = 4.dp, bottom = 2.dp, end = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Entry info
-            MainDetails(
-                brand = brand,
-                blend = blend,
-                favorite = favorite,
-                disliked = disliked,
-                notes = notes,
-                rating = rating,
-                typeGenreText = typeGenreText,
-                modifier = Modifier.weight(1f, false)
-            )
+        // Entry info
+        MainDetails(
+            brand = brand,
+            blend = blend,
+            favorite = favorite,
+            disliked = disliked,
+            notes = notes,
+            rating = rating,
+            typeGenreText = typeGenreText,
+            modifier = Modifier.weight(1f, false)
+        )
 
-            // Quantity
-            Column(
-                modifier = Modifier.width(IntrinsicSize.Max).padding(0.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.End
-            ) { QuantityColumn(formattedQuantity, outOfStock) }
-        }
+        // Quantity
+        Column(
+            modifier = Modifier
+                .width(IntrinsicSize.Max)
+                .padding(0.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.End
+        ) { QuantityColumn(formattedQuantity, outOfStock) }
     }
 }
 
 @Composable
 private fun MainDetails(
-    blend: () -> String,
-    brand: () -> String,
-    favorite: () -> Boolean,
-    disliked: () -> Boolean,
-    notes: () -> String,
-    rating: () -> String,
-    typeGenreText: () -> String,
+    blend: String,
+    brand: String,
+    favorite: Boolean,
+    disliked: Boolean,
+    notes: String,
+    rating: String,
+    typeGenreText: String,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(fraction = .95f)
-    ) {
+    Column(modifier.padding(end = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = blend(),
+                text = blend,
                 modifier = Modifier.weight(1f, false).padding(end = 4.dp),
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -244,12 +239,14 @@ private fun MainDetails(
             IconRow(favorite, disliked, notes)
         }
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp).offset(y = (-4).dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp, alignment = Alignment.Start),
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .offset(y = (-4).dp),
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
             Text(
-                text = brand(),
+                text = brand,
                 fontStyle = Italic,
                 fontWeight = FontWeight.Medium,
                 fontSize = 11.sp,
@@ -258,33 +255,34 @@ private fun MainDetails(
                     textDecoration = TextDecoration.None
                 )
             )
-            if (typeGenreText().isNotEmpty()){
+            if (typeGenreText.isNotEmpty()){
                 Text (
-                    text = typeGenreText(),
+                    text = typeGenreText,
                     style = MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         textDecoration = TextDecoration.None
                     ),
                     fontWeight = FontWeight.Normal,
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    modifier = Modifier.padding(start = 10.dp)
                 )
             }
-            if (rating().isNotEmpty()) { RatingLabel(rating) }
+            if (rating.isNotEmpty()) { RatingLabel(rating, Modifier.align(Alignment.CenterVertically)) }
         }
     }
 }
 
 @Composable
 private fun QuantityColumn(
-    formattedQuantity: () -> String,
-    outOfStock: () -> Boolean,
+    formattedQuantity: String,
+    outOfStock: Boolean,
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = formattedQuantity(),
+        text = formattedQuantity,
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium.copy(
-            color = if (outOfStock()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
+            color = if (outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
             textDecoration = TextDecoration.None
         ),
         fontWeight = FontWeight.Normal,
@@ -295,75 +293,65 @@ private fun QuantityColumn(
 
 @Composable
 private fun IconRow(
-    favorite: () -> Boolean,
-    disliked: () -> Boolean,
-    notes: () -> String,
-    modifier: Modifier = Modifier,
+    favorite: Boolean,
+    disliked: Boolean,
+    notes: String
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (favorite()) {
-            Icon(
-                painter = painterResource(id = R.drawable.heart_filled_24),
-                contentDescription = null,
-                modifier = Modifier.padding(start = 2.dp).size(17.dp),
-                tint = LocalCustomColors.current.favHeart
-            )
-        }
-        if (disliked()) {
-            Icon(
-                painter = painterResource(id = R.drawable.heartbroken_filled_24),
-                contentDescription = null,
-                modifier = Modifier.padding(start = 2.dp).size(17.dp),
-                tint = LocalCustomColors.current.disHeart
-            )
-        }
-        if (notes().isNotBlank()) {
-            Icon(
-                painter = painterResource(id = R.drawable.notes_24),
-                contentDescription = null,
-                modifier = Modifier.padding(start = 2.dp).size(16.dp),
-                tint = MaterialTheme.colorScheme.tertiary
-            )
-        }
+    if (favorite) {
+        Icon(
+            painter = painterResource(id = R.drawable.heart_filled_24),
+            contentDescription = null,
+            modifier = Modifier.padding(start = 2.dp).size(17.dp),
+            tint = LocalCustomColors.current.favHeart
+        )
+    }
+    if (disliked) {
+        Icon(
+            painter = painterResource(id = R.drawable.heartbroken_filled_24),
+            contentDescription = null,
+            modifier = Modifier.padding(start = 2.dp).size(17.dp),
+            tint = LocalCustomColors.current.disHeart
+        )
+    }
+    if (notes.isNotBlank()) {
+        Icon(
+            painter = painterResource(id = R.drawable.notes_24),
+            contentDescription = null,
+            modifier = Modifier.padding(start = 2.dp).size(16.dp),
+            tint = MaterialTheme.colorScheme.tertiary
+        )
     }
 }
 
 @Composable
 private fun RatingLabel(
-    rating: () -> String,
+    rating: String,
     modifier: Modifier = Modifier
 ) {
-    Row (
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = rating(),
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-        )
-        Image(
-            painter = painterResource(id = R.drawable.star_filled),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
-            alignment = Alignment.Center,
-            modifier = Modifier.padding(start = 2.dp).size(12.dp),
-        )
-    }
+    Text(
+        text = rating,
+        fontWeight = FontWeight.Normal,
+        fontSize = 11.sp,
+        modifier = Modifier.padding(start = 10.dp)
+    )
+    Image(
+        painter = painterResource(id = R.drawable.star_filled),
+        contentDescription = null,
+        colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
+        alignment = Alignment.Center,
+        modifier = modifier
+            .padding(start = 2.dp)
+            .size(12.dp)
+            .offset(y = (-0.5).dp),
+    )
 }
 
 @Composable
 private fun TinList(
-    filteredTins: TinsList,
-    modifier: Modifier = Modifier
+    filteredTins: TinsList
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .background(
                 LocalCustomColors.current.sheetBox,
                 RoundedCornerShape(bottomStart = 8.dp)
