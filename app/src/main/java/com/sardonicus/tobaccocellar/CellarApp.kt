@@ -95,7 +95,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun CellarApp(
-    isGestureNav: Boolean,
     twoPaneAllowed: Boolean,
     twoColumnTabs: Boolean,
     navigationState: NavigationState = rememberNavigationState(
@@ -106,14 +105,8 @@ fun CellarApp(
     navigator: Navigator = remember(navigationState, twoPaneAllowed) { Navigator(navigationState, twoPaneAllowed) },
     filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
 ) {
-    CellarNavigation(
-        navigator = navigator,
-        navigationState = navigationState,
-        isGestureNav = isGestureNav,
-        twoPaneAllowed = twoPaneAllowed,
-        twoColumnTabs = twoColumnTabs,
-        filterViewModel = filterViewModel
-    )
+    CellarNavigation(navigator, navigationState, twoPaneAllowed, twoColumnTabs,
+        filterViewModel)
 
     FilterSheet(filterViewModel)
 }
@@ -137,7 +130,7 @@ fun CellarTopAppBar(
     exportCsvHandler: ExportCsvHandler? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null,
     overrideBack: Boolean = false,
-    filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel,
+    filterViewModel: FilterViewModel = LocalCellarApplication.current.filterViewModel
 ) {
     val exportCsvPopup by filterViewModel.exportCsvPopup.collectAsState()
     val coroutineScope = rememberCoroutineScope()
@@ -180,11 +173,8 @@ fun CellarTopAppBar(
             coroutineScope.launch {
                 filterViewModel.saveExportRating(max, rounding)
 
-                val currentType = filterViewModel.exportType.value
-                when (currentType) {
-                    ExportType.ITEMS -> {
-                        exportCsvLauncher.launch(exportCsvIntent)
-                    }
+                when (filterViewModel.exportType.value) {
+                    ExportType.ITEMS -> exportCsvLauncher.launch(exportCsvIntent)
                     ExportType.TINS -> exportAsTinsLauncher.launch(exportAsTinsIntent)
                     null -> {}
                 }
@@ -214,14 +204,12 @@ fun CellarTopAppBar(
                 Box {
                     IconButton(
                         onClick = filterViewModel::toggleMenu,
-                        modifier = Modifier
-                            .size(36.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.more_vert),
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(24.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                     TopBarMenu(
@@ -253,8 +241,7 @@ fun CellarTopAppBar(
         ExportCsvDialog(
             confirm = onConfirmExport,
             filterViewModel = filterViewModel,
-            showExportCsv = { filterViewModel.showExportCsv(false) },
-            modifier = Modifier
+            showExportCsv = { filterViewModel.showExportCsv(false) }
         )
     }
 }
@@ -286,30 +273,18 @@ fun TopBarMenu(
             TopMenuState.MAIN -> {
                 DropdownMenuItem(
                     text = { Text(text = stringResource(R.string.bulk_edit_title)) },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToBulkEdit()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = currentDestination == HomeDestination,
+                    onClick = { filterViewModel.showMenu(false); navigateToBulkEdit() },
+                    enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
                     text = { Text(text = stringResource(R.string.import_csv)) },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToCsvImport()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = currentDestination == HomeDestination,
+                    onClick = { filterViewModel.showMenu(false); navigateToCsvImport() },
+                    enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
                     text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "Export CSV ")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Export CSV ")
                             Icon(
                                 painterResource(R.drawable.arrow_right),
                                 "Export Options",
@@ -317,58 +292,30 @@ fun TopBarMenu(
                                 tint = LocalContentColor.current.copy(alpha = 0.75f))
                         }
                     },
-                    onClick = {
-                        filterViewModel.changeMenuState(TopMenuState.EXPORT_CSV)
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled =
-                        currentDestination == HomeDestination && exportCsvHandler != null,
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp,
-                        vertical = 0.dp
-                    ),
+                    onClick = { filterViewModel.changeMenuState(TopMenuState.EXPORT_CSV) },
+                    enabled = currentDestination == HomeDestination && exportCsvHandler != null,
+                    contentPadding = PaddingValues(12.dp, 0.dp)
                 )
                 DropdownMenuItem(
-                    text = { Text(text = "Plaintext") },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToPlaintext()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = currentDestination == HomeDestination,
+                    text = { Text("Plaintext") },
+                    onClick = { filterViewModel.showMenu(false); navigateToPlaintext() },
+                    enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
-                    text = { Text(text = stringResource(R.string.help_faq)) },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToHelp()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = true,
+                    text = { Text(stringResource(R.string.help_faq)) },
+                    onClick = { filterViewModel.showMenu(false); navigateToHelp() },
+                    enabled = true
                 )
                 DropdownMenuItem(
-                    text = { Text(text = if (isTwoPane) "About/Settings" else "About") },
-                    onClick = {
-                        filterViewModel.showMenu(false)
-                        navigateToAbout()
-                    },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled = true,
+                    text = { Text(if (isTwoPane) "About/Settings" else "About") },
+                    onClick = { filterViewModel.showMenu(false); navigateToAbout() },
+                    enabled = true
                 )
                 if (!isTwoPane) {
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.settings)) },
-                        onClick = {
-                            filterViewModel.showMenu(false)
-                            navigateToSettings()
-                        },
-                        modifier = Modifier
-                            .padding(0.dp),
-                        enabled = true,
+                        text = { Text(stringResource(R.string.settings)) },
+                        onClick = { filterViewModel.showMenu(false); navigateToSettings() },
+                        enabled = true
                     )
                 }
             }
@@ -385,36 +332,28 @@ fun TopBarMenu(
                     onClick = { filterViewModel.changeMenuState(TopMenuState.MAIN) }
                 )
                 DropdownMenuItem(
-                    text = { Text(text = "Normal") },
+                    text = { Text("Normal") },
                     onClick = {
                         filterViewModel.changeExportType(ExportType.ITEMS)
                         filterViewModel.showExportCsv(true)
                         filterViewModel.showMenu(false)
                     },
-                    modifier = Modifier
-                        .padding(0.dp),
                     enabled =
                         currentDestination == HomeDestination && exportCsvHandler != null,
                     contentPadding = PaddingValues(
                         horizontal = 12.dp,
                         vertical = 0.dp
-                    ),
+                    )
                 )
                 DropdownMenuItem(
-                    text = { Text(text = "As Tins") },
+                    text = { Text("As Tins") },
                     onClick = {
                         filterViewModel.showMenu(false)
                         filterViewModel.changeExportType(ExportType.TINS)
                         filterViewModel.showExportCsv(true)
                     },
-                    modifier = Modifier
-                        .padding(0.dp),
-                    enabled =
-                        currentDestination == HomeDestination && exportCsvHandler != null,
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp,
-                        vertical = 0.dp
-                    ),
+                    enabled = currentDestination == HomeDestination && exportCsvHandler != null,
+                    contentPadding = PaddingValues(12.dp, 0.dp)
                 )
             }
         }
@@ -429,8 +368,6 @@ fun ExportCsvDialog(
     modifier: Modifier = Modifier
 ) {
     val dialogState by filterViewModel.exportCsvState.collectAsState()
-
-    val options = listOf("All", "Filtered")
     val allowedMax = remember { Regex("^(\\s*|\\d{0,3})$") }
 
     AlertDialog(
@@ -458,16 +395,14 @@ fun ExportCsvDialog(
                         .align(Alignment.CenterHorizontally)
                         .padding(bottom = 16.dp)
                 ) {
-                    options.forEachIndexed { index, label ->
+                    listOf("All", "Filtered").forEachIndexed { index, label ->
                         SegmentedButton(
                             selected = index == dialogState.selectedIndex,
                             onClick = { filterViewModel.selectAll(index == 0) },
-                            shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
                             contentPadding = PaddingValues(8.dp, 4.dp),
                             icon = { }
-                        ) {
-                            Text(label)
-                        }
+                        ) { Text(label) }
                     }
                 }
 
@@ -480,15 +415,13 @@ fun ExportCsvDialog(
                     verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Text(
                             text = "Max Rating:",
-                            modifier = Modifier
-                                .width(95.dp),
+                            modifier = Modifier.width(95.dp),
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                             maxLines = 1,
@@ -505,8 +438,7 @@ fun ExportCsvDialog(
                                 keyboardType = KeyboardType.Number,
                                 imeAction = ImeAction.Done
                             ),
-                            modifier = Modifier
-                                .width(80.dp),
+                            modifier = Modifier.width(80.dp),
                             shape = MaterialTheme.shapes.extraSmall,
                             colors = TextFieldDefaults.colors(
                                 focusedIndicatorColor = Color.Transparent,
@@ -521,15 +453,13 @@ fun ExportCsvDialog(
                     }
 
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Text(
                             text = "Decimal Places: ",
-                            modifier = Modifier
-                                .width(95.dp),
+                            modifier = Modifier.width(95.dp),
                             fontWeight = FontWeight.Normal,
                             fontSize = 15.sp,
                             maxLines = 2,
@@ -540,8 +470,7 @@ fun ExportCsvDialog(
                                 filterViewModel.updateExportRating(dialogState.exportRatingString.first, it)
                             },
                             options = listOf("0", "1", "2"),
-                            modifier = Modifier
-                                .width(80.dp),
+                            modifier = Modifier.width(80.dp),
                         )
                     }
                 }
@@ -552,18 +481,12 @@ fun ExportCsvDialog(
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
         dismissButton = {
-            TextButton(onClick = { showExportCsv() }) {
-                Text(stringResource(R.string.cancel))
-            }
+            TextButton({ showExportCsv() }) { Text(stringResource(R.string.cancel)) }
         },
         confirmButton = {
             TextButton(
-                onClick = { confirm(dialogState.exportRatingString.first, dialogState.exportRatingString.second) }
-            ) {
-                Text(
-                    text = "Confirm"
-                )
-            }
+                { confirm(dialogState.exportRatingString.first, dialogState.exportRatingString.second) }
+            ) { Text("Confirm") }
         }
     )
 }
@@ -597,21 +520,15 @@ fun CellarBottomAppBar(
     val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
 
     BottomAppBar(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp),
+        modifier = modifier.fillMaxWidth().height(52.dp),
         contentPadding = PaddingValues(0.dp),
         containerColor = LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
-        windowInsets = WindowInsets.displayCutout,
+        windowInsets = WindowInsets.displayCutout
     ) {
-        GlowBox(
-            color = GlowColor(Color.White.copy(alpha = 0.07f)),
-            size = GlowSize(top = 2.dp)
-        ) {
+        GlowBox(GlowColor(Color.White.copy(alpha = 0.07f)), GlowSize(top = 2.dp)) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
@@ -723,11 +640,7 @@ private fun BottomBarButton(
     indicatorColor: () -> Color = { Color.Transparent },
     borderColor: () -> Color = { Color.Transparent },
 ) {
-    Box(
-        modifier = modifier
-            .padding(vertical = 2.dp),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier.padding(vertical = 2.dp), Alignment.Center) {
         val interactionSource = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
@@ -757,9 +670,7 @@ private fun BottomBarButton(
                     Icon(
                         painter = painterResource(id = icon()),
                         contentDescription = title(),
-                        modifier = Modifier
-                            .size(26.dp)
-                            .offset(y = (-8).dp),
+                        modifier = Modifier.size(26.dp).offset(y = (-8).dp),
                         tint = color()
                     )
                 }

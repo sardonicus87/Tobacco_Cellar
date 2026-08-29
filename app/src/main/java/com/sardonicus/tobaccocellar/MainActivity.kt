@@ -177,8 +177,6 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val gestureNavigation = gestureNavigation()
-            val isGestureNav = remember(gestureNavigation) { gestureNavigation }
             val snackbarHostState = remember { SnackbarHostState() }
             var loading by remember { mutableStateOf(false) }
 
@@ -221,7 +219,6 @@ class MainActivity : ComponentActivity() {
                         }
 
                         CellarApp(
-                            isGestureNav = isGestureNav,
                             twoPaneAllowed = twoPaneAllowed,
                             twoColumnTabs = twoColumnTabs
                         )

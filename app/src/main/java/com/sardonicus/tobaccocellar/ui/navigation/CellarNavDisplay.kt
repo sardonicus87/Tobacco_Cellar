@@ -34,6 +34,7 @@ import androidx.navigation3.ui.NavDisplay.predictivePopTransitionSpec
 import androidx.navigation3.ui.NavDisplay.transitionSpec
 import androidx.navigationevent.NavigationEvent
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.gestureNavigation
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.aboutChangelog.AboutScreen
 import com.sardonicus.tobaccocellar.ui.aboutChangelog.ChangelogScreen
@@ -72,12 +73,13 @@ import kotlin.time.Duration.Companion.milliseconds
 fun CellarNavigation(
     navigator: Navigator,
     navigationState: NavigationState,
-    isGestureNav: Boolean,
     twoPaneAllowed: Boolean,
     twoColumnTabs: Boolean,
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val isGestureNav = gestureNavigation()
+
     SideEffect(twoPaneAllowed && navigationState.isTwoPane) {
         if (twoPaneAllowed && navigationState.isTwoPane) { filterViewModel.closeBottomSheet() }
     }
