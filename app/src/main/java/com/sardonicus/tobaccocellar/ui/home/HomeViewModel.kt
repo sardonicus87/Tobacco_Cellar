@@ -42,9 +42,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.takeWhile
@@ -63,15 +61,6 @@ class HomeViewModel(
     private val csvHelper: CsvHelper,
     private val application: Application
 ): ViewModel(), ExportCsvHandler {
-
-    private val _tableTableSorting = MutableStateFlow(TableSorting())
-    val tableSorting: StateFlow<TableSorting> = _tableTableSorting.asStateFlow()
-
-    private val _listSorting = MutableStateFlow(ListSorting())
-    val listSorting = _listSorting.asStateFlow()
-
-    private val _isTableView = MutableStateFlow(false)
-    val isTableView: StateFlow<Boolean> = _isTableView.asStateFlow()
 
     private val _releaseNotesState = MutableStateFlow(ReleaseNotesState())
     val releaseNotesState = _releaseNotesState.asStateFlow()
@@ -94,62 +83,23 @@ class HomeViewModel(
     init {
         viewModelScope.launch {
             EventBus.events.collect {
-                if (it is DatabaseRestoreEvent) {
-                    _resetLoading.value = true
-                }
+                if (it is DatabaseRestoreEvent) { _resetLoading.value = true }
             }
         }
         viewModelScope.launch(Dispatchers.Default) {
             supervisorScope {
-                // Table Sorting
-                launch {
-                    combine(
-                        preferencesRepo.sortColumnIndex,
-                        preferencesRepo.sortAscending
-                    ) { columnIndex, sortAscending ->
-                        TableSorting(columnIndex, sortAscending)
-                    }.collect {
-                        _tableTableSorting.value = it
-                    }
-                }
-
-                // List Sorting
-                launch {
-                    combine(
-                        preferencesRepo.listSorting,
-                        preferencesRepo.listAscending
-                    ) { value, ascending ->
-                        val option = ListSortOption.entries.firstOrNull { it.value == value } ?: ListSortOption.DEFAULT
-                        ListSorting(option, ascending)
-                    }.collect {
-                        _listSorting.value = it
-                    }
-                }
-
-                // Table View
-                launch {
-                    preferencesRepo.isTableView.collect { _isTableView.value = it }
-                }
-
                 // Release notes
-                launch{
+                launch {
                     val savedVersion = preferencesRepo.releaseNotesSeen.first()
-                    if (savedVersion == null) {
-                        saveReleaseNotesSeen()
-                    } else {
+                    if (savedVersion == null) { saveReleaseNotesSeen() }
+                    else {
                         val latestReleaseNotes = changelogEntries
                             .filter { it.versionNumber.isNotBlank() && it.releaseNotes.isNotEmpty() && it.versionCode > savedVersion }
-                            .sortedByDescending { it.versionCode }
-                            .take(3)
+                            .sortedByDescending { it.versionCode }.take(3)
 
                         if (latestReleaseNotes.isNotEmpty()) {
-                            _releaseNotesState.value = ReleaseNotesState(
-                                show = true,
-                                changelogData = latestReleaseNotes
-                            )
-                        } else {
-                            _releaseNotesState.value = ReleaseNotesState()
-                        }
+                            _releaseNotesState.value = ReleaseNotesState(true, latestReleaseNotes)
+                        } else { _releaseNotesState.value = ReleaseNotesState() }
                     }
                 }
 
@@ -176,9 +126,7 @@ class HomeViewModel(
                         }
 
                         _importantAlertState.value = ImportantAlertState(
-                            show = (alertToDisplay != null),
-                            alertToDisplay = alertToDisplay,
-                            isCurrentAlert = isCurrent
+                            (alertToDisplay != null), alertToDisplay, isCurrent
                         )
                     }
                 }
@@ -208,11 +156,8 @@ class HomeViewModel(
                             TypeGenreOption.TYPE_FALLBACK to types,
                             TypeGenreOption.SUB_FALLBACK to subgenres,
                         )
-                        val enabled = enablement[option] ?: true
-                        if (enabled) option else TypeGenreOption.TYPE
-                    }.collectLatest {
-                        preferencesRepo.saveTypeGenre(it.value)
-                    }
+                        if (enablement[option] ?: true) option else TypeGenreOption.TYPE
+                    }.collectLatest { preferencesRepo.saveTypeGenre(it.value) }
                 }
             }
         }
@@ -239,61 +184,53 @@ class HomeViewModel(
 
         val emptyList = filteredItems.isEmpty()
 
-        if (searchPerformed && searchText.isNotBlank()) {
-            savedSearchText = searchText
-        }
+        if (searchPerformed && searchText.isNotBlank()) { savedSearchText = searchText }
 
         val emptyMessage =
             if (!emptyList) { "" }
             else if (searchPerformed) {
                 "No entries found matching\n\"$savedSearchText\" in ${searchSetting.value}." }
             else if (filteringApplied) {
-                "No entries found matching\nselected filters."
-            }
+                "No entries found matching\nselected filters." }
             else if (emptyDatabase) {
-                "No entries found in cellar.\nClick \"+\" to add items,\n" +
-                        "or use options to import CSV." }
+                "No entries found in cellar.\nClick \"+\" to add items,\n or use options to " +
+                        "import CSV." }
             else { "" }
 
         val displayedMessage =
             if (searchWasPerformed && !searchPerformed) {
                 delay(50.milliseconds)
                 emptyMessage
-            } else {
-                emptyMessage
-            }
+            } else { emptyMessage }
+
         searchWasPerformed = searchPerformed
 
         displayedMessage
-    }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = ""
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "")
 
     val itemsCount = filterViewModel.homeScreenFilteredItems.map { it.size }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val viewSelect = isTableView.map { ViewSelect(isTableView = it) }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ViewSelect()
-        )
+
+    val viewSelect = preferencesRepo.isTableView.map { ViewSelect(isTableView = it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ViewSelect())
+
+    val tableSorting = combine(
+        preferencesRepo.sortColumnIndex,
+        preferencesRepo.sortAscending)
+    { columnIndex, sortAscending ->
+        TableSorting(columnIndex, sortAscending)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TableSorting())
+
+    val listSorting = combine(
+        preferencesRepo.listSorting,
+        preferencesRepo.listAscending
+    ) { value, ascending ->
+        ListSorting(value, ascending)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListSorting())
 
     val listSortingMenuState = combine(
-        isTableView,
+        viewSelect,
         preferencesRepo.typeGenreOption,
         filterViewModel.typesExist,
         filterViewModel.subgenresExist,
@@ -301,7 +238,7 @@ class HomeViewModel(
         preferencesRepo.showRating,
         listSorting
     ) { values ->
-        val isTableView = values[0] as Boolean
+        val viewSelect = values[0] as ViewSelect
         val typeGenreOption = values[1] as TypeGenreOption
         val typesExist = values[2] as Boolean
         val subgenresExist = values[3] as Boolean
@@ -329,31 +266,12 @@ class HomeViewModel(
             }
         }
 
-        ListSortingMenuState(
-            isTableView = isTableView,
-            sortingOptions = SortingOptionsList(sortingOptions),
-            listSorting = listSorting
-        )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ListSortingMenuState()
-        )
+        ListSortingMenuState(viewSelect.isTableView, SortingOptionsList(sortingOptions), listSorting)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListSortingMenuState())
 
-    val menuState = combine(
-        itemMenuShown,
-        activeMenuId,
-    ) { shown, id ->
+    val menuState = combine(itemMenuShown, activeMenuId) { shown, id ->
         MenuState(shown, id)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = MenuState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MenuState())
 
     private val quantityState = combine(
         filterViewModel.homeScreenFilteredItems,
@@ -369,24 +287,19 @@ class HomeViewModel(
 
             items.items.id to ItemQuantity(raw, display)
         }
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyMap()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     @Suppress("UNCHECKED_CAST")
     val sortedItems = combine(
         filterViewModel.homeScreenFilteredItems,
-        isTableView,
+        viewSelect,
         tableSorting,
         listSorting,
         preferencesRepo.typeGenreOption,
         quantityState
     ) { array ->
         val filteredItems = array[0] as List<ItemsComponentsAndTins>
-        val isTableView = array[1] as Boolean
+        val viewSelect = array[1] as ViewSelect
         val tableSorting = array[2] as TableSorting
         val listSorting = array[3] as ListSorting
         val typeGenreOption = array[4] as TypeGenreOption
@@ -394,23 +307,11 @@ class HomeViewModel(
 
         val sortQuantity = sortState.mapValues { it.value.raw }
 
-        sortItems(filteredItems, isTableView, tableSorting, listSorting, sortQuantity, typeGenreOption)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        sortItems(filteredItems, viewSelect.isTableView, tableSorting, listSorting, sortQuantity, typeGenreOption)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val filteredTins = filterViewModel.homeScreenFilteredTins.map { TinsList(it) }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TinsList()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinsList())
 
     @Suppress("UNCHECKED_CAST")
     val itemsListState: StateFlow<ItemsList> = combine(
@@ -448,25 +349,18 @@ class HomeViewModel(
         }
 
         ItemsList(list)
-    }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ItemsList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ItemsList())
 
     val tableLayoutData = combine(
         preferencesRepo.tableColumnsHidden,
         preferencesRepo.typeGenreOption
     ) { tableColumnsHidden, typeGenreOption ->
         val columnVisibility: Map<TableColumn, Boolean> = TableColumn.entries.associateWith { column ->
-            column.name !in tableColumnsHidden
-        }
+            column.name !in tableColumnsHidden }
+
         val columnMinWidths = TableColumn.entries.map {
             val visible = columnVisibility[it] ?: true
-            if (visible) {
+            if (!visible) { 0.dp } else {
                 when (it) {
                     TableColumn.BRAND -> 180.dp
                     TableColumn.BLEND -> 300.dp
@@ -478,7 +372,7 @@ class HomeViewModel(
                     TableColumn.QTY -> 98.dp
                     TableColumn.EDITED -> 108.dp
                 }
-            } else { 0.dp }
+            }
         }
         val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
 
@@ -498,7 +392,6 @@ class HomeViewModel(
                         else -> 0
                     }
                 }
-
                 TableColumn.NOTE -> { item: Items -> item.notes }
                 TableColumn.QTY -> { item: Items -> item.id }
                 TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "n/a" else formatMediumDate(it, true) } }
@@ -544,20 +437,13 @@ class HomeViewModel(
             alignment = ColumnAlignment(alignment),
             headerText = HeaderText(headerText)
         )
-    }
-        .distinctUntilChanged()
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TableLayoutData()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TableLayoutData())
 
 
     @Suppress("UNCHECKED_CAST")
     val homeUiState = combine(
         sortedItems,
-        isTableView,
+        viewSelect,
         filterViewModel.emptyDatabase,
         emptyMessage,
         resetLoading,
@@ -565,7 +451,7 @@ class HomeViewModel(
         quantityState
     ) { array ->
         val sortedItems = array[0] as List<ItemsComponentsAndTins>
-        val isTableView = array[1] as Boolean
+        val viewSelect = array[1] as ViewSelect
         val emptyDatabase = array[2] as Boolean
         val emptyMessage = array[3] as String
         val resetLoading = array[4] as Boolean
@@ -576,28 +462,19 @@ class HomeViewModel(
 
         if (formatFinished) { _resetLoading.value = false }
 
-        val dataLoading = if (resetLoading) {
-            true
-        } else {
-            if (!emptyDatabase && sortedItems.isNotEmpty()) {
-                !isRendered
-            } else {
-                if (emptyDatabase) false else emptyMessage.isBlank()
+        val dataLoading =
+            if (resetLoading) { true }
+            else {
+                if (!emptyDatabase && sortedItems.isNotEmpty()) { !isRendered }
+                else { if (emptyDatabase) false else emptyMessage.isBlank() }
             }
-        }
 
         HomeUiState(
-            isTableView = isTableView,
+            isTableView = viewSelect.isTableView,
             emptyDatabase = emptyDatabase,
             isLoading = dataLoading
         )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeUiState(isLoading = true)
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState(isLoading = true))
 
 
     /** Release Notes && One-Time Alerts **/
@@ -622,19 +499,14 @@ class HomeViewModel(
 
     private val _originalItem = MutableStateFlow<Items?>(null)
     val originalState: StateFlow<QuickEditItem> = _originalItem.map {
-            QuickEditItem(
-                rating = it?.rating,
-                favorite = it?.favorite ?: false,
-                disliked = it?.disliked ?: false,
-                notes = it?.notes ?: "",
-                quantity = it?.quantity ?: 0,
-            )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = QuickEditItem()
+        QuickEditItem(
+            rating = it?.rating,
+            favorite = it?.favorite ?: false,
+            disliked = it?.disliked ?: false,
+            notes = it?.notes ?: "",
+            quantity = it?.quantity ?: 0,
         )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), QuickEditItem())
 
 
     private var dismissJob: Job? = null
@@ -747,9 +619,7 @@ class HomeViewModel(
                 EventBus.emit(ItemUpdatedEvent())
             }
 
-            launch(Dispatchers.Main) {
-                onDismissMenu()
-            }
+            launch(Dispatchers.Main) { onDismissMenu() }
         }
     }
 
@@ -860,20 +730,16 @@ class HomeViewModel(
 
     /** UI functions **/
     fun selectView() {
-        viewModelScope.launch(Dispatchers.Default) {
-            preferencesRepo.saveView(!_isTableView.value)
-        }
+        viewModelScope.launch(Dispatchers.Default) { preferencesRepo.saveView(!viewSelect.value.isTableView) }
     }
 
     fun saveListSorting(value: ListSortOption) {
         onDismissMenu()
-        val currentSorting = _listSorting.value
+        val currentSorting = listSorting.value
         val newListSorting =
             if (currentSorting.option == value) {
                 ListSorting(value, !currentSorting.listAscending)
             } else { ListSorting(value) }
-
-        _listSorting.value = newListSorting
 
         viewModelScope.launch(Dispatchers.Default) {
             preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
@@ -882,7 +748,7 @@ class HomeViewModel(
 
     fun updateTableSorting(columnIndex: Int) {
         onDismissMenu()
-        val currentSorting = _tableTableSorting.value
+        val currentSorting = tableSorting.value
         val newTableSorting =
             if (currentSorting.columnIndex == columnIndex) {
                 when {
@@ -890,8 +756,6 @@ class HomeViewModel(
                     else -> TableSorting()
                 }
             } else { TableSorting(columnIndex, true) }
-
-        _tableTableSorting.value = newTableSorting
 
         viewModelScope.launch {
             preferencesRepo.saveTableSorting(
