@@ -62,7 +62,11 @@ fun CustomDropDown(
             },
             singleLine = true,
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
-            colors = colors,
+            colors = colors.copy(
+                focusedContainerColor =
+                    if (expanded) LocalCustomColors.current.textField.copy(alpha = 0.75f)
+                    else LocalCustomColors.current.textField,
+            ),
             shape = MaterialTheme.shapes.extraSmall,
             placeholder = placeholder,
             isError = isError,
