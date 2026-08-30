@@ -394,7 +394,7 @@ class HomeViewModel(
                 }
                 TableColumn.NOTE -> { item: Items -> item.notes }
                 TableColumn.QTY -> { item: Items -> item.id }
-                TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "n/a" else formatMediumDate(it, true) } }
+                TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "" else formatMediumDate(it, true) } }
             }
         }
         val alignment = columnMinWidths.indices.map {
