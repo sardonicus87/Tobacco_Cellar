@@ -649,15 +649,13 @@ class HomeViewModel(
                         if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
                         else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
                     4 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
-                        else filteredItems.sortedBy { it.items.rating ?: 10.0 }
+                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
+                        else filteredItems.sortedBy { it.items.rating ?: 6.0 }
                     7 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                        else filteredItems.sortedWith(
-                            compareBy<ItemsComponentsAndTins> {
-                                if (sortQuantity[it.items.id] == 0.0) 1 else 0
-                            }.thenBy { sortQuantity[it.items.id] }
-                        )
+                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] ?: 0.0 }
+                        else filteredItems.sortedBy {
+                            val quantity = sortQuantity[it.items.id] ?: 0.0
+                            if (quantity == 0.0) Double.MAX_VALUE else quantity }
                     8 ->
                         if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.lastModified }
                         else filteredItems.sortedBy { it.items.lastModified }
@@ -697,14 +695,13 @@ class HomeViewModel(
                             } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
                         }
                     ListSortOption.RATING ->
-                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: 0.0 }
-                        else filteredItems.sortedBy { item -> item.items.rating ?: 10.0 }
+                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
+                        else filteredItems.sortedBy { item -> item.items.rating ?: 6.0 }
                     ListSortOption.QUANTITY ->
                         if (listSorting.listAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                        else filteredItems.sortedWith(
-                            compareBy<ItemsComponentsAndTins> { if (sortQuantity[it.items.id] == 0.0) 1 else 0 }
-                                .thenBy { sortQuantity[it.items.id] }
-                        )
+                        else filteredItems.sortedBy {
+                            val quantity = sortQuantity[it.items.id] ?: 0.0
+                            if (quantity == 0.0) Double.MAX_VALUE else quantity }
                     ListSortOption.EDITED ->
                         if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.lastModified }
                         else filteredItems.sortedBy { it.items.lastModified }
@@ -718,10 +715,8 @@ class HomeViewModel(
             TypeGenreOption.TYPE -> item.type
             TypeGenreOption.SUBGENRE -> item.subGenre
             TypeGenreOption.BOTH -> {
-                item.type +
-                        if (item.type.isNotEmpty() && item.subGenre.isNotEmpty()) { " - " } else { "" } +
-                        item.subGenre
-            }
+                val middle = if (item.type.isNotEmpty() && item.subGenre.isNotEmpty()) " - " else ""
+                item.type + middle + item.subGenre }
             TypeGenreOption.TYPE_FALLBACK -> item.type.ifBlank { "(${item.subGenre})" }
             TypeGenreOption.SUB_FALLBACK -> item.subGenre.ifBlank { "(${item.type})" }
         }
@@ -735,11 +730,10 @@ class HomeViewModel(
 
     fun saveListSorting(value: ListSortOption) {
         onDismissMenu()
-        val currentSorting = listSorting.value
+        val currentSort = listSorting.value
         val newListSorting =
-            if (currentSorting.option == value) {
-                ListSorting(value, !currentSorting.listAscending)
-            } else { ListSorting(value) }
+            if (currentSort.option == value) { ListSorting(value, !currentSort.listAscending) }
+            else { ListSorting(value) }
 
         viewModelScope.launch(Dispatchers.Default) {
             preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
@@ -749,7 +743,7 @@ class HomeViewModel(
     fun updateTableSorting(columnIndex: Int) {
         onDismissMenu()
         val currentSorting = tableSorting.value
-        val newTableSorting =
+        val newSort =
             if (currentSorting.columnIndex == columnIndex) {
                 when {
                     currentSorting.sortAscending -> currentSorting.copy(sortAscending = false)
@@ -758,9 +752,7 @@ class HomeViewModel(
             } else { TableSorting(columnIndex, true) }
 
         viewModelScope.launch {
-            preferencesRepo.saveTableSorting(
-                newTableSorting.columnIndex, newTableSorting.sortAscending
-            )
+            preferencesRepo.saveTableSorting(newSort.columnIndex, newSort.sortAscending)
         }
     }
 
@@ -784,11 +776,8 @@ class HomeViewModel(
 
     val columnVisibilityEnablement: StateFlow<Map<TableColumn, Boolean>> =
         combine(
-            filterViewModel.typesExist,
-            filterViewModel.subgenresExist,
-            filterViewModel.ratingsExist,
-            filterViewModel.favDisExist,
-            filterViewModel.notesExist,
+            filterViewModel.typesExist, filterViewModel.subgenresExist,
+            filterViewModel.ratingsExist, filterViewModel.favDisExist, filterViewModel.notesExist,
         ) {
             mapOf(
                 TableColumn.BRAND to true,
@@ -1148,24 +1137,17 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
         QuantityOption.OUNCES -> {
             val pounds = quantity / 16
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 16) {
-                    "${formatDecimal(pounds)} lbs"
-                } else {
-                    "${formatDecimal(quantity)} oz"
-                }
+                if (quantity >= 16) { "${formatDecimal(pounds)} lbs" }
+                else { "${formatDecimal(quantity)} oz" }
             } else {
-                if (quantity >= 16) {
-                    "*${formatDecimal(pounds)} lbs"
-                } else
-                    "*${formatDecimal(quantity)} oz"
+                if (quantity >= 16) { "*${formatDecimal(pounds)} lbs" }
+                else { "*${formatDecimal(quantity)} oz" }
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                 "${formatDecimal(quantity)} g"
-            } else {
-                "*${formatDecimal(quantity)} g"
-            }
+            } else { "*${formatDecimal(quantity)} g" }
         }
     }
 }
