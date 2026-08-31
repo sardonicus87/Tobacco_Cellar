@@ -69,6 +69,7 @@ class PreferencesRepo(
 
         val PLAINTEXT_FORMAT_STRING = stringPreferencesKey("plaintext_format_string")
         val PLAINTEXT_DELIMITER = stringPreferencesKey("plaintext_delimiter")
+        val PLAINTEXT_LIST_AS = booleanPreferencesKey("plaintext_list_as_tins")
         val PLAINTEXT_SORTING = stringPreferencesKey("plaintext_sorting")
         val PLAINTEXT_SORT_ASCENDING = booleanPreferencesKey("plaintext_sort_ascending")
         val PLAINTEXT_SUBSORTING = stringPreferencesKey("plaintext_subsorting")
@@ -215,13 +216,25 @@ class PreferencesRepo(
     }
 
     // Cellar list view specific options //
-    val listSorting: Flow<String> = dataStore.data
+    val listSorting: Flow<ListSortOption> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading list sort preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[LIST_SORTING] ?: ListSortOption.DEFAULT.value }
+        }.map {
+            when (it[LIST_SORTING]) {
+                ListSortOption.DEFAULT.value -> ListSortOption.DEFAULT
+                ListSortOption.BLEND.value -> ListSortOption.BLEND
+                ListSortOption.BRAND.value -> ListSortOption.BRAND
+                ListSortOption.TYPE.value -> ListSortOption.TYPE
+                ListSortOption.SUBGENRE.value -> ListSortOption.SUBGENRE
+                ListSortOption.RATING.value -> ListSortOption.RATING
+                ListSortOption.QUANTITY.value -> ListSortOption.QUANTITY
+                ListSortOption.EDITED.value -> ListSortOption.EDITED
+                else -> ListSortOption.DEFAULT
+            }
+        }
 
     val listAscending: Flow<Boolean> = dataStore.data
         .catch {
@@ -461,6 +474,15 @@ class PreferencesRepo(
 
     suspend fun setPtDelimiter(delim: String) { dataStore.edit { it[PLAINTEXT_DELIMITER] = delim } }
 
+    val plaintextListAs: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[PLAINTEXT_LIST_AS] ?: false }
+
+    suspend fun setPtListAs(listAs: Boolean) { dataStore.edit { it[PLAINTEXT_LIST_AS] = listAs } }
 
     val plaintextSorting: Flow<String> = dataStore.data
         .catch {
@@ -510,9 +532,7 @@ class PreferencesRepo(
             } else {
                 throw it
             }
-        }.map {
-            it[PLAINTEXT_PRINT_MARGIN] ?: 1.0
-        }
+        }.map { it[PLAINTEXT_PRINT_MARGIN] ?: 1.0 }
 
     suspend fun setPtPrintOptions(font: Float, margin: Double) {
         dataStore.edit { it[PLAINTEXT_PRINT_FONT] = font; it[PLAINTEXT_PRINT_MARGIN] = margin }
