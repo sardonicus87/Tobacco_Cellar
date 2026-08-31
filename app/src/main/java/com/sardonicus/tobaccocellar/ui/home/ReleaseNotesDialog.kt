@@ -22,10 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -48,6 +44,7 @@ fun ReleaseNotesDialog(
     val maxHeight = LocalWindowInfo.current.containerDpSize.height * divisor
     val minWidth = if (landscape) 280.dp else Dp.Unspecified
     val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
+    val toLog = releaseNotesState.changelogData.last().versionCode
 
     AlertDialog(
         onDismissRequest = viewModel::saveReleaseNotesSeen,
@@ -95,30 +92,8 @@ fun ReleaseNotesDialog(
                             color = LocalContentColor.current.copy(alpha = alpha),
                         )
                         log.releaseNotes.forEach {
-                            val text = "- $it"
-                            val linkText = "full changelog"
-                            val annotatedString = buildAnnotatedString {
-                                append(text)
-                                val startIndex = text.indexOf(linkText)
-                                if (startIndex != -1) {
-                                    addLink(
-                                        clickable = LinkAnnotation.Clickable(
-                                            tag = "changelog",
-                                            styles = TextLinkStyles(
-                                                style = SpanStyle(
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = alpha)
-                                                )
-                                            ),
-                                            linkInteractionListener = { onNavigateToChangelog(log.versionCode) }
-                                        ),
-                                        start = startIndex,
-                                        end = startIndex + linkText.length
-                                    )
-                                }
-                            }
-
                             Text(
-                                text = annotatedString,
+                                text = "- $it",
                                 fontSize = if (index == 0) 15.sp else 14.sp,
                                 color = LocalContentColor.current.copy(alpha = alpha),
                                 modifier = Modifier.padding(start = 12.dp)
@@ -141,7 +116,7 @@ fun ReleaseNotesDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(null) },
+                onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(toLog) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
             ) { Text("Full Changelog") }
