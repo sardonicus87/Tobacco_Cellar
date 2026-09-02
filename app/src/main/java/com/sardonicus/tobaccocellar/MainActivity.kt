@@ -203,7 +203,10 @@ class MainActivity : ComponentActivity() {
                             .background(Color.Transparent)
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
-                            .filterTextContextMenuComponents { it.key != AutofillKey }
+                            .filterTextContextMenuComponents {
+                                it.key != AutofillKey
+                                it::class.java.simpleName != "TextContextMenuTextClassificationItem"
+                            }
                     ) {
                         val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
                         val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
@@ -334,6 +337,7 @@ class MainActivity : ComponentActivity() {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
                 preferencesRepo.saveCrossDeviceSync(false)
                 preferencesRepo.clearLogin()
+                (application as CellarApplication).cancelPeriodicSync()
                 Toast.makeText(this@MainActivity, "Logged out.", Toast.LENGTH_SHORT).show()
             }
             catch (_: Exception) {
