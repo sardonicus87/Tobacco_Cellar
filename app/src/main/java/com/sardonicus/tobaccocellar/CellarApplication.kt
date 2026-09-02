@@ -39,9 +39,7 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-    name = VIEW_PREFERENCE_NAME
-)
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
 
 class CellarApplication : Application(), Application.ActivityLifecycleCallbacks {
     lateinit var container: AppContainer
@@ -67,51 +65,54 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         // Check Network Flow and trigger upload if there are pending ops,
         applicationScope.launch(Dispatchers.Default) {
+            val networkMonitor = NetworkMonitor(this@CellarApplication)
             preferencesRepo.crossDeviceSync.collectLatest { enabled ->
-                if (enabled) { triggerPendingUpload() }
-                else { cancelPeriodicSync() }
+                if (enabled) {
+                    launch {
+                        combine(
+                            networkMonitor.isWifi,
+                            networkMonitor.isConnected,
+                            preferencesRepo.allowMobileData
+                        ) { isWifi, isConnected, allowMobile ->
+                            isWifi || (isConnected && allowMobile)
+                        }.distinctUntilChanged().collect {
+                            if (it && container.itemsRepository.hasPendingOperations()) {
+                                container.itemsRepository.triggerUploadWorker()
+                            }
+                        }
+                    }
+                    launch {
+                        preferencesRepo.allowMobileData.collect { enqueuePeriodicSync(it) }
+                    }
+                } else { cancelPeriodicSync() }
             }
         }
     }
 
-    private suspend fun triggerPendingUpload() {
-        val networkMonitor = NetworkMonitor(this@CellarApplication)
-        val itemsRepository = container.itemsRepository
+    private fun enqueuePeriodicSync(mobileEnabled: Boolean) {
+        val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
 
-        if (itemsRepository.hasPendingOperations()) {
-            val networkCheckFlow = combine(networkMonitor.isWifi, networkMonitor.isConnected,
-                preferencesRepo.allowMobileData) { isWifi, isConnected, allowMobile ->
-                isWifi || (isConnected && allowMobile)
-            }
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(networkType)
+            .build()
 
-            networkCheckFlow.distinctUntilChanged().collect { canUpload ->
-                if (canUpload) { itemsRepository.triggerUploadWorker() }
-            }
-        }
+        val downloadWorkRequest =
+            PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
+                .setConstraints(constraints)
+                .addTag("periodic worker")
+                .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "download_sync_work",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            downloadWorkRequest
+        )
     }
 
     fun periodicDownloadSetup() {
         applicationScope.launch(Dispatchers.Default) {
-            val workManager = WorkManager.getInstance(this@CellarApplication)
             val mobileEnabled = preferencesRepo.allowMobileData.first()
-            val networkType = if (mobileEnabled) NetworkType.CONNECTED else NetworkType.UNMETERED
-
-            // Periodic Worker
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(networkType)
-                .build()
-
-            val downloadWorkRequest =
-                PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
-                    .setConstraints(constraints)
-                    .addTag("periodic worker")
-                    .build()
-
-            workManager.enqueueUniquePeriodicWork(
-                "download_sync_work",
-                ExistingPeriodicWorkPolicy.KEEP,
-                downloadWorkRequest
-            )
+            enqueuePeriodicSync(mobileEnabled)
         }
     }
 
