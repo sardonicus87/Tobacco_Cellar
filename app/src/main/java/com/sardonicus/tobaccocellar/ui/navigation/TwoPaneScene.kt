@@ -160,13 +160,23 @@ data class TwoPaneScene<T : Any>(
                     modifier = Modifier
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
-                        .tapToggle(secondExpanded) { showButton = true }
                         .onFocusChanged { secondFocus = it.hasFocus }
-                        .pointerInput(mainFocus) {
-                            if (mainFocus) {
-                                awaitEachGesture {
-                                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
-                                    focusManager.clearFocus(); down.consume()
+                        .pointerInput(Unit) {
+                            secondExpanded
+                            awaitEachGesture {
+                                val down = awaitFirstDown(pass = PointerEventPass.Initial)
+
+                                if (mainFocus) { focusManager.clearFocus(); down.consume() }
+
+                                if (secondExpanded && !down.isConsumed) {
+                                    awaitFirstDown(pass = PointerEventPass.Final)
+                                    val up =
+                                        withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                                            waitForUpOrCancellation(pass = PointerEventPass.Final)
+                                        }
+                                    if (up != null && !up.isConsumed) {
+                                        showButton = true; up.consume()
+                                    }
                                 }
                             }
                         },
@@ -345,19 +355,6 @@ private fun TwoPaneButton(
     }
 }
 
-
-private fun Modifier.tapToggle(
-    enabled: Boolean,
-    onTap: () -> Unit
-): Modifier = if (!enabled) this else this.pointerInput(Unit) {
-    awaitEachGesture {
-        awaitFirstDown(pass = PointerEventPass.Final)
-        val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-            waitForUpOrCancellation(pass = PointerEventPass.Final)
-        }
-        if (up != null && !up.isConsumed) { onTap(); up.consume() }
-    }
-}
 
 private fun <T : Any> isBack(
     oldBackStack: List<T>,
