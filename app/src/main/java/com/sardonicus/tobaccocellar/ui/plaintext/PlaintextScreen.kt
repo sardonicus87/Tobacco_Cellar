@@ -1,19 +1,16 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
 import android.annotation.SuppressLint
-import android.content.ClipData
 import android.content.Context
 import android.print.PrintManager
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.Image
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,24 +24,27 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
+import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.rows
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
@@ -52,13 +52,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
@@ -86,35 +82,27 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.layout.positionOnScreen
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -126,8 +114,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -145,7 +133,6 @@ import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
@@ -168,34 +155,46 @@ fun PlaintextScreen(
     var selectionFocused by remember { mutableStateOf(false) }
     var selectionKey by remember { mutableIntStateOf(0) }
 
+    var actionRowToggleBounds by remember { mutableStateOf<Rect?>(null) }
+    var actionButtonBounds by remember { mutableStateOf<Rect?>(null) }
+    var saveLoadBounds by remember { mutableStateOf<Rect?>(null) }
+    var scaffoldCords by remember { mutableStateOf<LayoutCoordinates?>(null) }
+
     BackHandler(selectionFocused || anyFocused) {
-        if (selectionFocused) { selectionKey++; selectionFocused = false }
+        if (selectionFocused) { selectionKey++ }
         else { focusManager.clearFocus() }
     }
 
-    DisposableEffect(Unit) { onDispose { selectionKey++; selectionFocused = false } }
+    DisposableEffect(Unit) { onDispose { selectionKey++ } }
 
     Scaffold(
         modifier = modifier
             .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(null, null, !selectionFocused) { focusManager.clearFocus() }
-            .pointerInput(selectionFocused) {
+            .onGloballyPositioned { scaffoldCords = it }
+            .pointerInput(selectionFocused, anyFocused) {
                 awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Main)
-                    if (selectionFocused) {
-                        selectionKey++; selectionFocused = false; down.consume()
+                    val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                    val tapRoot =
+                        scaffoldCords?.localToRoot(down.position) ?: return@awaitEachGesture
+                    val actionToggle = actionRowToggleBounds?.contains(tapRoot) ?: false
+                    val isOtherTap = listOfNotNull(actionButtonBounds, saveLoadBounds)
+                        .any { it.contains(tapRoot) }
+
+                    when {
+                        actionToggle -> if (anyFocused && !selectionFocused) {
+                            focusManager.clearFocus(); down.consume() }
+                        selectionFocused -> { selectionKey++; down.consume() }
+                        anyFocused -> { focusManager.clearFocus(); if (isOtherTap) down.consume() }
                     }
                 }
-            }
-        ,
+            },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.plaintext_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = {
-                    if (selectionFocused) { selectionKey++; selectionFocused = false }
-                    else focusManager.clearFocus()
+                    if (selectionFocused) { selectionKey++ } else { focusManager.clearFocus() }
                     onNavigateUp()
                 },
                 showMenu = false,
@@ -216,14 +215,15 @@ fun PlaintextScreen(
                 filterViewModel = filterViewModel,
                 twoColumnTabs = twoColumnTabs,
                 selectionKey = selectionKey,
-                resetSelection = { selectionKey++; selectionFocused = false },
-                selectionFocused = selectionFocused,
+                resetSelection = { selectionKey++ },
                 anyFocused = anyFocused,
+                selectionFocused = selectionFocused,
                 updateSelectionFocused = { selectionFocused = it },
+                actionRowBounds = { actionRowToggleBounds = it.boundsInRoot() },
+                actionButtonBounds = { actionButtonBounds = it.boundsInRoot() },
+                saveLoadBounds = { saveLoadBounds = it.boundsInRoot() },
                 focusManager = focusManager,
-                saveFormatString = viewModel::saveFormatString,
-                savePrintOptions = viewModel::savePrintOptions,
-                savePreset = viewModel::savePreset
+                savePrintOptions = viewModel::savePrintOptions
             )
         }
     }
@@ -237,13 +237,14 @@ private fun PlaintextBody(
     twoColumnTabs: Boolean,
     selectionKey: Int,
     resetSelection: () -> Unit,
-    selectionFocused: Boolean,
     anyFocused: Boolean,
+    selectionFocused: Boolean,
     updateSelectionFocused: (Boolean) -> Unit,
+    actionRowBounds: (LayoutCoordinates) -> Unit,
+    actionButtonBounds: (LayoutCoordinates) -> Unit,
+    saveLoadBounds: (LayoutCoordinates) -> Unit,
     focusManager: FocusManager,
-    saveFormatString: (String, String) -> Unit,
-    savePrintOptions: (Float, Double) -> Unit,
-    savePreset: (Int, String, String) -> Unit
+    savePrintOptions: (Float, Double) -> Unit
 ) {
     var tabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
@@ -265,24 +266,24 @@ private fun PlaintextBody(
     var actionRowExpanded by remember { mutableStateOf(false) }
     val formatString by viewModel.formatStringEntry.collectAsState()
     val delimiter by viewModel.delimiter.collectAsState()
+    val listAs by viewModel.listAsTins.collectAsState()
 
     val context = LocalContext.current
     var printDialog by remember { mutableStateOf(false) }
     val printOptions by viewModel.printOptions.collectAsState()
+
+    BackHandler(actionRowExpanded) { actionRowExpanded = false }
 
     if (twoColumnTabs) {
         Row(Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .onFocusChanged { if (it.hasFocus && tabIndex == 1) { tabIndex = 0 } }
+                    .onFocusChanged { if (it.hasFocus && tabIndex == 1) tabIndex = 0 }
                     .pointerInput(tabIndex) {
                         if (tabIndex == 1) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                                    if (event.changes.any { it.changedToDown() }) { tabIndex = 0 }
-                                }
+                            awaitEachGesture {
+                                awaitFirstDown(pass = PointerEventPass.Initial); tabIndex = 0
                             }
                         }
                     }
@@ -297,11 +298,10 @@ private fun PlaintextBody(
                         filterViewModel = filterViewModel,
                         context = context,
                         plainList = plainList,
+                        actionRowBounds = actionRowBounds,
+                        actionButtonBounds = actionButtonBounds,
                         actionRowExpanded = actionRowExpanded,
-                        toggleActionRow = {
-                            if (anyFocused && !selectionFocused) { focusManager.clearFocus() }
-                            else { actionRowExpanded = !actionRowExpanded }
-                        },
+                        toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                         showPrintDialog = { printDialog = true },
                         formatString = formatString,
                         selectionKey = selectionKey,
@@ -316,14 +316,11 @@ private fun PlaintextBody(
                 size = GlowSize(top = 3.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .onFocusChanged { if (it.hasFocus && tabIndex == 0) { tabIndex = 1 } }
+                    .onFocusChanged { if (it.hasFocus && tabIndex == 0) tabIndex = 1 }
                     .pointerInput(tabIndex) {
                         if (tabIndex == 0) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
-                                    if (event.changes.any { it.changedToDown() }) { tabIndex = 1 }
-                                }
+                            awaitEachGesture {
+                                awaitFirstDown(pass = PointerEventPass.Initial); tabIndex = 1
                             }
                         }
                     }
@@ -331,11 +328,11 @@ private fun PlaintextBody(
             ) {
                 PlaintextFormatting(
                     viewModel = viewModel,
-                    largeScreen = twoColumnTabs,
+                    saveLoadBounds = saveLoadBounds,
+                    twoColumnTabs = twoColumnTabs,
                     formatString = formatString,
                     delimiter = delimiter,
-                    saveFormatString = saveFormatString,
-                    savePreset = savePreset,
+                    listAs = listAs,
                     selectionKey = selectionKey,
                     updateSelectionFocused = updateSelectionFocused
                 )
@@ -409,6 +406,8 @@ private fun PlaintextBody(
                             filterViewModel = filterViewModel,
                             context = context,
                             plainList = plainList,
+                            actionRowBounds = actionRowBounds,
+                            actionButtonBounds = actionButtonBounds,
                             actionRowExpanded = actionRowExpanded,
                             toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                             showPrintDialog = { printDialog = true },
@@ -420,11 +419,11 @@ private fun PlaintextBody(
                     1 ->
                         PlaintextFormatting(
                             viewModel = viewModel,
-                            largeScreen = twoColumnTabs,
+                            saveLoadBounds = saveLoadBounds,
+                            twoColumnTabs = twoColumnTabs,
                             formatString = formatString,
                             delimiter = delimiter,
-                            saveFormatString = saveFormatString,
-                            savePreset = savePreset,
+                            listAs = listAs,
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
                             fieldInteractionSource = fieldInteractionSource,
@@ -436,6 +435,8 @@ private fun PlaintextBody(
                             filterViewModel = filterViewModel,
                             context = context,
                             plainList = plainList,
+                            actionRowBounds = actionRowBounds,
+                            actionButtonBounds = actionButtonBounds,
                             actionRowExpanded = actionRowExpanded,
                             toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                             showPrintDialog = { printDialog = true },
@@ -466,328 +467,7 @@ private fun PlaintextBody(
 }
 
 
-@SuppressLint("ConfigurationScreenWidthHeight")
-@Composable
-private fun PlaintextActionRow(
-    viewModel: PlaintextViewModel,
-    filterViewModel: FilterViewModel,
-    expanded: Boolean,
-    toggleActionRow: () -> Unit,
-    showPrintDialog: () -> Unit,
-    plainList: String,
-    context: Context,
-    modifier: Modifier = Modifier
-) {
-    val sortState by viewModel.sortState.collectAsState()
-    val sortOptions by viewModel.sortOptions.collectAsState()
-    val sortMenuState by viewModel.sortMenuState.collectAsState()
 
-    val coroutineScope = rememberCoroutineScope()
-    val clipboard = LocalClipboard.current
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
-    BackHandler(sortMenuState.mainMenu || sortMenuState.subMenu) {
-        if (sortMenuState.mainMenu && !sortMenuState.subMenu) {
-            viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = false))
-        }
-        if (sortMenuState.subMenu) {
-            viewModel.updateSortMenuState(sortMenuState.copy(subMenu = false))
-        }
-    }
-
-    val buttonAlpha by animateFloatAsState(if (expanded) 1f else .5f, tween(300))
-    val buttonColor by animateColorAsState(if (expanded) LocalCustomColors.current.homeHeaderBg
-        else LocalCustomColors.current.whiteBlack, tween(300))
-    val borderColor by animateColorAsState(if (expanded) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
-        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f), tween(300))
-    val backgroundColor by animateColorAsState(if (expanded) LocalCustomColors.current.homeHeaderBg
-        else Color.Transparent, tween(300))
-    val iconRotation by animateFloatAsState(if (expanded) 180f else -0f,tween(450))
-
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .background(backgroundColor, RoundedCornerShape(8.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .padding(end = if (expanded) 8.dp else 0.dp)
-    ) {
-        CompositionLocalProvider(LocalRippleConfiguration provides null) {
-            IconButton(
-                onClick = toggleActionRow,
-                shape = RoundedCornerShape(25),
-                modifier = Modifier
-                    .size(40.dp)
-                    .graphicsLayer { alpha = buttonAlpha },
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onBackground,
-                    containerColor = buttonColor
-                )
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.arrow_left),
-                    contentDescription = if (expanded) "Hide Action Row" else "Show Action Row",
-                    modifier = Modifier.rotate(iconRotation),
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = expanded,
-            enter = expandHorizontally(tween(300), Alignment.Start),
-            exit = shrinkHorizontally(tween(300), Alignment.Start)
-        ) {
-            Row(
-                modifier = Modifier,
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Open filter sheet
-                Box(contentAlignment = Alignment.Center) {
-                    val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
-                    val borderColor =
-                        if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
-                    val indicatorColor =
-                        if (filteringApplied) LocalCustomColors.current.indicatorCircle else Color.Transparent
-
-                    IconButton(
-                        onClick = filterViewModel::openBottomSheet,
-                        enabled = sortOptions.isNotEmpty(),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                        ),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(40.dp)
-                    ) { Icon(painterResource(id = R.drawable.filter_24), "Filter") }
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .size(7.dp)
-                            .offset((-5).dp, (-9).dp)
-                            .clip(CircleShape)
-                            .border(0.5.dp, borderColor, CircleShape)
-                            .background(indicatorColor)
-                    )
-                }
-
-                // Sorting
-                Box {
-                    var reverse: Boolean
-
-                    val hasSubOptions = listOf(
-                        PlaintextSortOption.TIN_LABEL.value,
-                        PlaintextSortOption.TIN_CONTAINER.value,
-                        PlaintextSortOption.TIN_QUANTITY.value
-                    )
-                    val subOptionsList = listOf(
-                        PlaintextSortOption.DEFAULT.value,
-                        PlaintextSortOption.TIN_DEFAULT.value,
-                        PlaintextSortOption.BRAND.value,
-                        PlaintextSortOption.BLEND.value
-                    )
-
-                    val density = LocalDensity.current
-                    var yPositions by remember { mutableStateOf(mapOf<String, Dp>()) }
-                    var mainWidth by remember { mutableStateOf(0.dp) }
-                    var mainPosition by remember { mutableStateOf(0.dp) }
-                    val alteredColor =
-                        Color.Black.copy(alpha = .1f)
-                            .compositeOver(LocalCustomColors.current.textField)
-                    val color =
-                        if (sortMenuState.subMenu) alteredColor else LocalCustomColors.current.textField
-
-                    IconButton(
-                        onClick = { viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = !sortMenuState.mainMenu)) },
-                        enabled = sortOptions.isNotEmpty(),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                        ),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(40.dp)
-                    ) { Icon(painterResource(id = R.drawable.sort_bars), "Sorting") }
-
-                    // Main options
-                    DropdownMenu(
-                        expanded = sortMenuState.mainMenu,
-                        onDismissRequest = {
-                            viewModel.updateSortMenuState(sortMenuState.copy(mainMenu = false))
-                        },
-                        modifier = Modifier
-                            .onGloballyPositioned {
-                                mainWidth = with(density) { it.size.width.toDp() }
-                                mainPosition = with(density) { it.positionOnScreen().x.toDp() }
-                            },
-                        containerColor = color,
-                        shadowElevation = 6.dp
-                    ) {
-                        sortOptions.forEach { option ->
-                            var yPosition by remember { mutableStateOf(0.dp) }
-
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Start,
-                                    ) {
-                                        Text(
-                                            text = option.value,
-                                            modifier = Modifier.padding(end = 2.dp),
-                                            color = LocalContentColor.current.copy(alpha = if (sortMenuState.subMenu) 0.85f else 1.0f)
-                                        )
-                                        // Sort indicator and/or submenu
-                                        if (sortState.value == option.value) {
-                                            Box {
-                                                Image(
-                                                    painter = painterResource(id = sortState.icon),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(20.dp)
-                                                        .padding(0.dp),
-                                                    colorFilter = ColorFilter.tint(
-                                                        LocalContentColor.current
-                                                    )
-                                                )
-                                            }
-                                        } else if (option.value in hasSubOptions) {
-                                            Box {
-                                                Image(
-                                                    painter = painterResource(R.drawable.arrow_right),
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp),
-                                                    colorFilter = ColorFilter.tint(
-                                                        LocalContentColor.current.copy(alpha = 0.5f)
-                                                    )
-                                                )
-                                            }
-                                        } else { Spacer(Modifier.width(20.dp)) }
-                                    }
-                                },
-                                onClick = {
-                                    if (option.value in hasSubOptions) {
-                                        viewModel.updateSortMenuState(
-                                            sortMenuState.copy(
-                                                subMenu = true,
-                                                mainSelection = option.value,
-                                            )
-                                        )
-                                    } else { viewModel.updateSorting(option.value, true) }
-                                },
-                                modifier = Modifier
-                                    .onGloballyPositioned { yPosition =
-                                        with(density) { (it.positionInParent().y).toDp() }
-                                    }
-                            )
-
-                            yPositions = yPositions + (option.value to yPosition)
-
-                        }
-                    }
-
-                    // Sub sorting menu
-                    var subWidth by remember { mutableStateOf(0.dp) }
-                    val yOffset = yPositions[sortMenuState.mainSelection]
-                    val mainRightEdge = mainPosition + mainWidth
-                    val remainingSpace = screenWidth - mainRightEdge
-                    val xOffset = if (subWidth < (remainingSpace * 1.05f)) mainWidth else -(subWidth)
-
-                    DropdownMenu(
-                        expanded = sortMenuState.subMenu,
-                        onDismissRequest = { viewModel.updateSortMenuState(sortMenuState.copy(subMenu = false)) },
-                        containerColor = LocalCustomColors.current.textField,
-                        modifier = Modifier
-                            .onGloballyPositioned {
-                                subWidth = with(density) { it.size.width.toDp() }
-                            },
-                        offset = DpOffset(xOffset, yOffset ?: 0.dp),
-                        shadowElevation = 6.dp
-                    ) {
-                        subOptionsList.forEach {
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        modifier = Modifier,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Start,
-                                    ) {
-                                        Text(
-                                            text = it,
-                                            modifier = Modifier
-                                                .padding(end = 8.dp)
-                                        )
-                                        val color =
-                                            if (sortMenuState.subSelection == it && sortState.value == sortMenuState.mainSelection) {
-                                                LocalContentColor.current
-                                            } else Color.Transparent
-                                        Box(
-                                            modifier = Modifier
-                                                .size(6.dp)
-                                                .clip(CircleShape)
-                                                .background(color)
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    reverse =
-                                        sortMenuState.subSelection == it && sortState.value == sortMenuState.mainSelection
-                                    viewModel.updateSortMenuState(sortMenuState.copy(subSelection = it))
-                                    viewModel.updateSorting(sortMenuState.mainSelection, reverse)
-                                    viewModel.updateSubSorting(it)
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Copy
-                IconButton(
-                    onClick = {
-                        coroutineScope.launch {
-                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plainList)))
-                            Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    enabled = plainList.isNotBlank(),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                    ),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(40.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.copy_icon),
-                        contentDescription = "Copy",
-                        modifier = Modifier.padding(0.dp),
-                    )
-                }
-
-                // Print
-                IconButton(
-                    onClick = { showPrintDialog() },
-                    enabled = plainList.isNotBlank(),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
-                    ),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.print_icon),
-                        contentDescription = "Print",
-                        modifier = Modifier.padding(0.dp),
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun PlaintextList(
@@ -795,6 +475,8 @@ private fun PlaintextList(
     filterViewModel: FilterViewModel,
     context: Context,
     plainList: String,
+    actionRowBounds: (LayoutCoordinates) -> Unit,
+    actionButtonBounds: (LayoutCoordinates) -> Unit,
     actionRowExpanded: Boolean,
     toggleActionRow: () -> Unit,
     showPrintDialog: () -> Unit,
@@ -827,7 +509,7 @@ private fun PlaintextList(
         else {
             Column(
                 modifier = modifier
-                    .padding(horizontal = 12.dp)
+                    .padding(horizontal = 8.dp)
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
@@ -860,6 +542,8 @@ private fun PlaintextList(
             PlaintextActionRow(
                 viewModel = viewModel,
                 filterViewModel = filterViewModel,
+                actionRowBounds = actionRowBounds,
+                otherBounds = actionButtonBounds,
                 expanded = actionRowExpanded,
                 toggleActionRow = toggleActionRow,
                 showPrintDialog = showPrintDialog,
@@ -867,21 +551,22 @@ private fun PlaintextList(
                 context = context,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 6.dp)
+                    .padding(top = 12.dp)
             )
         }
     }
 }
 
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 private fun PlaintextFormatting(
     viewModel: PlaintextViewModel,
-    largeScreen: Boolean,
+    saveLoadBounds: (LayoutCoordinates) -> Unit,
+    twoColumnTabs: Boolean,
     formatString: String,
     delimiter: String,
-    saveFormatString: (String, String) -> Unit,
-    savePreset: (Int, String, String) -> Unit,
+    listAs: Boolean,
     selectionKey: Int,
     updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -889,6 +574,9 @@ private fun PlaintextFormatting(
 ) {
     val formatPreview by viewModel.formatPreview.collectAsState()
     val presets by viewModel.presets.collectAsState()
+    val tinsEnabled by viewModel.listAsTinsEnabled.collectAsState()
+
+    SideEffect(tinsEnabled) { if (!tinsEnabled) { viewModel.saveFormatting(listAsTins = false) } }
 
     var saveDialog by remember { mutableStateOf(false) }
     var loadDialog by remember { mutableStateOf(false) }
@@ -900,244 +588,244 @@ private fun PlaintextFormatting(
             .imePadding(),
         verticalArrangement = Arrangement.Top,
     ) {
-        if (largeScreen) {
+        if (twoColumnTabs) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Format Output:",
-                    modifier = Modifier,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-        else {
+            ) { Text("Format Output:", fontWeight = FontWeight.SemiBold) }
+        } else {
             Spacer(Modifier.height(12.dp))
             Text(
                 text = "Format Output:",
-                modifier = Modifier
-                    .padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = 8.dp),
                 fontWeight = FontWeight.SemiBold
             )
         }
 
-        Row(
+        Grid(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(IntrinsicSize.Min)
-            ) {
-                Box (
-                    modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "String:",
-                        modifier = Modifier
-                            .padding(end = 12.dp),
-                        maxLines = 1
-                    )
-                }
-                Box (
-                    modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text(
-                        text = "Delimiter:",
-                        modifier = Modifier
-                            .padding(end = 12.dp),
-                        maxLines = 1
-                    )
-                }
+                .padding(start = 8.dp, end = 8.dp, bottom = 24.dp),
+            config = {
+                columns(GridTrackSize.Auto, GridTrackSize.Flex(1.fr))
+                rows(GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto)
+                gap(row = 8.dp, column = 20.dp)
             }
-            Column(
+        ) {
+            Text(
+                text = "String:",
                 modifier = Modifier
-                    .weight(1f),
-                verticalArrangement = Arrangement.Top,
+                    .gridItem(row = 1, column = 1, alignment = Alignment.CenterStart),
+                maxLines = 1
+            )
+            Text(
+                text = "Delimiter:",
+                modifier = Modifier
+                    .gridItem(row = 2, column = 1, alignment = Alignment.CenterStart),
+                maxLines = 1
+            )
+            Text(
+                text = "List as:",
+                modifier = Modifier
+                    .gridItem(row = 3, column = 1, alignment = Alignment.CenterStart),
+                maxLines = 1
+            )
+
+            // format string
+            TextField(
+                value = formatString,
+                onValueChange = { viewModel.saveFormatting(format = it) },
+                modifier = Modifier
+                    .gridItem(row = 1, column = 2, alignment = Alignment.CenterStart)
+                    .fillMaxWidth(),
+                singleLine = true,
+                trailingIcon = {
+                    if (formatString.length > 4) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clickable(null, LocalIndication.current) {
+                                    viewModel.saveFormatting(format = "")
+                                }
+                                .alpha(0.66f)
+                                .size(20.dp)
+                                .focusable(false)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = LocalCustomColors.current.textField,
+                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                    disabledContainerColor = LocalCustomColors.current.textField,
+                ),
+                shape = MaterialTheme.shapes.extraSmall,
+                interactionSource = fieldInteractionSource
+            )
+
+            // Delimiter
+            TextField(
+                value = delimiter,
+                onValueChange = { viewModel.saveFormatting(delimiter = it) },
+                modifier = Modifier
+                    .gridItem(row = 2, column = 2, alignment = Alignment.CenterStart)
+                    .fillMaxWidth(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.None,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = LocalCustomColors.current.textField,
+                    unfocusedContainerColor = LocalCustomColors.current.textField,
+                    disabledContainerColor = LocalCustomColors.current.textField,
+                ),
+                shape = MaterialTheme.shapes.extraSmall,
+                interactionSource = fieldInteractionSource
+            )
+
+            // list as tins
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
+                modifier = Modifier
+                    .gridItem(row = 3, column = 2, alignment = Alignment.CenterStart)
             ) {
-                // String
-                TextField(
-                    value = formatString,
-                    onValueChange = { saveFormatString(it, delimiter) },
+                Text(
+                    text = "Entries",
+                    fontWeight = if (!listAs) FontWeight.Bold else FontWeight.Normal,
+                    color = LocalContentColor.current.copy(alpha = if (!listAs) 1f else .5f),
+                    fontSize = 14.sp,
+                    lineHeight = 1.em,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp, start = 8.dp),
-                    singleLine = true,
-                    trailingIcon = {
-                        if (formatString.length > 4) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                contentDescription = "Clear",
-                                modifier = Modifier
-                                    .clickable(
-                                        indication = LocalIndication.current,
-                                        interactionSource = null
-                                    ) { saveFormatString("", delimiter) }
-                                    .alpha(0.66f)
-                                    .size(20.dp)
-                                    .focusable(false)
-                            )
+                        .clip(RoundedCornerShape(25))
+                        .clickable(null, LocalIndication.current) {
+                            viewModel.saveFormatting(listAsTins = false)
                         }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        focusedContainerColor = LocalCustomColors.current.textField,
-                        unfocusedContainerColor = LocalCustomColors.current.textField,
-                        disabledContainerColor = LocalCustomColors.current.textField,
-                    ),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    interactionSource = fieldInteractionSource
+                        .padding(8.dp, 4.dp)
                 )
-
-                // Delimiter
-                TextField (
-                    value = delimiter,
-                    onValueChange = { saveFormatString(formatString, it) },
+                Text(
+                    text = "Tins",
+                    fontWeight = if (listAs) FontWeight.Bold else FontWeight.Normal,
+                    color = LocalContentColor.current.copy(alpha = if (listAs) 1f else .5f),
+                    fontSize = 14.sp,
+                    lineHeight = 1.em,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done,
-                    ),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        focusedContainerColor = LocalCustomColors.current.textField,
-                        unfocusedContainerColor = LocalCustomColors.current.textField,
-                        disabledContainerColor = LocalCustomColors.current.textField,
-                    ),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    interactionSource = fieldInteractionSource
+                        .clip(RoundedCornerShape(25))
+                        .clickable(null, LocalIndication.current, tinsEnabled) {
+                            viewModel.saveFormatting(listAsTins = true)
+                        }
+                        .padding(8.dp, 4.dp)
                 )
             }
-        }
 
-        // Load/save presets
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(Modifier.weight(.2f))
-            TextButton(
-                onClick = { saveDialog = true },
-                enabled = formatString.isNotBlank(),
+            Row(
                 modifier = Modifier
-                    .heightIn(40.dp, 40.dp),
-                contentPadding = PaddingValues(8.dp, 2.dp),
-            ) { Text("Save Preset") }
-            Spacer(Modifier.weight(.2f))
-            TextButton(
-                onClick = { loadDialog = true },
-                enabled = presets.any { it.formatString.isNotBlank() },
-                modifier = Modifier
-                    .heightIn(40.dp, 40.dp),
-                contentPadding = PaddingValues(8.dp, 2.dp),
-            ) { Text("Load Preset") }
-            Spacer(Modifier.weight(.2f))
+                    .gridItem(row = 4, column = 1, columnSpan = 2, alignment = Alignment.Center)
+                    .onGloballyPositioned { saveLoadBounds(it) },
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = { saveDialog = true },
+                    enabled = formatString.isNotBlank(),
+                    modifier = Modifier.heightIn(40.dp, 40.dp),
+                    contentPadding = PaddingValues(12.dp, 2.dp),
+                ) { Text("Save Preset") }
+                TextButton(
+                    onClick = { loadDialog = true },
+                    enabled = presets.any { it.formatString.isNotBlank() },
+                    modifier = Modifier.heightIn(40.dp, 40.dp),
+                    contentPadding = PaddingValues(12.dp, 2.dp),
+                ) { Text("Load Preset") }
+            }
         }
-
-        Spacer(Modifier.height(16.dp))
 
         // Preview
-        Text(
-            text = "Preview:",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-            fontWeight = FontWeight.SemiBold
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    RoundedCornerShape(8.dp)
-                )
-                .background(
-                    LocalCustomColors.current.whiteBlack.copy(alpha = .2f),
-                    RoundedCornerShape(8.dp)
-                )
-                .padding(vertical = 8.dp, horizontal = 12.dp)
-        ) { Text(formatPreview, minLines = 6, maxLines = 6, fontSize = 14.sp) }
-
-        Spacer(Modifier.height(30.dp))
+        if (!twoColumnTabs) {
+            Text(
+                text = "Preview:",
+                modifier = Modifier.padding(bottom = 8.dp),
+                fontWeight = FontWeight.SemiBold
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 8.dp, end = 8.dp, bottom = 30.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(LocalCustomColors.current.whiteBlack, RoundedCornerShape(8.dp))
+                    .padding(vertical = 8.dp, horizontal = 12.dp)
+            ) { Text(formatPreview, minLines = 6, maxLines = 6, fontSize = 14.sp) }
+        }
 
         // Formatting Guide
         Text(
             text = "Formatting Guide",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
+            modifier = Modifier.padding(bottom = 8.dp),
             fontWeight = FontWeight.Bold,
         )
+
         // Formatting Options
         key(selectionKey) { SelectionContainer(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .padding(bottom = 16.dp)
+                .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
                 .onFocusChanged { updateSelectionFocused(it.isFocused) }
         ) { FormattingGuide() } }
 
-        Text(
-            text = "Formatting Help",
-            modifier = Modifier
-                .padding(bottom = 8.dp),
-            fontWeight = FontWeight.Bold
-        )
         var expanded by remember { mutableStateOf(false) }
 
-        if (!expanded) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .padding(horizontal = 12.dp)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { expanded = true }
-            ) {
-                HorizontalDivider(Modifier.weight(1f), 1.dp)
+        AnimatedVisibility (
+            visible = expanded,
+            enter = expandVertically(tween(250), Alignment.Top) + fadeIn(tween(250)),
+            exit = shrinkVertically(tween(250), Alignment.Top) + fadeOut(tween(250))
+        ) {
+            Column {
                 Text(
-                    text = "Click to Expand",
-                    fontSize = 14.sp,
-                    color = LocalContentColor.current.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    text = "Formatting Help",
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    fontWeight = FontWeight.Bold
                 )
-                HorizontalDivider(Modifier.weight(1f), 1.dp)
+                FormattingHelp()
             }
-
-        } else { FormattingHelp({expanded = false}) }
-
+        }
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .padding(horizontal = 12.dp)
+                .clickable(null, LocalIndication.current) { expanded = !expanded }
+        ) {
+            HorizontalDivider(Modifier.weight(1f), 1.dp)
+            Text(
+                text = if (!expanded) "Click for Formatting Help" else "Click to Hide",
+                fontSize = 14.sp,
+                color = LocalContentColor.current.copy(alpha = 0.5f),
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            HorizontalDivider(Modifier.weight(1f), 1.dp)
+        }
 
         Spacer(Modifier.height(24.dp))
 
@@ -1146,8 +834,8 @@ private fun PlaintextFormatting(
                 savedPresets = presets,
                 formatString = formatString,
                 delimiter = delimiter,
-                onSaveConfirm = { slot, string, delimiter -> savePreset(slot, string, delimiter) },
-                onDeleteConfirm = { savePreset(it, "", "") },
+                onSaveConfirm = { slot, string, delimiter -> viewModel.savePreset(slot, string, delimiter) },
+                onDeleteConfirm = { viewModel.savePreset(it, "", "") },
                 onSaveCancel = { saveDialog = false },
             )
         }
@@ -1156,8 +844,8 @@ private fun PlaintextFormatting(
                 savedPresets = presets,
                 formatString = formatString,
                 delimiter = delimiter,
-                onLoadConfirm = { string, delimiter -> saveFormatString(string, delimiter) },
-                onDeleteConfirm = { savePreset(it, "", "") },
+                onLoadConfirm = { string, delimiter -> viewModel.saveFormatting(format = string, delimiter = delimiter) },
+                onDeleteConfirm = { viewModel.savePreset(it, "", "") },
                 onLoadCancel = { loadDialog = false },
             )
         }
@@ -1170,8 +858,7 @@ private fun FormattingGuide(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.Top
     ) {
@@ -1207,29 +894,19 @@ private fun FormattingGuide(
 
         // first half
         Column(
-            modifier = Modifier
-                .weight(1f),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Top,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(IntrinsicSize.Min)
-                        .padding(end = 8.dp),
-                ) {
+            Row(Modifier.fillMaxWidth()) {
+                Column(Modifier
+                    .width(IntrinsicSize.Min)
+                    .padding(end = 8.dp)) {
                     firstHalf.forEach {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(height),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
+                        Box(Modifier
+                            .fillMaxWidth()
+                            .height(height), Alignment.CenterStart) {
                             Text(
                                 text = "${it.key}:",
-                                modifier = Modifier,
                                 style = TextStyle(
                                     color = LocalContentColor.current,
                                     fontWeight = FontWeight.SemiBold
@@ -1244,21 +921,13 @@ private fun FormattingGuide(
                         }
                     }
                 }
-                Column(
-                    modifier = Modifier,
-                ) {
+                Column {
                     firstHalf.forEach {
-                        Box(
-                            modifier = Modifier
-                                .height(height),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
+                        Box(Modifier.height(height), Alignment.CenterStart) {
                             Text(
                                 text = it.value,
                                 modifier = Modifier,
-                                style = TextStyle(
-                                    color = LocalContentColor.current,
-                                ),
+                                style = TextStyle(color = LocalContentColor.current),
                                 maxLines = 1,
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 10.sp,
@@ -1276,8 +945,7 @@ private fun FormattingGuide(
 
         // second half
         Column(
-            modifier = Modifier
-                .weight(1f),
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Top,
         ) {
             Row(Modifier.fillMaxWidth()) {
@@ -1293,7 +961,6 @@ private fun FormattingGuide(
                         ) {
                             Text(
                                 text = "${it.key}:",
-                                modifier = Modifier,
                                 style = TextStyle(
                                     color = LocalContentColor.current,
                                     fontWeight = FontWeight.SemiBold
@@ -1308,9 +975,7 @@ private fun FormattingGuide(
                         }
                     }
                 }
-                Column(
-                    modifier = Modifier,
-                ) {
+                Column {
                     secondHalf.forEach {
                         Box(
                             modifier = Modifier
@@ -1320,10 +985,7 @@ private fun FormattingGuide(
                         ) {
                             Text(
                                 text = it.value,
-                                modifier = Modifier,
-                                style = TextStyle(
-                                    color = LocalContentColor.current,
-                                ),
+                                style = TextStyle(color = LocalContentColor.current),
                                 maxLines = 1,
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 10.sp,
@@ -1340,10 +1002,7 @@ private fun FormattingGuide(
 }
 
 @Composable
-private fun FormattingHelp(
-    hide: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun FormattingHelp(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -1352,20 +1011,17 @@ private fun FormattingHelp(
     ) {
         Text(
             text = "Anything typed in the format string will show in the text. To reference " +
-                    "specific fields, use the placeholders above. Sorting options are generated " +
-                    "based on the format string placeholders (set format string before sorting). " +
-                    "Using the delimiter field will automatically remove the delimiter from the " +
-                    "last line.",
-            modifier = Modifier
+                    "specific fields, use the placeholders above. Setting the \"List as\" to " +
+                    "tins will explode the tins into individual entries in the text list. The " +
+                    "delimiter separates entries and is automatically removed from the end.",
         )
         Text(
             text = "Use the delimiter line for how to separate records in the generated string. " +
                     "Anything typed here will show up in-between each record. So, to separate " +
-                    "each record by a blank line, you would need to enter \"_n__n_\". When tins " +
+                    "each record by a blank line, you would need to enter \"_n_\". When tins " +
                     "are passed as a sublist, mark the start of the tins sublist delimiter with " +
                     "a tilde (~) at the end of the tins-sublist formatting, inside the closing " +
                     "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}.",
-            modifier = Modifier
         )
         Text(
             text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
@@ -1375,87 +1031,56 @@ private fun FormattingHelp(
                     "a scale of 1-4 with whole number rounding, enter \"@rating_4_0\" into the " +
                     "formatting. More advanced examples might be:\n" +
                     "\"[@rating_10_0 stars]\" (of 10, whole number) or \"[@rating_4_2/4]\" (of 4, " +
-                    "two places)",
+                    "two places).",
             modifier = Modifier
         )
         Text(
             text = "\"Number\" is a special tag that counts each record in the given sort order " +
                     "(use multiple # to include leading 0's).",
-            modifier = Modifier
         )
         Text(
             text = "In order to output raw text rather than special characters, escape the " +
                     "special character with the escape character. For example, to output # in the " +
                     "string, enter: '#. Likewise for example, to output brackets around a field, " +
-                    "escape each bracket (e.g. '[@type']). The escape character itself doesn't " +
+                    "escape the first bracket (e.g. '[@type]). The escape character itself doesn't " +
                     "need to be escaped unless you're trying to use it before an escapable " +
                     "character (e.g. to render: '01' you would need to input ''##').",
-            modifier = Modifier
         )
         Text(
-            text = "Use the square brackets ([ ]) when you only want the text within them " +
-                    "to appear if one or more placeholders (also inside the brackets) are " +
+            text = "Use the square brackets ([ ]) when you conditionally want the text within them " +
+                    "to appear only if one or more placeholders (also inside the brackets) are " +
                     "found. For instance, if you want the type shown on a new line, but " +
                     "don't want an extra line for a blank type, enter: [_n_@type]. These " +
-                    "conditional brackets can also be nested.",
-            modifier = Modifier
+                    "conditionals can also be nested (e.g. [ @type[ - @subgenre]]).",
         )
         Text(
             text = "When sorting by items, if you want the tins organized as a sublist " +
                     "per each item, use the curly braces around the formatting you want for " +
-                    "tins (e.g. {@label (@T_qty)}). Conditional brackets can also be used " +
+                    "tins (e.g. {@label (@T_qty)~, }). Conditional brackets can also be used " +
                     "inside the curly braces.",
-            modifier = Modifier
         )
         Text(
             text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
                     "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
                     "just before the desired delimiter, followed by delimiter. For example, to " +
                     "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
-            modifier = Modifier
         )
         Text(
             text = "A more advanced example might be to pass the list of tins only if tins exist " +
                     "for that blend and passing the quantity in brackets. For example, entering...",
-            modifier = Modifier
         )
         Text(
             text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
-            modifier = Modifier,
             fontSize = 14.sp,
         )
         Text(
             text = "... would result in:",
-            modifier = Modifier
         )
         Box {
             Text(
                 text = "Lane Limited - \"Very Cherry\"\n        - Lot 1 [2 oz]\n        - Lot 2 [50 grams]",
-                modifier = Modifier,
                 fontSize = 14.sp,
             )
-        }
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .padding(horizontal = 12.dp)
-                .clickable(
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { hide() }
-        ) {
-            HorizontalDivider(Modifier.weight(1f), 1.dp)
-            Text(
-                text = "Click to Hide",
-                fontSize = 14.sp,
-                color = LocalContentColor.current.copy(alpha = 0.5f),
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-            )
-            HorizontalDivider(Modifier.weight(1f), 1.dp)
         }
     }
 }
