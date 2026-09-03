@@ -155,7 +155,7 @@ fun DeviceSyncDialog(
                         Text(
                             text = "Sync data does not count toward your Google Drive storage " +
                                     "quota. Data is checked once at every app start (including " +
-                                    "\"cold starts\" if it has been at least one hour since " +
+                                    "\"warm starts\" if it has been at least one hour since " +
                                     "initial app start), and cyclically once every 12 hours as " +
                                     "long as the device is powered on and connected. All data " +
                                     "checks respect your settings regarding mobile data or WIFI " +
