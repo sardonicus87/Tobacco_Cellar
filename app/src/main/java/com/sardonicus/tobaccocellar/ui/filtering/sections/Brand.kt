@@ -5,12 +5,10 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -61,6 +59,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -91,25 +91,18 @@ fun BrandFilterSection(
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
 
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         // Search bar and brand include/exclude button //
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BrandFilterSearch(
-                filterViewModel = filterViewModel,
-                modifier = Modifier
-                    .weight(1f, false)
-            )
+            BrandFilterSearch(filterViewModel, Modifier.weight(1f, false))
 
             IncludeExcludeSwitch(
                 excluded = { excludeSwitch },
                 onClick = filterViewModel::updateSelectedExcludeBrandsSwitch,
-                modifier = Modifier
             )
         }
 
@@ -142,8 +135,8 @@ private fun BrandFilterSearch(
     val brandSearchText by filterViewModel.brandSearchText.collectAsState()
 
     val focusManager = LocalFocusManager.current
-    var hasFocus by remember { mutableStateOf(false) }
-    val showCursor by remember(hasFocus) { mutableStateOf(hasFocus) }
+    var focused by remember { mutableStateOf(false) }
+    val showCursor by remember(focused) { mutableStateOf(focused) }
 
     BasicTextField(
         value = brandSearchText,
@@ -151,12 +144,7 @@ private fun BrandFilterSearch(
         modifier = modifier
             .background(color = LocalCustomColors.current.textField, RoundedCornerShape(6.dp))
             .height(48.dp)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus
-                if (!focusState.hasFocus) {
-                    focusManager.clearFocus()
-                }
-            }
+            .onFocusChanged { focused = it.hasFocus; if (!it.hasFocus) { focusManager.clearFocus() } }
             .padding(horizontal = 16.dp),
         textStyle = LocalTextStyle.current.copy(
             color = LocalContentColor.current,
@@ -171,21 +159,18 @@ private fun BrandFilterSearch(
         singleLine = true,
         maxLines = 1,
         cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
-        else { SolidColor(Color.Transparent) },
+            else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
             Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
             ) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f),
+                    modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    if (brandSearchText.isEmpty() && !hasFocus) {
+                    if (brandSearchText.isEmpty() && !focused) {
                         Text(
                             text = "Search Brands",
                             style = LocalTextStyle.current.copy(
@@ -211,38 +196,27 @@ private fun IncludeExcludeSwitch(
             .padding(start = 12.dp)
             .width(IntrinsicSize.Max)
             .height(48.dp)
-            .background(
-                LocalCustomColors.current.textField,
-                RoundedCornerShape(8.dp)
-            )
+            .background(LocalCustomColors.current.textField, RoundedCornerShape(8.dp))
             .border(
                 Dp.Hairline,
                 MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                 RoundedCornerShape(8.dp)
             )
             .padding(horizontal = 8.dp)
-            .combinedClickable(
-                onClick = { onClick() },
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ),
+            .clickable(remember { MutableInteractionSource() }, null) { onClick() },
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = "Include",
-            modifier = Modifier
-                .padding(0.dp)
-                .offset(y = 3.dp),
+            modifier = Modifier.offset(y = 3.dp),
             color = if (!excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (!excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
         )
         Text(
             text = "Exclude",
-            modifier = Modifier
-                .padding(0.dp)
-                .offset(y = (-3).dp),
+            modifier = Modifier.offset(y = (-3).dp),
             color = if (excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
@@ -261,16 +235,11 @@ private fun SelectableBrandsRow(
     val nestedScroll = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                return (Offset(x = available.x, y = 0f))
-            }
+                consumed: Offset, available: Offset, source: NestedScrollSource
+            ): Offset { return (Offset(x = available.x, y = 0f)) }
 
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                return Velocity(x = available.x, y = 0f)
-            }
+                return Velocity(x = available.x, y = 0f) }
         }
     }
 
@@ -282,11 +251,8 @@ private fun SelectableBrandsRow(
 
     val clickAction = remember {
         { brand: String ->
-            if (excludeSwitch) {
-                updateSelectedExcludedBrands(brand, true)
-            } else {
-                updateSelectedBrands(brand, true)
-            }
+            if (excludeSwitch) { updateSelectedExcludedBrands(brand, true) }
+            else { updateSelectedBrands(brand, true) }
             updateBrandSearchText("")
         }
     }
@@ -314,8 +280,7 @@ private fun SelectableBrandsRow(
                 BrandTextButton(
                     brand = { brand },
                     onClickAction = { clickAction(brand) },
-                    enabled = { enabled },
-                    modifier = Modifier
+                    enabled = { enabled }
                 )
             }
         }
@@ -335,12 +300,7 @@ private fun BrandTextButton(
         onClick = onClickAction,
         modifier = modifier,
         enabled = enabled(),
-    ) {
-        Text(
-            text = brand(),
-            modifier = Modifier
-        )
-    }
+    ) { Text(brand()) }
 }
 
 @Composable
@@ -353,50 +313,42 @@ private fun SelectedBrandChipBox(
 ) {
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
     val selectedBrands by filterViewModel.selectedBrand.collectAsState()
-    val showBrandChipOverflow by filterViewModel.showBrandChipOverflow.collectAsState()
-    val maxWidth by filterViewModel.chipMaxWidth.collectAsState()
+    var showOverflowDialog by remember { mutableStateOf(false) }
+    var boxWidth by remember { mutableStateOf(0.dp) }
+    val chipMaxWidth by remember { derivedStateOf { (boxWidth * 0.25f) } }
 
     val density = LocalDensity.current
 
-    Box (
-        modifier = Modifier
-            .onGloballyPositioned {
-                filterViewModel.updateChipBoxWidth(with(density) { it.size.width.toDp() })
-            }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { boxWidth = with(density) { it.size.width.toDp() } - 24.dp }
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
+        Box(
+            modifier = Modifier,
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier,
-                contentAlignment = Alignment.Center
-            ) {
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            Dp.Hairline,
-                            LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
-                            RoundedCornerShape(8.dp)
-                        )
-                        .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                        .height(96.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                    verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                ) {
-                    val overflowCount by remember { derivedStateOf { selectedBrands.size - 5 } }
 
-                    selectedBrands.take(5).forEach { brand ->
-                        val onRemoved = remember(brand, excludeSwitch) {
-                            {
-                                if (excludeSwitch) {
-                                    updateSelectedExcludedBrands(brand, false)
-                                } else {
-                                    updateSelectedBrands(brand, false)
-                                }
-                            }
-                        }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        Dp.Hairline,
+                        LocalCustomColors.current.sheetBoxBorder.copy(alpha = .8f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp)
+                    .height(96.dp)
+            ) {
+                DynamicChipLayout(
+                    items = selectedBrands,
+                    spacing = 6.dp,
+                    itemContent = { brand ->
+                        val onRemoved = remember(brand, excludeSwitch) { {
+                            if (excludeSwitch) { updateSelectedExcludedBrands(brand, false) }
+                            else { updateSelectedBrands(brand, false) }
+                        } }
 
                         Chip(
                             text = brand,
@@ -405,7 +357,7 @@ private fun SelectedBrandChipBox(
                             trailingIcon = true,
                             iconSize = 20.dp,
                             trailingTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxWidth = maxWidth,
+                            maxWidth = chipMaxWidth,
                             modifier = Modifier,
                             colors = AssistChipDefaults.assistChipColors(
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -417,12 +369,11 @@ private fun SelectedBrandChipBox(
                                     MaterialTheme.colorScheme.outline
                             )
                         )
-                    }
-
-                    if (overflowCount > 0) {
+                    },
+                    overflowContent = { overflowCount ->
                         Chip(
                             text = "+$overflowCount",
-                            onChipClicked = { filterViewModel.showBrandOverflow() },
+                            onChipClicked = { showOverflowDialog = true },
                             onChipRemoved = { },
                             trailingIcon = false,
                             modifier = Modifier,
@@ -436,36 +387,136 @@ private fun SelectedBrandChipBox(
                                     MaterialTheme.colorScheme.outline
                             )
                         )
-                    }
-                }
-
-                Box {
-                    val nothingSelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
-                    Text(
-                        text = if (nothingSelected) "" else if (excludeSwitch) "Excluded Brands" else "Included Brands",
-                        modifier = Modifier
-                            .padding(0.dp),
-                        color = if (nothingSelected) Color.Transparent else if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-            if (showBrandChipOverflow) {
-                SelectedBrandOverflow(
-                    onDismiss = filterViewModel::showBrandOverflow,
-                    excludeSwitch = { excludeSwitch },
-                    selectedBrands = { selectedBrands },
-                    updateSelectedExcludedBrands = updateSelectedExcludedBrands,
-                    updateSelectedBrands = updateSelectedBrands,
-                    clearAllSelectedBrands = clearAllSelectedBrands,
-                    modifier = Modifier
+
+            Box {
+                val anySelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
+                Text(
+                    text = if (anySelected) "" else if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                    color = if (anySelected) Color.Transparent else if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center
                 )
             }
         }
     }
+    if (showOverflowDialog) {
+        SelectedBrandOverflow(
+            onDismiss = { showOverflowDialog = false },
+            excludeSwitch = { excludeSwitch },
+            selectedBrands = { selectedBrands },
+            updateSelectedExcludedBrands = updateSelectedExcludedBrands,
+            updateSelectedBrands = updateSelectedBrands,
+            clearAllSelectedBrands = clearAllSelectedBrands
+        )
+    }
 }
+
+
+@Composable
+private fun DynamicChipLayout(
+    items: List<String>,
+    itemContent: @Composable (String) -> Unit,
+    overflowContent: @Composable (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    spacing: Dp = 6.dp
+) {
+    val density = LocalDensity.current
+    val spacingPx = with(density) { spacing.toPx() }.toInt()
+
+    SubcomposeLayout(modifier = modifier) { constraints ->
+        val maxWidth = constraints.maxWidth
+        val maxHeight = constraints.maxHeight
+
+        val itemMeasurables = subcompose("items") { items.forEach { itemContent(it) } }
+
+        val overflowMeasurable = subcompose("overflow") { overflowContent(items.size) }.firstOrNull()
+        val overflowPlaceable = overflowMeasurable?.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val overflowWidth = overflowPlaceable?.width ?: 0
+
+        val rows = mutableListOf<MutableList<Placeable>>()
+        var currentRow = mutableListOf<Placeable>()
+        var currentWidth = 0
+        var visibleCount = 0
+
+        for (i in items.indices) {
+            val placeable = itemMeasurables[i].measure(constraints.copy(minWidth = 0, minHeight = 0))
+            val applySpacing = if (currentRow.isEmpty()) 0 else spacingPx
+
+            if (currentWidth + applySpacing + placeable.width <= maxWidth) {
+                currentRow.add(placeable)
+                currentWidth += applySpacing + placeable.width
+                visibleCount++
+            }
+            else {
+                if (rows.isEmpty()) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf(placeable)
+                    currentWidth = placeable.width
+                    visibleCount++
+                } else { break }
+            }
+        }
+
+        if (currentRow.isNotEmpty()) rows.add(currentRow)
+
+        if (visibleCount < items.size) {
+            var lastRow = rows.last()
+            var lastRowWidth = lastRow.foldIndexed(0) { index, acc, placeable ->
+                acc + placeable.width + (if (index > 0) spacingPx else 0)
+            }
+
+            while (lastRowWidth + spacingPx + overflowWidth > maxWidth && visibleCount > 0) {
+                lastRow.removeAt(lastRow.size - 1)
+                visibleCount--
+                if (lastRow.isEmpty()) {
+                    rows.removeAt(rows.size - 1)
+                    if (rows.isEmpty()) break
+                    lastRow = rows.last()
+                }
+                lastRowWidth = lastRow.foldIndexed(0) { index, acc, placeable ->
+                    acc + placeable.width + (if (index > 0) spacingPx else 0)
+                }
+            }
+        }
+
+        val finalOverflowCount = items.size - visibleCount
+        val finalOverflowPlaceable = if (finalOverflowCount > 0) {
+            subcompose("overflow_final") { overflowContent(finalOverflowCount) }
+                .firstOrNull()?.measure(constraints.copy(minWidth = 0, minHeight = 0))
+        } else null
+
+        val rowHeight = rows.firstOrNull()?.maxOfOrNull { it.height } ?: 0
+        val verticalGap = (maxHeight - (2 * rowHeight)) / 3
+
+        layout(maxWidth, maxHeight) {
+            rows.forEachIndexed { index, row ->
+                val currentY = (verticalGap * (index + 1)) + (rowHeight * index)
+
+                val isLast = index == rows.size - 1
+                val rowContentWidth = row.foldIndexed(0) { index, acc, placeable ->
+                    acc + placeable.width + (if (index > 0) spacingPx else 0)
+                } + if (isLast && finalOverflowPlaceable != null) spacingPx +
+                        finalOverflowPlaceable.width else 0
+
+                var currentX = (maxWidth - rowContentWidth) / 2
+                row.forEach { placeable ->
+                    placeable.placeRelative(currentX, currentY + (rowHeight - placeable.height) / 2)
+                    currentX += placeable.width + spacingPx
+                }
+
+                if (isLast && finalOverflowPlaceable != null) {
+                    finalOverflowPlaceable.placeRelative(currentX, currentY + (rowHeight - finalOverflowPlaceable.height) / 2)
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun SelectedBrandOverflow(
@@ -482,9 +533,7 @@ private fun SelectedBrandOverflow(
         title = {
             Text(
                 text = if (excludeSwitch()) "Excluded Brands" else "Included Brands",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp),
+                modifier = Modifier.fillMaxWidth(),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -493,9 +542,7 @@ private fun SelectedBrandOverflow(
         modifier = modifier,
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(0.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically)
             ) {
@@ -510,22 +557,17 @@ private fun SelectedBrandOverflow(
                 ) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
-                        modifier = Modifier,
                         userScrollEnabled = true,
                         contentPadding = PaddingValues(bottom = 10.dp),
                         verticalArrangement = Arrangement.spacedBy((-6).dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(selectedBrands()) { brand ->
-                            val onRemoved = remember(brand, excludeSwitch) {
-                                {
-                                    if (excludeSwitch()) {
-                                        updateSelectedExcludedBrands(brand, false)
-                                    } else {
-                                        updateSelectedBrands(brand,  false)
-                                    }
-                                }
-                            }
+                            val onRemoved = remember(brand, excludeSwitch) { {
+                                if (excludeSwitch()) { updateSelectedExcludedBrands(brand, false) }
+                                else { updateSelectedBrands(brand,  false) }
+                            } }
+
                             Chip(
                                 text = brand,
                                 onChipClicked = { },
@@ -543,30 +585,20 @@ private fun SelectedBrandOverflow(
                     }
                 }
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Max)
-                    ,
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     TextButton(
-                        onClick = {
-                            clearAllSelectedBrands()
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .offset(x = (-4).dp),
+                        onClick = { clearAllSelectedBrands(); onDismiss() },
+                        modifier = Modifier.offset(x = (-4).dp),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.close),
                             contentDescription = "",
-                            modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(20.dp)
+                            modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
                             text = "Clear All",
-                            modifier = Modifier,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -574,11 +606,7 @@ private fun SelectedBrandOverflow(
                 }
             }
         },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("Close")
-            }
-        },
+        confirmButton = { Button(onDismiss) { Text("Close") } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -608,8 +636,7 @@ fun Chip(
         label = {
             if (text.startsWith("+")) {
                 Box (
-                    modifier = Modifier
-                        .width(25.dp),
+                    modifier = Modifier.width(25.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -620,11 +647,7 @@ fun Chip(
                             color = LocalContentColor.current
                         ),
                         minLines = 1,
-                        autoSize = TextAutoSize.StepBased(
-                            maxFontSize = fontSize,
-                            minFontSize = 9.sp,
-                            stepSize = .2.sp
-                        )
+                        autoSize = TextAutoSize.StepBased(9.sp, fontSize, 0.2.sp)
                     )
                 }
             }
@@ -643,18 +666,13 @@ fun Chip(
                     painter = painterResource(id = R.drawable.close),
                     contentDescription = "Remove Chip",
                     modifier = Modifier
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { onChipRemoved() }
+                        .clickable(null, LocalIndication.current) { onChipRemoved() }
                         .size(iconSize),
                     tint = trailingTint
                 )
             } else { /** do nothing */ }
         },
-        modifier = modifier
-            .widthIn(max = maxWidth)
-            .padding(0.dp),
+        modifier = modifier.widthIn(max = maxWidth).padding(0.dp),
         enabled = enabled,
         colors = colors,
         border = border
