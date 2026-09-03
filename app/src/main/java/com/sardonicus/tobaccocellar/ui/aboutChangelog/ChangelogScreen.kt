@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.aboutChangelog
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -55,7 +53,6 @@ fun ChangelogScreen (
     modifier: Modifier = Modifier
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
 
     var scrolling by remember { mutableStateOf(false) }
@@ -83,8 +80,7 @@ fun ChangelogScreen (
 
     Scaffold(
         modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-            .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
                 title = "Changelog",
