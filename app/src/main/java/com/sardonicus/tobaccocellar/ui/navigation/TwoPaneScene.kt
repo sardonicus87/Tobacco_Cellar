@@ -162,7 +162,6 @@ data class TwoPaneScene<T : Any>(
                         .graphicsLayer { clip = true }
                         .onFocusChanged { secondFocus = it.hasFocus }
                         .pointerInput(Unit) {
-                            secondExpanded
                             awaitEachGesture {
                                 val down = awaitFirstDown(pass = PointerEventPass.Initial)
 
