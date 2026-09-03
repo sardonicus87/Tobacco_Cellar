@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.filtering
+package com.sardonicus.tobaccocellar.ui.filtering.sections
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
@@ -39,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,20 +54,19 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.OverflowRow
-import com.sardonicus.tobaccocellar.ui.filtering.sections.Chip
 
 @Composable
 fun OverflowFilterSection(
-    label: () -> String,
-    nothingLabel: () -> String,
+    label: String,
+    nothingLabel: String,
     available: () -> List<String>,
     selected: () -> List<String>,
     enabled: () -> Map<String, Boolean>,
     updateSelectedOptions: (String, Boolean) -> Unit,
     overflowCheck: (List<String>, List<String>, Int) -> Boolean,
-    nothingAssigned: () -> Boolean,
+    nothingAssigned: Boolean,
     modifier: Modifier = Modifier,
-    matching: () -> FlowMatchOption? = { null },
+    matching: FlowMatchOption? = null,
     matchOptionEnablement: () -> Map<FlowMatchOption, Boolean> = { mapOf() },
     clearAll: () -> Unit = {},
     onMatchOptionChange: (FlowMatchOption) -> Unit = {},
@@ -76,37 +77,40 @@ fun OverflowFilterSection(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
     ) {
         var showOverflowPopup by remember { mutableStateOf(false) }
+        var height by remember { mutableStateOf(0.dp) }
+        val density = LocalDensity.current
 
         // Header and Match options
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+                .onGloballyPositioned { height = with(density) { it.size.height.toDp() } },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = label(),
+                text = label,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier,
-                color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
+                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
             )
-            if (matching() != null) {
+            if (matching != null) {
                 FlowFilterMatchOptions(
-                    nothingAssigned, matching, matchOptionEnablement, { onMatchOptionChange(it) },
+                    nothingAssigned, matching, matchOptionEnablement(), { onMatchOptionChange(it) },
                     Modifier.offset(x = 3.65.dp), Arrangement.End
                 )
             }
         }
 
-        if (nothingAssigned()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+        if (nothingAssigned) {
+            Box (
+                modifier = Modifier.height(48.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = nothingLabel(),
-                    modifier = Modifier.padding(0.dp),
+                    text = nothingLabel,
+                    modifier = Modifier.padding(bottom = height/2),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -127,16 +131,15 @@ fun OverflowFilterSection(
                 FlowFilterOverflowPopup(
                     onDismiss = { showOverflowPopup = false },
                     label = label,
-                    available = available,
-                    selected = selected,
-                    enabled = enabled,
+                    available = available(),
+                    selected = selected(),
+                    enabled = enabled(),
                     matching = matching,
-                    matchOptionEnablement = matchOptionEnablement,
-                    enableMatchOption = { matching() != null },
+                    matchOptionEnablement = matchOptionEnablement(),
+                    enableMatchOption = matching != null,
                     onMatchOptionChange = onMatchOptionChange,
                     updateSelectedOptions = updateSelectedOptions,
-                    clearAll = clearAll,
-                    modifier = Modifier
+                    clearAll = clearAll
                 )
             }
         }
@@ -154,7 +157,10 @@ private fun OverflowWrapper(
 ) {
     OverflowRow(
         items = available,
-        modifier = Modifier.fillMaxWidth().wrapContentHeight(Alignment.Top).padding(horizontal = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(Alignment.Top)
+            .padding(horizontal = 4.dp),
         itemSpacing = 6.dp,
         itemContent = {
             val isSelected = selected.contains(it)
@@ -235,8 +241,7 @@ private fun FilterChipWrapper(
                 overflow = TextOverflow.Ellipsis
             )
         },
-        modifier = modifier
-            .padding(0.dp),
+        modifier = modifier.padding(0.dp),
         shape = MaterialTheme.shapes.small,
         colors = FilterChipDefaults.filterChipColors(
             containerColor = MaterialTheme.colorScheme.background
@@ -247,9 +252,9 @@ private fun FilterChipWrapper(
 
 @Composable
 private fun FlowFilterMatchOptions(
-    nothingAssigned: () -> Boolean,
-    matching: () -> FlowMatchOption?,
-    matchOptionEnablement: () -> Map<FlowMatchOption, Boolean>,
+    nothingAssigned: Boolean,
+    matching: FlowMatchOption?,
+    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
     onMatchOptionChange: (FlowMatchOption) -> Unit,
     modifier: Modifier = Modifier,
     arrangement: Arrangement.Horizontal = Arrangement.Center,
@@ -264,20 +269,16 @@ private fun FlowFilterMatchOptions(
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.padding(start = 3.65.dp),
-            color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
+            color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
         )
 
         FlowMatchOption.entries.forEachIndexed { index, it ->
-            val enabled = !nothingAssigned() && (matchOptionEnablement()[it] ?: false) || matching() == it
+            val enabled = !nothingAssigned && (matchOptionEnablement[it] ?: false) || matching == it
             Box(
                 modifier = Modifier
                     .padding(0.dp)
                     .clip(RoundedCornerShape(25))
-                    .clickable(
-                        enabled = enabled,
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { onMatchOptionChange(it) }
+                    .clickable(null, LocalIndication.current, enabled) { onMatchOptionChange(it) }
                     .padding(horizontal = 3.65.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -290,8 +291,11 @@ private fun FlowFilterMatchOptions(
                 Text(
                     text = it.value,
                     fontSize = 14.sp,
-                    fontWeight = if (matching() == it && !nothingAssigned()) FontWeight.Medium else FontWeight.Normal,
-                    color = if (matching() == it && !nothingAssigned()) MaterialTheme.colorScheme.primary else if (enabled) LocalContentColor.current.copy(alpha = .6f) else LocalContentColor.current.copy(alpha = .38f)
+                    fontWeight = if (matching == it && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
+                    color =
+                        if (matching == it && !nothingAssigned) MaterialTheme.colorScheme.primary
+                        else if (enabled) LocalContentColor.current.copy(alpha = .6f)
+                        else LocalContentColor.current.copy(alpha = .38f)
                 )
             }
             if (index != FlowMatchOption.entries.lastIndex) {
@@ -299,7 +303,7 @@ private fun FlowFilterMatchOptions(
                     text = "/",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    color = if (nothingAssigned()) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
+                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
                 )
             }
         }
@@ -309,13 +313,13 @@ private fun FlowFilterMatchOptions(
 @Composable
 private fun FlowFilterOverflowPopup(
     onDismiss: () -> Unit,
-    label: () -> String,
-    available: () -> List<String>,
-    selected: () -> List<String>,
-    enabled: () -> Map<String, Boolean>,
-    enableMatchOption: () -> Boolean,
-    matching: () -> FlowMatchOption?,
-    matchOptionEnablement: () -> Map<FlowMatchOption, Boolean>,
+    label: String,
+    available: List<String>,
+    selected: List<String>,
+    enabled: Map<String, Boolean>,
+    enableMatchOption: Boolean,
+    matching: FlowMatchOption?,
+    matchOptionEnablement: Map<FlowMatchOption, Boolean>,
     onMatchOptionChange: (FlowMatchOption) -> Unit,
     updateSelectedOptions: (String, Boolean) -> Unit,
     clearAll: () -> Unit,
@@ -325,8 +329,8 @@ private fun FlowFilterOverflowPopup(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = label(),
-                modifier = Modifier.fillMaxWidth().padding(0.dp),
+                text = label,
+                modifier = Modifier.fillMaxWidth(),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -341,7 +345,7 @@ private fun FlowFilterOverflowPopup(
         shape = MaterialTheme.shapes.medium,
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(0.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
             ) {
@@ -358,9 +362,9 @@ private fun FlowFilterOverflowPopup(
                     ) {
                         Spacer(Modifier.height(4.dp))
                         // match options
-                        if (enableMatchOption()) {
+                        if (enableMatchOption) {
                             FlowFilterMatchOptions(
-                                { false }, matching, matchOptionEnablement, { onMatchOptionChange(it) },
+                                false, matching, matchOptionEnablement, { onMatchOptionChange(it) },
                                 Modifier.padding(bottom = 4.dp), Arrangement.Center
                             )
                         }
@@ -371,19 +375,16 @@ private fun FlowFilterOverflowPopup(
                             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
                             verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
                         ) {
-                            available().forEach {
+                            available.forEach {
                                 FilterChip(
-                                    selected = selected().contains(it),
-                                    onClick = {
-                                        updateSelectedOptions(it, !selected().contains(it))
-                                    },
+                                    selected = selected.contains(it),
+                                    onClick = { updateSelectedOptions(it, !selected.contains(it)) },
                                     label = { Text(text = it, fontSize = 14.sp) },
-                                    modifier = Modifier.padding(0.dp),
                                     shape = MaterialTheme.shapes.small,
                                     colors = FilterChipDefaults.filterChipColors(
                                         containerColor = MaterialTheme.colorScheme.background
                                     ),
-                                    enabled = enabled()[it] ?: false
+                                    enabled = enabled[it] ?: false
                                 )
                             }
                         }
@@ -396,7 +397,7 @@ private fun FlowFilterOverflowPopup(
                     TextButton(
                         onClick = { clearAll() },
                         modifier = Modifier.offset(x = (-4).dp),
-                        enabled = selected().isNotEmpty()
+                        enabled = selected.isNotEmpty()
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.close),
