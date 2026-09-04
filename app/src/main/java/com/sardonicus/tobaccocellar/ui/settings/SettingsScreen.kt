@@ -345,7 +345,8 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     Text(
                         text = "Adaptive layout options for large screens. The dual-pane and " +
                                 "expand tabs are separate options (disabling one will not affect " +
-                                "the other). \"Restrict to landscape\" affects both.",
+                                "the other). \"Restrict to landscape\" affects both. Foldable " +
+                                "devices are considered landscape when the hinge is vertical.",
                         modifier = Modifier.padding(bottom = 10.dp),
                         fontSize = 15.sp
                     )
