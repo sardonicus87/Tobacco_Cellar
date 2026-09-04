@@ -2,8 +2,6 @@ package com.sardonicus.tobaccocellar.ui
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.ExportType
@@ -36,9 +34,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
@@ -64,64 +62,35 @@ class FilterViewModel (
 
 
     /** HomeScreen HomeHeader blend search **/
-    private val _searchMenuExpanded = MutableStateFlow(false)
-    val searchMenuExpanded: StateFlow<Boolean> = _searchMenuExpanded.asStateFlow()
-
-    fun setSearchMenuExpanded(expanded: Boolean) { _searchMenuExpanded.value = expanded }
-
     fun saveSearchSetting(setting: String) {
         viewModelScope.launch(Dispatchers.Default) { preferencesRepo.setSearchSetting(setting) }
     }
 
     private val _searchTextDisplay = MutableStateFlow("")
-    val searchTextDisplay: StateFlow<String> = _searchTextDisplay
-
     fun updateSearchText(text: String) { _searchTextDisplay.value = text }
 
-    private val _searchPerformed = MutableStateFlow(false)
-    val searchPerformed: StateFlow<Boolean> = _searchPerformed.asStateFlow()
+    val searchPerformed = MutableStateFlow(false)
+    val searchValue = MutableStateFlow("")
 
-    private val _searchValue = MutableStateFlow("")
-    val searchValue: StateFlow<String> = _searchValue
+    fun onSearch(text: String) { searchValue.value = text }
 
-    fun onSearch(text: String) { _searchValue.value = text }
-
-    private val _searchFocused = MutableStateFlow(false)
-    val searchFocused: StateFlow<Boolean> = _searchFocused.asStateFlow()
-
-    fun updateSearchFocused(focused: Boolean) { _searchFocused.value = focused }
-
-    private val _isTinSearch = MutableStateFlow(false)
-    val isTinSearch: StateFlow<Boolean> = _isTinSearch
-
-    init {
-        viewModelScope.launch {
-            preferencesRepo.searchSetting
-                .flowOn(Dispatchers.Default)
-                .collect {
-                _isTinSearch.value = (it == SearchSetting.TinLabel)
-            }
-        }
-    }
+    private val _isTinSearch = preferencesRepo.searchSetting.map { it == SearchSetting.TinLabel }
+        .distinctUntilChanged()
 
 
     /** Filter states **/
     val brandSearchText = MutableStateFlow("")
     fun updateBrandSearchText(text: String) { brandSearchText.value = text }
 
-
     // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
-    val selectedBrands: StateFlow<List<String>> = _selectedBrands
 
     private val _selectedTypes = MutableStateFlow<List<String>>(emptyList())
     val selectedTypes: StateFlow<List<String>> = _selectedTypes
 
     private val _selectedFavorites = MutableStateFlow(false)
-    val selectedFavorites: StateFlow<Boolean> = _selectedFavorites
 
     private val _selectedDislikeds = MutableStateFlow(false)
-    val selectedDislikeds: StateFlow<Boolean> = _selectedDislikeds
 
     private val _selectedUnrated = MutableStateFlow(false)
     val selectedUnrated: StateFlow<Boolean> = _selectedUnrated
@@ -186,8 +155,8 @@ class FilterViewModel (
     // tins switch and filtering
     @Suppress("UNCHECKED_CAST")
     val showTins: StateFlow<Boolean> = combine(
-        selectedContainer, selectedOpened, selectedUnopened, selectedFinished, selectedUnfinished,
-        isTinSearch, searchPerformed
+        _selectedContainer, _selectedOpened, _selectedUnopened, _selectedFinished, _selectedUnfinished,
+        _isTinSearch, searchPerformed
     ) {
         val container = it[0] as List<String>
         val opened = it[1] as Boolean
@@ -198,36 +167,26 @@ class FilterViewModel (
         val searchPerformed = it[6] as Boolean
 
         (container.isNotEmpty() || opened || unopened || finished || unfinished) || (isTinSearch && searchPerformed)
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
     // exclusionary filter states //
     val excludeBrandSwitch = MutableStateFlow(false)
-
     private val _selectedExcludeBrands = MutableStateFlow<List<String>>(emptyList())
-    val selectedExcludeBrands: StateFlow<List<String>> = _selectedExcludeBrands
 
     private val _selectedExcludeFavorites = MutableStateFlow(false)
-    val selectedExcludeFavorites: StateFlow<Boolean> = _selectedExcludeFavorites
-
     private val _selectedExcludeDislikeds = MutableStateFlow(false)
-    val selectedExcludeDislikeds: StateFlow<Boolean> = _selectedExcludeDislikeds
 
     @Suppress("UNCHECKED_CAST")
     val filterSelectionsFlow: StateFlow<SheetSelections> =
         combine(
-            selectedBrands, selectedExcludeBrands, selectedTypes, selectedFavorites,
-            selectedExcludeFavorites, selectedDislikeds, selectedExcludeDislikeds, selectedInStock,
-            selectedOutOfStock, selectedSubgenres, selectedCuts, selectedComponents, compMatching,
-            selectedFlavorings, flavorMatching, selectedHasTins, selectedNoTins, selectedOpened,
-            selectedUnopened, selectedFinished, selectedUnfinished, selectedContainer,
-            selectedProduction, selectedOutOfProduction, selectedUnrated, selectedRatingLow,
-            selectedRatingHigh
+            _selectedBrands, _selectedExcludeBrands, _selectedTypes, _selectedFavorites,
+            _selectedExcludeFavorites, _selectedDislikeds, _selectedExcludeDislikeds,
+            _selectedInStock, _selectedOutOfStock, _selectedSubgenres, _selectedCuts,
+            _selectedComponents, _compMatching, _selectedFlavorings, _flavorMatching,
+            _selectedHasTins, _selectedNoTins, _selectedOpened, _selectedUnopened,
+            _selectedFinished, _selectedUnfinished, _selectedContainer, _selectedProduction,
+            _selectedOutOfProduction, _selectedUnrated, _selectedRatingLow, _selectedRatingHigh
         ) {
             SheetSelections(
                 brands = it[0] as List<String>,
@@ -258,12 +217,7 @@ class FilterViewModel (
                 ratingLow = it[25] as Double?,
                 ratingHigh = it[26] as Double?
             )
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(50L),
-                initialValue = SheetSelections()
-            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(50L),SheetSelections())
 
     val isFilterApplied: StateFlow<Boolean> = filterSelectionsFlow.map {
         it.brands.isNotEmpty() || it.excludeBrands.isNotEmpty() || it.types.isNotEmpty() ||
@@ -274,38 +228,21 @@ class FilterViewModel (
                 || it.noTins || it.opened || it.unopened || it.finished || it.unfinished
                 || it.container.isNotEmpty() || it.production || it.outOfProduction
     }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
     /** Cellar screen scroll state **/
     private val _shouldScrollUp = MutableStateFlow(false)
-    val shouldScrollUp: StateFlow<Boolean> = _shouldScrollUp.asStateFlow()
-
     private val _savedItemId = MutableStateFlow(-1)
-    val savedItemId: StateFlow<Int> = _savedItemId.asStateFlow()
-
     private val _shouldReturn = MutableStateFlow(false)
-    val shouldReturn: StateFlow<Boolean> = _shouldReturn.asStateFlow()
-
     private val _getPosition = MutableStateFlow(0)
-    val getPosition: StateFlow<Int> = _getPosition.asStateFlow()
-
     private val _searchCleared = MutableStateFlow(false)
 
     // remember scroll position //
     private val _currentPosition = MutableStateFlow(mapOf(0 to 0, 1 to 0))
-    val currentPosition: StateFlow<Map<Int, Int>> = _currentPosition.asStateFlow()
-
     fun updateScrollPosition(index: Int, offset: Int) { _currentPosition.value = mapOf(0 to index, 1 to offset) }
 
-    fun getPositionTrigger() {
-        _getPosition.value++
-        _shouldReturn.value = true
-    }
+    fun getPositionTrigger() { _getPosition.value++; _shouldReturn.value = true }
 
     fun shouldScrollUp() { _shouldScrollUp.value = true }
 
@@ -314,7 +251,7 @@ class FilterViewModel (
         _shouldReturn.value = false
         _getPosition.value = 0
         _searchCleared.value = false
-        _searchPerformed.value = false
+        searchPerformed.value = false
         _savedItemId.value = -1
         _currentPosition.value = mapOf(0 to 0, 1 to 0)
     }
@@ -337,12 +274,12 @@ class FilterViewModel (
                     _shouldReturn.value = true
                 }
                 if (it is SearchClearedEvent) {
-                    _searchPerformed.value = false
+                    searchPerformed.value = false
                     _searchCleared.value = true
                     _shouldReturn.value = true
                 }
                 if (it is SearchPerformedEvent) {
-                    _searchPerformed.value = true
+                    searchPerformed.value = true
                 }
                 if (it is DatabaseRestoreEvent) {
                     resetFilter()
@@ -362,11 +299,11 @@ class FilterViewModel (
     /** Home Scroll State stuff **/
     @Suppress("UNCHECKED_CAST")
     val homeScrollState: StateFlow<HomeScrollState> = combine(
-        currentPosition,
-        shouldScrollUp,
-        savedItemId,
-        shouldReturn,
-        getPosition
+        _currentPosition,
+        _shouldScrollUp,
+        _savedItemId,
+        _shouldReturn,
+        _getPosition
     ) { values ->
         val position = values[0] as Map<Int, Int>
         val scrollUp = values[1] as Boolean
@@ -375,12 +312,7 @@ class FilterViewModel (
         val getPosition = values[4] as Int
 
         HomeScrollState(position, scrollUp, savedItemId, doReturn, getPosition)
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeScrollState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeScrollState())
 
 
     /** Filtering states **/
@@ -392,22 +324,16 @@ class FilterViewModel (
     val availableBrands: StateFlow<List<String>> = _availableBrands
 
     private val _availableTypes = MutableStateFlow<List<String>>(emptyList())
-    val availableTypes: StateFlow<List<String>> = _availableTypes
 
     private val _availableSubgenres = MutableStateFlow<List<String>>(emptyList())
-    val availableSubgenres: StateFlow<List<String>> = _availableSubgenres
 
     private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
-    val availableCuts: StateFlow<List<String>> = _availableCuts
 
     private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
-    val availableComponents: StateFlow<List<String>> = _availableComponents
 
     private val _availableFlavorings = MutableStateFlow<List<String>>(emptyList())
-    val availableFlavorings: StateFlow<List<String>> = _availableFlavorings
 
     private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
-    val availableContainers: StateFlow<List<String>> = _availableContainers
 
     private val _typesExist = MutableStateFlow(true)
     val typesExist: StateFlow<Boolean> = _typesExist
@@ -439,9 +365,8 @@ class FilterViewModel (
     // database refresh on restore
     @OptIn(ExperimentalCoroutinesApi::class)
     val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
-        refresh.onStart { emit(Unit) }.flatMapLatest {
-            itemsRepository.getEverythingStream()
-        }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+        refresh.onStart { emit(Unit) }.flatMapLatest { itemsRepository.getEverythingStream() }
+            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
 
     // setting available vals
@@ -558,10 +483,7 @@ class FilterViewModel (
             }
         }
         viewModelScope.launch(Dispatchers.Default) {
-            combine (
-                everythingFlow,
-                preferencesRepo.datesSeen
-            ) { everything, datesString ->
+            combine (everythingFlow, preferencesRepo.datesSeen) { everything, datesString ->
                 val lastSeen = datesString.split(",").mapNotNull { it.trim().toIntOrNull() }
                 everything.flatMap { it.tins }
                     .filter { tins ->
@@ -569,11 +491,9 @@ class FilterViewModel (
                             Instant.ofEpochMilli(it)
                                 .atZone(ZoneId.systemDefault())
                                 .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
-                        } ?: false
-                    }.map { it.tinId }.any { it !in lastSeen }
-            }.collect {
-                _tinsReady.value = it
-            }
+                        } ?: false }
+                    .map { it.tinId }.any { it !in lastSeen }
+            }.collect { _tinsReady.value = it }
         }
     }
 
@@ -588,36 +508,14 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val unifiedFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
-            everythingFlow,
-            selectedBrands,
-            selectedExcludeBrands,
-            selectedTypes,
-            selectedFavorites,
-            selectedExcludeFavorites,
-            selectedDislikeds,
-            selectedExcludeDislikeds,
-            selectedInStock,
-            selectedOutOfStock,
-            selectedSubgenres,
-            selectedCuts,
-            selectedComponents,
-            compMatching,
-            selectedFlavorings,
-            flavorMatching,
-            selectedProduction,
-            selectedOutOfProduction,
-            selectedHasTins,
-            selectedNoTins,
-            selectedContainer,
-            selectedOpened,
-            selectedUnopened,
-            selectedFinished,
-            selectedUnfinished,
-            selectedUnrated,
-            selectedRatingLow,
-            selectedRatingHigh,
-            preferencesRepo.quantityOption,
-            preferencesRepo.tinOzConversionRate,
+            everythingFlow, _selectedBrands, _selectedExcludeBrands, _selectedTypes,
+            _selectedFavorites, _selectedExcludeFavorites, _selectedDislikeds,
+            _selectedExcludeDislikeds, _selectedInStock, _selectedOutOfStock, _selectedSubgenres,
+            _selectedCuts, _selectedComponents, _compMatching, _selectedFlavorings, _flavorMatching,
+            _selectedProduction, _selectedOutOfProduction, _selectedHasTins, _selectedNoTins,
+            _selectedContainer, _selectedOpened, _selectedUnopened, _selectedFinished,
+            _selectedUnfinished, _selectedUnrated, _selectedRatingLow, _selectedRatingHigh,
+            preferencesRepo.quantityOption, preferencesRepo.tinOzConversionRate,
             preferencesRepo.tinGramsConversionRate
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
@@ -662,20 +560,12 @@ class FilterViewModel (
                 ozRate, gramsRate, applyTin
             )
         }
-            .flowOn(Dispatchers.Default)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @Suppress("UNCHECKED_CAST")
     val homeScreenFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
-            everythingFlow,
-            unifiedFilteredItems,
-            searchValue,
-            preferencesRepo.searchSetting
+            everythingFlow, unifiedFilteredItems, searchValue, preferencesRepo.searchSetting
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val filteredItems = values[1] as List<ItemsComponentsAndTins>
@@ -692,13 +582,7 @@ class FilterViewModel (
                 }
             }
             else filteredItems
-        }
-            .flowOn(Dispatchers.Default)
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
-            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @Suppress("SameParameterValue")
     private fun generateFilteredItemsList(
@@ -707,11 +591,11 @@ class FilterViewModel (
         brands: List<String>, excludeBrands: List<String>, types: List<String>, favorites: Boolean,
         dislikeds: Boolean, excludeFavorites: Boolean, excludeDislikeds: Boolean, inStock: Boolean,
         outOfStock: Boolean, subgenres: List<String>, cuts: List<String>, components: List<String>,
-        compMatching: FlowMatchOption, flavorings: List<String>, flavorMatching: FlowMatchOption, production: Boolean,
-        outOfProduction: Boolean, hasTins: Boolean, noTins: Boolean, container: List<String>,
-        opened: Boolean, unopened: Boolean, finished: Boolean, unfinished: Boolean, unrated: Boolean,
-        ratingLow: Double?, ratingHigh: Double?, quantityOption: QuantityOption, ozRate: Double,
-        gramsRate: Double,
+        compMatching: FlowMatchOption, flavorings: List<String>, flavorMatching: FlowMatchOption,
+        production: Boolean, outOfProduction: Boolean, hasTins: Boolean, noTins: Boolean,
+        container: List<String>, opened: Boolean, unopened: Boolean, finished: Boolean,
+        unfinished: Boolean, unrated: Boolean, ratingLow: Double?, ratingHigh: Double?,
+        quantityOption: QuantityOption, ozRate: Double, gramsRate: Double,
 
         applyTinFilter: Boolean
     ): List<ItemsComponentsAndTins> {
@@ -781,12 +665,8 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val unifiedFilteredTins: StateFlow<List<Tins>> =
         combine(
-            everythingFlow,
-            selectedContainer,
-            selectedOpened,
-            selectedUnopened,
-            selectedFinished,
-            selectedUnfinished,
+            everythingFlow, _selectedContainer, _selectedOpened, _selectedUnopened,
+            _selectedFinished, _selectedUnfinished,
         ) { values ->
             val items = values[0] as List<ItemsComponentsAndTins>
             val container = values[1] as List<String>
@@ -796,43 +676,26 @@ class FilterViewModel (
             val unfinished = values[5] as Boolean
 
             generateFilteredTinsList(items, container, opened, unopened, finished, unfinished)
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = listOf()
-            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
 
     @Suppress("UNCHECKED_CAST")
     val homeScreenFilteredTins: StateFlow<List<Tins>> =
         combine(
-            everythingFlow,
-            unifiedFilteredTins,
-            searchValue,
-            preferencesRepo.searchSetting
+            everythingFlow, unifiedFilteredTins, searchValue, preferencesRepo.searchSetting
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val filteredTins = values[1] as List<Tins>
             val currentSearchValue = values[2] as String
             val currentSearchSetting = values[3] as SearchSetting
 
-            if (currentSearchValue.isBlank()) {
-                filteredTins
-            } else {
+            if (currentSearchValue.isBlank()) { filteredTins }
+            else {
                 if (currentSearchSetting == SearchSetting.TinLabel) {
-                    allItems.flatMap { it.tins }.filter {
-                        it.tinLabel.contains(currentSearchValue, true)
-                    }
-                } else {
-                    emptyList()
-                }
+                    allItems.flatMap { it.tins }
+                        .filter { it.tinLabel.contains(currentSearchValue, true) } }
+                else { emptyList() }
             }
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000L),
-                initialValue = listOf()
-            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
 
     private fun generateFilteredTinsList(
         allItems: List<ItemsComponentsAndTins>, container: List<String>, opened: Boolean,
@@ -855,11 +718,8 @@ class FilterViewModel (
     /** Enable/Disable Specific Filters based on Existing filtering **/
     @Suppress("UNCHECKED_CAST")
     val enablementState: StateFlow<EnablementState> = combine (
-        everythingFlow,
-        filterSelectionsFlow,
-        preferencesRepo.quantityOption,
-        preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
+        everythingFlow, filterSelectionsFlow, preferencesRepo.quantityOption,
+        preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate
     ) { array ->
         val allItems = array[0] as List<ItemsComponentsAndTins>
         val selections = array[1] as SheetSelections
@@ -1119,12 +979,7 @@ class FilterViewModel (
             unopened = unopened, finished = finished, unfinished = unfinished,
             container = containersMap, production = prod, outOfProduction = outOfProd
         )
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = EnablementState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), EnablementState())
 
     val brandsEnabled = enablementState.map { it.brands }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
     val excludeBrandsEnabled = enablementState.map { it.excludeBrands }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -1183,9 +1038,7 @@ class FilterViewModel (
             unifiedFilteredItems.collectLatest { items ->
                 if (items.isEmpty() && isFilterApplied.value && !searchPerformed.value && !_emptyDatabase.value) {
                     delay(50.milliseconds)
-                    if (unifiedFilteredItems.value.isEmpty()) {
-                        recoverFromEmpty()
-                    }
+                    if (unifiedFilteredItems.value.isEmpty()) { recoverFromEmpty() }
                 }
             }
         }
@@ -1193,10 +1046,7 @@ class FilterViewModel (
 
     private fun recoverFromEmpty() {
         val history = _selectionHistory.value
-        if (history.isEmpty()) {
-            resetFilter()
-            return
-        }
+        if (history.isEmpty()) { resetFilter(); return }
 
         val invalidSelections = history.filter { (category, value) ->
             isSelectionInvalid(category, value)
@@ -1212,41 +1062,35 @@ class FilterViewModel (
 
         if (category == FilterCategory.COMPONENT) {
             if (selections.compMatching == FlowMatchOption.ONLY) {
-                updateCompMatching(FlowMatchOption.ALL)
-                return
-            } else if (selections.compMatching == FlowMatchOption.ALL) {
-                updateCompMatching(FlowMatchOption.ANY)
-                return
-            }
+                updateCompMatching(FlowMatchOption.ALL); return }
+            else if (selections.compMatching == FlowMatchOption.ALL) {
+                updateCompMatching(FlowMatchOption.ANY); return }
         } else if (category == FilterCategory.FLAVORING) {
             if (selections.flavorMatching == FlowMatchOption.ONLY) {
-                updateFlavorMatching(FlowMatchOption.ALL)
-                return
-            } else if (selections.flavorMatching == FlowMatchOption.ALL) {
-                updateFlavorMatching(FlowMatchOption.ANY)
-                return
-            }
+                updateFlavorMatching(FlowMatchOption.ALL); return }
+            else if (selections.flavorMatching == FlowMatchOption.ALL) {
+                updateFlavorMatching(FlowMatchOption.ANY); return }
         }
 
         removeFilter(category, value)
     }
     private fun isSelectionInvalid(category: FilterCategory, value: Any?): Boolean {
         return when (category) {
-            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !availableBrands.value.contains(value as String)
-            FilterCategory.TYPE -> !availableTypes.value.contains(value as String)
-            FilterCategory.SUBGENRE -> !availableSubgenres.value.contains(value as String)
-            FilterCategory.CUT -> !availableCuts.value.contains(value as String)
-            FilterCategory.COMPONENT -> !availableComponents.value.contains(value as String)
-            FilterCategory.FLAVORING -> !availableFlavorings.value.contains(value as String)
-            FilterCategory.CONTAINER -> !availableContainers.value.contains(value as String)
+            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !_availableBrands.value.contains(value as String)
+            FilterCategory.TYPE -> !_availableTypes.value.contains(value as String)
+            FilterCategory.SUBGENRE -> !_availableSubgenres.value.contains(value as String)
+            FilterCategory.CUT -> !_availableCuts.value.contains(value as String)
+            FilterCategory.COMPONENT -> !_availableComponents.value.contains(value as String)
+            FilterCategory.FLAVORING -> !_availableFlavorings.value.contains(value as String)
+            FilterCategory.CONTAINER -> !_availableContainers.value.contains(value as String)
 
             FilterCategory.FAVORITE, FilterCategory.EXCLUDE_FAVORITE,
-            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !favDisExist.value
+            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !_favDisExist.value
 
-            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !ratingsExist.value
+            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !_ratingsExist.value
 
             FilterCategory.HAS_TINS, FilterCategory.NO_TINS, FilterCategory.OPENED,
-            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !tinsExist.value
+            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !_tinsExist.value
 
             else -> false
         }
@@ -1284,16 +1128,16 @@ class FilterViewModel (
 
     /** Final UI States and hoisted states for other stuff **/
     // top app bar
-    val menuExpanded = MutableStateFlow(false)
-    val topMenuState = MutableStateFlow(TopMenuState.MAIN)
+    private val _menuExpanded = MutableStateFlow(false)
+    private val _topMenuState = MutableStateFlow(TopMenuState.MAIN)
     val exportCsvPopup = MutableStateFlow(false)
     val exportType = MutableStateFlow<ExportType?>(null)
-    val displayedExportRating = MutableStateFlow(Pair("", ""))
-    val selectAllItems = MutableStateFlow(true)
+    private val _displayedExportRating = MutableStateFlow(Pair("", ""))
+    private val _selectAllItems = MutableStateFlow(true)
 
     val topAppBarMenuState = combine(
-        menuExpanded,
-        topMenuState
+        _menuExpanded,
+        _topMenuState
     ) { values: Array<Any?> ->
         val menuExpanded = values[0] as Boolean
         val topMenuState = values[1] as TopMenuState
@@ -1302,19 +1146,13 @@ class FilterViewModel (
             menuExpanded = menuExpanded,
             topMenuState = topMenuState,
         )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(500),
-            initialValue = TopAppBarMenuState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(500), TopAppBarMenuState())
 
     @Suppress("UNCHECKED_CAST")
     val exportCsvState = combine(
         preferencesRepo.exportRating,
-        displayedExportRating,
-        selectAllItems
+        _displayedExportRating,
+        _selectAllItems
     ) { values: Array<Any?> ->
         val exportRating = values[0] as ExportRating
         val displayedExportRating = values[1] as Pair<String, String>
@@ -1328,27 +1166,21 @@ class FilterViewModel (
             selectAllItems,
             selectedIndex
         )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = ExportCsvState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), ExportCsvState())
 
     fun toggleMenu() {
-        menuExpanded.value = !menuExpanded.value
+        _menuExpanded.value = !_menuExpanded.value
         getPositionTrigger()
     }
-    fun showMenu(expanded: Boolean) { menuExpanded.value = expanded }
-    fun changeMenuState(state: TopMenuState) { topMenuState.value = state }
+    fun showMenu(expanded: Boolean) { _menuExpanded.value = expanded }
+    fun changeMenuState(state: TopMenuState) { _topMenuState.value = state }
     fun changeExportType(type: ExportType) { exportType.value = type }
-    fun selectAll(all: Boolean) { selectAllItems.value = all }
+    fun selectAll(all: Boolean) { _selectAllItems.value = all }
     fun showExportCsv(show: Boolean) {
         if (show) {
             viewModelScope.launch {
                 val current = preferencesRepo.exportRating.first()
-                displayedExportRating.value = Pair(current.maxRating.toString(), current.rounding.toString())
+                _displayedExportRating.value = Pair(current.maxRating.toString(), current.rounding.toString())
                 exportCsvPopup.value = true
             }
         } else {
@@ -1356,7 +1188,7 @@ class FilterViewModel (
             changeMenuState(TopMenuState.MAIN)
         }
     }
-    fun updateExportRating(max: String, rounding: String) { displayedExportRating.value = Pair(max, rounding) }
+    fun updateExportRating(max: String, rounding: String) { _displayedExportRating.value = Pair(max, rounding) }
     suspend fun saveExportRating(rating: String, rounding: String) {
         val max = rating.toIntOrNull() ?: 5
         val roundingInt = rounding.toIntOrNull() ?: 2
@@ -1371,25 +1203,16 @@ class FilterViewModel (
 
     // HomeScreen stuff
     val searchState = combine(
-        searchFocused,
-        searchPerformed,
-        isTinSearch,
-        searchTextDisplay,
-        preferencesRepo.searchSetting,
-        tinsExist,
-        notesExist,
-        searchMenuExpanded,
-        emptyDatabase
+        searchPerformed, _isTinSearch, _searchTextDisplay, preferencesRepo.searchSetting,
+        _tinsExist, _notesExist, _emptyDatabase
     ) { it: Array<Any?> ->
-        val searchFocused = it[0] as Boolean
-        val searchPerformed = it[1] as Boolean
-        val isTinSearch = it[2] as Boolean
-        val searchText = it[3] as String
-        val searchSetting = it[4] as SearchSetting
-        val tinsExist = it[5] as Boolean
-        val notesExist = it[6] as Boolean
-        val searchMenuExpanded = it[7] as Boolean
-        val databaseEmpty = it[8] as Boolean
+        val searchPerformed = it[0] as Boolean
+        val isTinSearch = it[1] as Boolean
+        val searchText = it[2] as String
+        val searchSetting = it[3] as SearchSetting
+        val tinsExist = it[4] as Boolean
+        val notesExist = it[5] as Boolean
+        val databaseEmpty = it[6] as Boolean
 
         val blendSearch = SearchSetting.Blend
         val notesSearch = if (notesExist) SearchSetting.Notes else null
@@ -1397,29 +1220,18 @@ class FilterViewModel (
         val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
         val settingsEnabled = settingsList.size > 1
 
-        val iconOpacity = if (searchPerformed) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
-
         if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend.value) }
 
         SearchState(
-            searchFocused = searchFocused,
             searchPerformed = searchPerformed,
             isTinSearch = isTinSearch,
             searchText = searchText,
             currentSetting = searchSetting,
             settingsList = SearchSettingList(settingsList),
             settingsEnabled = settingsEnabled,
-            searchMenuExpanded = searchMenuExpanded,
-            searchIconOpacity = iconOpacity,
             emptyDatabase = databaseEmpty
         )
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000L),
-            initialValue = SearchState()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SearchState())
 
 
     // Final filter sections UI states //
@@ -1428,21 +1240,11 @@ class FilterViewModel (
         availableBrands
     ) { brandSearchText, allBrands ->
         updateFilterBrands(brandSearchText, allBrands)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     @Suppress("UNCHECKED_CAST")
     val unselectedBrands = combine(
-        filteredBrands,
-        excludeBrandSwitch,
-        selectedBrands,
-        selectedExcludeBrands,
-        brandsEnabled,
+        filteredBrands, excludeBrandSwitch, _selectedBrands, _selectedExcludeBrands, brandsEnabled,
         excludeBrandsEnabled
     ) { array ->
         val filteredBrands = array[0] as List<String>
@@ -1462,61 +1264,24 @@ class FilterViewModel (
             brandEnabled
         )
     }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val brandEnabled = combine(
-        excludeBrandSwitch,
-        brandsEnabled,
-        excludeBrandsEnabled
+        excludeBrandSwitch, brandsEnabled, excludeBrandsEnabled
     ) { switch, includeBrands, excludeBrands ->
         if (switch) excludeBrands else includeBrands
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyMap()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyMap())
 
     val selectedBrand = combine(
-        excludeBrandSwitch,
-        selectedBrands,
-        selectedExcludeBrands,
+        excludeBrandSwitch, _selectedBrands, _selectedExcludeBrands,
     ) { switch, includeBrands, excludeBrands ->
         if (switch) excludeBrands else includeBrands
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     private val _clearBrandTrigger = MutableStateFlow(0)
     val clearBrandTrigger = _clearBrandTrigger.asStateFlow()
     fun updateClearBrandTrigger() { _clearBrandTrigger.value++ }
 
-
-    private val _chipBoxWidth = MutableStateFlow(0.dp)
-    val chipBoxWidth = _chipBoxWidth.asStateFlow()
-    fun updateChipBoxWidth(width: Dp) { _chipBoxWidth.value = width }
-    val chipMaxWidth = chipBoxWidth.map {
-        (it * 0.32f) - 4.dp
-    }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = 0.dp
-        )
-
-    private val _showBrandChipOverflow = MutableStateFlow(false)
-    val showBrandChipOverflow = _showBrandChipOverflow.asStateFlow()
-    fun showBrandOverflow() { _showBrandChipOverflow.value = !_showBrandChipOverflow.value }
 
     fun updateFilterBrands(text: String, allBrands: List<String>): List<String> {
         if (text.isBlank()) return allBrands
@@ -1541,11 +1306,8 @@ class FilterViewModel (
         brandEnabled: Map<String, Boolean>
     ): List<String> {
         val preSorted = filteredBrands.filterNot {
-            if (!excluded) {
-                selectedBrands.contains(it)
-            } else {
-                selectedExcludedBrands.contains(it)
-            }
+            if (!excluded) { selectedBrands.contains(it) }
+            else { selectedExcludedBrands.contains(it) }
         }
 
         return reorderChips(preSorted, brandEnabled)
@@ -1553,8 +1315,7 @@ class FilterViewModel (
 
 
     val favoriteSelection = combine(
-        selectedFavorites,
-        selectedExcludeFavorites
+        _selectedFavorites, _selectedExcludeFavorites
     ) { favorites, excludeFavorites ->
         val favoritesSelection = when {
             favorites -> ToggleableState.On
@@ -1562,43 +1323,30 @@ class FilterViewModel (
             else -> ToggleableState.Off
         }
         favoritesSelection
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = ToggleableState.Off
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), ToggleableState.Off)
 
     val dislikedSelection = combine(
-        selectedDislikeds,
-        selectedExcludeDislikeds
-        ) { dislikeds, excludeDislikeds ->
+        _selectedDislikeds, _selectedExcludeDislikeds
+    ) { dislikeds, excludeDislikeds ->
         val dislikedsSelection = when {
             dislikeds -> ToggleableState.On
             excludeDislikeds -> ToggleableState.Indeterminate
             else -> ToggleableState.Off
         }
         dislikedsSelection
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = ToggleableState.Off
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), ToggleableState.Off)
 
     init {
         viewModelScope.launch {
             favoritesEnabled.collect { enabled ->
-                if (!enabled && selectedExcludeFavorites.value) {
+                if (!enabled && _selectedExcludeFavorites.value) {
                     updateSelectedExcludeFavorites(false)
                 }
             }
         }
         viewModelScope.launch {
             dislikedsEnabled.collect { enabled ->
-                if (!enabled && selectedExcludeDislikeds.value) {
+                if (!enabled && _selectedExcludeDislikeds.value) {
                     updateSelectedExcludeDislikeds(false)
                 }
             }
@@ -1613,82 +1361,41 @@ class FilterViewModel (
 
     val rangeEnabled = unifiedFilteredItems.map {
         it.any { item -> item.items.rating != null }
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = true
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), true)
 
     val rangeUnchosen = combine(
-        selectedRatingLow,
-        selectedRatingHigh
+        _selectedRatingLow,
+        _selectedRatingHigh
     ) { low, high ->
         low == null && high == null
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = true
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), true)
 
-    val rangeLowText = selectedRatingLow.map { formatDecimal(it, 1).ifBlank { "0" } }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = "0"
-        )
+    val rangeLowText = _selectedRatingLow.map { formatDecimal(it, 1).ifBlank { "0" } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "0")
 
-    val rangeHighText = selectedRatingHigh.map { formatDecimal(it, 1).ifBlank { "5" } }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = "5"
-        )
+    val rangeHighText = _selectedRatingHigh.map { formatDecimal(it, 1).ifBlank { "5" } }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "5")
 
     val rangeLowTextAlpha = combine(
-        selectedRatingLow,
+        _selectedRatingLow,
         rangeUnchosen
     ) { ratingLow, unchosen ->
         if (unchosen || ratingLow == null) .7f else 1f
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = .7f
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), .7f)
 
     val rangeHighTextAlpha = combine(
-        selectedRatingHigh,
+        _selectedRatingHigh,
         rangeUnchosen
     ) { ratingHigh, unchosen ->
         if (unchosen || ratingHigh == null) .7f else 1f
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = .7f
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), .7f)
 
     val ratingRowEmptyAlpha = combine(
         rangeUnchosen,
-        selectedRatingLow,
-        selectedRatingHigh
+        _selectedRatingLow,
+        _selectedRatingHigh
     ) { unchosen, ratingLow, ratingHigh ->
         if (unchosen || (ratingLow != null && ratingHigh == null)) 1f else .38f
     }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = 1f
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), 1f)
 
 
     fun reorderChips(available: List<String>, enablement: Map<String, Boolean>): List<String> {
@@ -1698,78 +1405,49 @@ class FilterViewModel (
 
     // Flow section filtering data
     val subgenreAvailable = combine(
-        availableSubgenres,
+        _availableSubgenres,
         subgenresEnabled
     ) { availableSubgenres, subgenresEnabled ->
         reorderChips(availableSubgenres, subgenresEnabled)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val cutAvailable = combine(
-        availableCuts,
+        _availableCuts,
         cutsEnabled
     ) { availableCuts, cutsEnabled ->
         reorderChips(availableCuts, cutsEnabled)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val componentAvailable = combine(
-        availableComponents,
+        _availableComponents,
         componentsEnabled
     ) { availableComponents, componentsEnabled ->
         reorderChips(availableComponents, componentsEnabled)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val flavoringAvailable = combine(
-        availableFlavorings,
+        _availableFlavorings,
         flavoringsEnabled
     ) { availableFlavorings, flavoringsEnabled ->
         reorderChips(availableFlavorings, flavoringsEnabled)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val containerAvailable = combine(
-        availableContainers,
+        _availableContainers,
         containerEnabled
     ) { availableContainers, containerEnabled ->
         reorderChips(availableContainers, containerEnabled)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = emptyList()
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
-    val hasContainer = selectedContainer.map { it.isNotEmpty() }
+    val hasContainer = _selectedContainer.map { it.isNotEmpty() }
 
+    @Suppress("UNCHECKED_CAST")
     val implicitHasTins = combine(
-        selectedHasTins,
-        selectedOpened,
-        selectedUnopened,
-        selectedFinished,
-        selectedUnfinished,
+        _selectedHasTins,
+        _selectedOpened,
+        _selectedUnopened,
+        _selectedFinished,
+        _selectedUnfinished,
         hasContainer,
     ) { array ->
         val hasTins = array[0]
@@ -1780,13 +1458,7 @@ class FilterViewModel (
         val hasContainer = array[5]
 
         !hasTins && (opened || unopened || finished || unfinished || hasContainer)
-    }
-        .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000L),
-            initialValue = false
-        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), false)
 
 
     // filter selection update functions //
@@ -2014,7 +1686,7 @@ class FilterViewModel (
         _compMatching.value = option
 
         if (option != FlowMatchOption.ANY) {
-            val selected = selectedComponents.value
+            val selected = _selectedComponents.value
             val pruned = selected.filter { componentsEnabled.value[it] == true }
             if (pruned.size < selected.size) {
                 val removed = selected - pruned.toSet()
@@ -2038,7 +1710,7 @@ class FilterViewModel (
         _flavorMatching.value = option
 
         if (option != FlowMatchOption.ANY) {
-            val selected = selectedFlavorings.value
+            val selected = _selectedFlavorings.value
             val pruned = selected.filter { flavoringsEnabled.value[it] == true }
             if (pruned.size < selected.size) {
                 val removed = selected - pruned.toSet()
@@ -2387,15 +2059,12 @@ data class SearchSettingList(
 
 @Stable
 data class SearchState(
-    val searchFocused: Boolean = false,
     val searchPerformed: Boolean = false,
     val isTinSearch: Boolean = false,
     val searchText: String = "",
     val currentSetting: SearchSetting = SearchSetting.Blend,
     val settingsList: SearchSettingList = SearchSettingList(),
     val settingsEnabled: Boolean = false,
-    val searchMenuExpanded: Boolean = false,
-    val searchIconOpacity: Float = 0.5f,
     val emptyDatabase: Boolean = false
 )
 
