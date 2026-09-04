@@ -88,8 +88,14 @@ fun HomeBody(
         JumpToButton(
             columnState = columnState,
             itemCountPass = itemsCountPass,
-            onScrollToTop = { coroutineScope.launch { columnState.scrollToItem(0) } },
-            onScrollToBottom = { coroutineScope.launch { columnState.scrollToItem(sortedItems.list.lastIndex) } },
+            onScrollToTop = {
+                coroutineScope.launch { columnState.scrollToItem(0) }
+                viewModel.onDismissMenu()
+            },
+            onScrollToBottom = {
+                coroutineScope.launch { columnState.scrollToItem(sortedItems.list.lastIndex) }
+                viewModel.onDismissMenu()
+            },
             modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp)
         )
 
