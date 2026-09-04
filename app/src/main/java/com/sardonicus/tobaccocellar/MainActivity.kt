@@ -195,6 +195,24 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+            val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
+            val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
+            val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
+            val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
+            val orientation = LocalConfiguration.current.orientation
+            val hingeList = currentWindowAdaptiveInfoV2().windowPosture.hingeList
+            val landscape = remember(hingeList, orientation) {
+                if (hingeList.isNotEmpty()) hingeList.first().isVertical
+                else orientation == Configuration.ORIENTATION_LANDSCAPE
+            }
+            val twoPaneAllowed = remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
+                isLarge && globalTwoPane && (if (landscapeOnly) landscape else true)
+            }
+            val twoColumnTabs = remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
+                isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true)
+            }
+
             CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
                     Box(
@@ -205,22 +223,9 @@ class MainActivity : ComponentActivity() {
                             .windowInsetsPadding(WindowInsets.displayCutout)
                             .filterTextContextMenuComponents {
                                 it.key != AutofillKey
-                                it::class.java.simpleName != "TextContextMenuTextClassificationItem"
+                            //    it::class.java.simpleName != "TextContextMenuTextClassificationItem"
                             }
                     ) {
-                        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
-                        val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
-                        val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
-                        val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
-                        val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
-                        val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-                        val twoPaneAllowed = remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
-                            isLarge && globalTwoPane && (if (landscapeOnly) landscape else true)
-                        }
-                        val twoColumnTabs = remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
-                            isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true)
-                        }
-
                         CellarApp(
                             twoPaneAllowed = twoPaneAllowed,
                             twoColumnTabs = twoColumnTabs
@@ -393,8 +398,10 @@ private fun SystemBarsProtection() {
         .fillMaxSize()
         .drawBehind {
             drawRect(Color.Black, size = Size(size.width, statusBarHeight))
-            drawRect(Color.Black, Offset(0f, size.height - navigationHeight),
-                Size(size.width, navigationHeight))
+            drawRect(
+                Color.Black, Offset(0f, size.height - navigationHeight),
+                Size(size.width, navigationHeight)
+            )
         }
     )
 }
