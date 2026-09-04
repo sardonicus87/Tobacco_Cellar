@@ -973,6 +973,7 @@ data class SettingsBackup (
     val tinGramsConversionRate: Double = 50.0,
     val plaintextFormatString: String = "",
     val plaintextDelimiter: String = "",
+    val plaintextListAs: Boolean = false,
     val plaintextPresets: List<PlaintextPreset> = emptyList(),
     val plaintextPrintFontSize: Float = 12f,
     val plaintextPrintMargin: Double = 1.0,
@@ -983,7 +984,11 @@ data class SettingsBackup (
     val columnVisibility: Set<String> = emptySet(),
     val parseLinksOption: Boolean = true,
     val syncAcknowledgement: Boolean = false,
+    val savedEmail: String? = null,
+    val driveScope: Boolean = false,
+    val mobileAllowed: Boolean = false,
     val processedSync: Set<String> = emptySet(),
+    val crossDevice: Boolean = false,
     val datesLastSeen: String = "",
     val globalTwoPane: Boolean = true,
     val twoColumnTabs: Boolean = true,
@@ -1113,6 +1118,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first(),
         plaintextFormatString = preferencesRepo.plaintextFormatString.first(),
         plaintextDelimiter = preferencesRepo.plaintextDelimiter.first(),
+        plaintextListAs = preferencesRepo.plaintextListAs.first(),
         plaintextPresets = preferencesRepo.plaintextPresetsFlow.first(),
         plaintextPrintFontSize = preferencesRepo.plaintextPrintFontSize.first(),
         plaintextPrintMargin = preferencesRepo.plaintextPrintMargin.first(),
@@ -1123,7 +1129,11 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         columnVisibility = preferencesRepo.tableColumnsHidden.first(),
         parseLinksOption = preferencesRepo.parseLinks.first(),
         syncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.first(),
+        savedEmail = preferencesRepo.signedInUserEmail.first(),
+        driveScope = preferencesRepo.hasDriveScope.first(),
+        mobileAllowed = preferencesRepo.allowMobileData.first(),
         processedSync = preferencesRepo.processedSyncFiles.first(),
+        crossDevice = preferencesRepo.crossDeviceSync.first(),
         datesLastSeen = preferencesRepo.datesSeen.first(),
         globalTwoPane = preferencesRepo.globalTwoPane.first(),
         twoColumnTabs = preferencesRepo.twoColumnTabs.first(),
@@ -1164,6 +1174,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             setGramRate(backup.tinGramsConversionRate)
             setPtFormat(backup.plaintextFormatString)
             setPtDelimiter(backup.plaintextDelimiter)
+            setPtListAs(backup.plaintextListAs)
             backup.plaintextPresets.forEach {
                 preferencesRepo.savePtPreset(it.slot, it.formatString, it.delimiter)
             }
@@ -1175,13 +1186,16 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             saveTableColumnsHidden(backup.columnVisibility)
             saveParseLinks(backup.parseLinksOption)
             saveCDAcknowledge(backup.syncAcknowledgement)
+            saveLoginState(backup.savedEmail ?: "", backup.driveScope)
+            saveAllowMobile(backup.mobileAllowed)
             saveProcessedSyncFiles(backup.processedSync)
+            saveCrossDeviceSync(backup.crossDevice)
             setDatesSeen(backup.datesLastSeen)
             saveGlobalTP(backup.globalTwoPane)
             saveTwoColumn(backup.twoColumnTabs)
             saveLandscape(backup.landscapeTwoPane)
         }
-    } else {
+    } else { // support for older backup files
         val lines = settingsText.lines()
         for (line in lines) {
             val parts = line.split("=")
