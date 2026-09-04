@@ -179,10 +179,7 @@ private fun SearchField (
         onValueChange = { updateSearchText(it); if (it.isEmpty()) { onSearch(it) } },
         modifier = Modifier
             .fillMaxWidth()
-            .onFocusChanged {
-                if (it.isFocused) updateSearchFocused(true)
-                else updateSearchFocused(false)
-            },
+            .onFocusChanged { updateSearchFocused(it.isFocused) },
         onImeAction = {
             coroutineScope.launch {
                 if (state.searchText.isNotBlank()) {
@@ -386,7 +383,6 @@ private fun CustomBlendSearch(
     trailingIcon: @Composable () -> Unit = {},
     onImeAction: () -> Unit = {},
 ) {
-    var showCursor by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
@@ -396,10 +392,7 @@ private fun CustomBlendSearch(
         modifier = modifier
             .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
             .height(30.dp)
-            .onFocusChanged { focusState ->
-                hasFocus = focusState.hasFocus; showCursor = focusState.hasFocus
-                if (!focusState.hasFocus) { focusManager.clearFocus() }
-            }
+            .onFocusChanged { hasFocus = it.hasFocus }
             .padding(horizontal = 8.dp),
         textStyle = LocalTextStyle.current.copy(
             color = LocalContentColor.current,
@@ -416,7 +409,7 @@ private fun CustomBlendSearch(
         ),
         singleLine = true,
         cursorBrush =
-            if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
+            if (hasFocus) { SolidColor(MaterialTheme.colorScheme.primary) }
             else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
             Row(
