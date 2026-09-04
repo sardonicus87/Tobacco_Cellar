@@ -93,7 +93,7 @@ fun TableViewMode(
 
     val activeMenuId by viewModel.activeMenuId.collectAsState()
 
-    val onClick = remember {
+    val onClick = remember(searchFocused) {
         { itemId: Int ->
             if (searchFocused) { focusManager.clearFocus() }
             else {
@@ -108,9 +108,10 @@ fun TableViewMode(
             }
         }
     }
-    val onLongClick = remember {
+    val onLongClick = remember(searchFocused) {
         { itemId: Int ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (searchFocused) { focusManager.clearFocus() }
             if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
             onShowMenu(itemId)
         }
