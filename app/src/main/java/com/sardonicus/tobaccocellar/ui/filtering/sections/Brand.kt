@@ -315,14 +315,14 @@ private fun SelectedBrandChipBox(
     val selectedBrands by filterViewModel.selectedBrand.collectAsState()
     var showOverflowDialog by remember { mutableStateOf(false) }
     var boxWidth by remember { mutableStateOf(0.dp) }
-    val chipMaxWidth by remember { derivedStateOf { (boxWidth * 0.25f) } }
+    val chipMaxWidth by remember { derivedStateOf { (boxWidth * 0.32f) - 4.dp } }
 
     val density = LocalDensity.current
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .onGloballyPositioned { boxWidth = with(density) { it.size.width.toDp() } - 24.dp }
+            .onGloballyPositioned { boxWidth = with(density) { it.size.width.toDp() } }
     ) {
         Box(
             modifier = Modifier,
