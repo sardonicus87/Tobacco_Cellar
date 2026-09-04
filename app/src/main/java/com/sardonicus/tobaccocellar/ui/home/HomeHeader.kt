@@ -410,7 +410,7 @@ private fun CustomBlendSearch(
         singleLine = true,
         cursorBrush =
             if (hasFocus) { SolidColor(MaterialTheme.colorScheme.primary) }
-            else { SolidColor(Color.Transparent) },
+            else { SolidColor(Color.Unspecified) },
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier.padding(0.dp).fillMaxSize(),
