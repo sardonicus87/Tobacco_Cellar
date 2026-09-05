@@ -150,10 +150,7 @@ private fun ViewSelect(
             modifier = Modifier
                 .padding(start = 1.dp)
                 .clip(CircleShape)
-                .clickable(
-                    indication = LocalIndication.current,
-                    interactionSource = null,
-                ) { viewModel.selectView() }
+                .clickable(null, LocalIndication.current) { viewModel.selectView() }
                 .padding(4.dp)
                 .size(20.dp)
         )
@@ -281,10 +278,7 @@ private fun ListColumnMenu(
                 modifier = Modifier
                     .padding(start = 1.dp)
                     .clip(CircleShape)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { sortingMenu = !sortingMenu }
+                    .clickable(null, LocalIndication.current) { sortingMenu = !sortingMenu }
                     .padding(4.dp)
                     .size(20.dp)
             )
@@ -336,15 +330,12 @@ private fun ListColumnMenu(
         } else {
             Icon(
                 painter = painterResource(R.drawable.table_edit),
-                contentDescription = "List sorting",
+                contentDescription = "Table column visibility",
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .padding(start = 1.dp)
                     .clip(CircleShape)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { onShowColumnPop() }
+                    .clickable(null, LocalIndication.current) { onShowColumnPop() }
                     .padding(4.dp)
                     .size(20.dp)
             )
@@ -408,9 +399,7 @@ private fun CustomBlendSearch(
             onSearch = { onImeAction(); focusManager.clearFocus() }
         ),
         singleLine = true,
-        cursorBrush =
-            if (hasFocus) { SolidColor(MaterialTheme.colorScheme.primary) }
-            else { SolidColor(Color.Unspecified) },
+        cursorBrush = SolidColor(if (hasFocus) MaterialTheme.colorScheme.primary else Color.Unspecified),
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier.padding(0.dp).fillMaxSize(),
