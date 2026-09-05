@@ -60,7 +60,7 @@ fun ListViewMode(
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
-    searchFocused: Boolean,
+    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onShowMenu: (Int) -> Unit,
@@ -72,9 +72,9 @@ fun ListViewMode(
 
     val activeMenuId by viewModel.activeMenuId.collectAsState()
 
-    val onClick = remember(searchFocused) {
+    val onClick = remember {
         { itemId: Int ->
-            if (searchFocused) { focusManager.clearFocus() }
+            if (searchFocused()) { focusManager.clearFocus() }
             else {
                 when {
                     (activeMenuId == itemId) -> { }
@@ -89,10 +89,10 @@ fun ListViewMode(
             }
         }
     }
-    val onLongClick = remember(searchFocused) {
+    val onLongClick = remember {
         { itemId: Int ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            if (searchFocused) { focusManager.clearFocus() }
+            focusManager.clearFocus()
             if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
             onShowMenu(itemId)
         }

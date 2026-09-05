@@ -120,7 +120,9 @@ fun HomeScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             HomeHeader(
                 viewModel = viewModel,
@@ -138,8 +140,8 @@ fun HomeScreen(
                 filterViewModel = filterViewModel,
                 showLoading = homeUiState.isLoading,
                 isTableView = homeUiState.isTableView,
-                columnMenu = showColumnMenu,
-                searchFocused = searchFocused,
+                columnMenu = { showColumnMenu },
+                searchFocused = { searchFocused },
                 showColumnMenuToggle = { showColumnMenu = !showColumnMenu },
                 onDetailsClick = navigateToBlendDetails,
                 onEditClick = navigateToEditEntry,

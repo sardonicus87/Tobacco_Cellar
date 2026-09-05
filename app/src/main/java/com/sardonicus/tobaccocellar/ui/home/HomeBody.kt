@@ -3,12 +3,14 @@ package com.sardonicus.tobaccocellar.ui.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -50,8 +52,8 @@ fun HomeBody(
     filterViewModel: FilterViewModel,
     showLoading: Boolean,
     isTableView: Boolean,
-    columnMenu: Boolean,
-    searchFocused: Boolean,
+    columnMenu: () -> Boolean,
+    searchFocused: () -> Boolean,
     showColumnMenuToggle: () -> Unit,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
@@ -69,12 +71,12 @@ fun HomeBody(
     }
 
     Box {
-        BodyContent(viewModel, filterViewModel, isTableView, columnState, sortedItems, searchFocused,
-            onDetailsClick, onEditClick, shouldScrollUp, modifier)
+        BodyContent(viewModel, filterViewModel, isTableView, columnState, sortedItems,
+            searchFocused, onDetailsClick, onEditClick, shouldScrollUp, modifier)
 
         if (showLoading) { LoadingIndicator() }
 
-        if (columnMenu) {
+        if (columnMenu()) {
             ColumnVisibilityPopup(
                 viewModel = viewModel,
                 onVisibilityChange = viewModel::updateColumnVisibility,
@@ -96,7 +98,9 @@ fun HomeBody(
                 coroutineScope.launch { columnState.scrollToItem(sortedItems.list.lastIndex) }
                 viewModel.onDismissMenu()
             },
-            modifier = Modifier.align(Alignment.CenterEnd).padding(16.dp)
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(16.dp)
         )
 
         HomeScrollHandler(columnState, sortedItems, itemsCount, filterViewModel, isTableView)
@@ -111,7 +115,7 @@ private fun BodyContent(
     isTableView: Boolean,
     columnState: LazyListState,
     sortedItems: ItemsList,
-    searchFocused: Boolean,
+    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     shouldScrollUp: () -> Unit,
@@ -155,7 +159,7 @@ private fun BodyContent(
                 filterViewModel = filterViewModel,
                 sortedItems = sortedItems,
                 columnState = columnState,
-                shadow = shadow,
+                shadow = { shadow },
                 tableLayoutData = tableLayoutData,
                 sorting = tableSorting,
                 searchFocused = searchFocused,
@@ -165,7 +169,9 @@ private fun BodyContent(
                 shouldScrollUp = shouldScrollUp,
                 onShowMenu = viewModel::onShowMenu,
                 onDismissMenu = viewModel::onDismissMenu,
-                modifier = Modifier.padding(0.dp).fillMaxWidth()
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxWidth()
             )
         } else {
             GlowBox(
@@ -182,7 +188,9 @@ private fun BodyContent(
                     onEditClick = onEditClick,
                     onShowMenu = viewModel::onShowMenu,
                     onDismissMenu = viewModel::onDismissMenu,
-                    modifier = Modifier.padding(0.dp).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .fillMaxWidth()
                 )
             }
         }
@@ -236,12 +244,12 @@ private fun HomeScrollHandler(
     LaunchedEffect(scrollState.getPosition) {
         if (scrollState.getPosition > 0 && !searchPerformed) {
             val layoutInfo = columnState.layoutInfo
-            val firstVisibleItem =
+            val firstItem =
                 if (isTableView) { layoutInfo.visibleItemsInfo.firstOrNull { it.index > 0 } }
                 else layoutInfo.visibleItemsInfo.firstOrNull()
 
-            if (firstVisibleItem != null) {
-                filterViewModel.updateScrollPosition(firstVisibleItem.index, firstVisibleItem.offset * -1)
+            if (firstItem != null) {
+                filterViewModel.updateScrollPosition(firstItem.index, firstItem.offset * -1)
             }
         }
     }
@@ -263,12 +271,13 @@ private fun ColumnVisibilityPopup(
         text = {
             LazyColumn (
                 verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.fillMaxWidth()
+                contentPadding = PaddingValues(0.dp)
             ) {
                 items(columns) { column ->
                     Row (
-                        modifier = Modifier.padding(0.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .padding(0.dp)
+                            .width(IntrinsicSize.Max),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start,
                     ) {

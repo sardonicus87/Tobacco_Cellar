@@ -71,10 +71,10 @@ fun TableViewMode(
     filterViewModel: FilterViewModel,
     sortedItems: ItemsList,
     columnState: LazyListState,
-    shadow: Boolean,
+    shadow: () -> Boolean,
     tableLayoutData: TableLayoutData,
     sorting: TableSorting,
-    searchFocused: Boolean,
+    searchFocused: () -> Boolean,
     onDetailsClick: (Int) -> Unit,
     onEditClick: (Int) -> Unit,
     onShowMenu: (Int) -> Unit,
@@ -93,9 +93,9 @@ fun TableViewMode(
 
     val activeMenuId by viewModel.activeMenuId.collectAsState()
 
-    val onClick = remember(searchFocused) {
+    val onClick = remember {
         { itemId: Int ->
-            if (searchFocused) { focusManager.clearFocus() }
+            if (searchFocused()) { focusManager.clearFocus() }
             else {
                 when {
                     activeMenuId == itemId -> { }
@@ -108,10 +108,10 @@ fun TableViewMode(
             }
         }
     }
-    val onLongClick = remember(searchFocused) {
+    val onLongClick = remember {
         { itemId: Int ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            if (searchFocused) { focusManager.clearFocus() }
+            focusManager.clearFocus()
             if (!filterViewModel.searchPerformed.value) { filterViewModel.getPositionTrigger() }
             onShowMenu(itemId)
         }
@@ -148,7 +148,7 @@ fun TableViewMode(
                                 radius = 3.dp,
                                 spread = 1.dp,
                                 offset = DpOffset(0.dp, 3.dp),
-                                alpha = if (shadow) 0.15f else 0f
+                                alpha = if (shadow()) 0.15f else 0f
                             )
                         )
                 )
@@ -288,7 +288,7 @@ private fun TableHeaderRow(
     activeMenuId: Int?,
     updateSorting: (Int) -> Unit,
     sorting: TableSorting,
-    searchFocused: Boolean,
+    searchFocused: () -> Boolean,
     shouldScrollUp: () -> Unit,
     onDismissMenu: () -> Unit,
     modifier: Modifier = Modifier,
@@ -297,7 +297,7 @@ private fun TableHeaderRow(
 
     val onClick = remember {
         { columnIndex: Int ->
-            if (searchFocused) { focusManager.clearFocus() }
+            if (searchFocused()) { focusManager.clearFocus() }
             else {
                 if (activeMenuId != null) { onDismissMenu() }
                 else { updateSorting(columnIndex); shouldScrollUp() }
