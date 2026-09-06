@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -274,6 +275,15 @@ private fun PlaintextBody(
 
     BackHandler(actionRowExpanded) { actionRowExpanded = false }
 
+    val listScroll = rememberScrollState()
+    val formatScroll = rememberScrollState()
+    var listShadow by remember { mutableStateOf(listScroll.canScrollBackward) }
+    var formatShadow by remember { mutableStateOf(formatScroll.canScrollBackward) }
+    SideEffect(listScroll.canScrollBackward) { listShadow = listScroll.canScrollBackward }
+    SideEffect(formatScroll.canScrollBackward) { formatShadow = formatScroll.canScrollBackward }
+
+    var helpExpanded by remember { mutableStateOf(false) }
+
     if (twoColumnTabs) {
         Row(Modifier.fillMaxWidth()) {
             Column(
@@ -289,14 +299,15 @@ private fun PlaintextBody(
                     }
             ) {
                 GlowBox(
-                    color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                    color = GlowColor(Color.Black.copy(alpha = if (listShadow) 0.3f else 0f)),
                     size = GlowSize(top = 3.dp),
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier
                 ) {
                     PlaintextList(
                         viewModel = viewModel,
                         filterViewModel = filterViewModel,
                         context = context,
+                        scrollState = listScroll,
                         plainList = plainList,
                         actionRowBounds = actionRowBounds,
                         actionButtonBounds = actionButtonBounds,
@@ -312,7 +323,7 @@ private fun PlaintextBody(
             VerticalDivider()
 
             GlowBox(
-                color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                color = GlowColor(Color.Black.copy(alpha = if (formatShadow) 0.3f else 0f)),
                 size = GlowSize(top = 3.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -324,17 +335,20 @@ private fun PlaintextBody(
                             }
                         }
                     }
-                    .padding(horizontal = 12.dp)
             ) {
                 PlaintextFormatting(
                     viewModel = viewModel,
+                    scrollState = formatScroll,
                     saveLoadBounds = saveLoadBounds,
                     twoColumnTabs = twoColumnTabs,
                     formatString = formatString,
                     delimiter = delimiter,
                     listAs = listAs,
                     selectionKey = selectionKey,
-                    updateSelectionFocused = updateSelectionFocused
+                    updateSelectionFocused = updateSelectionFocused,
+                    helpExpanded = helpExpanded,
+                    updateHelpExpanded = { helpExpanded = it },
+                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
         }
@@ -395,8 +409,9 @@ private fun PlaintextBody(
             beyondViewportPageCount = 1,
             verticalAlignment = Alignment.Top
         ) { targetIndex ->
+            val shadow = if (targetIndex == 0) listShadow else formatShadow
             GlowBox(
-                color = GlowColor(Color.Black.copy(alpha = 0.3f)),
+                color = GlowColor(Color.Black.copy(alpha = if (shadow) 0.3f else 0f)),
                 size = GlowSize(top = 3.dp)
             ) {
                 when (targetIndex) {
@@ -405,6 +420,7 @@ private fun PlaintextBody(
                             viewModel = viewModel,
                             filterViewModel = filterViewModel,
                             context = context,
+                            scrollState = listScroll,
                             plainList = plainList,
                             actionRowBounds = actionRowBounds,
                             actionButtonBounds = actionButtonBounds,
@@ -419,6 +435,7 @@ private fun PlaintextBody(
                     1 ->
                         PlaintextFormatting(
                             viewModel = viewModel,
+                            scrollState = formatScroll,
                             saveLoadBounds = saveLoadBounds,
                             twoColumnTabs = twoColumnTabs,
                             formatString = formatString,
@@ -426,6 +443,8 @@ private fun PlaintextBody(
                             listAs = listAs,
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
+                            helpExpanded = helpExpanded,
+                            updateHelpExpanded = { helpExpanded = it },
                             fieldInteractionSource = fieldInteractionSource,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -434,6 +453,7 @@ private fun PlaintextBody(
                             viewModel = viewModel,
                             filterViewModel = filterViewModel,
                             context = context,
+                            scrollState = listScroll,
                             plainList = plainList,
                             actionRowBounds = actionRowBounds,
                             actionButtonBounds = actionButtonBounds,
@@ -474,6 +494,7 @@ private fun PlaintextList(
     viewModel: PlaintextViewModel,
     filterViewModel: FilterViewModel,
     context: Context,
+    scrollState: ScrollState,
     plainList: String,
     actionRowBounds: (LayoutCoordinates) -> Unit,
     actionButtonBounds: (LayoutCoordinates) -> Unit,
@@ -485,7 +506,6 @@ private fun PlaintextList(
     updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scrollState = rememberScrollState()
     val loading by viewModel.loading.collectAsState()
     var showLoading by remember { mutableStateOf(true) }
 
@@ -509,7 +529,7 @@ private fun PlaintextList(
         else {
             Column(
                 modifier = modifier
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 12.dp)
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
@@ -551,7 +571,7 @@ private fun PlaintextList(
                 context = context,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 12.dp)
+                    .padding(top = 8.dp, end = 8.dp)
             )
         }
     }
@@ -562,6 +582,7 @@ private fun PlaintextList(
 @Composable
 private fun PlaintextFormatting(
     viewModel: PlaintextViewModel,
+    scrollState: ScrollState,
     saveLoadBounds: (LayoutCoordinates) -> Unit,
     twoColumnTabs: Boolean,
     formatString: String,
@@ -569,6 +590,8 @@ private fun PlaintextFormatting(
     listAs: Boolean,
     selectionKey: Int,
     updateSelectionFocused: (Boolean) -> Unit,
+    helpExpanded: Boolean,
+    updateHelpExpanded: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     fieldInteractionSource: MutableInteractionSource? = null
 ) {
@@ -583,7 +606,7 @@ private fun PlaintextFormatting(
 
     Column(
         modifier = modifier
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(horizontal = 12.dp)
             .imePadding(),
         verticalArrangement = Arrangement.Top,
@@ -792,10 +815,8 @@ private fun PlaintextFormatting(
                 .onFocusChanged { updateSelectionFocused(it.isFocused) }
         ) { FormattingGuide() } }
 
-        var expanded by remember { mutableStateOf(false) }
-
         AnimatedVisibility (
-            visible = expanded,
+            visible = helpExpanded,
             enter = expandVertically(tween(250), Alignment.Top) + fadeIn(tween(250)),
             exit = shrinkVertically(tween(250), Alignment.Top) + fadeOut(tween(250))
         ) {
@@ -815,11 +836,11 @@ private fun PlaintextFormatting(
                 .fillMaxWidth()
                 .height(24.dp)
                 .padding(horizontal = 12.dp)
-                .clickable(null, LocalIndication.current) { expanded = !expanded }
+                .clickable(null, LocalIndication.current) { updateHelpExpanded(!helpExpanded) }
         ) {
             HorizontalDivider(Modifier.weight(1f), 1.dp)
             Text(
-                text = if (!expanded) "Click for Formatting Help" else "Click to Hide",
+                text = if (!helpExpanded) "Click for Formatting Help" else "Click to Hide",
                 fontSize = 14.sp,
                 color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier.padding(horizontal = 8.dp)

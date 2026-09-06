@@ -51,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.compositeOver
@@ -99,16 +98,15 @@ fun PlaintextActionRow(
         else LocalCustomColors.current.whiteBlack)
     val borderColor by animateColorAsState(if (expanded) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)
         else MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
-    val backgroundColor by animateColorAsState(if (expanded) LocalCustomColors.current.homeHeaderBg
-        else Color.Transparent)
-    val iconRotation by animateFloatAsState(if (expanded) 180f else -0f,tween(450))
+    val backgroundAlpha by animateFloatAsState(if (expanded) 1f else 0f, tween(250))
+    val iconRotation by animateFloatAsState(if (expanded) 180f else -0f, tween(450))
 
     SideEffect(plainList) { if (plainList.isBlank() && expanded) { toggleActionRow() } }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(backgroundColor, RoundedCornerShape(8.dp))
+            .background(LocalCustomColors.current.homeHeaderBg.copy(alpha = backgroundAlpha), RoundedCornerShape(8.dp))
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .padding(end = if (expanded) 8.dp else 0.dp)
     ) {
@@ -241,15 +239,24 @@ private fun SortingButton(
     val screenWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() }
     val screenHeight = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
 
-    var anchorPosition by remember { mutableStateOf(Offset.Zero) }
-    var mainPosition by remember { mutableStateOf(Offset.Zero) }
+    var anchorX by remember { mutableStateOf(0.dp) }
+    var anchorY by remember { mutableStateOf(0.dp) }
+    var mainX by remember { mutableStateOf(0.dp) }
+    var mainY by remember { mutableStateOf(0.dp) }
     var mainWidth by remember { mutableStateOf(0.dp) }
     val yPositions = remember { mutableStateMapOf<PlaintextSorting, Dp>() }
+    val sideSpace = (screenWidth - (mainX + mainWidth)) * .95f
 
     BackHandler(mainMenu) { if (mainMenu) { mainMenu = false; subMenu = false } }
 
-    Box(modifier = modifier.onGloballyPositioned { anchorPosition = it.positionOnScreen() }) {
-        val alteredColor = Color.Black.copy(alpha = .1f).compositeOver(LocalCustomColors.current.textField)
+    Box(
+        modifier = modifier.onGloballyPositioned {
+            anchorX = with(density) { it.positionOnScreen().x.toDp() }
+            anchorY = with(density) { it.positionOnScreen().y.toDp() }
+        }
+    ) {
+        val alteredAlpha = if (LocalCustomColors.current.isLightTheme) .5f else .15f
+        val alteredColor = LocalCustomColors.current.listMenuScrim.copy(alpha = alteredAlpha).compositeOver(LocalCustomColors.current.textField)
 
         IconButton(
             onClick = {
@@ -274,7 +281,8 @@ private fun SortingButton(
                 .heightIn(max = screenHeight * .65f)
                 .onGloballyPositioned {
                     mainWidth = with(density) { it.size.width.toDp() }
-                    mainPosition = it.positionOnScreen()
+                    mainX = with(density) { it.positionOnScreen().x.toDp() }
+                    mainY = with(density) { it.positionOnScreen().y.toDp() }
                 },
             containerColor = if (subMenu) alteredColor else LocalCustomColors.current.textField,
             shadowElevation = 6.dp
@@ -337,30 +345,20 @@ private fun SortingButton(
         }
 
         // Sub sorting menu
+        var subWidth by remember { mutableStateOf(0.dp) }
+        val xOffset = if (subWidth > sideSpace) (mainX - anchorX) - subWidth else (mainX - anchorX) + mainWidth
+        val yOffset = (mainY - anchorY) + (yPositions[sortMenuState.mainSelection] ?: 0.dp)
+
         if (subMenu) {
-            var subWidth by remember { mutableStateOf(0.dp) }
-
-            val anchorPosDpX = with(density) { anchorPosition.x.toDp() }
-            val anchorPosDpY = with(density) { anchorPosition.y.toDp() }
-            val mainPosDpX = with(density) { mainPosition.x.toDp() }
-            val mainPosDpY = with(density) { mainPosition.y.toDp() }
-
-            val sideSpace = (screenWidth - (mainPosDpX + mainWidth)) * .95f
-            val menuShiftX = mainPosDpX - anchorPosDpX
-            val xOffset = if (subWidth > sideSpace) menuShiftX - subWidth else menuShiftX + mainWidth
-
-            val menuShiftY = mainPosDpY - anchorPosDpY
-            val yOffset = menuShiftY + (yPositions[sortMenuState.mainSelection] ?: 0.dp)
-
             DropdownMenu(
-                expanded = subMenu,
+                expanded = true,
                 onDismissRequest = { },
                 containerColor = LocalCustomColors.current.textField,
                 properties = PopupProperties(focusable = false, clippingEnabled = false),
+                offset = DpOffset(xOffset, yOffset),
                 modifier = Modifier
                     .heightIn(max = screenHeight * .60f)
                     .onGloballyPositioned { subWidth = with(density) { it.size.width.toDp() } },
-                offset = DpOffset(xOffset, yOffset),
                 shadowElevation = 6.dp
             ) {
                 Text(
