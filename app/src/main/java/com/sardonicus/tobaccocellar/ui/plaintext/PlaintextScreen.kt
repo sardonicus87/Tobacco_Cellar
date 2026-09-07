@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.rows
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -868,7 +869,7 @@ private fun PlaintextFormatting(
 
 @Composable
 private fun FormattingGuide(modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth()) {
+    Row(modifier.width(IntrinsicSize.Min)) {
         val formatGuide = mapOf(
             "Brand" to "@brand",
             "Blend" to "@blend",
@@ -899,12 +900,14 @@ private fun FormattingGuide(modifier: Modifier = Modifier) {
         val secondHalf = formatGuide.entries.drop(firstHalf.size)
         val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
 
+        // TODO: convert to adaptive column grid, auto by width min 2 columns (max 3?)
+
         // first half
-        Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth()) {
+        Column(Modifier.weight(1f, false)) {
+            Row(Modifier.width(IntrinsicSize.Min)) {
                 Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
                     firstHalf.forEach {
-                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
+                        Box(Modifier.height(height), Alignment.CenterStart) {
                             Text(
                                 text = "${it.key}:",
                                 style = TextStyle(
@@ -935,14 +938,14 @@ private fun FormattingGuide(modifier: Modifier = Modifier) {
             }
         }
 
-        Spacer(Modifier.width(36.dp))
+        Spacer(Modifier.widthIn(36.dp))
 
         // second half
-        Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth()) {
+        Column(Modifier.weight(1f, false)) {
+            Row(Modifier.width(IntrinsicSize.Min)) {
                 Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
                     secondHalf.forEach {
-                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
+                        Box(Modifier.height(height), Alignment.CenterStart) {
                             Text(
                                 text = "${it.key}:",
                                 style = TextStyle(
@@ -958,7 +961,7 @@ private fun FormattingGuide(modifier: Modifier = Modifier) {
                 }
                 Column {
                     secondHalf.forEach {
-                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
+                        Box(Modifier.height(height), Alignment.CenterStart) {
                             Text(
                                 text = it.value,
                                 style = TextStyle(color = LocalContentColor.current),
@@ -1453,7 +1456,7 @@ private fun SaveDialog(
                 TextButton({ onDeleteConfirm(selectedSlot); selectedSlot = -1; onConfirm(false) }
                 ) { Text("Delete") }
             },
-            dismissButton = { TextButton({ onConfirm(false) },) { Text("Cancel") } },
+            dismissButton = { TextButton({ onConfirm(false) }) { Text("Cancel") } },
             title = { Text("Delete Preset") },
             text = { Text("Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
             shape = MaterialTheme.shapes.small,
@@ -1488,7 +1491,7 @@ private fun LoadDialog(
                 enabled = selectedSlot != -1
             ) { Text("Load") }
         },
-        dismissButton = { TextButton({ onLoadCancel() },) { Text("Cancel") } },
+        dismissButton = { TextButton({ onLoadCancel() }) { Text("Cancel") } },
         title = { Text("Load Preset") },
         modifier = modifier
             .fillMaxWidth(.9f)
