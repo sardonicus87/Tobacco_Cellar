@@ -604,18 +604,14 @@ private fun PlaintextFormatting(
     var saveDialog by remember { mutableStateOf(false) }
     var loadDialog by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier
-            .verticalScroll(scrollState)
-            .padding(horizontal = 12.dp)
-            .imePadding(),
-        verticalArrangement = Arrangement.Top,
+    Column(modifier
+        .verticalScroll(scrollState)
+        .padding(horizontal = 12.dp)
+        .imePadding()
     ) {
         if (twoColumnTabs) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) { Text("Format Output:", fontWeight = FontWeight.SemiBold) }
@@ -640,20 +636,17 @@ private fun PlaintextFormatting(
         ) {
             Text(
                 text = "String:",
-                modifier = Modifier
-                    .gridItem(row = 1, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(row = 1, column = 1, alignment = Alignment.CenterStart),
                 maxLines = 1
             )
             Text(
                 text = "Delimiter:",
-                modifier = Modifier
-                    .gridItem(row = 2, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(row = 2, column = 1, alignment = Alignment.CenterStart),
                 maxLines = 1
             )
             Text(
                 text = "List as:",
-                modifier = Modifier
-                    .gridItem(row = 3, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(row = 3, column = 1, alignment = Alignment.CenterStart),
                 maxLines = 1
             )
 
@@ -726,8 +719,7 @@ private fun PlaintextFormatting(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                modifier = Modifier
-                    .gridItem(row = 3, column = 2, alignment = Alignment.CenterStart)
+                modifier = Modifier.gridItem(row = 3, column = 2, alignment = Alignment.CenterStart)
             ) {
                 Text(
                     text = "Entries",
@@ -804,7 +796,7 @@ private fun PlaintextFormatting(
         Text(
             text = "Formatting Guide",
             modifier = Modifier.padding(bottom = 8.dp),
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Bold
         )
 
         // Formatting Options
@@ -857,7 +849,7 @@ private fun PlaintextFormatting(
                 delimiter = delimiter,
                 onSaveConfirm = { slot, string, delimiter -> viewModel.savePreset(slot, string, delimiter) },
                 onDeleteConfirm = { viewModel.savePreset(it, "", "") },
-                onSaveCancel = { saveDialog = false },
+                onSaveCancel = { saveDialog = false }
             )
         }
         if (loadDialog) {
@@ -867,7 +859,7 @@ private fun PlaintextFormatting(
                 delimiter = delimiter,
                 onLoadConfirm = { string, delimiter -> viewModel.saveFormatting(format = string, delimiter = delimiter) },
                 onDeleteConfirm = { viewModel.savePreset(it, "", "") },
-                onLoadCancel = { loadDialog = false },
+                onLoadCancel = { loadDialog = false }
             )
         }
     }
@@ -875,14 +867,8 @@ private fun PlaintextFormatting(
 
 
 @Composable
-private fun FormattingGuide(
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.Top
-    ) {
+private fun FormattingGuide(modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth()) {
         val formatGuide = mapOf(
             "Brand" to "@brand",
             "Blend" to "@blend",
@@ -914,18 +900,11 @@ private fun FormattingGuide(
         val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
 
         // first half
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Top,
-        ) {
+        Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth()) {
-                Column(Modifier
-                    .width(IntrinsicSize.Min)
-                    .padding(end = 8.dp)) {
+                Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
                     firstHalf.forEach {
-                        Box(Modifier
-                            .fillMaxWidth()
-                            .height(height), Alignment.CenterStart) {
+                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
                             Text(
                                 text = "${it.key}:",
                                 style = TextStyle(
@@ -933,11 +912,8 @@ private fun FormattingGuide(
                                     fontWeight = FontWeight.SemiBold
                                 ),
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 10.sp,
-                                    maxFontSize = 14.sp,
-                                    stepSize = 0.25.sp
-                                )
+                                overflow = TextOverflow.Visible,
+                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
                             )
                         }
                     }
@@ -950,11 +926,8 @@ private fun FormattingGuide(
                                 modifier = Modifier,
                                 style = TextStyle(color = LocalContentColor.current),
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 10.sp,
-                                    maxFontSize = 14.sp,
-                                    stepSize = 0.25.sp
-                                )
+                                overflow = TextOverflow.Visible,
+                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
                             )
                         }
                     }
@@ -965,21 +938,11 @@ private fun FormattingGuide(
         Spacer(Modifier.width(36.dp))
 
         // second half
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Top,
-        ) {
+        Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth()) {
-                Column(Modifier
-                    .width(IntrinsicSize.Min)
-                    .padding(end = 8.dp)) {
+                Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
                     secondHalf.forEach {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(height),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
+                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
                             Text(
                                 text = "${it.key}:",
                                 style = TextStyle(
@@ -987,32 +950,21 @@ private fun FormattingGuide(
                                     fontWeight = FontWeight.SemiBold
                                 ),
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 10.sp,
-                                    maxFontSize = 14.sp,
-                                    stepSize = 0.25.sp
-                                )
+                                overflow = TextOverflow.Visible,
+                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
                             )
                         }
                     }
                 }
                 Column {
                     secondHalf.forEach {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(height),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
+                        Box(Modifier.fillMaxWidth().height(height), Alignment.CenterStart) {
                             Text(
                                 text = it.value,
                                 style = TextStyle(color = LocalContentColor.current),
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 10.sp,
-                                    maxFontSize = 14.sp,
-                                    stepSize = 0.25.sp
-                                )
+                                overflow = TextOverflow.Visible,
+                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
                             )
                         }
                     }
@@ -1025,8 +977,7 @@ private fun FormattingGuide(
 @Composable
 private fun FormattingHelp(modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
@@ -1034,7 +985,7 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
             text = "Anything typed in the format string will show in the text. To reference " +
                     "specific fields, use the placeholders above. Setting the \"List as\" to " +
                     "tins will explode the tins into individual entries in the text list. The " +
-                    "delimiter separates entries and is automatically removed from the end.",
+                    "delimiter separates entries and is automatically removed from the end."
         )
         Text(
             text = "Use the delimiter line for how to separate records in the generated string. " +
@@ -1042,7 +993,7 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
                     "each record by a blank line, you would need to enter \"_n_\". When tins " +
                     "are passed as a sublist, mark the start of the tins sublist delimiter with " +
                     "a tilde (~) at the end of the tins-sublist formatting, inside the closing " +
-                    "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}.",
+                    "tins as sublist bracket (e.g.: {@label~, } or {@label~_n_}."
         )
         Text(
             text = "The \"@rating_0_0\" tag is to be used in a specific way. The first zero should " +
@@ -1052,12 +1003,11 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
                     "a scale of 1-4 with whole number rounding, enter \"@rating_4_0\" into the " +
                     "formatting. More advanced examples might be:\n" +
                     "\"[@rating_10_0 stars]\" (of 10, whole number) or \"[@rating_4_2/4]\" (of 4, " +
-                    "two places).",
-            modifier = Modifier
+                    "two places)."
         )
         Text(
             text = "\"Number\" is a special tag that counts each record in the given sort order " +
-                    "(use multiple # to include leading 0's).",
+                    "(use multiple # to include leading 0's)."
         )
         Text(
             text = "In order to output raw text rather than special characters, escape the " +
@@ -1065,42 +1015,37 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
                     "string, enter: '#. Likewise for example, to output brackets around a field, " +
                     "escape the first bracket (e.g. '[@type]). The escape character itself doesn't " +
                     "need to be escaped unless you're trying to use it before an escapable " +
-                    "character (e.g. to render: '01' you would need to input ''##').",
+                    "character (e.g. to render: '01' you would need to input ''##')."
         )
         Text(
             text = "Use the square brackets ([ ]) when you conditionally want the text within them " +
                     "to appear only if one or more placeholders (also inside the brackets) are " +
                     "found. For instance, if you want the type shown on a new line, but " +
                     "don't want an extra line for a blank type, enter: [_n_@type]. These " +
-                    "conditionals can also be nested (e.g. [ @type[ - @subgenre]]).",
+                    "conditionals can also be nested (e.g. [ @type[ - @subgenre]])."
         )
         Text(
             text = "When sorting by items, if you want the tins organized as a sublist " +
                     "per each item, use the curly braces around the formatting you want for " +
                     "tins (e.g. {@label (@T_qty)~, }). Conditional brackets can also be used " +
-                    "inside the curly braces.",
+                    "inside the curly braces."
         )
         Text(
             text = "To set a delimiter for tins as a sublist, at the very end of the tin line " +
                     "formatting, still inside the tins as sublist brackets, place a tilde (~) " +
                     "just before the desired delimiter, followed by delimiter. For example, to " +
-                    "separate each tin in the sublist by a new line, enter: {@label~_n_}.",
+                    "separate each tin in the sublist by a new line, enter: {@label~_n_}."
         )
         Text(
             text = "A more advanced example might be to pass the list of tins only if tins exist " +
-                    "for that blend and passing the quantity in brackets. For example, entering...",
+                    "for that blend and passing the quantity in brackets. For example, entering..."
         )
-        Text(
-            text = "@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]",
-            fontSize = 14.sp,
-        )
-        Text(
-            text = "... would result in:",
-        )
+        Text("@brand - \"@blend\"[_n_{    - @label '[@T_qty']~_n_}]", fontSize = 14.sp)
+        Text("... would result in:")
         Box {
             Text(
                 text = "Lane Limited - \"Very Cherry\"\n        - Lot 1 [2 oz]\n        - Lot 2 [50 grams]",
-                fontSize = 14.sp,
+                fontSize = 14.sp
             )
         }
     }
@@ -1123,26 +1068,12 @@ private fun PrintDialog(
     val decimalSeparator = symbols.decimalSeparator.toString()
 
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose { focusManager.clearFocus() }
-    }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     AlertDialog(
         onDismissRequest = { onPrintCancel(fontSize, margins) },
-        confirmButton = {
-            TextButton(
-                onClick = { onPrintConfirm(fontSize, margins) },
-            ) {
-                Text(text = "Print")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = { onPrintCancel(fontSize, margins) },
-            ) {
-                Text(text = "Cancel")
-            }
-        },
+        confirmButton = { TextButton({ onPrintConfirm(fontSize, margins) }) { Text("Print") } },
+        dismissButton = { TextButton({ onPrintCancel(fontSize, margins) }) { Text("Cancel") } },
         title = { Text(text = "Print Settings") },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
@@ -1150,17 +1081,14 @@ private fun PrintDialog(
         shape = MaterialTheme.shapes.large,
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
                     text = "Font size is standard point-font size. Margin value is a multiplier " +
                             "of 1 inch with a range of 0-3 (including decimals, for example 0.5).",
-                    modifier = Modifier
-                        .padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Row(
                     modifier = Modifier
@@ -1179,26 +1107,13 @@ private fun PrintDialog(
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text("Font Size:")
-                        }
-                        Box(
-                            modifier = Modifier
-                                .weight(1f),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text("Margins:")
-                        }
+                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text("Font Size:") }
+                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text("Margins:") }
                     }
 
                     // Text fields
                     Column(
-                        modifier = Modifier
-                            .width(IntrinsicSize.Max),
+                        modifier = Modifier.width(IntrinsicSize.Max),
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.Start
                     ) {
@@ -1224,17 +1139,15 @@ private fun PrintDialog(
                                     if (it.matches(fontPattern)) {
                                         fontSizeString = it
                                         fontSize =
-                                            if (it.isNotBlank()) {
-                                                it.toFloatOrNull() ?: fontSize
-                                            } else { 12f }
+                                            if (it.isNotBlank()) { it.toFloatOrNull() ?: fontSize }
+                                            else { 12f }
                                     }
                                 },
                                 suffix = {
                                     Text(
                                         "pt",
                                         fontSize = 14.sp,
-                                        modifier = Modifier
-                                            .padding(0.75.dp),
+                                        modifier = Modifier.padding(0.75.dp),
                                         color = LocalContentColor.current.copy(alpha = .8f)
                                     )
                                 },
@@ -1295,8 +1208,7 @@ private fun PrintDialog(
                                         }
                                     }
                                 },
-                                modifier = Modifier
-                                    .fillMaxHeight(),
+                                modifier = Modifier.fillMaxHeight()
                             )
                         }
 
@@ -1318,35 +1230,28 @@ private fun PrintDialog(
 
                                             if (it.isNotBlank()) {
                                                 val preNumber =
-                                                    if (it.startsWith(decimalSeparator)) {
-                                                        "0$it"
-                                                    } else it
+                                                    if (it.startsWith(decimalSeparator)) { "0$it" }
+                                                    else it
                                                 val number = numberFormat.parse(preNumber)
 
-                                                parsedDouble = number?.toDouble() ?: 1.0
-                                            } else {
-                                                parsedDouble = 1.0
-                                            }
+                                                parsedDouble = number?.toDouble() ?: 1.0 }
+                                            else { parsedDouble = 1.0 }
 
                                             margins = if (parsedDouble <= 3.0) parsedDouble else 3.0
-                                        } catch (e: ParseException) {
-                                            Log.e("Print dialog", "Input: $it", e)
-                                        }
+                                        } catch (_: ParseException) { Log.e("Print dialog", "Input: $it") }
                                     }
                                 },
                                 modifier = Modifier
                                     .width(68.dp)
                                     .padding(vertical = 4.dp)
                                     .onFocusChanged {
-                                        if (!it.hasFocus) marginsString = formatDecimal(margins)
-                                    },
+                                        if (!it.hasFocus) marginsString = formatDecimal(margins) },
                                 singleLine = true,
                                 suffix = {
                                     Text(
                                         text = "x",
                                         fontSize = 14.sp,
-                                        modifier = Modifier
-                                            .padding(start = 0.75.dp),
+                                        modifier = Modifier.padding(start = 0.75.dp),
                                         color = LocalContentColor.current.copy(alpha = .8f)
                                     )
                                          },
@@ -1370,7 +1275,7 @@ private fun PrintDialog(
                                     disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
                                 ),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp)
                             )
 
                             // increase/decrease margin buttons
@@ -1403,8 +1308,7 @@ private fun PrintDialog(
                                         }
                                     }
                                 },
-                                modifier = Modifier
-                                    .fillMaxHeight(),
+                                modifier = Modifier.fillMaxHeight()
                             )
                         }
                     }
@@ -1435,24 +1339,16 @@ private fun SaveDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSaveConfirm(selectedSlot, formatString, delimiter)
-                    onSaveCancel()
+                    onSaveConfirm(selectedSlot, formatString, delimiter); onSaveCancel()
                 },
                 enabled = selectedSlot != -1
-            ) { Text(text = "Save") }
+            ) { Text("Save") }
         },
-        dismissButton = {
-            TextButton(
-                onClick = { onSaveCancel() },
-            ) { Text(text = "Cancel") }
-        },
-        title = { Text(text = "Save Preset") },
+        dismissButton = { TextButton({ onSaveCancel() }) { Text("Cancel") } },
+        title = { Text("Save Preset") },
         modifier = modifier
             .fillMaxWidth(.9f)
-            .clickable(
-                indication = null,
-                interactionSource = null
-            ) { selectedSlot = -1 },
+            .clickable(null, null) { selectedSlot = -1 },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -1483,77 +1379,62 @@ private fun SaveDialog(
                                 shape = RoundedCornerShape(4.dp)
                             )
                             .background(
-                                if (isSelected) selectedColor else
-                                    LocalCustomColors.current.darkNeutral,
+                                if (isSelected) selectedColor else LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .combinedClickable(
-                                indication = null,
-                                interactionSource = null,
+                            .combinedClickable(null, null,
                                 onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = {
                                     if (preset.formatString.isNotBlank()) {
-                                        selectedSlot = it
-                                        onConfirm(true)
+                                        selectedSlot = it; onConfirm(true)
                                     }
                                 }
                             )
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Box (
-                            modifier = Modifier
-                                .weight(1f),
+                            modifier = Modifier.weight(1f),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Row (
-                                modifier = Modifier
-                                    .height(IntrinsicSize.Min)
-                                    .fillMaxWidth(),
+                                modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 val color = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current
                                 val color2 = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current.copy(alpha = .5f)
                                 Text(
                                     text = "${it + 1}:",
-                                    modifier = Modifier
-                                        .width(IntrinsicSize.Max)
-                                        .padding(end = 8.dp),
+                                    modifier = Modifier.width(IntrinsicSize.Max).padding(end = 8.dp),
                                     maxLines = 1,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 )
                                 Text(
                                     text = preset.formatString,
-                                    modifier = Modifier
-                                        .weight(1f),
+                                    modifier = Modifier.weight(1f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = color
                                 )
                                 if (preset.formatString.isNotBlank()) {
                                     VerticalDivider(
-                                        modifier = Modifier
-                                            .padding(horizontal = 6.dp)
-                                            .fillMaxHeight(),
+                                        modifier = Modifier.padding(horizontal = 6.dp).fillMaxHeight(),
                                         color = color,
                                         thickness = 1.5.dp
                                     )
                                     Text(
                                         text = preset.delimiter.ifBlank{ "n/a" },
-                                        modifier = Modifier
-                                            .width(44.dp)
-                                            .padding(start = 2.dp),
+                                        modifier = Modifier.width(44.dp).padding(start = 2.dp),
                                         color = if (preset.delimiter.isBlank()) color2 else color,
                                         maxLines = 1,
                                         fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
-                                        textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start,
+                                        textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start
                                     )
                                 }
                             }
                             if (isSelected && preset.formatString.isNotBlank()) {
                                 Text(
                                     text = "Overwrite?",
-                                    modifier = Modifier
-                                        .matchParentSize(),
+                                    modifier = Modifier.matchParentSize(),
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.error,
                                     fontWeight = FontWeight.SemiBold
@@ -1569,28 +1450,15 @@ private fun SaveDialog(
         AlertDialog(
             onDismissRequest = { onConfirm(false) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteConfirm(selectedSlot)
-                        selectedSlot = -1
-                        onConfirm(false)
-                    },
-                ) {
-                    Text(text = "Delete")
-                }
+                TextButton({ onDeleteConfirm(selectedSlot); selectedSlot = -1; onConfirm(false) }
+                ) { Text("Delete") }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { onConfirm(false) },
-                ) {
-                    Text(text = "Cancel")
-                }
-            },
-            title = { Text(text = "Delete Preset") },
-            text = { Text(text = "Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
+            dismissButton = { TextButton({ onConfirm(false) },) { Text("Cancel") } },
+            title = { Text("Delete Preset") },
+            text = { Text("Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
-            textContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -1616,23 +1484,15 @@ private fun LoadDialog(
             TextButton(
                 onClick = {
                     onLoadConfirm(savedPresets[selectedSlot].formatString, savedPresets[selectedSlot].delimiter)
-                    onLoadCancel()
-                },
+                    onLoadCancel() },
                 enabled = selectedSlot != -1
-            ) { Text(text = "Load") }
+            ) { Text("Load") }
         },
-        dismissButton = {
-            TextButton(
-                onClick = { onLoadCancel() },
-            ) { Text(text = "Cancel") }
-        },
-        title = { Text(text = "Load Preset") },
+        dismissButton = { TextButton({ onLoadCancel() },) { Text("Cancel") } },
+        title = { Text("Load Preset") },
         modifier = modifier
             .fillMaxWidth(.9f)
-            .clickable(
-                indication = null,
-                interactionSource = null
-            ) { selectedSlot = -1 },
+            .clickable(null, null) { selectedSlot = -1 },
         properties = DialogProperties(usePlatformDefaultWidth = false),
         shape = MaterialTheme.shapes.small,
         containerColor = MaterialTheme.colorScheme.background,
@@ -1670,29 +1530,21 @@ private fun LoadDialog(
                                 else LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .combinedClickable(
-                                enabled = preset.formatString.isNotBlank(),
-                                indication = null,
-                                interactionSource = null,
+                            .combinedClickable(null, null, preset.formatString.isNotBlank(),
                                 onClick = { selectedSlot = if (isSelected) -1 else it },
-                                onLongClick = {
-                                    selectedSlot = it
-                                    onConfirm(true)
-                                }
+                                onLongClick = { selectedSlot = it; onConfirm(true) }
                             )
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "${it + 1}:",
-                            modifier = Modifier
-                                .padding(end = 8.dp),
+                            modifier = Modifier.padding(end = 8.dp),
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (disabled) LocalContentColor.current.copy(alpha = .38f) else LocalContentColor.current
                         )
                         Text(
                             text = preset.formatString,
-                            modifier = Modifier
-                                .weight(1f),
+                            modifier = Modifier.weight(1f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             fontWeight = FontWeight.Normal,
@@ -1700,21 +1552,17 @@ private fun LoadDialog(
                         )
                         if (preset.formatString.isNotBlank()) {
                             VerticalDivider(
-                                modifier = Modifier
-                                    .padding(horizontal = 6.dp)
-                                    .fillMaxHeight(),
+                                modifier = Modifier.padding(horizontal = 6.dp).fillMaxHeight(),
                                 color = LocalContentColor.current,
                                 thickness = 1.5.dp
                             )
                             Text(
                                 text = preset.delimiter.ifBlank{ "n/a" },
-                                modifier = Modifier
-                                    .width(44.dp)
-                                    .padding(start = 2.dp),
+                                modifier = Modifier.width(44.dp).padding(start = 2.dp),
                                 color = if (preset.delimiter.isBlank()) LocalContentColor.current.copy(alpha = .5f) else LocalContentColor.current,
                                 maxLines = 1,
                                 fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
-                                textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start,
+                                textAlign = if (preset.delimiter.isBlank()) TextAlign.Center else TextAlign.Start
                             )
                         }
                     }
@@ -1726,28 +1574,15 @@ private fun LoadDialog(
         AlertDialog(
             onDismissRequest = { onConfirm(false) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteConfirm(selectedSlot)
-                        selectedSlot = -1
-                        onConfirm(false)
-                    },
-                ) {
-                    Text(text = "Delete")
-                }
+                TextButton({ onDeleteConfirm(selectedSlot); selectedSlot = -1; onConfirm(false) }) {
+                    Text("Delete") }
             },
-            dismissButton = {
-                TextButton(
-                    onClick = { onConfirm(false) },
-                ) {
-                    Text(text = "Cancel")
-                }
-            },
-            title = { Text(text = "Delete Preset") },
-            text = { Text(text = "Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
+            dismissButton = { TextButton({ onConfirm(false) }) { Text("Cancel") } },
+            title = { Text("Delete Preset") },
+            text = { Text("Are you sure you want to delete the preset in Slot ${selectedSlot + 1}?") },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
-            textContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onBackground
         )
     }
 }
