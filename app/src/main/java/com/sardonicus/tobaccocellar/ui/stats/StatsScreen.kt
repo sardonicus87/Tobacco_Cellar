@@ -37,6 +37,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,7 +102,7 @@ fun StatsScreen(
                 title = stringResource(R.string.stats_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
-                showMenu = false,
+                showMenu = false
             )
         },
         bottomBar = {
@@ -111,7 +112,7 @@ fun StatsScreen(
                 navigateToHome = { selectionKey++; selectionFocused = false; navigateToHome() },
                 navigateToDates = { selectionKey++; selectionFocused = false; navigateToDates() },
                 navigateToAddEntry = { selectionKey++; selectionFocused = false; navigateToAddEntry() },
-                currentDestination = StatsDestination,
+                currentDestination = StatsDestination
             )
         },
     ) { innerPadding ->
@@ -130,7 +131,7 @@ fun StatsScreen(
                     availableSections = availableSections,
                     selectionKey = { selectionKey },
                     selectionFocused = { selectionFocused = it },
-                    modifier = modifier.fillMaxSize(),
+                    modifier = modifier.fillMaxSize()
                 )
             }
         }
@@ -148,13 +149,12 @@ private fun StatsBody(
 ) {
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
 
     LazyColumn(
         state = lazyListState,
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Top
     ) {
         item { Header("Quick Stats", Modifier.padding(top = 1.dp)) }
@@ -173,7 +173,7 @@ private fun StatsBody(
                 expand = { expanded = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(),
+                    .wrapContentHeight()
             )
         }
 
@@ -190,7 +190,7 @@ private fun StatsBody(
                     .padding(horizontal = 20.dp, vertical = 0.dp)
                     .wrapContentHeight(),
                 verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(10.dp))
                 Text(
@@ -200,7 +200,7 @@ private fun StatsBody(
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Start,
-                    softWrap = true,
+                    softWrap = true
                 )
                 Spacer(Modifier.height(24.dp))
             }
@@ -213,7 +213,7 @@ private fun StatsBody(
                     .padding(horizontal = 20.dp, vertical = 0.dp)
                     .wrapContentHeight(),
                 verticalArrangement = Arrangement.Top,
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ChartsFormat(
                     label = "Brands by Number of Entries",
@@ -226,7 +226,7 @@ private fun StatsBody(
             item {
                 HorizontalDivider(
                     modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
-                    thickness = 1.dp,
+                    thickness = 1.dp
                 )
                 ChartsFormat(
                     label = "Brands by \"No. of Tins\"",
@@ -238,8 +238,8 @@ private fun StatsBody(
         if (filteredStats.brandsByRating.count() > 1) {
             item {
                 HorizontalDivider(
-                    modifier = Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
-                    thickness = 1.dp,
+                    Modifier.padding(start = 28.dp, end = 28.dp, bottom = 28.dp),
+                    1.dp
                 )
                 BrandsByRatingSection(
                     brandsByRating = { filteredStats.brandsByRating }
@@ -349,8 +349,7 @@ private fun StatsBody(
                 ChartsFormat(
                     label = "Cuts by \"No. of Tins\"",
                     chartData = { filteredStats.cutsByQuantity },
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
         }
@@ -374,7 +373,7 @@ private fun Header(
                 .background(color = LocalCustomColors.current.backgroundVariant)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = title,
@@ -419,19 +418,17 @@ private fun BrandsByRatingSection(
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         val countVal = brandsByRating().values.sumOf { it.ratingsCount }
         Text(
             text = "Brands by Average Rating",
-            modifier = Modifier,
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
             textAlign = TextAlign.Center
         )
         Text(
             text = "(Data Total: $countVal)",
-            modifier = Modifier,
             fontSize = 12.sp,
             textAlign = TextAlign.Start
         )
@@ -440,12 +437,12 @@ private fun BrandsByRatingSection(
                 .padding(top = 20.dp, bottom = 44.dp)
                 .fillMaxWidth(0.7f),
             verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
-                    modifier = Modifier.padding(bottom = 4.dp),
+                    modifier = Modifier.padding(bottom = 4.dp)
                 ) {
                     Column(Modifier.width(IntrinsicSize.Max)) {
                         brandsByRating().forEach {
@@ -455,7 +452,7 @@ private fun BrandsByRatingSection(
                                 fontSize = 14.sp,
                                 textAlign = TextAlign.End,
                                 fontWeight = FontWeight.Medium,
-                                maxLines = 1,
+                                maxLines = 1
                             )
                         }
                     }
@@ -474,7 +471,7 @@ private fun BrandsByRatingSection(
                             Text(
                                 text = formatDecimal(it.value.averageRating, drop = false),
                                 fontSize = 14.sp,
-                                maxLines = 1,
+                                maxLines = 1
                             )
                         }
                     }
@@ -483,7 +480,7 @@ private fun BrandsByRatingSection(
                             Text(
                                 text = "(${it.value.ratingsCount})",
                                 fontSize = 14.sp,
-                                maxLines = 1,
+                                maxLines = 1
                             )
                         }
                     }
@@ -492,7 +489,7 @@ private fun BrandsByRatingSection(
                             Text(
                                 text = formatDecimal(it.value.weightedRating, drop = false),
                                 fontSize = 14.sp,
-                                maxLines = 1,
+                                maxLines = 1
                             )
                         }
                     }
@@ -527,27 +524,23 @@ private fun ChartsFormat(
     var showValue by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = label,
-            modifier = Modifier,
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
             textAlign = TextAlign.Center
         )
         Row(
-            modifier = Modifier
-                .padding(bottom = 6.dp),
+            modifier = Modifier.padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "(Data Total: $countVal - ",
-                modifier = Modifier,
                 fontSize = 12.sp,
                 textAlign = TextAlign.Start
             )
@@ -555,15 +548,12 @@ private fun ChartsFormat(
                 text = if (!showValue) "Show Values" else "Hide Values",
                 modifier = Modifier
                     .clip(RoundedCornerShape(25))
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { showValue = !showValue }
+                    .clickable(null, LocalIndication.current) { showValue = !showValue }
                     .width(75.dp),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                color = colorScheme.primary,
+                color = colorScheme.primary
             )
             Text(
                 text = ")",
