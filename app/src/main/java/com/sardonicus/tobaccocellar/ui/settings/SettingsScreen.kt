@@ -345,14 +345,14 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     Text(
                         text = "Adaptive layout options for large screens. The dual-pane and " +
                                 "expand tabs are separate options (disabling one will not affect " +
-                                "the other). \"Restrict to landscape\" affects both. Foldable " +
+                                "the other). \"Adapt in landscape only\" affects both. Foldable " +
                                 "devices are considered landscape when the hinge is vertical.",
                         modifier = Modifier.padding(bottom = 10.dp),
                         fontSize = 15.sp
                     )
                     ToggleRow("Dual pane layouts:", globalTwoPane, viewModel::saveGlobalTwoPane)
                     ToggleRow("Expand tabs to two columns:", twoColumnTabs, viewModel::saveTwoColumnTabs)
-                    ToggleRow("Restrict to landscape only:", landscapeTwoPane, viewModel::saveLandscapeTwoPane)
+                    ToggleRow("Adapt in landscape only:", landscapeTwoPane, viewModel::saveLandscapeTwoPane, (globalTwoPane || twoColumnTabs))
                 }
             }
         }
@@ -530,7 +530,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, enabled: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -539,9 +539,9 @@ private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+        Text(text = label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = LocalContentColor.current.copy(alpha = if (enabled) 1f else .38f))
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
-            Switch(checked = checked, onCheckedChange = onCheckedChange, modifier = Modifier
+            Switch(checked, onCheckedChange, enabled = enabled, modifier = Modifier
                 .scale(.6f)
                 .padding(start = 10.dp))
         }
