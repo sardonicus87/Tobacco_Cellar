@@ -24,6 +24,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
@@ -107,12 +108,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -139,7 +140,6 @@ import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
-import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -471,7 +471,6 @@ private fun PlaintextBody(
         }
     }
 
-
     if (printDialog) {
         PrintDialog(
             savedFontSize = printOptions.font,
@@ -612,7 +611,9 @@ private fun PlaintextFormatting(
     ) {
         if (twoColumnTabs) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) { Text("Format Output:", fontWeight = FontWeight.SemiBold) }
@@ -795,7 +796,7 @@ private fun PlaintextFormatting(
 
         // Formatting Guide
         Text(
-            text = "Formatting Guide",
+            text = "Formatting Placeholders",
             modifier = Modifier.padding(bottom = 8.dp),
             fontWeight = FontWeight.Bold
         )
@@ -806,7 +807,7 @@ private fun PlaintextFormatting(
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
                 .onFocusChanged { updateSelectionFocused(it.isFocused) }
-        ) { FormattingGuide() } }
+        ) { PlaceholderGuide() } }
 
         AnimatedVisibility (
             visible = helpExpanded,
@@ -816,7 +817,7 @@ private fun PlaintextFormatting(
             Column {
                 Text(
                     text = "Formatting Help",
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(bottom = 8.dp, top = 24.dp),
                     fontWeight = FontWeight.Bold
                 )
                 FormattingHelp()
@@ -866,113 +867,150 @@ private fun PlaintextFormatting(
     }
 }
 
-
+@OptIn(ExperimentalGridApi::class)
 @Composable
-private fun FormattingGuide(modifier: Modifier = Modifier) {
-    Row(modifier.width(IntrinsicSize.Min)) {
-        val formatGuide = mapOf(
-            "Brand" to "@brand",
-            "Blend" to "@blend",
-            "Type" to "@type",
-            "Subgenre" to "@subgenre",
-            "Cut" to "@cut",
-            "Components" to "@comps",
-            "Flavoring" to "@flavors",
-            "Quantity" to "@qty",
-            "Rating" to "@rating_0_0",
-            "Production" to "@prod",
-            "Tin Label" to "@label",
-            "Tin Container" to "@container",
-            "Tin Quantity" to "@T_qty",
-            "Manufacture" to "@manufacture",
-            "Cellar Date" to "@cellar",
-            "Open Date" to "@open",
-            "Finished" to "@finished",
-            "New Line" to "_n_",
-            "Number" to "#",
-            "Escape char" to "'",
-            "Conditional" to "[...]",
-            "Tin sublist" to "{...}",
-            "Sublist delim." to "~"
-        )
+private fun PlaceholderGuide(modifier: Modifier = Modifier) {
+    val formatGuide = mapOf(
+        "Brand" to "@brand",
+        "Blend" to "@blend",
+        "Type" to "@type",
+        "Subgenre" to "@subgenre",
+        "Cut" to "@cut",
+        "Components" to "@comps",
+        "Flavoring" to "@flavors",
+        "Quantity" to "@qty",
+        "Rating" to "@rating_0_0",
+        "Production" to "@prod",
+        "Tin Label" to "@label",
+        "Tin Container" to "@container",
+        "Tin Quantity" to "@T_qty",
+        "Manufacture" to "@manufacture",
+        "Cellar Date" to "@cellar",
+        "Open Date" to "@open",
+        "Finished" to "@finished",
+        "New Line" to "_n_",
+        "Number" to "#",
+        "Escape char" to "'",
+        "Conditional" to "[...]",
+        "Tin sublist" to "{...}",
+        "Sublist delim." to "~"
+    )
 
-        val firstHalf = formatGuide.entries.take((formatGuide.size / 2.0).roundToInt())
-        val secondHalf = formatGuide.entries.drop(firstHalf.size)
-        val height: Dp = with(LocalDensity.current) { 24.sp.toDp() }
+    val density = LocalDensity.current
+    val rowHeight = with(density) { 24.sp.toDp() }
+    val textMeasure = rememberTextMeasurer()
+    val textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
+    val idealWidths = remember(formatGuide) {
+        formatGuide.map { (key, value) ->
+            key to (textMeasure.measure("$key:", textStyle).size.width to
+                    textMeasure.measure(value, textStyle).size.width) }.toMap() }
 
-        // TODO: convert to adaptive column grid, auto by width min 2 columns (max 3?)
-
-        // first half
-        Column(Modifier.weight(1f, false)) {
-            Row(Modifier.width(IntrinsicSize.Min)) {
-                Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
-                    firstHalf.forEach {
-                        Box(Modifier.height(height), Alignment.CenterStart) {
-                            Text(
-                                text = "${it.key}:",
-                                style = TextStyle(
-                                    color = LocalContentColor.current,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
-                            )
-                        }
-                    }
-                }
-                Column {
-                    firstHalf.forEach {
-                        Box(Modifier.height(height), Alignment.CenterStart) {
-                            Text(
-                                text = it.value,
-                                modifier = Modifier,
-                                style = TextStyle(color = LocalContentColor.current),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
-                            )
-                        }
-                    }
-                }
-            }
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val columnCount = when {
+            this.maxWidth >= 1000.dp -> 5
+            this.maxWidth >= 800.dp -> 4
+            this.maxWidth >= 600.dp -> 3
+            else -> 2
         }
 
-        Spacer(Modifier.widthIn(36.dp))
+        val itemsPerColumn = (formatGuide.size + columnCount - 1) / columnCount
+        val chunks = formatGuide.entries.chunked(itemsPerColumn)
+        val rowCount = chunks.maxOf { it.size }
 
-        // second half
-        Column(Modifier.weight(1f, false)) {
-            Row(Modifier.width(IntrinsicSize.Min)) {
-                Column(Modifier.width(IntrinsicSize.Min).padding(end = 8.dp)) {
-                    secondHalf.forEach {
-                        Box(Modifier.height(height), Alignment.CenterStart) {
-                            Text(
-                                text = "${it.key}:",
-                                style = TextStyle(
-                                    color = LocalContentColor.current,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
-                            )
+        val fixedSpacers = (8.dp * columnCount) + (36.dp * (columnCount - 1))
+        val availableWidth = this.maxWidth - fixedSpacers
+
+        val chunkIdeals = remember(chunks, idealWidths) {
+            chunks.map { chunk ->
+                val maxKey = chunk.maxOf { idealWidths[it.key]!!.first }
+                val maxValue = chunk.maxOf { idealWidths[it.key]!!.second }
+                maxKey to maxValue
+            }
+        }
+        val totalIdeal = with(density) { chunkIdeals.sumOf { (k, v) -> k + v }.toDp() }
+        val scale = (availableWidth / totalIdeal).coerceAtMost(1f)
+
+        Grid (
+            modifier = Modifier.fillMaxWidth(),
+            config = {
+                val columnSpecs = {
+                    val specs = mutableListOf<GridTrackSize>()
+                    specs.add(GridTrackSize.MinMax(0.dp, .25.fr)) // outer flex spacer
+                    for (i in 0 until columnCount) {
+                        specs.add(GridTrackSize.Auto) // Key
+                        specs.add(GridTrackSize.Fixed(8.dp)) // key-value fixed padding
+                        specs.add(GridTrackSize.Auto) // Value
+                        if (i < columnCount - 1) { // between chunk flex spacer
+                            specs.add(GridTrackSize.MinMax(36.dp, .5.fr))
                         }
                     }
+                    specs.add(GridTrackSize.MinMax(0.dp, .25.fr)) // outer flex spacer
+                    specs.toTypedArray()
                 }
-                Column {
-                    secondHalf.forEach {
-                        Box(Modifier.height(height), Alignment.CenterStart) {
-                            Text(
-                                text = it.value,
-                                style = TextStyle(color = LocalContentColor.current),
-                                maxLines = 1,
-                                overflow = TextOverflow.Visible,
-                                autoSize = TextAutoSize.StepBased(9.sp, 14.sp, 0.25.sp)
-                            )
-                        }
+                val rowSpecs = { Array(rowCount) { GridTrackSize.Auto } }
+
+                columns(*columnSpecs())
+                rows(*rowSpecs())
+                gap(1.dp, 0.dp)
+            }
+        ) {
+            Spacer(Modifier
+                .gridItem(1, 1, rowCount, 1, Alignment.CenterStart)
+                .fillMaxSize()
+            )
+            chunks.forEachIndexed { columnIndex, chunk ->
+                val (idealKey, idealValue) = chunkIdeals[columnIndex]
+                val maxKeyWidth = with(density) { (idealKey.toDp() * scale) }
+                val maxValueWidth = with(density) { (idealValue.toDp() * scale) }
+
+                chunk.forEachIndexed { rowIndex, entry ->
+                    val column = (columnIndex * 4) + 2 // +2 b/c indexing 0-based, grid is 1-based,
+                    val row = rowIndex + 1             // and 1 column is outer flex spacer
+
+                    // KEYS (chunk column 1)
+                    Box(
+                        modifier = Modifier
+                            .gridItem(row, column, alignment = Alignment.CenterStart)
+                            .height(rowHeight)
+                            .widthIn(max = maxKeyWidth),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = "${entry.key}:",
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.25.sp)
+                        )
+                    }
+
+                    // VALUES (chunk column 3; column 2 is 8.dp padding)
+                    Box(
+                        modifier = Modifier
+                            .gridItem(row, column + 2, alignment = Alignment.CenterStart)
+                            .height(rowHeight)
+                            .widthIn(max = maxValueWidth),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = entry.value,
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.25.sp)
+                        )
+                    }
+
+                    // between chunk flex spacer
+                    if (columnIndex < chunks.size - 1) {
+                        VerticalDivider(Modifier
+                            .gridItem(1, column + 3, rowCount, 1, Alignment.Center)
+                            .fillMaxHeight(.9f)
+                        )
                     }
                 }
             }
+            // for total column count, inner count = (columnCount * 4) - 1
+            Spacer(Modifier
+                .gridItem(1, (columnCount * 4) + 1, rowCount, 1, Alignment.Center)
+                .fillMaxSize())
         }
     }
 }
