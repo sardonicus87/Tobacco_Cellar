@@ -101,10 +101,11 @@ fun ListViewMode(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        val background = if (LocalCustomColors.current.isLightTheme) MaterialTheme.colorScheme.background else LocalCustomColors.current.backgroundVariant
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
-                .background(LocalCustomColors.current.backgroundVariant)
+                .background(background)
                 .padding(0.dp),
             state = columnState,
         ) {
