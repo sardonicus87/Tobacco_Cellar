@@ -45,7 +45,7 @@ class DownloadSyncWorker(
 
         val allowMobile = preferencesRepo.allowMobileData.first()
         if (!allowMobile) {
-            val networkMonitor = NetworkMonitor(applicationContext)
+            val networkMonitor = NetworkMonitor(applicationContext, app.applicationScope)
             val isWifi = networkMonitor.isWifi.first()
             if (!isWifi) { return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR)) }
         }

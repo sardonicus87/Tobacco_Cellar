@@ -96,7 +96,7 @@ fun CellarNavigation(
     val preferencesRepo = app.preferencesRepo
     val itemsRepository = app.container.itemsRepository
     val csvHelper = app.csvHelper
-    val networkMonitor = remember { NetworkMonitor(app) }
+    val networkMonitor = remember { NetworkMonitor(app, app.applicationScope) }
 
     val csvHelpScrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
