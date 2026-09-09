@@ -4,61 +4,37 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 
-class NetworkMonitor(context: Context) {
-    private val connectivityManager =
+class NetworkMonitor(context: Context, scope: CoroutineScope) {
+    private val manager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    val isConnected: Flow<Boolean> = callbackFlow {
+    private val networkStatus: Flow<NetworkCapabilities?> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                super.onAvailable(network)
-                trySend(true)
-            }
-
-            override fun onLost(network: Network) {
-                super.onLost(network)
-                trySend(false)
-            }
+            override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+                trySend(capabilities) }
+            override fun onLost(network: Network) { trySend(null) }
         }
 
-        val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        trySend(capabilities != null)
+        trySend(manager.getNetworkCapabilities(manager.activeNetwork))
+        manager.registerDefaultNetworkCallback(callback)
+        awaitClose { manager.unregisterNetworkCallback(callback) }
+    }.distinctUntilChanged().conflate().shareIn(scope, SharingStarted.WhileSubscribed(5000), 1)
 
-        connectivityManager.registerDefaultNetworkCallback(callback)
+    val isConnected: Flow<Boolean> = networkStatus
+        .map { it != null }
+        .distinctUntilChanged()
 
-        awaitClose {
-            connectivityManager.unregisterNetworkCallback(callback)
-        }
-    }.conflate()
-
-    val isWifi: Flow<Boolean> = callbackFlow {
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onCapabilitiesChanged(
-                network: Network,
-                networkCapabilities: NetworkCapabilities
-            ) {
-                super.onCapabilitiesChanged(network, networkCapabilities)
-                trySend(networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI))
-            }
-
-            override fun onLost(network: Network) {
-                super.onLost(network)
-                trySend(false)
-            }
-        }
-
-        val capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-        trySend(capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true)
-
-        connectivityManager.registerDefaultNetworkCallback(callback)
-
-        awaitClose {
-            connectivityManager.unregisterNetworkCallback(callback)
-        }
-    }.conflate()
+    val isWifi: Flow<Boolean> = networkStatus
+        .map { it?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true }
+        .distinctUntilChanged()
 }

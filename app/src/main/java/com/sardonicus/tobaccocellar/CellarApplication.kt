@@ -65,7 +65,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         // Check Network Flow and trigger upload if there are pending ops,
         applicationScope.launch(Dispatchers.Default) {
-            val networkMonitor = NetworkMonitor(this@CellarApplication)
+            val networkMonitor = NetworkMonitor(this@CellarApplication, applicationScope)
             preferencesRepo.crossDeviceSync.collectLatest { enabled ->
                 if (enabled) {
                     launch {
