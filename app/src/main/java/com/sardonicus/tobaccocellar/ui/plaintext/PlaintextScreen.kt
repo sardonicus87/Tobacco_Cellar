@@ -51,6 +51,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.CopyKey
+import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -807,6 +810,7 @@ private fun PlaintextFormatting(
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, bottom = 16.dp)
                 .onFocusChanged { updateSelectionFocused(it.isFocused) }
+                .filterTextContextMenuComponents { it.key == CopyKey }
         ) { PlaceholderGuide() } }
 
         AnimatedVisibility (
@@ -975,12 +979,12 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                             .widthIn(max = maxKeyWidth),
                         contentAlignment = Alignment.CenterStart
                     ) {
-                        Text(
+                        DisableSelection { Text(
                             text = "${entry.key}:",
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.25.sp)
-                        )
+                        ) }
                     }
 
                     // VALUES (chunk column 3; column 2 is 8.dp padding)
@@ -1122,7 +1126,9 @@ private fun PrintDialog(
         shape = MaterialTheme.shapes.large,
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -1285,8 +1291,7 @@ private fun PrintDialog(
                                 modifier = Modifier
                                     .width(68.dp)
                                     .padding(vertical = 4.dp)
-                                    .onFocusChanged {
-                                        if (!it.hasFocus) marginsString = formatDecimal(margins) },
+                                    .onFocusChanged { if (!it.hasFocus) marginsString = formatDecimal(margins) },
                                 singleLine = true,
                                 suffix = {
                                     Text(
@@ -1423,7 +1428,8 @@ private fun SaveDialog(
                                 if (isSelected) selectedColor else LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .combinedClickable(null, null,
+                            .combinedClickable(
+                                null, null,
                                 onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = {
                                     if (preset.formatString.isNotBlank()) {
@@ -1438,14 +1444,18 @@ private fun SaveDialog(
                             contentAlignment = Alignment.CenterStart
                         ) {
                             Row (
-                                modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth(),
+                                modifier = Modifier
+                                    .height(IntrinsicSize.Min)
+                                    .fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 val color = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current
                                 val color2 = if (isSelected) LocalContentColor.current.copy(alpha = .2f) else LocalContentColor.current.copy(alpha = .5f)
                                 Text(
                                     text = "${it + 1}:",
-                                    modifier = Modifier.width(IntrinsicSize.Max).padding(end = 8.dp),
+                                    modifier = Modifier
+                                        .width(IntrinsicSize.Max)
+                                        .padding(end = 8.dp),
                                     maxLines = 1,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 )
@@ -1458,13 +1468,17 @@ private fun SaveDialog(
                                 )
                                 if (preset.formatString.isNotBlank()) {
                                     VerticalDivider(
-                                        modifier = Modifier.padding(horizontal = 6.dp).fillMaxHeight(),
+                                        modifier = Modifier
+                                            .padding(horizontal = 6.dp)
+                                            .fillMaxHeight(),
                                         color = color,
                                         thickness = 1.5.dp
                                     )
                                     Text(
                                         text = preset.delimiter.ifBlank{ "n/a" },
-                                        modifier = Modifier.width(44.dp).padding(start = 2.dp),
+                                        modifier = Modifier
+                                            .width(44.dp)
+                                            .padding(start = 2.dp),
                                         color = if (preset.delimiter.isBlank()) color2 else color,
                                         maxLines = 1,
                                         fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
@@ -1571,7 +1585,8 @@ private fun LoadDialog(
                                 else LocalCustomColors.current.darkNeutral,
                                 RoundedCornerShape(4.dp)
                             )
-                            .combinedClickable(null, null, preset.formatString.isNotBlank(),
+                            .combinedClickable(
+                                null, null, preset.formatString.isNotBlank(),
                                 onClick = { selectedSlot = if (isSelected) -1 else it },
                                 onLongClick = { selectedSlot = it; onConfirm(true) }
                             )
@@ -1593,13 +1608,17 @@ private fun LoadDialog(
                         )
                         if (preset.formatString.isNotBlank()) {
                             VerticalDivider(
-                                modifier = Modifier.padding(horizontal = 6.dp).fillMaxHeight(),
+                                modifier = Modifier
+                                    .padding(horizontal = 6.dp)
+                                    .fillMaxHeight(),
                                 color = LocalContentColor.current,
                                 thickness = 1.5.dp
                             )
                             Text(
                                 text = preset.delimiter.ifBlank{ "n/a" },
-                                modifier = Modifier.width(44.dp).padding(start = 2.dp),
+                                modifier = Modifier
+                                    .width(44.dp)
+                                    .padding(start = 2.dp),
                                 color = if (preset.delimiter.isBlank()) LocalContentColor.current.copy(alpha = .5f) else LocalContentColor.current,
                                 maxLines = 1,
                                 fontStyle = if (preset.delimiter.isBlank()) FontStyle.Italic else FontStyle.Normal,
