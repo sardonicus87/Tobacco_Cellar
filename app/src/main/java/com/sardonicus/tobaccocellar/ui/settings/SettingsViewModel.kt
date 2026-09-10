@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
-import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
@@ -31,7 +30,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -67,8 +65,7 @@ class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
     val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-    private val networkMonitor: NetworkMonitor,
-    private val application: Application
+    private val application: CellarApplication
 ): ViewModel() {
 
     /** Display Settings */
@@ -160,6 +157,7 @@ class SettingsViewModel(
         }
     }
 
+    private val networkMonitor = application.container.networkMonitor
     val networkEnabled: StateFlow<Boolean> = combine(
         preferencesRepo.allowMobileData,
         networkMonitor.isConnected,
@@ -291,7 +289,7 @@ class SettingsViewModel(
             if (enable) {
                 val email = userEmail.value
                 if (!email.isNullOrEmpty()) {
-                    (application as CellarApplication).periodicDownloadSetup()
+                    application.periodicDownloadSetup()
                 }
                 _signingIn.value = userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
@@ -435,7 +433,7 @@ class SettingsViewModel(
     fun clearLoginState() { viewModelScope.launch { EventBus.emit(SignOutEvent) } }
 
     private fun stopWorkers() {
-        viewModelScope.launch { (application as CellarApplication).cancelPeriodicSync() }
+        viewModelScope.launch { application.cancelPeriodicSync() }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {

@@ -9,7 +9,6 @@ import com.google.api.services.drive.model.File
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker.Companion.NETWORK_ERROR
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker.Companion.RESULT_KEY
-import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -30,7 +29,7 @@ class UploadSyncWorker(
 
         val allowMobile = preferencesRepo.allowMobileData.first()
         if (!allowMobile) {
-            val networkMonitor = NetworkMonitor(applicationContext, app.applicationScope)
+            val networkMonitor = app.container.networkMonitor
             val isWifi = networkMonitor.isWifi.first()
             if (!isWifi) { return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR)) }
         }

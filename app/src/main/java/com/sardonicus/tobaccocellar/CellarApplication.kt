@@ -25,7 +25,6 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,7 +64,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         // Check Network Flow and trigger upload if there are pending ops,
         applicationScope.launch(Dispatchers.Default) {
-            val networkMonitor = NetworkMonitor(this@CellarApplication, applicationScope)
+            val networkMonitor = container.networkMonitor
             preferencesRepo.crossDeviceSync.collectLatest { enabled ->
                 if (enabled) {
                     launch {

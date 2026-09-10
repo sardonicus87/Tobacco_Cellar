@@ -17,7 +17,6 @@ import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -45,7 +44,7 @@ class DownloadSyncWorker(
 
         val allowMobile = preferencesRepo.allowMobileData.first()
         if (!allowMobile) {
-            val networkMonitor = NetworkMonitor(applicationContext, app.applicationScope)
+            val networkMonitor = app.container.networkMonitor
             val isWifi = networkMonitor.isWifi.first()
             if (!isWifi) { return Result.success(workDataOf(RESULT_KEY to NETWORK_ERROR)) }
         }

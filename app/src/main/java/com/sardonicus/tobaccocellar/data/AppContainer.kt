@@ -2,9 +2,11 @@ package com.sardonicus.tobaccocellar.data
 
 import android.content.Context
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.ui.utilities.NetworkMonitor
 
 interface AppContainer {
     val itemsRepository: ItemsRepository
+    val networkMonitor: NetworkMonitor
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -12,5 +14,9 @@ class AppDataContainer(private val context: Context) : AppContainer {
         val database = TobaccoDatabase.getDatabase(context)
         val preferences = (context.applicationContext as CellarApplication).preferencesRepo
         OfflineItemsRepository(database.itemsDao(), database.pendingSyncOperationDao(), preferences, context)
+    }
+    override val networkMonitor: NetworkMonitor by lazy {
+        val app = context.applicationContext as CellarApplication
+        NetworkMonitor(app, app.applicationScope)
     }
 }
