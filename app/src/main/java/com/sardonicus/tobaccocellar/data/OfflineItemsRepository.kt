@@ -456,9 +456,7 @@ class OfflineItemsRepository(
     /** Cloud-sync **/
     override suspend fun getPendingSyncOperationDao(): PendingSyncOperationDao = this.pendingSyncOperationDao
 
-    override suspend fun triggerUploadWorker() {
-        scheduleSyncUpload()
-    }
+    override suspend fun triggerUploadWorker() { scheduleSyncUpload() }
 
     private suspend fun logOperation(operation: PendingSyncOperation) {
         if (SyncStateManager.loggingPaused) return
@@ -472,7 +470,6 @@ class OfflineItemsRepository(
         if (!preferencesRepo.crossDeviceSync.first()) return
 
         val allowMobileData = preferencesRepo.allowMobileData.first()
-
         val networkType = if (allowMobileData) NetworkType.CONNECTED else NetworkType.UNMETERED
 
         val workManager = WorkManager.getInstance(context)
@@ -488,7 +485,7 @@ class OfflineItemsRepository(
 
         workManager.enqueueUniqueWork(
             "upload_sync_work",
-            ExistingWorkPolicy.APPEND,
+            ExistingWorkPolicy.REPLACE,
             uploadWorkRequest
         )
     }
