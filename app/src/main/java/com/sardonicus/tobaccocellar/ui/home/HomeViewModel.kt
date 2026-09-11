@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.home
 
-import android.app.Application
 import android.net.Uri
 import android.os.Environment
 import androidx.compose.runtime.Immutable
@@ -11,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.BuildConfig
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.CsvHelper
 import com.sardonicus.tobaccocellar.data.Items
@@ -42,7 +42,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.takeWhile
@@ -59,7 +61,7 @@ class HomeViewModel(
     private val itemsRepository: ItemsRepository,
     private val filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
-    private val application: Application
+    private val application: CellarApplication
 ): ViewModel(), ExportCsvHandler {
 
     private val _releaseNotesState = MutableStateFlow(ReleaseNotesState())
@@ -81,7 +83,7 @@ class HomeViewModel(
     fun updateListRendered(rendered: Boolean) { _isRendered.value = rendered }
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             EventBus.events.collect {
                 if (it is DatabaseRestoreEvent) { _resetLoading.value = true }
             }
@@ -110,8 +112,8 @@ class HomeViewModel(
 
                 // Important alerts
                 launch {
-                    preferencesRepo.lastAlertFlow.takeWhile { lastShown ->
-                        lastShown < OneTimeAlerts.CURRENT_ALERT_VERSION
+                    preferencesRepo.lastAlertFlow.takeWhile {
+                        it < OneTimeAlerts.CURRENT_ALERT_VERSION
                     }.collect { lastShown ->
                         val unseenAlerts = OneTimeAlerts.alerts
                             .filter { it.id in (lastShown + 1)..OneTimeAlerts.CURRENT_ALERT_VERSION }
@@ -134,11 +136,9 @@ class HomeViewModel(
                 // Ensure Brand and Blend columns never get hidden, unhide them if so
                 launch {
                     val hiddenColumns = preferencesRepo.tableColumnsHidden.first()
-                    if (hiddenColumns.contains(TableColumn.BRAND.name)) {
-                        updateColumnVisibility(TableColumn.BRAND, true)
-                    }
-                    if (hiddenColumns.contains(TableColumn.BLEND.name)) {
-                        updateColumnVisibility(TableColumn.BLEND, true)
+                    if (hiddenColumns.contains(TableColumn.BRAND.name) || hiddenColumns.contains(TableColumn.BLEND.name)) {
+                        val unhide = hiddenColumns.minus(TableColumn.BRAND.name).minus(TableColumn.BLEND.name)
+                        preferencesRepo.saveTableColumnsHidden(unhide)
                     }
                 }
 
@@ -156,8 +156,14 @@ class HomeViewModel(
                             TypeGenreOption.TYPE_FALLBACK to types,
                             TypeGenreOption.SUB_FALLBACK to subgenres,
                         )
+                        delay(50.milliseconds)
                         if (enablement[option] ?: true) option else TypeGenreOption.TYPE
-                    }.collectLatest { preferencesRepo.saveTypeGenre(it.value) }
+                    }.distinctUntilChanged()
+                        .collectLatest {
+                            if (it != preferencesRepo.typeGenreOption.first()) {
+                                preferencesRepo.saveTypeGenre(it.value)
+                            }
+                        }
                 }
             }
         }
@@ -211,14 +217,13 @@ class HomeViewModel(
     val itemsCount = filterViewModel.homeScreenFilteredItems.map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-
     val viewSelect = preferencesRepo.isTableView.map { ViewSelect(isTableView = it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ViewSelect())
 
     val tableSorting = combine(
         preferencesRepo.sortColumnIndex,
-        preferencesRepo.sortAscending)
-    { columnIndex, sortAscending ->
+        preferencesRepo.sortAscending
+    ) { columnIndex, sortAscending ->
         TableSorting(columnIndex, sortAscending)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TableSorting())
 
@@ -267,7 +272,9 @@ class HomeViewModel(
         }
 
         ListSortingMenuState(viewSelect.isTableView, SortingOptionsList(sortingOptions), listSorting)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListSortingMenuState())
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListSortingMenuState())
 
     val menuState = combine(itemMenuShown, activeMenuId) { shown, id ->
         MenuState(shown, id)
@@ -287,7 +294,9 @@ class HomeViewModel(
 
             items.items.id to ItemQuantity(raw, display)
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     @Suppress("UNCHECKED_CAST")
     val sortedItems = combine(
@@ -308,7 +317,9 @@ class HomeViewModel(
         val sortQuantity = sortState.mapValues { it.value.raw }
 
         sortItems(filteredItems, viewSelect.isTableView, tableSorting, listSorting, sortQuantity, typeGenreOption)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val filteredTins = filterViewModel.homeScreenFilteredTins.map { TinsList(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinsList())
@@ -349,95 +360,16 @@ class HomeViewModel(
         }
 
         ItemsList(list)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ItemsList())
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ItemsList())
 
     val tableLayoutData = combine(
         preferencesRepo.tableColumnsHidden,
         preferencesRepo.typeGenreOption
     ) { tableColumnsHidden, typeGenreOption ->
-        val columnVisibility: Map<TableColumn, Boolean> = TableColumn.entries.associateWith { column ->
-            column.name !in tableColumnsHidden }
-
-        val columnMinWidths = TableColumn.entries.map {
-            val visible = columnVisibility[it] ?: true
-            if (!visible) { 0.dp } else {
-                when (it) {
-                    TableColumn.BRAND -> 180.dp
-                    TableColumn.BLEND -> 300.dp
-                    TableColumn.TYPE -> 108.dp
-                    TableColumn.SUBGENRE -> 120.dp
-                    TableColumn.RATING -> 64.dp
-                    TableColumn.FAV_DIS -> 64.dp
-                    TableColumn.NOTE -> 64.dp
-                    TableColumn.QTY -> 98.dp
-                    TableColumn.EDITED -> 108.dp
-                }
-            }
-        }
-        val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
-
-        val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
-        val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
-        val columnMapping = TableColumn.entries.map { column ->
-            when (column) {
-                TableColumn.BRAND -> { item: Items -> item.brand }
-                TableColumn.BLEND -> { item: Items -> item.blend }
-                TableColumn.TYPE -> { item: Items -> item.type.ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
-                TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) "(${item.type})" else "" } }
-                TableColumn.RATING -> { item: Items -> item.rating }
-                TableColumn.FAV_DIS -> { item: Items ->
-                    when {
-                        item.favorite -> 1
-                        item.disliked -> 2
-                        else -> 0
-                    }
-                }
-                TableColumn.NOTE -> { item: Items -> item.notes }
-                TableColumn.QTY -> { item: Items -> item.id }
-                TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "" else formatMediumDate(it, true) } }
-            }
-        }
-        val alignment = columnMinWidths.indices.map {
-            when (it) {
-                0 -> Alignment.CenterStart // brand
-                1 -> Alignment.CenterStart // blend
-                2 -> Alignment.Center // type
-                3 -> Alignment.Center // subgenre
-                4 -> Alignment.Center // rating
-                5 -> Alignment.Center // fav/dis
-                6 -> Alignment.Center // notes
-                7 -> Alignment.Center // quantity
-                8 -> Alignment.Center // edited
-                else -> Alignment.CenterStart
-            }
-        }
-
-        val headerText = columnMinWidths.indices.map {
-            val width = columnMinWidths[it]
-            if (width == 0.dp) "" else {
-                when (it) {
-                    0 -> "Brand"
-                    1 -> "Blend"
-                    2 -> "Type"
-                    3 -> "Subgenre"
-                    4 -> "" // rating
-                    5 -> "" // favorite/dislike
-                    6 -> "Note"
-                    7 -> "Qty"
-                    8 -> "Modified"
-                    else -> ""
-                }
-            }
-        }
-
-        TableLayoutData(
-            columnMinWidths = ColumnWidth(columnMinWidths),
-            totalWidth = totalWidth,
-            columnMapping = ColumnMapping(columnMapping),
-            alignment = ColumnAlignment(alignment),
-            headerText = HeaderText(headerText)
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TableLayoutData())
+        generateTableData(tableColumnsHidden, typeGenreOption)
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TableLayoutData())
 
 
     @Suppress("UNCHECKED_CAST")
@@ -633,81 +565,165 @@ class HomeViewModel(
         sortQuantity: Map<Int, Double>,
         typeGenreOption: TypeGenreOption,
     ): List<ItemsComponentsAndTins> {
-        return if (filteredItems.isNotEmpty()) {
-            if (isTableView) {
-                when (tableSorting.columnIndex) {
-                    0 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.brand }
-                        else filteredItems.sortedByDescending { it.items.brand }
-                    1 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.blend }
-                        else filteredItems.sortedByDescending { it.items.blend }
-                    2 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
-                        else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
-                    3 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                        else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
-                    4 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
-                        else filteredItems.sortedBy { it.items.rating ?: 6.0 }
-                    7 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] ?: 0.0 }
-                        else filteredItems.sortedBy {
-                            val quantity = sortQuantity[it.items.id] ?: 0.0
-                            if (quantity == 0.0) Double.MAX_VALUE else quantity }
-                    8 ->
-                        if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.lastModified }
-                        else filteredItems.sortedBy { it.items.lastModified }
-                    else -> filteredItems
-                }
-            } else {
-                when (listSorting.option) {
-                    ListSortOption.DEFAULT ->
-                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.id }
-                        else filteredItems.sortedByDescending { it.items.id }
-                    ListSortOption.BLEND ->
-                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.blend }
-                        else filteredItems.sortedByDescending { it.items.blend }
-                    ListSortOption.BRAND ->
-                        if (listSorting.listAscending) filteredItems.sortedBy { it.items.brand }
-                        else filteredItems.sortedByDescending { it.items.brand }
-                    ListSortOption.TYPE ->
-                        if (listSorting.listAscending) {
-                            if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                                filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                            } else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
-                        }
-                        else {
-                            if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                                filteredItems.sortedByDescending { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                            } else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
-                        }
-                    ListSortOption.SUBGENRE ->
-                        if (listSorting.listAscending) {
-                            if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                                filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
-                            } else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                        }
-                        else {
-                            if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                                filteredItems.sortedByDescending { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
-                            } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
-                        }
-                    ListSortOption.RATING ->
-                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
-                        else filteredItems.sortedBy { item -> item.items.rating ?: 6.0 }
-                    ListSortOption.QUANTITY ->
-                        if (listSorting.listAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
-                        else filteredItems.sortedBy {
-                            val quantity = sortQuantity[it.items.id] ?: 0.0
-                            if (quantity == 0.0) Double.MAX_VALUE else quantity }
-                    ListSortOption.EDITED ->
-                        if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.lastModified }
-                        else filteredItems.sortedBy { it.items.lastModified }
+        if (filteredItems.isEmpty()) return emptyList()
+        return if (isTableView) {
+            when (tableSorting.columnIndex) {
+                0 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.brand }
+                    else filteredItems.sortedByDescending { it.items.brand }
+                1 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.blend }
+                    else filteredItems.sortedByDescending { it.items.blend }
+                2 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
+                3 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                    else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                4 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
+                    else filteredItems.sortedBy { it.items.rating ?: 6.0 }
+                7 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] ?: 0.0 }
+                    else filteredItems.sortedBy {
+                        val quantity = sortQuantity[it.items.id] ?: 0.0
+                        if (quantity == 0.0) Double.MAX_VALUE else quantity }
+                8 ->
+                    if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.lastModified }
+                    else filteredItems.sortedBy { it.items.lastModified }
+                else -> filteredItems
+            }
+        } else {
+            when (listSorting.option) {
+                ListSortOption.DEFAULT ->
+                    if (listSorting.listAscending) filteredItems.sortedBy { it.items.id }
+                    else filteredItems.sortedByDescending { it.items.id }
+                ListSortOption.BLEND ->
+                    if (listSorting.listAscending) filteredItems.sortedBy { it.items.blend }
+                    else filteredItems.sortedByDescending { it.items.blend }
+                ListSortOption.BRAND ->
+                    if (listSorting.listAscending) filteredItems.sortedBy { it.items.brand }
+                    else filteredItems.sortedByDescending { it.items.brand }
+                ListSortOption.TYPE ->
+                    if (listSorting.listAscending) {
+                        if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
+                            filteredItems.sortedBy { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                        } else filteredItems.sortedBy { it.items.type.ifBlank { "~" } }
+                    }
+                    else {
+                        if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
+                            filteredItems.sortedByDescending { it.items.type.ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                        } else filteredItems.sortedByDescending { it.items.type.ifBlank { "~" } }
+                    }
+                ListSortOption.SUBGENRE ->
+                    if (listSorting.listAscending) {
+                        if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
+                            filteredItems.sortedBy { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                        } else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                    }
+                    else {
+                        if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
+                            filteredItems.sortedByDescending { it.items.subGenre.ifBlank { it.items.type.ifBlank { "~" } } }
+                        } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                    }
+                ListSortOption.RATING ->
+                    if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
+                    else filteredItems.sortedBy { item -> item.items.rating ?: 6.0 }
+                ListSortOption.QUANTITY ->
+                    if (listSorting.listAscending) filteredItems.sortedByDescending { sortQuantity[it.items.id] }
+                    else filteredItems.sortedBy {
+                        val quantity = sortQuantity[it.items.id] ?: 0.0
+                        if (quantity == 0.0) Double.MAX_VALUE else quantity }
+                ListSortOption.EDITED ->
+                    if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.lastModified }
+                    else filteredItems.sortedBy { it.items.lastModified }
+            }
+        }
+    }
+
+    private fun generateTableData(tableColumnsHidden: Set<String>, typeGenreOption: TypeGenreOption): TableLayoutData {
+        val columnVisibility: Map<TableColumn, Boolean> = TableColumn.entries.associateWith { column ->
+            column.name !in tableColumnsHidden }
+
+        val columnMinWidths = TableColumn.entries.map {
+            val visible = columnVisibility[it] ?: true
+            if (!visible) { 0.dp } else {
+                when (it) {
+                    TableColumn.BRAND -> 180.dp
+                    TableColumn.BLEND -> 300.dp
+                    TableColumn.TYPE -> 108.dp
+                    TableColumn.SUBGENRE -> 120.dp
+                    TableColumn.RATING -> 64.dp
+                    TableColumn.FAV_DIS -> 64.dp
+                    TableColumn.NOTE -> 64.dp
+                    TableColumn.QTY -> 98.dp
+                    TableColumn.EDITED -> 108.dp
                 }
             }
-        } else emptyList()
+        }
+        val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
+
+        val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
+        val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
+        val columnMapping = TableColumn.entries.map { column ->
+            when (column) {
+                TableColumn.BRAND -> { item: Items -> item.brand }
+                TableColumn.BLEND -> { item: Items -> item.blend }
+                TableColumn.TYPE -> { item: Items -> item.type.ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
+                TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) "(${item.type})" else "" } }
+                TableColumn.RATING -> { item: Items -> item.rating }
+                TableColumn.FAV_DIS -> { item: Items ->
+                    when {
+                        item.favorite -> 1
+                        item.disliked -> 2
+                        else -> 0
+                    }
+                }
+                TableColumn.NOTE -> { item: Items -> item.notes }
+                TableColumn.QTY -> { item: Items -> item.id }
+                TableColumn.EDITED -> { item: Items -> item.lastModified.let { if (it == 0L) "" else formatMediumDate(it, true) } }
+            }
+        }
+        val alignment = columnMinWidths.indices.map {
+            when (it) {
+                0 -> Alignment.CenterStart // brand
+                1 -> Alignment.CenterStart // blend
+                2 -> Alignment.Center // type
+                3 -> Alignment.Center // subgenre
+                4 -> Alignment.Center // rating
+                5 -> Alignment.Center // fav/dis
+                6 -> Alignment.Center // notes
+                7 -> Alignment.Center // quantity
+                8 -> Alignment.Center // edited
+                else -> Alignment.CenterStart
+            }
+        }
+
+        val headerText = columnMinWidths.indices.map {
+            val width = columnMinWidths[it]
+            if (width == 0.dp) "" else {
+                when (it) {
+                    0 -> "Brand"
+                    1 -> "Blend"
+                    2 -> "Type"
+                    3 -> "Subgenre"
+                    4 -> "" // rating
+                    5 -> "" // favorite/dislike
+                    6 -> "Note"
+                    7 -> "Qty"
+                    8 -> "Modified"
+                    else -> ""
+                }
+            }
+        }
+
+        return TableLayoutData(
+            columnMinWidths = ColumnWidth(columnMinWidths),
+            totalWidth = totalWidth,
+            columnMapping = ColumnMapping(columnMapping),
+            alignment = ColumnAlignment(alignment),
+            headerText = HeaderText(headerText)
+        )
     }
 
     private fun calculateTypeGenre(item: Items, option: TypeGenreOption): String {
@@ -780,8 +796,6 @@ class HomeViewModel(
             filterViewModel.ratingsExist, filterViewModel.favDisExist, filterViewModel.notesExist,
         ) {
             mapOf(
-                TableColumn.BRAND to true,
-                TableColumn.BLEND to true,
                 TableColumn.TYPE to it[0],
                 TableColumn.SUBGENRE to it[1],
                 TableColumn.RATING to it[2],
@@ -795,8 +809,6 @@ class HomeViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = mapOf(
-                    TableColumn.BRAND to true,
-                    TableColumn.BLEND to true,
                     TableColumn.TYPE to true,
                     TableColumn.SUBGENRE to true,
                     TableColumn.RATING to true,
@@ -810,9 +822,17 @@ class HomeViewModel(
     // make columns not visible automatically if they become disabled
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            columnVisibilityEnablement.collect { visibilityMap ->
+            columnVisibilityEnablement.collectLatest { visibilityMap ->
+                delay(50.milliseconds)
                 val disabled = visibilityMap.filterValues { !it }.keys
-                disabled.forEach { updateColumnVisibility(it, false) }
+                val currentHidden = preferencesRepo.tableColumnsHidden.first()
+                val newHidden = currentHidden + disabled.map { it.name }.distinct()
+                if (newHidden.isNotEmpty()) { preferencesRepo.saveTableColumnsHidden(newHidden) }
+
+                val currentSort = tableSorting.first()
+                if (currentSort.columnIndex in disabled.map { it.ordinal }) {
+                    preferencesRepo.saveTableSorting(-1, true)
+                }
             }
         }
     }
