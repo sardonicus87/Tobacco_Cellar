@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.navigation
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -48,7 +47,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
@@ -82,10 +81,9 @@ data class TwoPaneScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(mainEntry, secondEntry)
     override val metadata: Map<String, Any> = emptyMap()
 
-    @SuppressLint("ConfigurationScreenWidthHeight")
     override val content: @Composable (() -> Unit) = {
-        val configuration = LocalConfiguration.current
-        val expandedWidth = configuration.screenWidthDp.dp / 2
+        val density = LocalDensity.current
+        val expandedWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() / 2 }
         var initialComposition = remember { mutableStateOf(true) }
         var secondExpanded by remember { mutableStateOf(true) }
         var showButton by remember { mutableStateOf(false) }
@@ -161,7 +159,7 @@ data class TwoPaneScene<T : Any>(
                         .width(paneWidth)
                         .graphicsLayer { clip = true }
                         .onFocusChanged { secondFocus = it.hasFocus }
-                        .pointerInput(Unit) {
+                        .pointerInput(mainFocus, secondExpanded) {
                             awaitEachGesture {
                                 val down = awaitFirstDown(pass = PointerEventPass.Initial)
 
