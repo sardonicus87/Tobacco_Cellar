@@ -17,4 +17,5 @@ object EventBus {
 }
 
 data class ShowSnackbar (val message: String)
+data class ShowToast (val message: String)
 data object DismissSnackbar
