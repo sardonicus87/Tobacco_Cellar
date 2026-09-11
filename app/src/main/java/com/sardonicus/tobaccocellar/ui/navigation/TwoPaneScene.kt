@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -163,7 +164,9 @@ data class TwoPaneScene<T : Any>(
                             awaitEachGesture {
                                 val down = awaitFirstDown(pass = PointerEventPass.Initial)
 
-                                if (mainFocus) { focusManager.clearFocus(); down.consume() }
+                                if (mainFocus) {
+                                    focusManager.clearFocus(); down.consume()
+                                }
 
                                 if (secondExpanded && !down.isConsumed) {
                                     awaitFirstDown(pass = PointerEventPass.Final)
@@ -178,7 +181,7 @@ data class TwoPaneScene<T : Any>(
                             }
                         },
                     expandedWidth = expandedWidth,
-                    onEnter = { longDelay = false; secondExpanded = true }
+                    onEnter = { if (!secondExpanded){ longDelay = false; secondExpanded = true } }
                 )
             }
 
@@ -246,7 +249,7 @@ private fun <T : Any> PaneContainer(
     expandedWidth: Dp = 0.dp,
     onEnter: () -> Unit = {}
 ) {
-    LaunchedEffect(transition.targetState) { onEnter() }
+    SideEffect(transition.targetState.contentKey) { onEnter() }
 
     val contentTransform =
         (transition.targetState.metadata["transitionSpec"] as? ContentTransform) ?:
