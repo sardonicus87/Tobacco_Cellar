@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
-import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.Context
 import android.widget.Toast
@@ -222,7 +221,6 @@ fun PlaintextActionRow(
 }
 
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun SortingButton(
     viewModel: PlaintextViewModel,

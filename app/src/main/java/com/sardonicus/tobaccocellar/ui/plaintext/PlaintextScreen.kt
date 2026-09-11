@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.print.PrintManager
 import android.util.Log
@@ -234,7 +233,6 @@ fun PlaintextScreen(
     }
 }
 
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun PlaintextBody(
     viewModel: PlaintextViewModel,
@@ -488,8 +486,6 @@ private fun PlaintextBody(
         )
     }
 }
-
-
 
 
 @Composable
