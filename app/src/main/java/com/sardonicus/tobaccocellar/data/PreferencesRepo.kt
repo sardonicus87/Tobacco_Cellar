@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.io.IOException
@@ -110,7 +111,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading release notes preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[RELEASE_NOTES] }
+        }.map { it[RELEASE_NOTES] }.distinctUntilChanged()
 
     suspend fun saveReleaseNotes(version: Int) { dataStore.edit { it[RELEASE_NOTES] = version } }
 
@@ -120,7 +121,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading alert preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[LAST_ALERT_SHOWN] ?: 1 }
+        }.map { it[LAST_ALERT_SHOWN] ?: 1 }.distinctUntilChanged()
 
     suspend fun saveAlertShown(alertId: Int) { dataStore.edit { it[LAST_ALERT_SHOWN] = alertId } }
 
@@ -148,7 +149,7 @@ class PreferencesRepo(
                 SearchSetting.TinLabel.value -> SearchSetting.TinLabel
                 else -> SearchSetting.Blend
             }
-        }
+        }.distinctUntilChanged()
 
     suspend fun setSearchSetting(setting: String) { dataStore.edit { it[SEARCH_SETTING] = setting } }
 
@@ -162,7 +163,7 @@ class PreferencesRepo(
             val maxRating = it[MAX_RATING] ?: 5
             val rounding = it[RATING_ROUND] ?: 2
             ExportRating(maxRating, rounding)
-        }
+        }.distinctUntilChanged()
 
     suspend fun saveExportRating(rating: Int, rounding: Int) {
         dataStore.edit {
@@ -178,7 +179,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading view preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[IS_TABLE_VIEW] ?: false }
+        }.map { it[IS_TABLE_VIEW] ?: false }.distinctUntilChanged()
 
     suspend fun saveView(tableView: Boolean) { dataStore.edit { it[IS_TABLE_VIEW] = tableView } }
 
@@ -189,7 +190,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet() }
+        }.map { it[TABLE_COLUMNS_HIDDEN]?.split(",")?.toSet() ?: emptySet() }.distinctUntilChanged()
 
     suspend fun saveTableColumnsHidden(columnsHidden: Set<String>) {
         dataStore.edit { it[TABLE_COLUMNS_HIDDEN] = columnsHidden.joinToString(",") }
@@ -201,7 +202,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[SORT_COLUMN_INDEX] ?: -1 }
+        }.map { it[SORT_COLUMN_INDEX] ?: -1 }.distinctUntilChanged()
 
     val sortAscending: Flow<Boolean> = dataStore.data
         .catch {
@@ -209,7 +210,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading table sort preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[SORT_ASCENDING] ?: true }
+        }.map { it[SORT_ASCENDING] ?: true }.distinctUntilChanged()
 
     suspend fun saveTableSorting(index: Int, ascending: Boolean) {
         dataStore.edit { it[SORT_COLUMN_INDEX] = index; it[SORT_ASCENDING] = ascending }
@@ -234,7 +235,7 @@ class PreferencesRepo(
                 ListSortOption.EDITED.value -> ListSortOption.EDITED
                 else -> ListSortOption.DEFAULT
             }
-        }
+        }.distinctUntilChanged()
 
     val listAscending: Flow<Boolean> = dataStore.data
         .catch {
@@ -242,7 +243,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading list sort preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[LIST_ASCENDING] ?: true }
+        }.map { it[LIST_ASCENDING] ?: true }.distinctUntilChanged()
 
     suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
         dataStore.edit { it[LIST_SORTING] = listSorting; it[LIST_ASCENDING] = ascending }
@@ -287,7 +288,7 @@ class PreferencesRepo(
         }.map { setting ->
             val savedValue = setting[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
             TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
-        }
+        }.distinctUntilChanged()
 
     suspend fun saveTypeGenre(option: String) { dataStore.edit { it[TYPE_GENRE_OPTION] = option } }
 
@@ -305,7 +306,7 @@ class PreferencesRepo(
                 QuantityOption.GRAMS.value -> QuantityOption.GRAMS
                 else -> QuantityOption.TINS
             }
-        }
+        }.distinctUntilChanged()
 
     suspend fun saveQuantity(option: String) { dataStore.edit { it[QUANTITY_OPTION] = option } }
 
@@ -315,7 +316,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading link preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PARSE_LINKS] ?: true }
+        }.map { it[PARSE_LINKS] ?: true }.distinctUntilChanged()
 
     suspend fun saveParseLinks(parse: Boolean) { dataStore.edit { it[PARSE_LINKS] = parse } }
 
@@ -361,7 +362,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[CROSS_DEVICE_ACKNOWLEDGED] ?: false }
+        }.map { it[CROSS_DEVICE_ACKNOWLEDGED] ?: false }.distinctUntilChanged()
 
     suspend fun saveCDAcknowledge(yes: Boolean) { dataStore.edit { it[CROSS_DEVICE_ACKNOWLEDGED] = yes } }
 
@@ -371,7 +372,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[CROSS_DEVICE_SYNC] ?: false }
+        }.map { it[CROSS_DEVICE_SYNC] ?: false }.distinctUntilChanged()
 
     suspend fun saveCrossDeviceSync(sync: Boolean) { dataStore.edit { it[CROSS_DEVICE_SYNC] = sync } }
 
@@ -381,7 +382,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[ALLOW_MOBILE_DATA] ?: false }
+        }.map { it[ALLOW_MOBILE_DATA] ?: false }.distinctUntilChanged()
 
     suspend fun saveAllowMobile(allow: Boolean) { dataStore.edit { it[ALLOW_MOBILE_DATA] = allow } }
 
@@ -391,7 +392,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[SIGNED_IN_ACCOUNT] }
+        }.map { it[SIGNED_IN_ACCOUNT] }.distinctUntilChanged()
 
     val hasDriveScope: Flow<Boolean> = dataStore.data
         .catch {
@@ -399,7 +400,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[HAS_DRIVE_SCOPE] ?: false }
+        }.map { it[HAS_DRIVE_SCOPE] ?: false }.distinctUntilChanged()
 
     suspend fun saveLoginState(email: String, hasDriveScope: Boolean) {
         dataStore.edit { it[SIGNED_IN_ACCOUNT] = email; it[HAS_DRIVE_SCOPE] = hasDriveScope }
@@ -415,7 +416,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PROCESSED_SYNC_FILES]?.split(",")?.toSet() ?: emptySet() }
+        }.map { it[PROCESSED_SYNC_FILES]?.split(",")?.toSet() ?: emptySet() }.distinctUntilChanged()
 
     suspend fun saveProcessedSyncFiles(filesIds: Set<String>) {
         dataStore.edit { it[PROCESSED_SYNC_FILES] = filesIds.joinToString(",") }
@@ -427,7 +428,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading conversion preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[TIN_OZ_CONVERSION_RATE] ?: 1.75 }
+        }.map { it[TIN_OZ_CONVERSION_RATE] ?: 1.75 }.distinctUntilChanged()
 
     suspend fun setOzRate(rate: Double) { dataStore.edit { it[TIN_OZ_CONVERSION_RATE] = rate } }
 
@@ -437,7 +438,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading conversion preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[TIN_GRAMS_CONVERSION_RATE] ?: 50.0 }
+        }.map { it[TIN_GRAMS_CONVERSION_RATE] ?: 50.0 }.distinctUntilChanged()
 
     suspend fun setGramRate(rate: Double) { dataStore.edit { it[TIN_GRAMS_CONVERSION_RATE] = rate } }
 
@@ -447,7 +448,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[DEFAULT_SYNC] ?: false }
+        }.map { it[DEFAULT_SYNC] ?: false }.distinctUntilChanged()
 
     suspend fun saveDefaultSyncOption(sync: Boolean) { dataStore.edit { it[DEFAULT_SYNC] = sync } }
 
@@ -460,7 +461,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_FORMAT_STRING] ?: "" }
+        }.map { it[PLAINTEXT_FORMAT_STRING] ?: "" }.distinctUntilChanged()
 
     suspend fun setPtFormat(format: String) { dataStore.edit { it[PLAINTEXT_FORMAT_STRING] = format } }
 
@@ -470,7 +471,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_DELIMITER] ?: "" }
+        }.map { it[PLAINTEXT_DELIMITER] ?: "" }.distinctUntilChanged()
 
     suspend fun setPtDelimiter(delim: String) { dataStore.edit { it[PLAINTEXT_DELIMITER] = delim } }
 
@@ -480,7 +481,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_LIST_AS] ?: false }
+        }.map { it[PLAINTEXT_LIST_AS] ?: false }.distinctUntilChanged()
 
     suspend fun setPtListAs(listAs: Boolean) { dataStore.edit { it[PLAINTEXT_LIST_AS] = listAs } }
 
@@ -490,9 +491,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map {
-            it[PLAINTEXT_SORTING] ?: PlaintextSorting.DEFAULT.value
-        }
+        }.map { it[PLAINTEXT_SORTING] ?: PlaintextSorting.DEFAULT.value }.distinctUntilChanged()
 
     val plaintextSubSorting: Flow<String> = dataStore.data
         .catch {
@@ -500,7 +499,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_SUBSORTING] ?: PlaintextSorting.DEFAULT.value }
+        }.map { it[PLAINTEXT_SUBSORTING] ?: PlaintextSorting.DEFAULT.value }.distinctUntilChanged()
 
     val plaintextSortAscending: Flow<Boolean> = dataStore.data
         .catch{
@@ -508,7 +507,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_SORT_ASCENDING] ?: true }
+        }.map { it[PLAINTEXT_SORT_ASCENDING] ?: true }.distinctUntilChanged()
 
     suspend fun setPtSort(sort: String, ascend: Boolean) {
         dataStore.edit { it[PLAINTEXT_SORTING] = sort; it[PLAINTEXT_SORT_ASCENDING] = ascend }
@@ -522,17 +521,15 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_PRINT_FONT] ?: 12f }
+        }.map { it[PLAINTEXT_PRINT_FONT] ?: 12f }.distinctUntilChanged()
 
     val plaintextPrintMargin: Flow<Double> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
-            } else {
-                throw it
-            }
-        }.map { it[PLAINTEXT_PRINT_MARGIN] ?: 1.0 }
+            } else { throw it }
+        }.map { it[PLAINTEXT_PRINT_MARGIN] ?: 1.0 }.distinctUntilChanged()
 
     suspend fun setPtPrintOptions(font: Float, margin: Double) {
         dataStore.edit { it[PLAINTEXT_PRINT_FONT] = font; it[PLAINTEXT_PRINT_MARGIN] = margin }
@@ -552,7 +549,7 @@ class PreferencesRepo(
                     delimiter = preferences[ptDelimiterKey(it)] ?: ""
                 )
             }
-        }
+        }.distinctUntilChanged()
 
     suspend fun savePtPreset(slot: Int, format: String, delimiter: String) {
         dataStore.edit { it[ptFormatKey(slot)] = format; it[ptDelimiterKey(slot)] = delimiter }
@@ -597,7 +594,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading sync state.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[SYNC_SETTINGS_MIGRATED] ?: false }
+        }.map { it[SYNC_SETTINGS_MIGRATED] ?: false }.distinctUntilChanged()
 
     suspend fun setSyncSettingsMigrated() { dataStore.edit { it[SYNC_SETTINGS_MIGRATED] = true } }
 
