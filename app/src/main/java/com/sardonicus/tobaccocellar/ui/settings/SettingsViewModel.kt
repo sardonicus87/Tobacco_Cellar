@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -84,6 +85,7 @@ class SettingsViewModel(
             TypeGenreOption.SUB_FALLBACK to subgenres,
         )
     }
+        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -102,7 +104,9 @@ class SettingsViewModel(
     ) { option, typeGenreEnablement ->
         val enabled = typeGenreEnablement[option] ?: true
         if (enabled) option else TypeGenreOption.TYPE
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TypeGenreOption.TYPE)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TypeGenreOption.TYPE)
 
     val quantityOption = preferencesRepo.quantityOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), QuantityOption.TINS)
 
@@ -165,6 +169,7 @@ class SettingsViewModel(
     ) { allowMobile, isConnected, isWifi ->
         (allowMobile && isConnected) || isWifi
     }
+        .flowOn(Dispatchers.Default)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
