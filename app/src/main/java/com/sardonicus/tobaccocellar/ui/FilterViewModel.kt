@@ -37,7 +37,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -315,185 +317,190 @@ class FilterViewModel (
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeScrollState())
 
 
-    /** Filtering states **/
-    // available fields for filter //
-    private val _autoComplete = MutableStateFlow(AutoCompleteData())
-    val autoComplete: StateFlow<AutoCompleteData> = _autoComplete
-
-    private val _availableBrands = MutableStateFlow<List<String>>(emptyList())
-    val availableBrands: StateFlow<List<String>> = _availableBrands
-
-    private val _availableTypes = MutableStateFlow<List<String>>(emptyList())
-
-    private val _availableSubgenres = MutableStateFlow<List<String>>(emptyList())
-
-    private val _availableCuts = MutableStateFlow<List<String>>(emptyList())
-
-    private val _availableComponents = MutableStateFlow<List<String>>(emptyList())
-
-    private val _availableFlavorings = MutableStateFlow<List<String>>(emptyList())
-
-    private val _availableContainers = MutableStateFlow<List<String>>(emptyList())
-
-    private val _typesExist = MutableStateFlow(true)
-    val typesExist: StateFlow<Boolean> = _typesExist
-
-    private val _subgenresExist = MutableStateFlow(true)
-    val subgenresExist: StateFlow<Boolean> = _subgenresExist
-
-    private val _ratingsExist = MutableStateFlow(true)
-    val ratingsExist: StateFlow<Boolean> = _ratingsExist
-
-    private val _favDisExist = MutableStateFlow(true)
-    val favDisExist: StateFlow<Boolean> = _favDisExist
-
-    private val _tinsExist = MutableStateFlow(true)
-    val tinsExist: StateFlow<Boolean> = _tinsExist
-
-    private val _tinsReady = MutableStateFlow(false)
-    val tinsReady: StateFlow<Boolean> = _tinsReady
-
-    private val _notesExist = MutableStateFlow(true)
-    val notesExist: StateFlow<Boolean> = _notesExist
-
-    private val _datesExist = MutableStateFlow(true)
-    val datesExist: StateFlow<Boolean> = _datesExist
-
-    private val _emptyDatabase = MutableStateFlow(false)
-    val emptyDatabase: StateFlow<Boolean> = _emptyDatabase
-
     // database refresh on restore
     @OptIn(ExperimentalCoroutinesApi::class)
     val everythingFlow: Flow<List<ItemsComponentsAndTins>> =
         refresh.onStart { emit(Unit) }.flatMapLatest { itemsRepository.getEverythingStream() }
-            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+            .distinctUntilChanged().shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
+
+    /** Filtering states **/
+    // available fields for filter //
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val cellarMetaData: StateFlow<CellarMetaData> = everythingFlow.mapLatest { data ->
+        generateMetaData(data)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CellarMetaData())
+
+    private fun generateMetaData(data: List<ItemsComponentsAndTins>): CellarMetaData {
+        if (data.isEmpty()) { return CellarMetaData() }
+
+        val brands = mutableSetOf<String>()
+        val types = mutableSetOf<String>()
+        val subgenres = mutableSetOf<String>()
+        val cuts = mutableSetOf<String>()
+        val components = mutableSetOf<String>()
+        val flavorings = mutableSetOf<String>()
+        val containers = mutableSetOf<String>()
+
+        var typesAny = false
+        var subgenresAny = false
+        var ratingsAny = false
+        var favDisAny = false
+        var tinsAny = false
+        var notesAny = false
+        var datesAny = false
+
+        for (itemFull in data) {
+            val item = itemFull.items
+
+            brands.add(item.brand)
+            types.add(item.type.ifBlank { "(Unassigned)" })
+            subgenres.add(item.subGenre.ifBlank { "(Unassigned)" })
+            cuts.add(item.cut.ifBlank { "(Unassigned)" })
+
+            if (item.type.isNotBlank()) typesAny = true
+            if (item.subGenre.isNotBlank()) subgenresAny = true
+            if (item.rating != null) ratingsAny = true
+            if (item.favorite || item.disliked) favDisAny = true
+            if (item.notes.isNotBlank()) notesAny = true
+
+            if (itemFull.components.isEmpty()) { components.add("(None Assigned)") }
+            else {
+                for (comp in itemFull.components) { components.add(comp.componentName) }
+            }
+
+            if (itemFull.flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
+            else {
+                for (flavor in itemFull.flavoring) { flavorings.add(flavor.flavoringName) }
+            }
+
+            if (itemFull.tins.isNotEmpty()) {
+                tinsAny = true
+                for (tin in itemFull.tins) {
+                    containers.add(tin.container.ifBlank { "(Unassigned)" })
+                    if (!datesAny && (tin.manufactureDate != null || tin.cellarDate != null || tin.openDate != null)) {
+                        datesAny = true
+                    }
+                }
+            }
+        }
+
+        val placeComparator = compareBy<String> {
+            if (it == "(Unassigned)" || it == "(None Assigned)") 1 else 0
+        }.thenBy { it.lowercase() }
+
+        return CellarMetaData(
+            availableBrands = brands.sorted(),
+            availableTypes = types.sortedWith(compareBy { typeOrder[it] ?: typeOrder.size }),
+            availableSubgenres = subgenres.sortedWith(placeComparator),
+            availableCuts = cuts.sortedWith(placeComparator),
+            availableComponents = components.sortedWith(placeComparator),
+            availableFlavorings = flavorings.sortedWith(placeComparator),
+            availableContainers = containers.sortedWith(placeComparator),
+            typesExist = typesAny,
+            subgenresExist = subgenresAny,
+            ratingsExist = ratingsAny,
+            favDisExist = favDisAny,
+            tinsExist = tinsAny,
+            notesExist = notesAny,
+            datesExist = datesAny,
+            autoCompleteData = AutoCompleteData(
+                brands = brands.sorted(),
+                subgenres = subgenres.filter { it != "(Unassigned)" }.sorted(),
+                cuts = cuts.filter { it != "(Unassigned)" }.sorted(),
+                components = components.filter { it != "(None Assigned)" }.sorted(),
+                flavorings = flavorings.filter { it != "(None Assigned)" }.sorted(),
+                tinContainers = containers.filter { it != "(Unassigned)" }.sorted()
+            ),
+            emptyDatabase = false
+        )
+    }
+
+    private val _autoComplete = MutableStateFlow(AutoCompleteData())
+    val autoComplete = _autoComplete.asStateFlow()
+
+    val availableBrands = cellarMetaData.map { it.availableBrands }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableTypes = cellarMetaData.map { it.availableTypes }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableSubgenres = cellarMetaData.map { it.availableSubgenres }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableCuts = cellarMetaData.map { it.availableCuts }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableComponents = cellarMetaData.map { it.availableComponents }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableFlavorings = cellarMetaData.map { it.availableFlavorings }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _availableContainers = cellarMetaData.map { it.availableContainers }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val typesExist = cellarMetaData.map { it.typesExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val subgenresExist = cellarMetaData.map { it.subgenresExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val ratingsExist = cellarMetaData.map { it.ratingsExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val favDisExist = cellarMetaData.map { it.favDisExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val tinsExist = cellarMetaData.map { it.tinsExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val notesExist = cellarMetaData.map { it.notesExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val datesExist = cellarMetaData.map { it.datesExist }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val emptyDatabase = cellarMetaData.map { it.emptyDatabase }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _tinsReady = MutableStateFlow(false)
+    val tinsReady: StateFlow<Boolean> = _tinsReady
 
 
     // setting available vals
     private val _selectionHistory = MutableStateFlow<List<Pair<FilterCategory, Any?>>>(emptyList())
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            everythingFlow.collectLatest { data ->
-                if (data.isEmpty()) {
-                    _availableBrands.value = emptyList()
-                    _availableTypes.value = emptyList()
-                    _availableSubgenres.value = emptyList()
-                    _availableCuts.value = emptyList()
-                    _availableComponents.value = emptyList()
-                    _availableFlavorings.value = emptyList()
-                    _availableContainers.value = emptyList()
-                    _typesExist.value = false
-                    _subgenresExist.value = false
-                    _ratingsExist.value = false
-                    _favDisExist.value = false
-                    _tinsExist.value = false
-                    _notesExist.value = false
-                    _datesExist.value = false
-                    _emptyDatabase.value = true
-                    _autoComplete.value = AutoCompleteData()
-                    return@collectLatest
-                }
-
-                val brands = mutableSetOf<String>()
-                val types = mutableSetOf<String>()
-                val subgenres = mutableSetOf<String>()
-                val cuts = mutableSetOf<String>()
-                val components = mutableSetOf<String>()
-                val flavorings = mutableSetOf<String>()
-                val containers = mutableSetOf<String>()
-
-                var typesAny = false
-                var subgenresAny = false
-                var ratingsAny = false
-                var favDisAny = false
-                var tinsAny = false
-                var notesAny = false
-                var datesAny = false
-
-                for (itemFull in data) {
-                    val item = itemFull.items
-
-                    brands.add(item.brand)
-                    types.add(item.type.ifBlank { "(Unassigned)" })
-                    subgenres.add(item.subGenre.ifBlank { "(Unassigned)" })
-                    cuts.add(item.cut.ifBlank { "(Unassigned)" })
-
-                    if (item.type.isNotBlank()) typesAny = true
-                    if (item.subGenre.isNotBlank()) subgenresAny = true
-                    if (item.rating != null) ratingsAny = true
-                    if (item.favorite || item.disliked) favDisAny = true
-                    if (item.notes.isNotBlank()) notesAny = true
-
-                    if (itemFull.components.isEmpty()) { components.add("(None Assigned)") }
-                    else {
-                        for (comp in itemFull.components) { components.add(comp.componentName) }
+            launch {
+                everythingFlow.distinctUntilChanged().collectLatest {
+                    val invalid = _selectionHistory.value.filter { (cat, value) ->
+                        isSelectionInvalid(cat, value)
                     }
-
-                    if (itemFull.flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
-                    else {
-                        for (flavor in itemFull.flavoring) { flavorings.add(flavor.flavoringName) }
+                    if (invalid.isNotEmpty()) {
+                        invalid.forEach { (cat, value) -> removeFilter(cat, value) }
                     }
-
-                    if (itemFull.tins.isNotEmpty()) {
-                        tinsAny = true
-                        for (tin in itemFull.tins) {
-                            containers.add(tin.container.ifBlank { "(Unassigned)" })
-                            if (!datesAny && (tin.manufactureDate != null || tin.cellarDate != null || tin.openDate != null)) {
-                                datesAny = true
-                            }
-                        }
-                    }
-                }
-
-                val placeComparator = compareBy<String> {
-                    if (it == "(Unassigned)" || it == "(None Assigned)") 1 else 0
-                }.thenBy { it.lowercase() }
-
-                _availableBrands.value = brands.sorted()
-                _availableTypes.value = types.sortedWith(compareBy { typeOrder[it] ?: typeOrder.size })
-                _availableSubgenres.value = subgenres.sortedWith(placeComparator)
-                _availableCuts.value = cuts.sortedWith(placeComparator)
-                _availableComponents.value = components.sortedWith(placeComparator)
-                _availableFlavorings.value = flavorings.sortedWith(placeComparator)
-                _availableContainers.value = containers.sortedWith(placeComparator)
-
-                _typesExist.value = typesAny
-                _subgenresExist.value = subgenresAny
-                _ratingsExist.value = ratingsAny
-                _favDisExist.value = favDisAny
-                _tinsExist.value = tinsAny
-                _notesExist.value = notesAny
-                _datesExist.value = datesAny
-                _emptyDatabase.value = false
-                _autoComplete.value = AutoCompleteData(
-                    brands = _availableBrands.value,
-                    subgenres = _availableSubgenres.value.filter { it != "(Unassigned)" },
-                    cuts = _availableCuts.value.filter { it != "(Unassigned)" },
-                    components = _availableComponents.value.filter { it != "(None Assigned)" },
-                    flavorings = _availableFlavorings.value.filter { it != "(None Assigned)" },
-                    tinContainers = _availableContainers.value.filter { it != "(Unassigned)" }
-                )
-
-                val invalid = _selectionHistory.value.filter { (cat, value) ->
-                    isSelectionInvalid(cat, value)
-                }
-                if (invalid.isNotEmpty()) {
-                    invalid.forEach { (cat, value) -> removeFilter(cat, value) }
                 }
             }
-        }
-        viewModelScope.launch(Dispatchers.Default) {
-            combine (everythingFlow, preferencesRepo.datesSeen) { everything, datesString ->
-                val lastSeen = datesString.split(",").mapNotNull { it.trim().toIntOrNull() }
-                everything.flatMap { it.tins }
-                    .filter { tins ->
-                        tins.openDate?.let {
-                            Instant.ofEpochMilli(it)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
-                        } ?: false }
-                    .map { it.tinId }.any { it !in lastSeen }
-            }.collect { _tinsReady.value = it }
+            launch {
+                combine(everythingFlow, preferencesRepo.datesSeen) { everything, datesString ->
+                    val lastSeen = datesString.split(",").mapNotNull { it.trim().toIntOrNull() }
+                    everything.flatMap { it.tins }
+                        .filter { tins ->
+                            tins.openDate?.let {
+                                Instant.ofEpochMilli(it)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate() in LocalDate.now()..LocalDate.now().plusDays(7)
+                            } ?: false
+                        }
+                        .map { it.tinId }.any { it !in lastSeen }
+                }.collect { _tinsReady.value = it }
+            }
+            launch {
+                cellarMetaData.collect { _autoComplete.value = it.autoCompleteData }
+            }
         }
     }
 
@@ -508,58 +515,15 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val unifiedFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
-            everythingFlow, _selectedBrands, _selectedExcludeBrands, _selectedTypes,
-            _selectedFavorites, _selectedExcludeFavorites, _selectedDislikeds,
-            _selectedExcludeDislikeds, _selectedInStock, _selectedOutOfStock, _selectedSubgenres,
-            _selectedCuts, _selectedComponents, _compMatching, _selectedFlavorings, _flavorMatching,
-            _selectedProduction, _selectedOutOfProduction, _selectedHasTins, _selectedNoTins,
-            _selectedContainer, _selectedOpened, _selectedUnopened, _selectedFinished,
-            _selectedUnfinished, _selectedUnrated, _selectedRatingLow, _selectedRatingHigh,
+            everythingFlow, filterSelectionsFlow,
             preferencesRepo.quantityOption, preferencesRepo.tinOzConversionRate,
             preferencesRepo.tinGramsConversionRate
-        ) { values ->
-            val allItems = values[0] as List<ItemsComponentsAndTins>
-            val brands = values[1] as List<String>
-            val excludeBrands = values[2] as List<String>
-            val types = values[3] as List<String>
-            val favorites = values[4] as Boolean
-            val excludeLikes = values[5] as Boolean
-            val dislikeds = values[6] as Boolean
-            val excludeDislikes = values[7] as Boolean
-            val inStock = values[8] as Boolean
-            val outOfStock = values[9] as Boolean
-            val subgenres = values[10] as List<String>
-            val cuts = values[11] as List<String>
-            val components = values[12] as List<String>
-            val compMatching = values[13] as FlowMatchOption
-            val flavoring = values[14] as List<String>
-            val flavorMatching = values[15] as FlowMatchOption
-            val production = values[16] as Boolean
-            val outOfProduction = values[17] as Boolean
-            val hasTins = values[18] as Boolean
-            val noTins = values[19] as Boolean
-            val container = values[20] as List<String>
-            val opened = values[21] as Boolean
-            val unopened = values[22] as Boolean
-            val finished = values[23] as Boolean
-            val unfinished = values[24] as Boolean
-            val unrated = values[25] as Boolean
-            val ratingLow = values[26] as Double?
-            val ratingHigh = values[27] as Double?
-            val quantityOption = values[28] as QuantityOption
-            val ozRate = values[29] as Double
-            val gramsRate = values[30] as Double
-
+        ) { allItems, selections, qtyOption, ozRate, gramsRate ->
             val applyTin = true
 
-            generateFilteredItemsList(
-                allItems, brands, excludeBrands, types, favorites, dislikeds, excludeLikes,
-                excludeDislikes, inStock, outOfStock, subgenres, cuts, components, compMatching,
-                flavoring, flavorMatching, production, outOfProduction, hasTins, noTins, container,
-                opened, unopened, finished, unfinished, unrated, ratingLow, ratingHigh, quantityOption,
-                ozRate, gramsRate, applyTin
-            )
+            generateFilteredItemsList(allItems, selections, qtyOption, ozRate, gramsRate, applyTin)
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @Suppress("UNCHECKED_CAST")
@@ -582,80 +546,72 @@ class FilterViewModel (
                 }
             }
             else filteredItems
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     @Suppress("SameParameterValue")
     private fun generateFilteredItemsList(
-        allItems: List<ItemsComponentsAndTins>,
-
-        brands: List<String>, excludeBrands: List<String>, types: List<String>, favorites: Boolean,
-        dislikeds: Boolean, excludeFavorites: Boolean, excludeDislikeds: Boolean, inStock: Boolean,
-        outOfStock: Boolean, subgenres: List<String>, cuts: List<String>, components: List<String>,
-        compMatching: FlowMatchOption, flavorings: List<String>, flavorMatching: FlowMatchOption,
-        production: Boolean, outOfProduction: Boolean, hasTins: Boolean, noTins: Boolean,
-        container: List<String>, opened: Boolean, unopened: Boolean, finished: Boolean,
-        unfinished: Boolean, unrated: Boolean, ratingLow: Double?, ratingHigh: Double?,
-        quantityOption: QuantityOption, ozRate: Double, gramsRate: Double,
-
-        applyTinFilter: Boolean
+        allItems: List<ItemsComponentsAndTins>, selections: SheetSelections,
+        quantityOption: QuantityOption, ozRate: Double, gramsRate: Double, applyTinFilter: Boolean
     ): List<ItemsComponentsAndTins> {
         if (allItems.isEmpty()) return emptyList()
         val now = System.currentTimeMillis()
 
         return allItems.filter { items ->
             val tinFiltering = if (!applyTinFilter) items.tins else items.tins.filter { tin ->
-                (!opened || (tin.openDate != null && tin.openDate < now)) &&
-                        (!unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
-                        (!finished || tin.finished) &&
-                        (!unfinished || !tin.finished) &&
-                        (container.isEmpty() || container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                (!selections.opened || (tin.openDate != null && tin.openDate < now)) &&
+                        (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
+                        (!selections.finished || tin.finished) &&
+                        (!selections.unfinished || !tin.finished) &&
+                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
             }
 
-            val compMatch = when (compMatching) {
-                FlowMatchOption.ALL -> (components.isEmpty() || (components == listOf("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(components))
-                FlowMatchOption.ONLY -> (components.isEmpty() || (components == listOf("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.containsAll(components) && items.components.size == components.size))
-                else -> (components.isEmpty() || ((components.contains("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.any { components.contains(it) }))
+            val compMatch = when (selections.compMatching) {
+                FlowMatchOption.ALL -> (selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(selections.components))
+                FlowMatchOption.ONLY -> (selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.containsAll(selections.components) && items.components.size == selections.components.size))
+                else -> (selections.components.isEmpty() || ((selections.components.contains("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.any { selections.components.contains(it) }))
             }
-            val flavorMatch = when (flavorMatching) {
-                FlowMatchOption.ALL -> (flavorings.isEmpty() || (flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.containsAll(flavorings))
-                FlowMatchOption.ONLY -> (flavorings.isEmpty() || (flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(flavorings) && items.flavoring.size == flavorings.size))
-                else -> (flavorings.isEmpty() || ((flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { flavorings.contains(it) }))
+            val flavorMatch = when (selections.flavorMatching) {
+                FlowMatchOption.ALL -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings))
+                FlowMatchOption.ONLY -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings) && items.flavoring.size == selections.flavorings.size))
+                else -> (selections.flavorings.isEmpty() || ((selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { selections.flavorings.contains(it) }))
             }
 
             val quantity = calculateTotalQuantity(items, tinFiltering, quantityOption, ozRate, gramsRate)
             val isInStock = quantity > 0.0
 
-            val ratingRangeLow = (ratingLow != null && (items.items.rating != null && (items.items.rating >= ratingLow)))
-            val ratingRangeHigh = (ratingHigh != null && (items.items.rating != null && (items.items.rating <= ratingHigh)))
+            val ratingRangeLow = (selections.ratingLow != null && (items.items.rating != null && (items.items.rating >= selections.ratingLow)))
+            val ratingRangeHigh = (selections.ratingHigh != null && (items.items.rating != null && (items.items.rating <= selections.ratingHigh)))
 
             val baseFilters =
-                (brands.isEmpty() || brands.contains(items.items.brand)) &&
-                        (excludeBrands.isEmpty() || !excludeBrands.contains(items.items.brand)) &&
-                        (types.isEmpty() || types.contains(items.items.type.ifBlank { "(Unassigned)" })) &&
-                        (!favorites || if (dislikeds) (items.items.disliked || items.items.favorite) else items.items.favorite) &&
-                        (!excludeFavorites || !items.items.favorite) &&
-                        (!dislikeds || if (favorites) (items.items.favorite || items.items.disliked) else items.items.disliked) &&
-                        (!excludeDislikeds || !items.items.disliked) &&
-                        (!inStock || isInStock) &&
-                        (!outOfStock || !isInStock) &&
+                (selections.brands.isEmpty() || selections.brands.contains(items.items.brand)) &&
+                        (selections.excludeBrands.isEmpty() || !selections.excludeBrands.contains(items.items.brand)) &&
+                        (selections.types.isEmpty() || selections.types.contains(items.items.type.ifBlank { "(Unassigned)" })) &&
+                        (!selections.favorites || if (selections.dislikeds) (items.items.disliked || items.items.favorite) else items.items.favorite) &&
+                        (!selections.excludeFavorites || !items.items.favorite) &&
+                        (!selections.dislikeds || if (selections.favorites) (items.items.favorite || items.items.disliked) else items.items.disliked) &&
+                        (!selections.excludeDislikeds || !items.items.disliked) &&
+                        (!selections.inStock || isInStock) &&
+                        (!selections.outOfStock || !isInStock) &&
                         compMatch &&
                         flavorMatch &&
-                        (subgenres.isEmpty() || subgenres.contains(items.items.subGenre.ifBlank { "(Unassigned)" })) &&
-                        (cuts.isEmpty() || cuts.contains(items.items.cut.ifBlank { "(Unassigned)" })) &&
-                        (!production || items.items.inProduction) &&
-                        (!outOfProduction || !items.items.inProduction) &&
-                        (!unrated || (items.items.rating == null || ratingRangeLow || ratingRangeHigh)) &&
-                        (ratingLow == null || (if (unrated) (items.items.rating == null || ratingRangeLow) else ratingRangeLow)) &&
-                        (ratingHigh == null || (if (unrated) (items.items.rating == null || ratingRangeHigh) else ratingRangeHigh))
+                        (selections.subgenres.isEmpty() || selections.subgenres.contains(items.items.subGenre.ifBlank { "(Unassigned)" })) &&
+                        (selections.cuts.isEmpty() || selections.cuts.contains(items.items.cut.ifBlank { "(Unassigned)" })) &&
+                        (!selections.production || items.items.inProduction) &&
+                        (!selections.outOfProduction || !items.items.inProduction) &&
+                        (!selections.unrated || (items.items.rating == null || ratingRangeLow || ratingRangeHigh)) &&
+                        (selections.ratingLow == null || (if (selections.unrated) (items.items.rating == null || ratingRangeLow) else ratingRangeLow)) &&
+                        (selections.ratingHigh == null || (if (selections.unrated) (items.items.rating == null || ratingRangeHigh) else ratingRangeHigh))
 
             val tinsFilterResult = if (!applyTinFilter) true else {
-                (!hasTins || items.tins.isNotEmpty()) &&
-                        (!noTins || items.tins.isEmpty()) &&
-                        (!opened || tinFiltering.isNotEmpty()) &&
-                        (!unopened || tinFiltering.isNotEmpty()) &&
-                        (!finished || tinFiltering.isNotEmpty()) &&
-                        (!unfinished || tinFiltering.isNotEmpty()) &&
-                        (container.isEmpty() || tinFiltering.isNotEmpty())
+                (!selections.hasTins || items.tins.isNotEmpty()) &&
+                        (!selections.noTins || items.tins.isEmpty()) &&
+                        (!selections.opened || tinFiltering.isNotEmpty()) &&
+                        (!selections.unopened || tinFiltering.isNotEmpty()) &&
+                        (!selections.finished || tinFiltering.isNotEmpty()) &&
+                        (!selections.unfinished || tinFiltering.isNotEmpty()) &&
+                        (selections.container.isEmpty() || tinFiltering.isNotEmpty())
             }
 
             baseFilters && tinsFilterResult
@@ -676,7 +632,9 @@ class FilterViewModel (
             val unfinished = values[5] as Boolean
 
             generateFilteredTinsList(items, container, opened, unopened, finished, unfinished)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
 
     @Suppress("UNCHECKED_CAST")
     val homeScreenFilteredTins: StateFlow<List<Tins>> =
@@ -695,7 +653,9 @@ class FilterViewModel (
                         .filter { it.tinLabel.contains(currentSearchValue, true) } }
                 else { emptyList() }
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
+        }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), listOf())
 
     private fun generateFilteredTinsList(
         allItems: List<ItemsComponentsAndTins>, container: List<String>, opened: Boolean,
@@ -727,7 +687,19 @@ class FilterViewModel (
         val ozRate = array[3] as Double
         val gramsRate = array[4] as Double
 
-        if (allItems.isEmpty()) return@combine EnablementState()
+        calculateEnablement(allItems, selections, quantityOption, ozRate, gramsRate)
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), EnablementState())
+
+    private fun calculateEnablement(
+        allItems: List<ItemsComponentsAndTins>,
+        selections: SheetSelections,
+        quantityOption: QuantityOption,
+        ozRate: Double,
+        gramsRate: Double,
+    ) : EnablementState {
+        if (allItems.isEmpty()) return EnablementState()
         val now = System.currentTimeMillis()
 
         val brandsMap = mutableMapOf<String, Boolean>()
@@ -745,11 +717,23 @@ class FilterViewModel (
             if (selections.flavorings.isEmpty()) FlowMatchOption.entries.forEach { put(it, true) }
         }
 
-        var favorites = false; var excludeFaves = false; var dislikes = false; var excludeDis = false
-        var unrated = false; var inStock = false; var outOfStock = false
-        var hasTins = false; var noTins = false; var opened = false; var unopened = false
-        var finished = false; var unfinished = false; var prod = false; var outOfProd = false
-        var minR: Double? = null; var maxR: Double? = null
+        var favorites = false
+        var excludeFaves = false
+        var dislikes = false
+        var excludeDis = false
+        var unrated = false
+        var inStock = false
+        var outOfStock = false
+        var hasTins = false
+        var noTins = false
+        var opened = false
+        var unopened = false
+        var finished = false
+        var unfinished = false
+        var prod = false
+        var outOfProd = false
+        var minR: Double? = null
+        var maxR: Double? = null
 
         for (items in allItems) {
             val item = items.items
@@ -958,7 +942,7 @@ class FilterViewModel (
                             (!selections.finished || tin.finished) &&
                             (!selections.unfinished || !tin.finished)
                 }
-                vTins.groupBy { it.container.ifBlank { "(Unassigned)" } }.forEach { (name, tins) ->
+                vTins.groupBy { it.container.ifBlank { "(Unassigned)" } }.forEach { (name, _) ->
                     containersMap[name] = true
                 }
             }
@@ -969,7 +953,7 @@ class FilterViewModel (
             }
         }
 
-        EnablementState(
+        return EnablementState(
             brands = brandsMap, excludeBrands = excludeBrandsMap, types = typesMap,
             favorites = favorites, excludeFavorites = excludeFaves, dislikeds = dislikes,
             excludeDislikes = excludeDis, unrated = unrated, ratingLow = minR, ratingHigh = maxR,
@@ -979,7 +963,7 @@ class FilterViewModel (
             unopened = unopened, finished = finished, unfinished = unfinished,
             container = containersMap, production = prod, outOfProduction = outOfProd
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), EnablementState())
+    }
 
     val brandsEnabled = enablementState.map { it.brands }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
     val excludeBrandsEnabled = enablementState.map { it.excludeBrands }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -1036,7 +1020,7 @@ class FilterViewModel (
     init {
         viewModelScope.launch(Dispatchers.Default) {
             unifiedFilteredItems.collectLatest { items ->
-                if (items.isEmpty() && isFilterApplied.value && !searchPerformed.value && !_emptyDatabase.value) {
+                if (items.isEmpty() && isFilterApplied.value && !searchPerformed.value && !emptyDatabase.value) {
                     delay(50.milliseconds)
                     if (unifiedFilteredItems.value.isEmpty()) { recoverFromEmpty() }
                 }
@@ -1076,7 +1060,7 @@ class FilterViewModel (
     }
     private fun isSelectionInvalid(category: FilterCategory, value: Any?): Boolean {
         return when (category) {
-            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !_availableBrands.value.contains(value as String)
+            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !availableBrands.value.contains(value as String)
             FilterCategory.TYPE -> !_availableTypes.value.contains(value as String)
             FilterCategory.SUBGENRE -> !_availableSubgenres.value.contains(value as String)
             FilterCategory.CUT -> !_availableCuts.value.contains(value as String)
@@ -1085,12 +1069,12 @@ class FilterViewModel (
             FilterCategory.CONTAINER -> !_availableContainers.value.contains(value as String)
 
             FilterCategory.FAVORITE, FilterCategory.EXCLUDE_FAVORITE,
-            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !_favDisExist.value
+            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !favDisExist.value
 
-            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !_ratingsExist.value
+            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !ratingsExist.value
 
             FilterCategory.HAS_TINS, FilterCategory.NO_TINS, FilterCategory.OPENED,
-            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !_tinsExist.value
+            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !tinsExist.value
 
             else -> false
         }
@@ -1204,7 +1188,7 @@ class FilterViewModel (
     // HomeScreen stuff
     val searchState = combine(
         searchPerformed, _isTinSearch, _searchTextDisplay, preferencesRepo.searchSetting,
-        _tinsExist, _notesExist, _emptyDatabase
+        tinsExist, notesExist, emptyDatabase
     ) { it: Array<Any?> ->
         val searchPerformed = it[0] as Boolean
         val isTinSearch = it[1] as Boolean
@@ -2088,6 +2072,25 @@ data class AutoCompleteData(
     val tinContainers: List<String> = emptyList()
 )
 
+@Stable
+data class CellarMetaData(
+    val availableBrands: List<String> = emptyList(),
+    val availableTypes: List<String> = emptyList(),
+    val availableSubgenres: List<String> = emptyList(),
+    val availableCuts: List<String> = emptyList(),
+    val availableComponents: List<String> = emptyList(),
+    val availableFlavorings: List<String> = emptyList(),
+    val availableContainers: List<String> = emptyList(),
+    val typesExist: Boolean = true,
+    val subgenresExist: Boolean = true,
+    val ratingsExist: Boolean = true,
+    val favDisExist: Boolean = true,
+    val tinsExist: Boolean = true,
+    val notesExist: Boolean = true,
+    val datesExist: Boolean = true,
+    val emptyDatabase: Boolean = false,
+    val autoCompleteData: AutoCompleteData = AutoCompleteData()
+)
 
 val typeOrder = mapOf(
     "Aromatic" to 0,
