@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -25,6 +24,8 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -81,7 +82,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                         }
                     }
                     launch {
-                        preferencesRepo.allowMobileData.collect { enqueuePeriodicSync(it) }
+                        preferencesRepo.allowMobileData.distinctUntilChanged()
+                            .collect { enqueuePeriodicSync(it) }
                     }
                 } else { cancelPeriodicSync() }
             }
@@ -137,12 +139,12 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         preferencesRepo.setSyncSettingsMigrated()
     }
 
-    private suspend fun verifySyncStatus() {
+    private suspend fun verifySyncStatus(context: Context) {
         val userEmail = preferencesRepo.signedInUserEmail.first()
         if (userEmail != null) {
             withContext(Dispatchers.IO) {
                 try {
-                    val driveService = GoogleDriveServiceHelper.getDriveService(this@CellarApplication, userEmail)
+                    val driveService = GoogleDriveServiceHelper.getDriveService(context, userEmail)
 
                     driveService.files().list()
                         .setSpaces("appDataFolder")
@@ -172,7 +174,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         val workManager = WorkManager.getInstance(this@CellarApplication)
         workManager.cancelUniqueWork("download_sync_work")
-        Toast.makeText(this@CellarApplication, "Sync disabled, please sign in again.", Toast.LENGTH_SHORT).show()
+        EventBus.emit(ShowToast("Sync disabled, please sign in again."))
     }
 
 
@@ -207,7 +209,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                     val hour: Long = 60 * 60 * 1000
                     if ((System.currentTimeMillis() - lastSyncVerification) > hour) {
                         lastSyncVerification = System.currentTimeMillis()
-                        verifySyncStatus()
+                        verifySyncStatus(activity)
                     }
                 }
             }
