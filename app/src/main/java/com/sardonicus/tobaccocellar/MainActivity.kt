@@ -4,7 +4,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -93,6 +92,7 @@ import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -117,7 +117,6 @@ class MainActivity : ComponentActivity() {
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
-        window.decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
 
         onBackPressedDispatcher.addCallback(
             this, object : OnBackPressedCallback(true) {
@@ -138,11 +137,9 @@ class MainActivity : ComponentActivity() {
         windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
-        updateSystemBarsForOrientation(resources.configuration.orientation)
-
         preferencesRepo = (application as CellarApplication).preferencesRepo
-        credentialManager = CredentialManager.create(applicationContext)
-        authorizationClient = Identity.getAuthorizationClient(applicationContext)
+        credentialManager = CredentialManager.create(this@MainActivity)
+        authorizationClient = Identity.getAuthorizationClient(this@MainActivity)
         authorizationLauncher = registerForActivityResult(
                 ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -172,6 +169,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (event is SignOutEvent) { signOut() }
+                    if (event is ShowToast) { Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_SHORT).show() }
                 }
             }
         }
@@ -179,6 +177,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val snackbarHostState = remember { SnackbarHostState() }
             var loading by remember { mutableStateOf(false) }
+            val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
+            updateSystemBarsForOrientation(displayCutoutTop)
 
             LaunchedEffect(Unit) {
                 var snackbarJob: Job? = null
@@ -221,10 +221,7 @@ class MainActivity : ComponentActivity() {
                             .background(Color.Transparent)
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .windowInsetsPadding(WindowInsets.displayCutout)
-                            .filterTextContextMenuComponents {
-                                it.key != AutofillKey
-                            //    it::class.java.simpleName != "TextContextMenuTextClassificationItem"
-                            }
+                            .filterTextContextMenuComponents { it.key != AutofillKey }
                     ) {
                         CellarApp(
                             twoPaneAllowed = twoPaneAllowed,
@@ -287,13 +284,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        updateSystemBarsForOrientation(newConfig.orientation)
-    }
-
-    private fun updateSystemBarsForOrientation(orientation: Int) {
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+    private fun updateSystemBarsForOrientation(topCutout: Int) {
+        if (topCutout == 0) {
             windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
         } else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
     }
