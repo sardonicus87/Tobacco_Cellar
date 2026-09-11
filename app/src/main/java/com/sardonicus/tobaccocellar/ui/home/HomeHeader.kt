@@ -238,17 +238,13 @@ private fun SearchField (
                     contentDescription = null,
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) {
+                        .clickable(null, LocalIndication.current) {
                             updateSearchText(""); onSearch("")
 
                             if (state.searchPerformed) {
                                 coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
                             }
                         }
-                        .padding(0.dp),
                 )
             }
         },
@@ -265,12 +261,11 @@ private fun ListColumnMenu(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.listSortingMenuState.collectAsState()
+    var sortingMenu by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
         // List Sorting
         if (!state.isTableView) {
-            var sortingMenu by remember { mutableStateOf(false) }
-
             Icon(
                 painter = painterResource(R.drawable.sort_bars),
                 contentDescription = "List sorting",
