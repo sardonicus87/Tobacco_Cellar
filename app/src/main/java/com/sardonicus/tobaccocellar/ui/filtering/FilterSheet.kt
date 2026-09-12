@@ -18,16 +18,21 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -52,6 +57,11 @@ fun FilterSheet(
     val orientation = LocalConfiguration.current.orientation
 
     if (bottomSheetState == BottomSheetState.OPENED) {
+        val window = LocalWindowInfo.current
+        val density = LocalDensity.current
+        val navigation = WindowInsets.navigationBars.getBottom(density).toFloat()
+        var currentTop by remember { mutableFloatStateOf(0f) }
+
         ModalBottomSheet(
             onDismissRequest = { filterViewModel.closeBottomSheet() },
             modifier = modifier.statusBarsPadding(),
@@ -74,9 +84,7 @@ fun FilterSheet(
                 }
             }
 
-            Box {
-                val density = LocalDensity.current
-                val navigation = WindowInsets.navigationBars.getBottom(density).toFloat()
+            Box(Modifier.onGloballyPositioned { currentTop = it.positionOnScreen().y }) {
                 FilterLayout(
                     filterViewModel = filterViewModel,
                     closeSheet = filterViewModel::closeBottomSheet,
@@ -87,8 +95,8 @@ fun FilterSheet(
                 Spacer(Modifier
                     .matchParentSize()
                     .drawBehind {
-                        drawRect(Color.Black.copy(alpha = .9f), Offset(0f, size.height),
-                            Size(size.width, navigation))
+                        val pinned = window.containerSize.height.toFloat() - currentTop - navigation
+                        drawRect(Color.Black, Offset(0f, pinned), Size(size.width, navigation))
                     }
                 )
             }
