@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -64,6 +66,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +94,7 @@ import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
 import com.sardonicus.tobaccocellar.ui.navigation.rememberNavigationState
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
+import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import kotlinx.coroutines.launch
 
@@ -110,7 +115,6 @@ fun CellarApp(
 
     FilterSheet(filterViewModel)
 }
-
 
 /** App bars **/
 @Composable
@@ -184,9 +188,21 @@ fun CellarTopAppBar(
         }
     }
 
+    val density = LocalDensity.current
+    val direction = LocalLayoutDirection.current
+    val isTwoPane by filterViewModel.twoPaneState.collectAsState()
+    val default = TopAppBarDefaults.windowInsets
+    val atEdge = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() <= 0.dp
+    val extraLeft = with(density) { (DeviceCorners.topLeft * .85f).toPx() }.toInt()
+    val extraRight = with(density) { (DeviceCorners.topRight * .85f).toPx() }.toInt()
+    val left = if (atEdge) maxOf(default.getLeft(density, direction), extraLeft) else default.getLeft(density, direction)
+    val right = if (atEdge && !isTwoPane) maxOf(default.getRight(density, direction), extraRight) else default.getRight(density, direction)
+    val insets = WindowInsets(left, default.getTop(density), right, default.getBottom(density))
+
     TopAppBar(
         title = { Text(title) },
         modifier = modifier,
+        windowInsets = insets,
         navigationIcon = {
             if (canNavigateBack) {
                 val icon = if (overrideBack) painterResource(id = R.drawable.arrow_forward) else painterResource(id = R.drawable.arrow_back)
