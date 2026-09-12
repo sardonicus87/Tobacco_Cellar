@@ -25,9 +25,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -64,6 +67,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -98,7 +102,11 @@ data class TwoPaneScene<T : Any>(
         BackHandler(mainFocus || secondFocus) { focusManager.clearFocus() }
 
         val paneWidth by animateDpAsState(if (secondExpanded) expandedWidth else 32.dp, tween(300))
-        val buttonOffset by animateDpAsState(if (secondExpanded) 12.dp else 0.dp, tween(300))
+
+        val atEdge = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() <= 0.dp
+        val rightPadding = if (atEdge) maxOf(12.dp, DeviceCorners.topRight) else 12.dp
+        val buttonOffsetTop by animateDpAsState(if (secondExpanded) 12.dp else 0.dp, tween(300))
+        val buttonOffsetEnd by animateDpAsState(if (secondExpanded) rightPadding else 0.dp, tween(300))
 
         LaunchedEffect(showButton, secondExpanded) {
             if (showButton && secondExpanded) {
@@ -164,9 +172,7 @@ data class TwoPaneScene<T : Any>(
                             awaitEachGesture {
                                 val down = awaitFirstDown(pass = PointerEventPass.Initial)
 
-                                if (mainFocus) {
-                                    focusManager.clearFocus(); down.consume()
-                                }
+                                if (mainFocus) { focusManager.clearFocus(); down.consume() }
 
                                 if (secondExpanded && !down.isConsumed) {
                                     awaitFirstDown(pass = PointerEventPass.Final)
@@ -181,7 +187,7 @@ data class TwoPaneScene<T : Any>(
                             }
                         },
                     expandedWidth = expandedWidth,
-                    onEnter = { if (!secondExpanded){ longDelay = false; secondExpanded = true } }
+                    onEnter = { if (!secondExpanded) { longDelay = false; secondExpanded = true } }
                 )
             }
 
@@ -191,7 +197,7 @@ data class TwoPaneScene<T : Any>(
                 exit = fadeOut(tween(150)),
                 modifier = Modifier
                     .align(BiasAlignment(1f, -1f))
-                    .offset { IntOffset(-buttonOffset.roundToPx(), buttonOffset.roundToPx()) }
+                    .offset { IntOffset(-buttonOffsetEnd.roundToPx(), buttonOffsetTop.roundToPx()) }
             ) {
                 TwoPaneButton(
                     secondExpanded = secondExpanded,
