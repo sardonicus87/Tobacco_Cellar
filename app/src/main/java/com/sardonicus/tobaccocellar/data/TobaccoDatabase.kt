@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.sardonicus.tobaccocellar.data.TobaccoDatabase.Companion.DATABASE_VERSION
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperation
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.PendingSyncOperationDao
 
@@ -161,17 +162,17 @@ val allMigrations = arrayOf(
         ItemsFlavoringCrossRef::class,
         PendingSyncOperation::class
     ],
-    version = 6,
+    version = DATABASE_VERSION,
     exportSchema = true
 )
 abstract class TobaccoDatabase : RoomDatabase() {
-
     abstract fun itemsDao(): ItemsDao
     abstract fun pendingSyncOperationDao(): PendingSyncOperationDao
 
     companion object {
         @Volatile
         private var Instance: TobaccoDatabase? = null
+        const val DATABASE_VERSION = 6
 
         fun getDatabase(context: Context): TobaccoDatabase {
             return Instance ?: synchronized(this) {
@@ -182,10 +183,7 @@ abstract class TobaccoDatabase : RoomDatabase() {
             }
         }
 
-        fun getDatabaseVersion(context: Context): Int {
-            val database = getDatabase(context)
-            return database.openHelper.readableDatabase.version
-        }
+        fun getVersion(): Int = DATABASE_VERSION
 
     }
 }
