@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.RoundedCorner
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -40,10 +41,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -89,6 +92,8 @@ import com.sardonicus.tobaccocellar.ui.settings.SignInCancelled
 import com.sardonicus.tobaccocellar.ui.settings.SignInEvent
 import com.sardonicus.tobaccocellar.ui.settings.SignOutEvent
 import com.sardonicus.tobaccocellar.ui.theme.TobaccoCellarTheme
+import com.sardonicus.tobaccocellar.ui.utilities.CornerRadii
+import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
@@ -96,7 +101,9 @@ import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -155,7 +162,6 @@ class MainActivity : ComponentActivity() {
         }
 
 
-        // sign in launch
         lifecycleScope.launch(Dispatchers.Default) {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 EventBus.events.collect { event ->
@@ -177,8 +183,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val snackbarHostState = remember { SnackbarHostState() }
             var loading by remember { mutableStateOf(false) }
-            val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
-            updateSystemBarsForOrientation(displayCutoutTop)
 
             LaunchedEffect(Unit) {
                 var snackbarJob: Job? = null
@@ -195,23 +199,52 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
-            val isLarge: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val view = LocalView.current
+                val density = LocalDensity.current
+                LaunchedEffect(view, density) {
+                    snapshotFlow { view.rootWindowInsets }
+                        .mapNotNull { it }
+                        .distinctUntilChanged()
+                        .collect { insets ->
+                            val windowInsets = WindowInsetsCompat.toWindowInsetsCompat(insets, view)
+                            val platformInsets = windowInsets.toWindowInsets()
+
+                            DeviceCorners.update(
+                                CornerRadii(
+                                    topLeft = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius?.toDp() } ?: 0.dp,
+                                    topRight = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)?.radius?.toDp() } ?: 0.dp,
+                                    bottomRight = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius?.toDp() } ?: 0.dp,
+                                    bottomLeft = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)?.radius?.toDp() } ?: 0.dp
+                                )
+                            )
+                        }
+                }
+            }
+
+            val adaptive = currentWindowAdaptiveInfoV2()
+            val config = LocalConfiguration.current
+            val isLarge: Boolean = remember(adaptive.windowSizeClass) { adaptive.windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_MEDIUM_LOWER_BOUND) }
             val globalTwoPane by preferencesRepo.globalTwoPane.collectAsState()
             val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
             val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
-            val orientation = LocalConfiguration.current.orientation
-            val hingeList = currentWindowAdaptiveInfoV2().windowPosture.hingeList
-            val landscape = remember(hingeList, orientation) {
-                if (hingeList.isNotEmpty()) hingeList.first().isVertical
-                else orientation == Configuration.ORIENTATION_LANDSCAPE
+
+            val landscape by remember(adaptive.windowPosture, config.orientation) {
+                derivedStateOf {
+                    val hingeList = adaptive.windowPosture.hingeList
+                    if (hingeList.isNotEmpty()) hingeList.first().isVertical
+                    else config.orientation == Configuration.ORIENTATION_LANDSCAPE
+                }
             }
-            val twoPaneAllowed = remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
-                isLarge && globalTwoPane && (if (landscapeOnly) landscape else true)
+            val twoPaneAllowed by remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
+                derivedStateOf { isLarge && globalTwoPane && (if (landscapeOnly) landscape else true) }
             }
-            val twoColumnTabs = remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
-                isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true)
+            val twoColumnTabs by remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
+                derivedStateOf { isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true) }
             }
+
+            val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
+            SideEffect(displayCutoutTop) { updateSystemBarsForOrientation(displayCutoutTop) }
 
             CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
