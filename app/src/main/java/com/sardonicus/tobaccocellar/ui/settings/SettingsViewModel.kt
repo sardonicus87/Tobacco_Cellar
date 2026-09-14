@@ -112,7 +112,7 @@ class SettingsViewModel(
 
     val parseLinks = preferencesRepo.parseLinks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val globalTwoPane = preferencesRepo.globalTwoPane.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val globalTwoPane = preferencesRepo.globalTwoPane
 
     val landscapeTwoPane = preferencesRepo.landscapeTwoPane
 
