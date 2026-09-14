@@ -113,7 +113,7 @@ fun CellarApp(
     CellarNavigation(navigator, navigationState, twoPaneAllowed, twoColumnTabs,
         filterViewModel)
 
-    FilterSheet(filterViewModel)
+    FilterSheet(filterViewModel, twoPaneAllowed)
 }
 
 /** App bars **/

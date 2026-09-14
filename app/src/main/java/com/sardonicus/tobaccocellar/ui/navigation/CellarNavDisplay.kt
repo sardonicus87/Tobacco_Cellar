@@ -182,12 +182,7 @@ fun CellarNavigation(
                 )
             }
 
-            is FilterPaneDestination -> NavEntry(key, metadata = paneInfo) {
-                FilterPane(
-                    filterViewModel = filterViewModel,
-                    modifier = Modifier
-                )
-            }
+            is FilterPaneDestination -> NavEntry(key, metadata = paneInfo) { FilterPane(filterViewModel, twoPaneAllowed) }
 
             is StatsDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: StatsViewModel = viewModel(
@@ -451,7 +446,7 @@ fun CellarNavigation(
 
     var wasAllowed by remember { mutableStateOf(twoPaneAllowed) }
 
-    SideEffect(twoPaneAllowed) {
+    LaunchedEffect(twoPaneAllowed) {
         if (wasAllowed != twoPaneAllowed) {
             if (!twoPaneAllowed && navigationState.topLevelRoute == AboutDestination) {
                 val aboutStack = navigationState.backStacks[AboutDestination]

@@ -1,9 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.filtering
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.rememberPagerState
@@ -28,11 +28,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -45,6 +43,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 @Composable
 fun FilterSheet(
     filterViewModel: FilterViewModel,
+    twoPaneAllowed: Boolean,
     modifier: Modifier = Modifier
 ) {
     val bottomSheetState by filterViewModel.bottomSheetState.collectAsState()
@@ -53,14 +52,14 @@ fun FilterSheet(
     val focusManager = LocalFocusManager.current
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
     val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
-    val tall: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_EXPANDED_LOWER_BOUND) }
-    val orientation = LocalConfiguration.current.orientation
+    val window = LocalView.current
 
-    if (bottomSheetState == BottomSheetState.OPENED) {
-        val window = LocalWindowInfo.current
+    if (bottomSheetState == BottomSheetState.OPENED && !twoPaneAllowed) {
+        val tall: Boolean = remember(windowSizeClass) { windowSizeClass.isAtLeastBreakpoint(WIDTH_DP_MEDIUM_LOWER_BOUND, HEIGHT_DP_EXPANDED_LOWER_BOUND) }
         val density = LocalDensity.current
+        val displayCutout = WindowInsets.displayCutout.getTop(density)
         val navigation = WindowInsets.navigationBars.getBottom(density).toFloat()
-        var currentTop by remember { mutableFloatStateOf(0f) }
+        var currentTop by remember(navigation) { mutableFloatStateOf(0f) }
 
         ModalBottomSheet(
             onDismissRequest = { filterViewModel.closeBottomSheet() },
@@ -77,16 +76,19 @@ fun FilterSheet(
                     WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
                     WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
 
-                    if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    if (displayCutout == 0) {
                         WindowCompat.getInsetsController(window, window.decorView)
-                            .hide(WindowInsetsCompat.Type.statusBars())
-                    }
+                            .hide(WindowInsetsCompat.Type.statusBars()) }
+                    else {
+                        WindowCompat.getInsetsController(window, window.decorView)
+                            .show(WindowInsetsCompat.Type.statusBars()) }
                 }
             }
 
             Box(Modifier.onGloballyPositioned { currentTop = it.positionOnScreen().y }) {
                 FilterLayout(
                     filterViewModel = filterViewModel,
+                    twoPane = twoPaneAllowed,
                     closeSheet = filterViewModel::closeBottomSheet,
                     paginateLayout = !tall,
                     pagerState = pagerState
@@ -95,7 +97,7 @@ fun FilterSheet(
                 Spacer(Modifier
                     .matchParentSize()
                     .drawBehind {
-                        val pinned = window.containerSize.height.toFloat() - currentTop - navigation
+                        val pinned = window.rootView.height.toFloat() - currentTop - navigation
                         drawRect(Color.Black, Offset(0f, pinned), Size(size.width, navigation))
                     }
                 )

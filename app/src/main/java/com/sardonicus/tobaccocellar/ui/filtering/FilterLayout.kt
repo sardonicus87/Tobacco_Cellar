@@ -18,17 +18,17 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +65,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun FilterLayout(
     filterViewModel: FilterViewModel,
+    twoPane: Boolean,
     modifier: Modifier = Modifier,
     closeSheet: () -> Unit = {},
     paginateLayout: Boolean = true,
@@ -72,16 +73,15 @@ fun FilterLayout(
 ) {
     val focusManager = LocalFocusManager.current
     var hasFocus by remember { mutableStateOf(false) }
-    val twoPane by filterViewModel.twoPaneState.collectAsState()
 
     BackHandler(hasFocus) { if (hasFocus) { focusManager.clearFocus() } }
+    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
-    Column (
+    LazyColumn(
         modifier = modifier
             .fillMaxWidth()
             .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 0.dp)
             .imePadding()
-            .verticalScroll(rememberScrollState())
             .onFocusChanged { hasFocus = it.hasFocus }
             .pointerInput(hasFocus) {
                 awaitEachGesture {
@@ -92,14 +92,17 @@ fun FilterLayout(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        item { FilterHeader(!twoPane, closeSheet) }
 
-        FilterHeader(!twoPane, closeSheet)
+        if (paginateLayout) { item { PagerLayout(filterViewModel, pagerState) } }
+        else {
+            item { Spacer(Modifier.height(8.dp)) }
+            item { PageOne(filterViewModel) }
+            item { PageTwo(filterViewModel, Modifier.padding(vertical = 8.dp)) }
+            item { PageThree(filterViewModel, Modifier.padding(top = 4.dp)) }
+        }
 
-        if (paginateLayout) { PagerLayout(filterViewModel, pagerState) }
-        else { PaneLayout(filterViewModel) }
-
-        FilterFooter(filterViewModel)
-
+        item { FilterFooter(filterViewModel) }
     }
 }
 
@@ -187,18 +190,6 @@ private fun FilterFooter(
     }
     Spacer(Modifier.height(12.dp))
 }
-
-
-@Composable
-private fun PaneLayout(
-    filterViewModel: FilterViewModel
-) {
-    Spacer(Modifier.height(8.dp))
-    PageOne(filterViewModel)
-    PageTwo(filterViewModel, Modifier.padding(vertical = 8.dp))
-    PageThree(filterViewModel, Modifier.padding(top = 4.dp))
-}
-
 
 @Composable
 private fun PagerLayout(
