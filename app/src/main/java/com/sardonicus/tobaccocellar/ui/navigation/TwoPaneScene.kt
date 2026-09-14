@@ -36,7 +36,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +64,7 @@ import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -87,24 +89,27 @@ data class TwoPaneScene<T : Any>(
     override val metadata: Map<String, Any> = emptyMap()
 
     override val content: @Composable (() -> Unit) = {
+        val window = LocalWindowInfo.current
         val density = LocalDensity.current
-        val expandedWidth = with(density) { LocalWindowInfo.current.containerSize.width.toDp() / 2 }
+        val filterViewModel = LocalCellarApplication.current.filterViewModel
+
+        val expandedWidth = remember(window.containerSize, density) { with(density) { window.containerSize.width.toDp() / 2 } }
         var initialComposition = remember { mutableStateOf(true) }
-        var secondExpanded by remember { mutableStateOf(true) }
-        var showButton by remember { mutableStateOf(false) }
+        val secondExpanded by filterViewModel.savedExpanded.collectAsState()
+        var showButton by remember { mutableStateOf(!secondExpanded) }
         var longDelay by remember { mutableStateOf(true) }
         val focusManager = LocalFocusManager.current
         var mainFocus by remember { mutableStateOf(false) }
         var secondFocus by remember { mutableStateOf(false) }
 
         BackHandler(enabled = interceptBack, onBack = onBack)
-        BackHandler(!secondExpanded) { longDelay = false; secondExpanded = true }
+        BackHandler(!secondExpanded) { longDelay = false; filterViewModel.saveExpandedState(true) }
         BackHandler(mainFocus || secondFocus) { focusManager.clearFocus() }
 
         val paneWidth by animateDpAsState(if (secondExpanded) expandedWidth else 32.dp, tween(300))
 
         val atEdge = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding() <= 0.dp
-        val rightPadding = if (atEdge) maxOf(12.dp, DeviceCorners.topRight) else 12.dp
+        val rightPadding by remember(atEdge) { derivedStateOf { if (atEdge) maxOf(12.dp, DeviceCorners.topRight) else 12.dp } }
         val buttonOffsetTop by animateDpAsState(if (secondExpanded) 12.dp else 0.dp, tween(300))
         val buttonOffsetEnd by animateDpAsState(if (secondExpanded) rightPadding else 0.dp, tween(300))
 
@@ -114,6 +119,13 @@ data class TwoPaneScene<T : Any>(
                 if (longDelay) { delay(3000.milliseconds) }
                 showButton = false
                 longDelay = true
+            }
+            if (!showButton && !secondExpanded) { showButton = true }
+        }
+
+        LaunchedEffect(secondEntry.contentKey) {
+            if (!secondExpanded && !initialComposition.value) {
+                longDelay = false; filterViewModel.saveExpandedState(true)
             }
         }
 
@@ -178,16 +190,14 @@ data class TwoPaneScene<T : Any>(
                                     awaitFirstDown(pass = PointerEventPass.Final)
                                     val up =
                                         withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                                            waitForUpOrCancellation(pass = PointerEventPass.Final)
-                                        }
+                                            waitForUpOrCancellation(pass = PointerEventPass.Final) }
                                     if (up != null && !up.isConsumed) {
                                         showButton = true; up.consume()
                                     }
                                 }
                             }
                         },
-                    expandedWidth = expandedWidth,
-                    onEnter = { if (!secondExpanded) { longDelay = false; secondExpanded = true } }
+                    expandedWidth = expandedWidth
                 )
             }
 
@@ -203,7 +213,7 @@ data class TwoPaneScene<T : Any>(
                     secondExpanded = secondExpanded,
                     toggleSecondPane = {
                         if (!secondExpanded)  longDelay = false
-                        secondExpanded = !secondExpanded
+                        filterViewModel.saveExpandedState(!secondExpanded)
                     }
                 )
             }
@@ -253,17 +263,20 @@ private fun <T : Any> PaneContainer(
     isMain: Boolean,
     modifier: Modifier = Modifier,
     expandedWidth: Dp = 0.dp,
-    onEnter: () -> Unit = {}
 ) {
-    SideEffect(transition.targetState.contentKey) { onEnter() }
-
     val contentTransform =
         (transition.targetState.metadata["transitionSpec"] as? ContentTransform) ?:
         (transition.currentState.metadata["popTransitionSpec"] as? ContentTransform) ?:
         (fadeIn(tween(500)) togetherWith fadeOut(tween(500)))
 
     val isDeparture = fullBackStack.none { it.contentKey.toString().substringBefore('(') == transition.currentState.contentKey.toString().substringBefore('(') }
-    val isBack = isBack(remember(transition.currentState) { fullBackStack }, fullBackStack)
+    var previousStack by remember { mutableStateOf(fullBackStack) }
+    val isBack = remember(fullBackStack) {
+        val back = isBack(previousStack, fullBackStack)
+        previousStack = fullBackStack
+        back
+    }
+
     val targetZIndex = if (isBack || isDeparture) -1f else 1f
 
     val contentModifier = if (isMain) modifier else {

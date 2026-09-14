@@ -80,6 +80,11 @@ class FilterViewModel (
         .distinctUntilChanged()
 
 
+    /** Other UI state persistence needs **/
+    val savedExpanded = MutableStateFlow(true)
+    fun saveExpandedState(state: Boolean) { savedExpanded.value = state }
+
+
     /** Filter states **/
     val brandSearchText = MutableStateFlow("")
     fun updateBrandSearchText(text: String) { brandSearchText.value = text }
