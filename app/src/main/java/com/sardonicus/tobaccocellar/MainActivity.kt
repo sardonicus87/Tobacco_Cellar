@@ -41,7 +41,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +104,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
@@ -229,22 +229,27 @@ class MainActivity : ComponentActivity() {
             val twoColumnSetting by preferencesRepo.twoColumnTabs.collectAsState()
             val landscapeOnly by preferencesRepo.landscapeTwoPane.collectAsState()
 
-            val landscape by remember(adaptive.windowPosture, config.orientation) {
-                derivedStateOf {
-                    val hingeList = adaptive.windowPosture.hingeList
-                    if (hingeList.isNotEmpty()) hingeList.first().isVertical
-                    else config.orientation == Configuration.ORIENTATION_LANDSCAPE
+            val targetLandscape = remember (adaptive, config) {
+                val hingeList = adaptive.windowPosture.hingeList
+                if (hingeList.isNotEmpty()) hingeList.first().isVertical
+                else config.orientation == Configuration.ORIENTATION_LANDSCAPE
+            }
+            val targetTwoPane = isLarge && globalTwoPane && (!landscapeOnly || targetLandscape)
+            val targetTwoColumn = isLarge && twoColumnSetting && (!landscapeOnly || targetLandscape)
+
+            var twoPaneAllowed by remember { mutableStateOf(targetTwoPane) }
+            var twoColumnTabs by remember { mutableStateOf(targetTwoColumn) }
+
+            LaunchedEffect(targetTwoPane, targetTwoColumn) {
+                if (twoPaneAllowed != targetTwoPane || twoColumnTabs != targetTwoColumn) {
+                    yield()
+                    twoPaneAllowed = targetTwoPane
+                    twoColumnTabs = targetTwoColumn
                 }
-            }
-            val twoPaneAllowed by remember(isLarge, globalTwoPane, landscapeOnly, landscape) {
-                derivedStateOf { isLarge && globalTwoPane && (if (landscapeOnly) landscape else true) }
-            }
-            val twoColumnTabs by remember(isLarge, twoColumnSetting, landscapeOnly, landscape) {
-                derivedStateOf { isLarge && twoColumnSetting && (if (landscapeOnly) landscape else true) }
             }
 
             val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
-            SideEffect(displayCutoutTop) { updateSystemBarsForOrientation(displayCutoutTop) }
+            LaunchedEffect(displayCutoutTop) { updateSystemBarsForOrientation(displayCutoutTop) }
 
             CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
