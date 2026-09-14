@@ -344,7 +344,7 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map { it[LANDSCAPE_TWO_PANE] ?: false }
-        .stateIn(applicationScope, SharingStarted.Eagerly, false)
+        .stateIn(applicationScope, SharingStarted.Eagerly, true)
 
     suspend fun saveGlobalTP(enabled: Boolean) { dataStore.edit { it[GLOBAL_TWO_PANE] = enabled } }
 
