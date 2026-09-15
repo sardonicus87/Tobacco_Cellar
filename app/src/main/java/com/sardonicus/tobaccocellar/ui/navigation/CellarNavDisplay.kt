@@ -221,7 +221,6 @@ fun CellarNavigation(
 
                 AddEntryScreen(
                     navigateBack = { navigator.goBack() },
-                    onNavigateUp = { navigator.goBack() },
                     navigateToEditEntry = { navigator.navigate(EditEntryDestination(it)) },
                     twoColumnTabs = twoColumnTabs,
                     viewModel = viewModel
