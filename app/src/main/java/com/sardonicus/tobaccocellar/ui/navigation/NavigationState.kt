@@ -42,7 +42,12 @@ fun rememberNavigationState(
             backStacks.forEach { (topLevelRoute, stack) ->
                 mainSecondaryMap[topLevelRoute]?.let {
                     if (stack.getOrNull(1) != it.defaultSecondary) {
-                        stack.add(1, it.defaultSecondary)
+                        when {
+                            stack.isEmpty() -> {
+                                stack.add(topLevelRoute); stack.add(it.defaultSecondary) }
+                            stack.size == 1 -> stack.add(it.defaultSecondary)
+                            else -> stack.add(1, it.defaultSecondary)
+                        }
                     }
                 }
             }
