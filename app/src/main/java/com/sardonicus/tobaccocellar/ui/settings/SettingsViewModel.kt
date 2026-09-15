@@ -241,41 +241,41 @@ class SettingsViewModel(
 
     /** Display Settings **/
     fun saveThemeSetting(setting: String) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTheme(setting) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTheme(setting) }
     }
 
     fun saveQuantityOption(option: String) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveQuantity(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveQuantity(option) }
     }
 
     fun saveShowRatingOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveShowRating(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveShowRating(option) }
     }
 
     fun saveTypeGenreOption(option: String) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTypeGenre(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTypeGenre(option) }
     }
 
     fun saveParseLinksOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveParseLinks(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveParseLinks(option) }
     }
 
     fun saveGlobalTwoPane(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveGlobalTP(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveGlobalTP(option) }
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveLandscape(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveLandscape(option) }
     }
 
     fun saveTwoColumnTabs(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTwoColumn(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTwoColumn(option) }
     }
 
 
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveCDAcknowledge(true) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveCDAcknowledge(true) }
     }
 
     fun saveCrossDeviceSync(enable: Boolean) {
@@ -293,7 +293,7 @@ class SettingsViewModel(
     }
 
     fun saveAllowMobileData(enable: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveAllowMobile(enable) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveAllowMobile(enable) }
     }
 
     fun manualSync() {
@@ -428,7 +428,7 @@ class SettingsViewModel(
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
-        application.applicationScope.launch(Dispatchers.IO) {
+        application.applicationScope.launch(Dispatchers.Default) {
             preferencesRepo.setOzRate(ozRate)
             preferencesRepo.setGramRate(gramsRate)
 
@@ -437,7 +437,7 @@ class SettingsViewModel(
     }
 
     fun setDefaultSyncOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveDefaultSyncOption(option) }
+        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveDefaultSyncOption(option) }
     }
 
     fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
