@@ -14,6 +14,31 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 62,
+        versionNumber = "5.3.2",
+        buildDate = "15 Sep, 2026",
+        improvements = listOf(
+            "Cross-device sync, further improvements to Network Monitor efficiency and reliability.",
+            "Full Screen system status bars now hidden automatically (swipe to view) regardless " +
+                    "of screen orientation, as long as there's no display cutout area.",
+            "Dual Pane Layouts, if the second pane is collapsed, it remains so on navigation " +
+                    "and only automatically re-expands if its content actually changes.",
+            "Large Corner Radius devices, top bar and other UI elements now get extra padding to " +
+                    "not be too close to the corners (if device reports corner radius and is " +
+                    "running Android 12+).",
+            "Startup and memory/resource management and efficiency improvements.",
+            "Add/Edit entry screen, only collapse the top app bar if there's not enough height, " +
+                    "regardless of device orientation.",
+            "Other minor UI jank adjustments.",
+            "Other performance and stability improvements."
+        ),
+        bugFixes = listOf(
+            "Fixed a bug where settings screen could stop working when swapping between " +
+                    "Dual/Single Pane instances without leaving the screen."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 61,
         versionNumber = "5.3.1",
         buildDate = "9 Sep, 2026",
