@@ -110,7 +110,7 @@ fun AboutScreen(
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Medium
             )
-        ) { append(TobaccoDatabase.getVersion().toString()) }
+        ) { append(TobaccoDatabase.DATABASE_VERSION.toString()) }
     }
 
 

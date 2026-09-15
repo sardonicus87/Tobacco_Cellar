@@ -74,7 +74,7 @@ class DownloadSyncWorker(
 
             val successfullyProcessedFiles = mutableListOf<String>()
 
-            val dbVersion = TobaccoDatabase.getVersion()
+            val dbVersion = TobaccoDatabase.DATABASE_VERSION
 
             for (file in newFiles) {
                 var processSuccess = true

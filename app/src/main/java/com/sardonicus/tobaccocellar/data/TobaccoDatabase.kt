@@ -182,8 +182,5 @@ abstract class TobaccoDatabase : RoomDatabase() {
                     .also { Instance = it }
             }
         }
-
-        fun getVersion(): Int = DATABASE_VERSION
-
     }
 }

@@ -748,7 +748,7 @@ class SettingsViewModel(
 
         val tempZipFile = File(tempDir, "temp_db_restore.zip")
 
-        val existingDbVersion = TobaccoDatabase.getVersion()
+        val existingDbVersion = TobaccoDatabase.DATABASE_VERSION
         val backupDbVersion = getBackupDbVersion(context, databaseBytes)
 
         try {
