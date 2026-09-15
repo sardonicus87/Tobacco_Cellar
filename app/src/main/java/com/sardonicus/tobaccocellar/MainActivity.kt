@@ -175,7 +175,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     if (event is SignOutEvent) { signOut() }
-                    if (event is ShowToast) { Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_SHORT).show() }
                 }
             }
         }
@@ -195,6 +194,7 @@ class MainActivity : ComponentActivity() {
                         is DismissSnackbar -> { snackbarHostState.currentSnackbarData?.dismiss() }
                         is ShowLoading -> { loading = true }
                         is DismissLoading -> { loading = false }
+                        is ShowToast -> { Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_SHORT).show() }
                     }
                 }
             }
