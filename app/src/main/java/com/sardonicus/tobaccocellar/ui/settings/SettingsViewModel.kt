@@ -66,7 +66,9 @@ class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
     val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-    private val application: CellarApplication
+    private val application: CellarApplication,
+    savedDialog: DialogType?,
+    private val updateDialog: (DialogType?) -> Unit
 ): ViewModel() {
 
     /** Display Settings */
@@ -86,10 +88,8 @@ class SettingsViewModel(
         )
     }
         .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = mapOf(
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),
+            mapOf(
                 TypeGenreOption.TYPE to true,
                 TypeGenreOption.SUBGENRE to true,
                 TypeGenreOption.BOTH to true,
@@ -143,9 +143,6 @@ class SettingsViewModel(
 
 
     /** General UI control **/
-    private val _openDialog = MutableStateFlow<DialogType?>(null)
-    val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
-
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
@@ -170,11 +167,7 @@ class SettingsViewModel(
         (allowMobile && isConnected) || isWifi
     }
         .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
     val displaySettings = combine(
@@ -199,11 +192,7 @@ class SettingsViewModel(
             SettingsDialog("Large Screen Options", "Large screen adaptive layout options.", null, DialogType.GlobalTwoPane)
         )
     }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val databaseSettings = combine (
         crossDeviceSync,
@@ -233,16 +222,17 @@ class SettingsViewModel(
             SettingsDialog("Delete Database", "Delete all entries.", null, DialogType.DeleteAll)
         )
     }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
-    fun showDialog(dialog: DialogType) { _openDialog.value = dialog }
+    private val _openDialog = MutableStateFlow<DialogType?>(savedDialog)
+    val openDialog: StateFlow<DialogType?> = _openDialog.asStateFlow()
 
-    fun dismissDialog() { _openDialog.value = null }
+    fun showDialog(dialog: DialogType) { _openDialog.value = dialog; updateDialog(dialog) }
+
+    fun dismissDialog() { _openDialog.value = null; updateDialog(null) }
+
+    fun cleanupDismiss() { _openDialog.value = null }
 
     private suspend fun showSnackbar(message: String) { EventBus.emit(ShowSnackbar(message)) }
 
@@ -250,52 +240,48 @@ class SettingsViewModel(
 
 
     /** Display Settings **/
-
     fun saveThemeSetting(setting: String) {
-        viewModelScope.launch { preferencesRepo.saveTheme(setting) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTheme(setting) }
     }
 
     fun saveQuantityOption(option: String) {
-        viewModelScope.launch { preferencesRepo.saveQuantity(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveQuantity(option) }
     }
 
     fun saveShowRatingOption(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveShowRating(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveShowRating(option) }
     }
 
     fun saveTypeGenreOption(option: String) {
-        viewModelScope.launch { preferencesRepo.saveTypeGenre(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTypeGenre(option) }
     }
 
     fun saveParseLinksOption(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveParseLinks(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveParseLinks(option) }
     }
 
     fun saveGlobalTwoPane(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveGlobalTP(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveGlobalTP(option) }
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveLandscape(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveLandscape(option) }
     }
 
     fun saveTwoColumnTabs(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveTwoColumn(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveTwoColumn(option) }
     }
 
 
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
-        viewModelScope.launch { preferencesRepo.saveCDAcknowledge(true) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveCDAcknowledge(true) }
     }
 
     fun saveCrossDeviceSync(enable: Boolean) {
-        viewModelScope.launch {
+        application.applicationScope.launch {
             if (enable) {
-                val email = userEmail.value
-                if (!email.isNullOrEmpty()) {
-                    application.periodicDownloadSetup()
-                }
+                if (!userEmail.value.isNullOrEmpty()) { application.periodicDownloadSetup() }
                 _signingIn.value = userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
             } else {
@@ -307,11 +293,11 @@ class SettingsViewModel(
     }
 
     fun saveAllowMobileData(enable: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveAllowMobile(enable) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveAllowMobile(enable) }
     }
 
     fun manualSync() {
-        viewModelScope.launch {
+        application.applicationScope.launch {
             if (SyncStateManager.isSyncing.first()) {
                 showSnackbar("Sync already in progress."); return@launch }
 
@@ -375,7 +361,7 @@ class SettingsViewModel(
     }
 
     fun clearRemoteData() {
-        viewModelScope.launch {
+        application.applicationScope.launch {
             if (SyncStateManager.isSyncing.first()) {
                 showSnackbar("Sync in progress, please wait for it to finish.")
                 return@launch
@@ -435,14 +421,14 @@ class SettingsViewModel(
         }
     }
 
-    fun clearLoginState() { viewModelScope.launch { EventBus.emit(SignOutEvent) } }
+    fun clearLoginState() { application.applicationScope.launch { EventBus.emit(SignOutEvent) } }
 
     private fun stopWorkers() {
-        viewModelScope.launch { application.cancelPeriodicSync() }
+        application.applicationScope.launch { application.cancelPeriodicSync() }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
-        viewModelScope.launch {
+        application.applicationScope.launch(Dispatchers.IO) {
             preferencesRepo.setOzRate(ozRate)
             preferencesRepo.setGramRate(gramsRate)
 
@@ -451,11 +437,11 @@ class SettingsViewModel(
     }
 
     fun setDefaultSyncOption(option: Boolean) {
-        viewModelScope.launch { preferencesRepo.saveDefaultSyncOption(option) }
+        application.applicationScope.launch(Dispatchers.IO) { preferencesRepo.saveDefaultSyncOption(option) }
     }
 
     fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
-        viewModelScope.launch {
+        application.applicationScope.launch {
             if (!runSilent) { setLoadingState(true) }
             SyncStateManager.schedulingPaused = true
 
@@ -490,7 +476,7 @@ class SettingsViewModel(
     }
 
     fun optimizeDatabase() {
-        viewModelScope.launch {
+        application.applicationScope.launch(Dispatchers.Default) {
             setLoadingState(true)
             itemsRepository.optimizeDatabase()
             setLoadingState(false)
@@ -499,7 +485,7 @@ class SettingsViewModel(
     }
 
     fun deleteAllItems() {
-        viewModelScope.launch(Dispatchers.Default) {
+        application.applicationScope.launch(Dispatchers.Default) {
             itemsRepository.deleteAllItems()
             saveTypeGenreOption(TypeGenreOption.TYPE.value)
             showSnackbar("Database deleted!")
@@ -557,7 +543,7 @@ class SettingsViewModel(
     }
 
     fun createBackupBinary(uri: Uri, context: Context) {
-        viewModelScope.launch {
+        application.applicationScope.launch {
             _dbLoading.value = true
             var message = ""
 
@@ -612,7 +598,7 @@ class SettingsViewModel(
 
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
-        viewModelScope.launch(Dispatchers.Default) {
+        application.applicationScope.launch(Dispatchers.Default) {
             _dbLoading.value = true
 
             val workManager = WorkManager.getInstance(context)
@@ -867,7 +853,7 @@ class SettingsViewModel(
     }
 
     private fun restoreSettings(settingsBytes: ByteArray, backupVersion: Int) {
-        viewModelScope.launch(Dispatchers.Default) {
+        application.applicationScope.launch(Dispatchers.Default) {
             val settingsText = String(settingsBytes, Charset.forName("UTF-8"))
             parseSettingsText(settingsText, preferencesRepo, backupVersion)
         }
