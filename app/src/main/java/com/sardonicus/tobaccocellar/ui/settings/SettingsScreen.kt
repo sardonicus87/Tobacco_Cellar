@@ -87,7 +87,7 @@ fun SettingsScreen(
     }
 
     DisposableEffect(Unit) {
-        onDispose { viewModel.dismissDialog(); EventBus.tryEmit(DismissSnackbar) }
+        onDispose { viewModel.cleanupDismiss(); EventBus.tryEmit(DismissSnackbar) }
     }
 
     DialogManager(viewModel = viewModel)
