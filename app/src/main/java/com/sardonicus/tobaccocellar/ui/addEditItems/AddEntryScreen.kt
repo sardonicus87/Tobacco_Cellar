@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDpAsState
@@ -29,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +49,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AutoCompleteData
@@ -55,25 +58,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEntryScreen(
     modifier: Modifier = Modifier,
     navigateBack: () -> Unit,
-    onNavigateUp: () -> Unit,
     navigateToEditEntry: (Int) -> Unit,
     canNavigateBack: Boolean = true,
     twoColumnTabs: Boolean = false,
     viewModel: AddEntryViewModel = viewModel(),
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val imeOpen = WindowInsets.isImeVisible
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val shouldCollapse = !twoColumnTabs && isLandscape && imeOpen
-    val topBarHeight by animateDpAsState(if (shouldCollapse) 0.dp else 56.dp, tween(250))
-
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+
+    val imeOpen = WindowInsets.isImeVisible
+    val short = LocalConfiguration.current.screenHeightDp <= HEIGHT_DP_MEDIUM_LOWER_BOUND
+    val shouldCollapse by remember(twoColumnTabs, imeOpen, short) { derivedStateOf { !twoColumnTabs && imeOpen && short } }
+    val topBarHeight by animateDpAsState(if (shouldCollapse) 0.dp else 56.dp, tween(250))
+
 
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
@@ -92,7 +96,7 @@ fun AddEntryScreen(
                     scrollBehavior = scrollBehavior,
                     canNavigateBack = canNavigateBack,
                     modifier = Modifier,
-                    navigateUp = onNavigateUp,
+                    navigateUp = navigateBack,
                     showMenu = false,
                 )
             }
