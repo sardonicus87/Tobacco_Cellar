@@ -333,14 +333,13 @@ class FilterViewModel (
     // available fields for filter //
     @OptIn(ExperimentalCoroutinesApi::class)
     private val cellarMetaData: StateFlow<CellarMetaData> = everythingFlow.mapLatest { data ->
+        delay(50.milliseconds)
         generateMetaData(data)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CellarMetaData())
 
     private fun generateMetaData(data: List<ItemsComponentsAndTins>): CellarMetaData {
-        if (data.isEmpty()) { return CellarMetaData(emptyDatabase = true) }
-
         val brands = mutableSetOf<String>()
         val types = mutableSetOf<String>()
         val subgenres = mutableSetOf<String>()
@@ -419,7 +418,7 @@ class FilterViewModel (
                 flavorings = flavorings.filter { it != "(None Assigned)" }.sorted(),
                 tinContainers = containers.filter { it != "(Unassigned)" }.sorted()
             ),
-            emptyDatabase = false
+            emptyDatabase = data.isEmpty()
         )
     }
 
@@ -448,25 +447,25 @@ class FilterViewModel (
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val typesExist = cellarMetaData.map { it.typesExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val subgenresExist = cellarMetaData.map { it.subgenresExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val ratingsExist = cellarMetaData.map { it.ratingsExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val favDisExist = cellarMetaData.map { it.favDisExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val tinsExist = cellarMetaData.map { it.tinsExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val notesExist = cellarMetaData.map { it.notesExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val datesExist = cellarMetaData.map { it.datesExist }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val emptyDatabase = cellarMetaData.map { it.emptyDatabase }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -2070,13 +2069,13 @@ data class CellarMetaData(
     val availableComponents: List<String> = emptyList(),
     val availableFlavorings: List<String> = emptyList(),
     val availableContainers: List<String> = emptyList(),
-    val typesExist: Boolean = false,
-    val subgenresExist: Boolean = false,
-    val ratingsExist: Boolean = false,
-    val favDisExist: Boolean = false,
-    val tinsExist: Boolean = false,
-    val notesExist: Boolean = false,
-    val datesExist: Boolean = false,
+    val typesExist: Boolean = true,
+    val subgenresExist: Boolean = true,
+    val ratingsExist: Boolean = true,
+    val favDisExist: Boolean = true,
+    val tinsExist: Boolean = true,
+    val notesExist: Boolean = true,
+    val datesExist: Boolean = true,
     val emptyDatabase: Boolean = false,
     val autoCompleteData: AutoCompleteData = AutoCompleteData()
 )
