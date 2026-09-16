@@ -128,6 +128,7 @@ fun TableViewMode(
                 .fillMaxWidth()
                 .horizontalScroll(horizontalScroll, overscrollEffect = null),
             state = columnState,
+            overscrollEffect = null,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             stickyHeader {
