@@ -794,17 +794,28 @@ class HomeViewModel(
         combine(
             filterViewModel.typesExist, filterViewModel.subgenresExist,
             filterViewModel.ratingsExist, filterViewModel.favDisExist, filterViewModel.notesExist,
+            homeUiState
         ) {
+            val types = it[0] as Boolean
+            val subgenres = it[1] as Boolean
+            val ratings = it[2] as Boolean
+            val favDis = it[3] as Boolean
+            val notes = it[4] as Boolean
+            val homeUiState = it[5] as HomeUiState
+
+            while (homeUiState.isLoading) { delay(100.milliseconds) }
+
             mapOf(
-                TableColumn.TYPE to it[0],
-                TableColumn.SUBGENRE to it[1],
-                TableColumn.RATING to it[2],
-                TableColumn.FAV_DIS to it[3],
-                TableColumn.NOTE to it[4],
+                TableColumn.TYPE to types,
+                TableColumn.SUBGENRE to subgenres,
+                TableColumn.RATING to ratings,
+                TableColumn.FAV_DIS to favDis,
+                TableColumn.NOTE to notes,
                 TableColumn.QTY to true,
                 TableColumn.EDITED to true
             )
         }
+            .flowOn(Dispatchers.Default)
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
