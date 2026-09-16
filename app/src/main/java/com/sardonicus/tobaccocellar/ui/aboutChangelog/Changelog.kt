@@ -14,6 +14,16 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 63,
+        versionNumber = "5.3.3",
+        buildDate = "16 Sep, 2026",
+        bugFixes = listOf(
+            "Cellar Screen, fixed a small bug where sometimes table columns get temporarily " +
+                    "disabled and removed at app start."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 62,
         versionNumber = "5.3.2",
         buildDate = "15 Sep, 2026",
