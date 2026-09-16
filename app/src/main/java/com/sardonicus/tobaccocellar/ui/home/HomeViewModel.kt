@@ -795,15 +795,26 @@ class HomeViewModel(
             filterViewModel.typesExist, filterViewModel.subgenresExist,
             filterViewModel.ratingsExist, filterViewModel.favDisExist, filterViewModel.notesExist,
             homeUiState
-        ) {
-            val types = it[0] as Boolean
-            val subgenres = it[1] as Boolean
-            val ratings = it[2] as Boolean
-            val favDis = it[3] as Boolean
-            val notes = it[4] as Boolean
-            val homeUiState = it[5] as HomeUiState
+        ) { array ->
+            val types = array[0] as Boolean
+            val subgenres = array[1] as Boolean
+            val ratings = array[2] as Boolean
+            val favDis = array[3] as Boolean
+            val notes = array[4] as Boolean
+            val homeUiState = array[5] as HomeUiState
 
-            while (homeUiState.isLoading) { delay(100.milliseconds) }
+            delay(50.milliseconds)
+            if (homeUiState.isLoading) {
+                return@combine mapOf(
+                    TableColumn.TYPE to true,
+                    TableColumn.SUBGENRE to true,
+                    TableColumn.RATING to true,
+                    TableColumn.FAV_DIS to true,
+                    TableColumn.NOTE to true,
+                    TableColumn.QTY to true,
+                    TableColumn.EDITED to true
+                )
+            }
 
             mapOf(
                 TableColumn.TYPE to types,
