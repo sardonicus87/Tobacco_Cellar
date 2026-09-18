@@ -74,8 +74,6 @@ class DownloadSyncWorker(
 
             val successfullyProcessedFiles = mutableListOf<String>()
 
-            val dbVersion = TobaccoDatabase.DATABASE_VERSION
-
             for (file in newFiles) {
                 var processSuccess = true
 
@@ -86,7 +84,7 @@ class DownloadSyncWorker(
 
                         db.withTransaction {
                             for (op in operations) {
-                                if (!applyOperation(itemsRepository, op, dbVersion)) {
+                                if (!applyOperation(itemsRepository, op)) {
                                     processSuccess = false
                                 }
                             }
@@ -131,8 +129,8 @@ class DownloadSyncWorker(
         }
     }
 
-    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation, localDbVersion: Int): Boolean {
-        if (op.dbVersion > localDbVersion) { return false }
+    private suspend fun applyOperation(repo: ItemsRepository, op: PendingSyncOperation): Boolean {
+        if (op.dbVersion > TobaccoDatabase.DATABASE_VERSION) { return false }
 
         when (op.entityType) {
             "Items" -> {
