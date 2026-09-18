@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -331,9 +330,7 @@ class FilterViewModel (
 
     /** Filtering states **/
     // available fields for filter //
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val cellarMetaData: StateFlow<CellarMetaData> = everythingFlow.mapLatest { data ->
-        delay(50.milliseconds)
+    private val cellarMetaData: StateFlow<CellarMetaData> = everythingFlow.map { data ->
         generateMetaData(data)
     }
         .flowOn(Dispatchers.Default)
@@ -428,8 +425,8 @@ class FilterViewModel (
     val availableBrands = cellarMetaData.map { it.availableBrands }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _availableTypes = cellarMetaData.map { it.availableTypes }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+//    private val _availableTypes = cellarMetaData.map { it.availableTypes }
+//        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _availableSubgenres = cellarMetaData.map { it.availableSubgenres }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -474,14 +471,16 @@ class FilterViewModel (
     val tinsReady: StateFlow<Boolean> = _tinsReady
 
 
-    // setting available vals
+    // Remove invalid selections and check dates
     private val _selectionHistory = MutableStateFlow<List<Pair<FilterCategory, Any?>>>(emptyList())
     init {
         viewModelScope.launch(Dispatchers.Default) {
             launch {
-                everythingFlow.distinctUntilChanged().collectLatest {
+                cellarMetaData.collect {
+                    _autoComplete.value = it.autoCompleteData
+
                     val invalid = _selectionHistory.value.filter { (cat, value) ->
-                        isSelectionInvalid(cat, value)
+                        isSelectionInvalid(cat, value, it)
                     }
                     if (invalid.isNotEmpty()) {
                         invalid.forEach { (cat, value) -> removeFilter(cat, value) }
@@ -501,9 +500,6 @@ class FilterViewModel (
                         }
                         .map { it.tinId }.any { it !in lastSeen }
                 }.collect { _tinsReady.value = it }
-            }
-            launch {
-                cellarMetaData.collect { _autoComplete.value = it.autoCompleteData }
             }
         }
     }
@@ -1021,7 +1017,7 @@ class FilterViewModel (
         if (history.isEmpty()) { resetFilter(); return }
 
         val invalidSelections = history.filter { (category, value) ->
-            isSelectionInvalid(category, value)
+            isSelectionInvalid(category, value, cellarMetaData.value)
         }
 
         if (invalidSelections.isNotEmpty()) {
@@ -1046,23 +1042,23 @@ class FilterViewModel (
 
         removeFilter(category, value)
     }
-    private fun isSelectionInvalid(category: FilterCategory, value: Any?): Boolean {
+    private fun isSelectionInvalid(category: FilterCategory, value: Any?, data: CellarMetaData): Boolean {
         return when (category) {
-            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !availableBrands.value.contains(value as String)
-            FilterCategory.TYPE -> !_availableTypes.value.contains(value as String)
-            FilterCategory.SUBGENRE -> !_availableSubgenres.value.contains(value as String)
-            FilterCategory.CUT -> !_availableCuts.value.contains(value as String)
-            FilterCategory.COMPONENT -> !_availableComponents.value.contains(value as String)
-            FilterCategory.FLAVORING -> !_availableFlavorings.value.contains(value as String)
-            FilterCategory.CONTAINER -> !_availableContainers.value.contains(value as String)
+            FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !data.availableBrands.contains(value as String)
+            FilterCategory.TYPE -> !data.availableTypes.contains(value as String)
+            FilterCategory.SUBGENRE -> !data.availableSubgenres.contains(value as String)
+            FilterCategory.CUT -> !data.availableCuts.contains(value as String)
+            FilterCategory.COMPONENT -> !data.availableComponents.contains(value as String)
+            FilterCategory.FLAVORING -> !data.availableFlavorings.contains(value as String)
+            FilterCategory.CONTAINER -> !data.availableContainers.contains(value as String)
 
             FilterCategory.FAVORITE, FilterCategory.EXCLUDE_FAVORITE,
-            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !favDisExist.value
+            FilterCategory.DISLIKED, FilterCategory.EXCLUDE_DISLIKED -> !data.favDisExist
 
-            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !ratingsExist.value
+            FilterCategory.UNRATED, FilterCategory.RATING_LOW, FilterCategory.RATING_HIGH -> !data.ratingsExist
 
             FilterCategory.HAS_TINS, FilterCategory.NO_TINS, FilterCategory.OPENED,
-            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !tinsExist.value
+            FilterCategory.UNOPENED, FilterCategory.FINISHED, FilterCategory.UNFINISHED -> !data.tinsExist
 
             else -> false
         }
