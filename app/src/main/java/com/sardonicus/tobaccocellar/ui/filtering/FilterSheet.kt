@@ -100,7 +100,7 @@ fun FilterSheet(
                     .matchParentSize()
                     .drawBehind {
                         val pinned = window.rootView.height.toFloat() - currentTop - navigation
-                        drawRect(Color.Black, Offset(0f, pinned), Size(size.width, navigation))
+                        drawRect(Color(0xFF131413), Offset(0f, pinned), Size(size.width, navigation))
                     }
                 )
             }

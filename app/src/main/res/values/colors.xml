@@ -5,4 +5,5 @@
     <color name="splashscreen_background">#272727</color>
     <color name="primaryLight">#FF206A4D</color>
     <color name="primaryLightDark">#FF164A36</color>
+    <color name="dark">#FF131413</color>
 </resources>

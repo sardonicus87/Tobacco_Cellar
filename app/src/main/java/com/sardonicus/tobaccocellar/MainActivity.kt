@@ -119,8 +119,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.BLACK)
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13)),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13))
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
@@ -143,6 +143,8 @@ class MainActivity : ComponentActivity() {
 
         windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        windowInsetsController.isAppearanceLightNavigationBars = false
+        windowInsetsController.isAppearanceLightStatusBars = false
 
         preferencesRepo = (application as CellarApplication).preferencesRepo
         credentialManager = CredentialManager.create(this@MainActivity)
@@ -427,9 +429,9 @@ private fun SystemBarsProtection() {
     Spacer(Modifier
         .fillMaxSize()
         .drawBehind {
-            drawRect(Color.Black, size = Size(size.width, statusBarHeight))
+            drawRect(Color(0xFF131413), size = Size(size.width, statusBarHeight))
             drawRect(
-                Color.Black, Offset(0f, size.height - navigationHeight),
+                Color(0xFF131413), Offset(0f, size.height - navigationHeight),
                 Size(size.width, navigationHeight)
             )
         }
