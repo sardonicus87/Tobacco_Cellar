@@ -38,7 +38,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -64,8 +63,6 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDia
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,15 +73,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-    val dbLoading by viewModel.dbLoading.collectAsState()
-
-    LaunchedEffect(dbLoading) {
-        if (dbLoading) {
-            delay(50.milliseconds)
-            EventBus.emit(ShowLoading)
-        }
-        else { EventBus.emit(DismissLoading) }
-    }
 
     DisposableEffect(Unit) {
         onDispose { viewModel.cleanupDismiss(); EventBus.tryEmit(DismissSnackbar) }
