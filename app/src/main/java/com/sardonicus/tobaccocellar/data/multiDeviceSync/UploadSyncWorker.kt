@@ -40,7 +40,9 @@ class UploadSyncWorker(
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             if (!syncEnabled) { return Result.success() }
 
-            val userEmail = preferencesRepo.signedInUserEmail.first() ?: return Result.success()
+            val userEmail = preferencesRepo.signedInUserEmail.first()
+            if (userEmail.isNullOrBlank()) return Result.success()
+
             val driveService = GoogleDriveServiceHelper.getDriveService(applicationContext, userEmail)
 
             while (pendingSyncOperationDao.hasPendingOperations()) {
@@ -77,9 +79,7 @@ class UploadSyncWorker(
 
             return Result.success()
         } catch (_: Exception) {
-            return Result.retry()
-        } finally {
-            SyncStateManager.finished()
-        }
+            return if (runAttemptCount >= 5) Result.success() else Result.retry()
+        } finally { SyncStateManager.finished() }
     }
 }

@@ -2,12 +2,15 @@ package com.sardonicus.tobaccocellar
 
 import android.app.Activity
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
@@ -51,12 +54,15 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     private var verificationJob: Job? = null
     private var lastSyncVerification: Long = 0
 
+    companion object { const val NOTIFICATION_CHANNEL_ID = "sync_channel" }
+
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(this)
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore, applicationScope)
         csvHelper = CsvHelper()
+        createNotificationChannel()
 
         applicationScope.launch(Dispatchers.Default) {
             if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() }
@@ -97,10 +103,15 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             .setRequiredNetworkType(networkType)
             .build()
 
+        val data = Data.Builder()
+            .putString(DownloadSyncWorker.SYNC_TYPE_KEY, DownloadSyncWorker.SYNC_TYPE_PERIODIC)
+            .build()
+
         val downloadWorkRequest =
             PeriodicWorkRequestBuilder<DownloadSyncWorker>(12, TimeUnit.HOURS)
                 .setConstraints(constraints)
                 .addTag("periodic worker")
+                .setInputData(data)
                 .build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
@@ -177,6 +188,19 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         EventBus.emit(ShowToast("Sync disabled, please sign in again."))
     }
 
+    private fun createNotificationChannel() {
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, "Sync Status", importance).apply {
+            description = "Notifications for background sync"
+            setSound(null, null)
+            enableVibration(false)
+            setShowBadge(true)
+            enableLights(false)
+        }
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         // cold/warm start check for new files
@@ -189,6 +213,10 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 val allowMobile = preferencesRepo.allowMobileData.first()
                 val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
+                val data = Data.Builder()
+                    .putString(DownloadSyncWorker.SYNC_TYPE_KEY, "other")
+                    .build()
+
                 val onStartWorkRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
                     .setConstraints(
                         Constraints.Builder()
@@ -196,6 +224,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                             .build()
                     )
                     .addTag("cold/warm start check")
+                    .setInputData(data)
                     .build()
 
                 workManager.enqueue(onStartWorkRequest)
