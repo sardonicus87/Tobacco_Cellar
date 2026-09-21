@@ -64,6 +64,8 @@ class PreferencesRepo(
         val SIGNED_IN_ACCOUNT = stringPreferencesKey("signed_in_account")
         val HAS_DRIVE_SCOPE = booleanPreferencesKey("has_drive_scope")
         val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
+        val TIN_NOTIFICATIONS = booleanPreferencesKey("tin_notifications")
+        val TIN_NOTIFY_TIME = intPreferencesKey("tin_notify_time")
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
         val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
@@ -420,6 +422,28 @@ class PreferencesRepo(
 
     suspend fun saveProcessedSyncFiles(filesIds: Set<String>) {
         dataStore.edit { it[PROCESSED_SYNC_FILES] = filesIds.joinToString(",") }
+    }
+
+    val tinNotifications: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[TIN_NOTIFICATIONS] ?: false }.distinctUntilChanged()
+
+    val tinNotifyTime: Flow<Int> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[TIN_NOTIFY_TIME] ?: 600 }
+
+    suspend fun saveTinNotifications(enabled: Boolean) { dataStore.edit { it[TIN_NOTIFICATIONS] = enabled } }
+
+    suspend fun saveTinNotifyTime(time: Int) {
+        dataStore.edit { it[TIN_NOTIFY_TIME] =  time }
     }
 
     val tinOzConversionRate: Flow<Double> = dataStore.data
