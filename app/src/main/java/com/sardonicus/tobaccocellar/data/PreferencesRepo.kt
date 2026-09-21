@@ -438,7 +438,7 @@ class PreferencesRepo(
                 Log.e(TAG, "Error reading conversion preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[TIN_NOTIFY_TIME] ?: 600 }
+        }.map { it[TIN_NOTIFY_TIME] ?: 600 }.distinctUntilChanged()
 
     suspend fun saveTinNotifications(enabled: Boolean) { dataStore.edit { it[TIN_NOTIFICATIONS] = enabled } }
 
