@@ -60,6 +60,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.BackupRestore
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DbOperationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDialog
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinNotificationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -268,6 +269,8 @@ private fun DialogManager(viewModel: SettingsViewModel) {
     val deviceSync by viewModel.crossDeviceSync.collectAsState()
     val signingIn by viewModel.signingIn.collectAsState()
     val allowMobileData by viewModel.allowMobileData.collectAsState()
+    val tinNotifications by viewModel.tinNotifications.collectAsState()
+    val notificationTime by viewModel.tinNotifyTime.collectAsState()
     val ozRate by viewModel.tinOzConversionRate.collectAsState()
     val gramsRate by viewModel.tinGramsConversionRate.collectAsState()
     val defaultSyncOption by viewModel.defaultSyncOption.collectAsState()
@@ -363,6 +366,14 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                 onManualSync = viewModel::manualSync,
                 clearRemoteData = viewModel::clearRemoteData,
                 clearLoginState = viewModel::clearLoginState
+            )
+        }
+        DialogType.TinNotifications -> {
+            TinNotificationsDialog(
+                onDismiss = viewModel::dismissDialog,
+                tinNotifications = tinNotifications,
+                notificationTime = notificationTime,
+                onSave = viewModel::saveTinNotifications
             )
         }
         DialogType.TinRates -> {

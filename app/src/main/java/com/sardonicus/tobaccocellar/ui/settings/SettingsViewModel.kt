@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.app.NotificationManager
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
@@ -10,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
@@ -29,6 +31,7 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import kotlinx.coroutines.Dispatchers
@@ -118,6 +121,8 @@ class SettingsViewModel(
 
     val twoColumnTabs = preferencesRepo.twoColumnTabs
 
+    val isSyncing = SyncStateManager.isSyncing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
 
     /** App & Database settings */
     val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -135,6 +140,10 @@ class SettingsViewModel(
 
     val hasScope = preferencesRepo.hasDriveScope.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val tinNotifications = preferencesRepo.tinNotifications.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val tinNotifyTime = preferencesRepo.tinNotifyTime.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 600)
+
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.ozRate)
 
     val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.gramsRate)
@@ -144,16 +153,28 @@ class SettingsViewModel(
 
     /** General UI control **/
     private val _loading = MutableStateFlow(false)
-    val loading: StateFlow<Boolean> = _loading.asStateFlow()
-
-    private val _dbLoading = MutableStateFlow(false)
-    val dbLoading: StateFlow<Boolean> = _dbLoading.asStateFlow()
+    val loading: StateFlow<Boolean> = combine(isSyncing, _loading) {
+        syncing, loading -> syncing || loading }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
         viewModelScope.launch {
             EventBus.events.collect { event ->
                 if (event is SignInCancelled) { _signingIn.value = false }
                 if (event is SignOutEvent) { _signingIn.value = false }
+            }
+        }
+        application.applicationScope.launch(Dispatchers.Default) {
+            launch {
+                val email = preferencesRepo.signedInUserEmail.first()
+                if (email?.isBlank() == true) { clearLoginState() }
+            }
+            launch {
+                val notification = preferencesRepo.tinNotifications.first()
+                if (notification) {
+                    val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    val system = checkNotificationPermission(notificationManager, application)
+                    if (!system) { preferencesRepo.saveTinNotifications(false) }
+                }
             }
         }
     }
@@ -198,6 +219,7 @@ class SettingsViewModel(
         crossDeviceSync,
         allowMobileData,
         networkEnabled,
+        tinNotifications,
         tinOzConversionRate,
         tinGramsConversionRate,
         defaultSyncOption,
@@ -205,9 +227,10 @@ class SettingsViewModel(
         val crossDeviceSync = values[0] as Boolean
         val mobileData = values[1] as Boolean
         val connected = values[2] as Boolean
-        val ozRate = values[3] as Double
-        val gramsRate = values[4] as Double
-        val defaultSync = values[5] as Boolean
+        val tinNotifications = values[3] as Boolean
+        val ozRate = values[4] as Double
+        val gramsRate = values[5] as Double
+        val defaultSync = values[6] as Boolean
 
         listOf(
             SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync.", crossDeviceSync.let {
@@ -215,6 +238,7 @@ class SettingsViewModel(
                     if (!connected) "Disconnected" else "On (${if (mobileData) "mobile" else "WiFi"})"
                 } else "Off"
             }, DialogType.DeviceSync),
+            SettingsDialog("Tin Ready Notifications", "Enable/disable tin notifications.", tinNotifications.let { if (it) "On" else "Off" }, DialogType.TinNotifications),
             SettingsDialog("Tin Conversion Rates", "Change tin conversion rates.", "$ozRate oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
             SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option.", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
             SettingsDialog("Backup/Restore", "Backup or restore database and/or settings.", null, DialogType.BackupRestore),
@@ -298,8 +322,7 @@ class SettingsViewModel(
 
     fun manualSync() {
         application.applicationScope.launch {
-            if (SyncStateManager.isSyncing.first()) {
-                showSnackbar("Sync already in progress."); return@launch }
+            if (isSyncing.first()) { showSnackbar("Sync already in progress."); return@launch }
 
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
@@ -315,54 +338,84 @@ class SettingsViewModel(
 
             itemsRepository.triggerUploadWorker()
 
+            val data = Data.Builder()
+                .putString(DownloadSyncWorker.SYNC_TYPE_KEY, "other")
+                .build()
+
             val workRequest = OneTimeWorkRequestBuilder<DownloadSyncWorker>()
                 .setConstraints(
                     Constraints.Builder().setRequiredNetworkType(networkType).build()
                 )
+                .setInputData(data)
                 .build()
 
             workManager.enqueueUniqueWork("manual_download_sync", ExistingWorkPolicy.REPLACE, workRequest)
 
-            val timeoutJob = viewModelScope.launch {
+            val timeoutJob = launch {
                 delay(5000.milliseconds)
                 val workInfo = workManager.getWorkInfoById(workRequest.id).get()
                 if (workInfo?.state == WorkInfo.State.ENQUEUED) {
                     workManager.cancelWorkById(workRequest.id)
-                    setLoadingState(false)
                     showSnackbar("Sync failed (connection timeout).")
                 }
             }
 
-            workManager.getWorkInfoByIdFlow(workRequest.id)
-                .collect { workInfo ->
-                    when (workInfo?.state) {
-                        WorkInfo.State.ENQUEUED -> { setLoadingState(true) }
-                        WorkInfo.State.RUNNING -> { timeoutJob.cancel(); setLoadingState(true) }
-                        WorkInfo.State.SUCCEEDED -> {
-                            timeoutJob.cancel()
-                            setLoadingState(false)
-                            val result = workInfo.outputData
-                            when (result.getString(DownloadSyncWorker.RESULT_KEY)) {
-                                DownloadSyncWorker.SYNC_COMPLETE -> { showSnackbar("Sync complete.") }
-                                DownloadSyncWorker.REMOTE_EMPTY -> { showSnackbar("Remote files not found.") }
-                                DownloadSyncWorker.UP_TO_DATE -> { showSnackbar("No new sync data available.") }
+            launch {
+                workManager.getWorkInfoByIdFlow(workRequest.id)
+                    .collect { workInfo ->
+                        when (workInfo?.state) {
+                            WorkInfo.State.ENQUEUED -> { }
+
+                            WorkInfo.State.RUNNING -> { timeoutJob.cancel() }
+
+                            WorkInfo.State.SUCCEEDED -> {
+                                timeoutJob.cancel()
+                                val success = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
+                                val message = when (success) {
+                                    DownloadSyncWorker.SYNC_COMPLETE -> {
+                                        "Sync complete." }
+                                    DownloadSyncWorker.REMOTE_EMPTY -> {
+                                        "Remote files not found." }
+                                    DownloadSyncWorker.NETWORK_ERROR -> {
+                                        "No or lost connection." }
+                                    DownloadSyncWorker.SKIPPED -> {
+                                        "Sync became disabled." }
+                                    DownloadSyncWorker.UP_TO_DATE -> {
+                                        "No new sync data available." }
+                                    else -> "Sync complete."
+                                }
+                                showSnackbar(message)
                             }
+
+                            WorkInfo.State.FAILED -> {
+                                timeoutJob.cancel()
+                                val error = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
+                                val message = when (error) {
+                                    DownloadSyncWorker.NO_ACCOUNT -> {
+                                        "Sync failed, not signed in." }
+                                    DownloadSyncWorker.AUTH_ERROR -> {
+                                        "Authentication error, try signing out and back in." }
+                                    DownloadSyncWorker.SERVER_ERROR -> {
+                                        "Remote connection failed." }
+                                    DownloadSyncWorker.NETWORK_ERROR -> {
+                                        "Sync failed, please check connection." }
+                                    else -> "Sync failed (unknown error)."
+                                }
+                                showSnackbar(message)
+                            }
+
+                            WorkInfo.State.CANCELLED -> { timeoutJob.cancel() }
+
+                            else -> { timeoutJob.cancel() }
                         }
-                        WorkInfo.State.FAILED -> {
-                            timeoutJob.cancel()
-                            setLoadingState(false)
-                            showSnackbar("Sync failed (check connection).")
-                        }
-                        WorkInfo.State.CANCELLED -> { timeoutJob.cancel(); setLoadingState(false) }
-                        else -> { timeoutJob.cancel(); setLoadingState(false) }
                     }
-                }
+            }
         }
     }
 
     fun clearRemoteData() {
         application.applicationScope.launch {
-            if (SyncStateManager.isSyncing.first()) {
+            if (isSyncing.first()) {
                 showSnackbar("Sync in progress, please wait for it to finish.")
                 return@launch
             }
@@ -374,11 +427,12 @@ class SettingsViewModel(
                 return@launch
             }
 
-            setLoadingState(true)
+            val email = preferencesRepo.signedInUserEmail.first()
+            if (email == null) { showSnackbar("No user signed in."); return@launch }
+
+            SyncStateManager.started()
 
             withContext(Dispatchers.IO) {
-                val email = preferencesRepo.signedInUserEmail.first()
-                if (email == null) { setLoadingState(false); return@withContext }
 
                 try {
                     val driveService = GoogleDriveServiceHelper.getDriveService(application, email)
@@ -389,7 +443,6 @@ class SettingsViewModel(
                         .execute()
 
                     if (files.files.isNullOrEmpty()) {
-                        setLoadingState(false)
                         showSnackbar("No data to delete.")
                         return@withContext
                     }
@@ -416,7 +469,7 @@ class SettingsViewModel(
 
                 }
                 catch (_: Exception) { showSnackbar("Error deleting remote data.") }
-                finally { setLoadingState(false) }
+                finally { SyncStateManager.finished() }
             }
         }
     }
@@ -425,6 +478,13 @@ class SettingsViewModel(
 
     private fun stopWorkers() {
         application.applicationScope.launch { application.cancelPeriodicSync() }
+    }
+
+    fun saveTinNotifications(option: Boolean, time: Int) {
+        application.applicationScope.launch(Dispatchers.Default) {
+            preferencesRepo.saveTinNotifications(option)
+            preferencesRepo.saveTinNotifyTime(time)
+        }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
@@ -544,7 +604,13 @@ class SettingsViewModel(
 
     fun createBackupBinary(uri: Uri, context: Context) {
         application.applicationScope.launch {
-            _dbLoading.value = true
+            var loadingTriggered = false
+            val loadingTimer = launch {
+                delay(200.milliseconds)
+                EventBus.emit(ShowLoading)
+                loadingTriggered = true
+            }
+
             var message = ""
 
             val tempDbZip = context.contentResolver.openFileDescriptor(uri, "w")?.use {
@@ -584,9 +650,10 @@ class SettingsViewModel(
                 } catch (_: Exception) { }
                 message = "Backup failed."
             } finally {
+                loadingTimer.cancel()
                 deleteTempFile(tempDbZip)
                 onBackupOptionChanged(BackupState(databaseChecked = false, settingsChecked = false))
-                _dbLoading.value = false
+                if (loadingTriggered) { EventBus.emit(DismissLoading) }
                 showSnackbar(message)
             }
         }
@@ -599,7 +666,12 @@ class SettingsViewModel(
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
         application.applicationScope.launch(Dispatchers.Default) {
-            _dbLoading.value = true
+            var loadingTriggered = false
+            val loadingTimer = launch {
+                delay(200.milliseconds)
+                EventBus.emit(ShowLoading)
+                loadingTriggered = true
+            }
 
             val workManager = WorkManager.getInstance(context)
             SyncStateManager.loggingPaused = true
@@ -675,12 +747,13 @@ class SettingsViewModel(
             } catch (e: Exception) {
                 message = "Restore failed: ${e.message}"
             } finally {
+                loadingTimer.cancel()
                 SyncStateManager.loggingPaused = false
                 SyncStateManager.schedulingPaused = false
                 if (crossDeviceSync.value) { workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build()) }
 
                 onRestoreOptionChanged(RestoreState(databaseChecked = false, settingsChecked = false))
-                _dbLoading.value = false
+                if (loadingTriggered) { EventBus.emit(DismissLoading) }
                 showSnackbar(message)
             }
         }
@@ -904,9 +977,10 @@ sealed class DialogType {
     object GlobalTwoPane: DialogType()
 
     object DeviceSync : DialogType()
-    object BackupRestore: DialogType()
+    object TinNotifications : DialogType()
     object TinRates : DialogType()
     object TinSyncDefault : DialogType()
+    object BackupRestore: DialogType()
     object DbOperations : DialogType()
     object DeleteAll : DialogType()
 }
@@ -981,7 +1055,9 @@ data class SettingsBackup (
     val datesLastSeen: String = "",
     val globalTwoPane: Boolean = true,
     val twoColumnTabs: Boolean = true,
-    val landscapeTwoPane: Boolean = false
+    val landscapeTwoPane: Boolean = false,
+    val tinNotifications: Boolean = false,
+    val tinNotifyTime: Int = 600,
 )
 
 data class RestoreState(
@@ -1126,7 +1202,9 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         datesLastSeen = preferencesRepo.datesSeen.first(),
         globalTwoPane = preferencesRepo.globalTwoPane.first(),
         twoColumnTabs = preferencesRepo.twoColumnTabs.first(),
-        landscapeTwoPane = preferencesRepo.landscapeTwoPane.first()
+        landscapeTwoPane = preferencesRepo.landscapeTwoPane.first(),
+        tinNotifications = preferencesRepo.tinNotifications.first(),
+        tinNotifyTime = preferencesRepo.tinNotifyTime.first()
     )
 
     return Json.encodeToString(backup)
@@ -1153,6 +1231,7 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
 
 suspend fun parseSettingsText(settingsText: String, preferencesRepo: PreferencesRepo, version: Int) {
     if (version >= 4) {
+        val userEmail = preferencesRepo.signedInUserEmail.first()
         val backup = Json.decodeFromString<SettingsBackup>(settingsText)
         with(preferencesRepo) {
             saveView(backup.tableView)
@@ -1174,15 +1253,19 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             saveDefaultSyncOption(backup.defaultSyncTinsOption)
             saveTableColumnsHidden(backup.columnVisibility)
             saveParseLinks(backup.parseLinksOption)
-            saveCDAcknowledge(backup.syncAcknowledgement)
-            saveLoginState(backup.savedEmail ?: "", backup.driveScope)
-            saveAllowMobile(backup.mobileAllowed)
             saveProcessedSyncFiles(backup.processedSync)
-            saveCrossDeviceSync(backup.crossDevice)
+            if (backup.syncAcknowledgement) saveCDAcknowledge(true)
+            if (backup.savedEmail != null && userEmail == null) {
+                saveLoginState(backup.savedEmail, backup.driveScope)
+                saveAllowMobile(backup.mobileAllowed)
+                saveCrossDeviceSync(backup.crossDevice)
+            }
             setDatesSeen(backup.datesLastSeen)
             saveGlobalTP(backup.globalTwoPane)
             saveTwoColumn(backup.twoColumnTabs)
             saveLandscape(backup.landscapeTwoPane)
+            saveTinNotifications(backup.tinNotifications)
+            saveTinNotifyTime(backup.tinNotifyTime)
         }
     } else { // support for older backup files
         val lines = settingsText.lines()
@@ -1231,7 +1314,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                         preferencesRepo.saveTableColumnsHidden(columns)
                     }
                     "parseLinksOption" -> preferencesRepo.saveParseLinks(value.toBoolean())
-                    "syncAcknowledgement" -> preferencesRepo.saveCDAcknowledge(value.toBoolean())
+                    "syncAcknowledgement" -> if(value.toBoolean()) preferencesRepo.saveCDAcknowledge(true)
                     "processedSync" -> {
                         val files = value.split(", ").toSet()
                         preferencesRepo.saveProcessedSyncFiles(files)
