@@ -101,7 +101,7 @@ class DownloadSyncWorker(
                         val title =
                             if (syncType == SYNC_TYPE_PERIODIC) "Periodic sync in progress"
                             else "Sync in progress"
-                        val notification = NotificationCompat.Builder(applicationContext, CellarApplication.NOTIFICATION_CHANNEL_ID)
+                        val notification = NotificationCompat.Builder(applicationContext, CellarApplication.SYNC_NOTIFICATION)
                             .setContentTitle(title)
                             .setSmallIcon(android.R.drawable.stat_notify_sync)
                             .setOngoing(true)

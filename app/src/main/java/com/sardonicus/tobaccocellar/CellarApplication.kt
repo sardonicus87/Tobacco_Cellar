@@ -54,7 +54,10 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     private var verificationJob: Job? = null
     private var lastSyncVerification: Long = 0
 
-    companion object { const val NOTIFICATION_CHANNEL_ID = "sync_channel" }
+    companion object {
+        const val SYNC_NOTIFICATION = "sync_channel"
+        const val TIN_NOTIFICATION = "tin_notification"
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -189,16 +192,23 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     }
 
     private fun createNotificationChannel() {
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, "Sync Status", importance).apply {
-            description = "Notifications for background sync"
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, "Background sync", NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = "Quiet background notification indicating sync working in the background."
+            setShowBadge(false)
             setSound(null, null)
             enableVibration(false)
-            setShowBadge(true)
             enableLights(false)
         }
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
+        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, "Tins ready", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "Show a notification when a tin is ready to open."
+            setShowBadge(true)
+            enableVibration(true)
+            enableLights(true)
+        }
+
+        notificationManager.createNotificationChannel(syncChannel)
+        notificationManager.createNotificationChannel(tinReadyChannel)
     }
 
 
