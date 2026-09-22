@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -58,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -199,9 +201,7 @@ private fun IndividualTin(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .onGloballyPositioned {
-                    headerWidth = with(density) { it.size.width.toDp() }
-                }
+                .onGloballyPositioned { headerWidth = with(density) { it.size.width.toDp() } }
         ) {
             val textFieldMax = headerWidth - 72.dp
 
@@ -221,10 +221,9 @@ private fun IndividualTin(
                         painter = painterResource(id = icon),
                         contentDescription = "Expand/contract details",
                         modifier = Modifier
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { onTinValueChange(tinDetails.copy(detailsExpanded = !tinDetails.detailsExpanded)) }
+                            .clip(CircleShape)
+                            .clickable(null, LocalIndication.current) {
+                                onTinValueChange(tinDetails.copy(detailsExpanded = !tinDetails.detailsExpanded)) }
                             .padding(4.dp)
                             .size(22.dp),
                         tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
@@ -310,10 +309,8 @@ private fun IndividualTin(
                         imageVector = ImageVector.vectorResource(id = R.drawable.remove_outline),
                         contentDescription = "Close",
                         modifier = Modifier
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null
-                            ) { removeTin() }
+                            .clip(CircleShape)
+                            .clickable(null, LocalIndication.current) { removeTin() }
                             .padding(4.dp)
                             .size(20.dp),
                         tint = LocalCustomColors.current.pieNine.copy(alpha = 0.8f)
@@ -350,10 +347,7 @@ private fun IndividualTin(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable(
-                                            indication = LocalIndication.current,
-                                            interactionSource = null
-                                        ) { onTinValueChange(tinDetails.copy(container = "")) }
+                                        .clickable(null, LocalIndication.current) { onTinValueChange(tinDetails.copy(container = "")) }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -891,11 +885,7 @@ private fun IndividualTin(
                     Row(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable(
-                                indication = null,
-                                interactionSource = null,
-                                enabled = !disabled
-                            ) { onTinValueChange(tinDetails.copy(finished = !tinDetails.finished)) },
+                            .clickable(null, null, !disabled) { onTinValueChange(tinDetails.copy(finished = !tinDetails.finished)) },
                         horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -925,10 +915,7 @@ private fun IndividualTin(
                 color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null
-                    ) { onTinValueChange(tinDetails.copy(detailsExpanded = true)) }
+                    .clickable(null, LocalIndication.current) { onTinValueChange(tinDetails.copy(detailsExpanded = true)) }
                     .fillMaxWidth()
             )
         }
