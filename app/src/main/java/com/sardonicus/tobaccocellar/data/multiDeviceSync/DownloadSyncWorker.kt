@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.data.multiDeviceSync
 
 import android.app.NotificationManager
 import android.content.Context
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.room.withTransaction
 import androidx.work.CoroutineWorker
@@ -20,17 +21,17 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import java.io.IOException
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class DownloadSyncWorker(
     appContext: Context,
@@ -69,12 +70,28 @@ class DownloadSyncWorker(
         }
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        var notificationShown = false
 
         SyncStateManager.started()
 
+        var started = 0L
+
         try {
-            delay(15.seconds)
+            if (checkNotificationPermission(notificationManager, app)) {
+                started = SystemClock.elapsedRealtime()
+                val title =
+                    if (syncType == SYNC_TYPE_PERIODIC) "Tobacco Cellar periodic sync check"
+                    else "Tobacco Cellar sync check"
+                val notification = NotificationCompat.Builder(applicationContext, CellarApplication.SYNC_NOTIFICATION)
+                    .setContentTitle(title)
+                    .setSmallIcon(android.R.drawable.stat_notify_sync)
+                    .setOngoing(true)
+                    .setProgress(0, 0, true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setSilent(true)
+                    .build()
+
+                notificationManager.notify(SYNC_NOTIFICATION_ID, notification)
+            }
             val syncEnabled = prefsRepo.crossDeviceSync.first()
             if (!syncEnabled) { return Result.success(workDataOf(RESULT_KEY to SKIPPED)) }
 
@@ -94,75 +111,47 @@ class DownloadSyncWorker(
             val newFiles = fileList.files.filter { it.id !in processedFileIds }
                 .ifEmpty { return Result.success(workDataOf(RESULT_KEY to REMOTE_EMPTY)) }
 
-            coroutineScope {
-                val notificationTimer = launch {
-                    delay(250.milliseconds)
-                    if (notificationManager.areNotificationsEnabled()) {
-                        val title =
-                            if (syncType == SYNC_TYPE_PERIODIC) "Periodic sync in progress"
-                            else "Sync in progress"
-                        val notification = NotificationCompat.Builder(applicationContext, CellarApplication.SYNC_NOTIFICATION)
-                            .setContentTitle(title)
-                            .setSmallIcon(android.R.drawable.stat_notify_sync)
-                            .setOngoing(true)
-                            .setProgress(0, 0, true)
-                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                            .setSilent(true)
-                            .build()
+            val successfullyProcessedFiles = mutableListOf<String>()
 
-                        notificationManager.notify(SYNC_NOTIFICATION_ID, notification)
-                        notificationShown = true
-                    }
-                }
+            for (file in newFiles) {
+                var processSuccess = true
 
                 try {
-                    val successfullyProcessedFiles = mutableListOf<String>()
+                    driveService.files().get(file.id).executeMediaAsInputStream()
+                        .use { inputStream ->
+                            val operations =
+                                Json.decodeFromStream<List<PendingSyncOperation>>(inputStream)
+                            val db = TobaccoDatabase.getDatabase(applicationContext)
 
-                    for (file in newFiles) {
-                        var processSuccess = true
-
-                        try {
-                            driveService.files().get(file.id).executeMediaAsInputStream()
-                                .use { inputStream ->
-                                    val operations =
-                                        Json.decodeFromStream<List<PendingSyncOperation>>(inputStream)
-                                    val db = TobaccoDatabase.getDatabase(applicationContext)
-
-                                    db.withTransaction {
-                                        for (op in operations) {
-                                            if (!applyOperation(itemsRepo, op))
-                                                processSuccess = false
-                                        }
-                                    }
+                            db.withTransaction {
+                                for (op in operations) {
+                                    if (!applyOperation(itemsRepo, op))
+                                        processSuccess = false
                                 }
-                            if (processSuccess) { successfullyProcessedFiles.add(file.id) }
-                        } catch (_: Exception) { continue }
-                    }
-
-                    // find old files and delete
-                    val oneMonthMillis = 30 * 24 * 60 * 60 * 1000L
-                    val cutOffTime = System.currentTimeMillis() - oneMonthMillis
-
-                    val oldFiles = fileList.files.filter { it.createdTime.value < cutOffTime }
-                    val failedDelete = mutableSetOf<String>()
-                    if (oldFiles.isNotEmpty()) {
-                        for (file in oldFiles) {
-                            try { driveService.files().delete(file.id).execute() }
-                            catch (_: Exception) { failedDelete.add(file.id); continue }
+                            }
                         }
-                    }
+                    if (processSuccess) { successfullyProcessedFiles.add(file.id) }
+                } catch (_: Exception) { continue }
+            }
 
-                    val oldFileIds = oldFiles.map { it.id }.toSet() - failedDelete
-                    val allProcessedIds = processedFileIds + successfullyProcessedFiles - oldFileIds
+            // find old files and delete
+            val oneMonthMillis = 30 * 24 * 60 * 60 * 1000L
+            val cutOffTime = System.currentTimeMillis() - oneMonthMillis
 
-                    prefsRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
-                } finally {
-                    notificationTimer.cancel()
-                    if (notificationShown) {
-                        delay(500.milliseconds); notificationManager.cancel(SYNC_NOTIFICATION_ID)
-                    }
+            val oldFiles = fileList.files.filter { it.createdTime.value < cutOffTime }
+            val failedDelete = mutableSetOf<String>()
+            if (oldFiles.isNotEmpty()) {
+                for (file in oldFiles) {
+                    try { driveService.files().delete(file.id).execute() }
+                    catch (_: Exception) { failedDelete.add(file.id); continue }
                 }
             }
+
+            val oldFileIds = oldFiles.map { it.id }.toSet() - failedDelete
+            val allProcessedIds = processedFileIds + successfullyProcessedFiles - oldFileIds
+
+            prefsRepo.saveProcessedSyncFiles(allProcessedIds.toSet())
+
             EventBus.emit(SyncDownloadEvent)
             return Result.success(workDataOf(RESULT_KEY to SYNC_COMPLETE))
         } catch (e: Exception) {
@@ -178,7 +167,17 @@ class DownloadSyncWorker(
             return if (error == AUTH_ERROR || runAttemptCount >= 5) {
                 Result.failure(workDataOf(RESULT_KEY to error))
             } else Result.retry()
-        } finally { SyncStateManager.finished() }
+        } finally {
+            withContext(NonCancellable) {
+                SyncStateManager.finished()
+                if (started > 0) {
+                    val elapsed = SystemClock.elapsedRealtime() - started
+                    val extend = 3000 - elapsed
+                    if (extend > 0) { delay(extend.milliseconds) }
+                }
+                notificationManager.cancel(SYNC_NOTIFICATION_ID)
+            }
+        }
     }
 
 
