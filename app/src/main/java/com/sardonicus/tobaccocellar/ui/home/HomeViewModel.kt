@@ -212,7 +212,8 @@ class HomeViewModel(
         searchWasPerformed = searchPerformed
 
         displayedMessage
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "")
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), "")
 
     val itemsCount = filterViewModel.homeScreenFilteredItems.map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
