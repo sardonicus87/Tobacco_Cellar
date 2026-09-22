@@ -1,5 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
@@ -38,9 +42,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -53,6 +60,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
@@ -62,6 +71,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDial
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinNotificationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 
@@ -77,6 +87,40 @@ fun SettingsScreen(
 
     DisposableEffect(Unit) {
         onDispose { viewModel.cleanupDismiss(); EventBus.tryEmit(DismissSnackbar) }
+    }
+
+    val notificationTime by viewModel.tinNotifyTime.collectAsState()
+    val context = LocalContext.current
+    val notificationManager = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    var requestEvent by remember { mutableStateOf<RequestNotification?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) { viewModel.saveTinNotifications(true, notificationTime); requestEvent?.onComplete?.complete(Unit) }
+        else { viewModel.saveTinNotifications(false, notificationTime); requestEvent?.onComplete?.completeExceptionally(Exception("denied")) }
+        requestEvent = null
+    }
+
+    var waitingSignal by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        if (waitingSignal) {
+            requestEvent?.onComplete?.complete(Unit); requestEvent = null; waitingSignal = false
+        }
+        onPauseOrDispose { }
+    }
+    LaunchedEffect(Unit) {
+        EventBus.events.collect {
+            if (it is RequestNotification) {
+                requestEvent = it
+                val ready = requestNotificationPermission(context, notificationManager, permissionLauncher)
+                if (ready) { it.onComplete.complete(Unit); requestEvent = null }
+                else {
+                    val isRuntimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    } else true
+
+                    if (isRuntimeGranted) { waitingSignal = true }
+                }
+            }
+        }
     }
 
     DialogManager(viewModel = viewModel)

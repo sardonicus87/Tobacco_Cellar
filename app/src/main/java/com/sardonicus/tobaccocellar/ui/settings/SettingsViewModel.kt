@@ -34,6 +34,7 @@ import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -64,6 +66,7 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
@@ -669,8 +672,7 @@ class SettingsViewModel(
             var loadingTriggered = false
             val loadingTimer = launch {
                 delay(200.milliseconds)
-                EventBus.emit(ShowLoading)
-                loadingTriggered = true
+                EventBus.emit(ShowLoading); loadingTriggered = true
             }
 
             val workManager = WorkManager.getInstance(context)
@@ -681,10 +683,7 @@ class SettingsViewModel(
 
             try {
                 val bytes = readBytesFromFile(uri, context)
-                if (bytes == null) {
-                    message = "Invalid file."
-                    return@launch
-                }
+                if (bytes == null) { message = "Invalid file."; return@launch }
 
                 val fileContentState = validateBackupFile(bytes)
                 val restoreState = _restoreState.value
@@ -737,16 +736,31 @@ class SettingsViewModel(
                     }
 
                     if (dbRestored || settingsRestored) {
-                        try {
-                            withTimeout(2000.milliseconds) { filterViewModel.everythingFlow.first { it.isNotEmpty() } }
+                        try { withTimeout(2000.milliseconds) {
+                            filterViewModel.everythingFlow.first { it.isNotEmpty() } }
                         } catch (_: Exception) { }
                         delay(25.milliseconds)
                         updateTinSync(runSilent = true)
+
+                        if (settingsRestored) {
+                            delay(50.milliseconds)
+                            val restoredNotify = preferencesRepo.tinNotifications.first()
+                            if (restoredNotify) {
+                                val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                if (!checkNotificationPermission(notificationManager, application)) {
+                                    val signal = CompletableDeferred<Unit>()
+                                    EventBus.emit(RequestNotification(signal))
+                                    try { withTimeoutOrNull(60.seconds) { signal.await() } }
+                                    catch (_: Exception) { preferencesRepo.saveTinNotifications(false) }
+                                }
+                            }
+                        }
                     }
                 }
             } catch (e: Exception) {
                 message = "Restore failed: ${e.message}"
             } finally {
+                delay(500.milliseconds)
                 loadingTimer.cancel()
                 SyncStateManager.loggingPaused = false
                 SyncStateManager.schedulingPaused = false
@@ -754,6 +768,7 @@ class SettingsViewModel(
 
                 onRestoreOptionChanged(RestoreState(databaseChecked = false, settingsChecked = false))
                 if (loadingTriggered) { EventBus.emit(DismissLoading) }
+
                 showSnackbar(message)
             }
         }
@@ -925,11 +940,9 @@ class SettingsViewModel(
         }
     }
 
-    private fun restoreSettings(settingsBytes: ByteArray, backupVersion: Int) {
-        application.applicationScope.launch(Dispatchers.Default) {
-            val settingsText = String(settingsBytes, Charset.forName("UTF-8"))
-            parseSettingsText(settingsText, preferencesRepo, backupVersion)
-        }
+    private suspend fun restoreSettings(settingsBytes: ByteArray, backupVersion: Int) {
+        val settingsText = String(settingsBytes, Charset.forName("UTF-8"))
+        parseSettingsText(settingsText, preferencesRepo, backupVersion)
     }
 
     fun getBackupDbVersion(context: Context, databaseBytes: ByteArray): Int {
@@ -1080,6 +1093,7 @@ data object SignInCancelled
 data object SignOutEvent
 data object ShowLoading
 data object DismissLoading
+data class RequestNotification(val onComplete: CompletableDeferred<Unit>)
 
 
 /** Helper functions */
