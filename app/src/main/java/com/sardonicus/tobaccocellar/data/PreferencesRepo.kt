@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSortOption
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
@@ -66,6 +67,7 @@ class PreferencesRepo(
         val PROCESSED_SYNC_FILES = stringPreferencesKey("processed_sync_files")
         val TIN_NOTIFICATIONS = booleanPreferencesKey("tin_notifications")
         val TIN_NOTIFY_TIME = intPreferencesKey("tin_notify_time")
+        val TIN_LAST_NOTIFICATION = longPreferencesKey("tin_last_notification")
         val TIN_OZ_CONVERSION_RATE = doublePreferencesKey("tin_oz_conversion_rate")
         val TIN_GRAMS_CONVERSION_RATE = doublePreferencesKey("tin_grams_conversion_rate")
         val DEFAULT_SYNC = booleanPreferencesKey("default_sync")
@@ -440,11 +442,24 @@ class PreferencesRepo(
             } else { throw it }
         }.map { it[TIN_NOTIFY_TIME] ?: 600 }.distinctUntilChanged()
 
+    val lastTinNotifyDate: Flow<Long?> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading conversion preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[TIN_LAST_NOTIFICATION] }.distinctUntilChanged()
+
     suspend fun saveTinNotifications(enabled: Boolean) { dataStore.edit { it[TIN_NOTIFICATIONS] = enabled } }
 
     suspend fun saveTinNotifyTime(time: Int) {
         dataStore.edit { it[TIN_NOTIFY_TIME] =  time }
     }
+
+    suspend fun saveLastTinNotify(date: Long) {
+        dataStore.edit { it[TIN_LAST_NOTIFICATION] = date }
+    }
+
 
     val tinOzConversionRate: Flow<Double> = dataStore.data
         .catch {
