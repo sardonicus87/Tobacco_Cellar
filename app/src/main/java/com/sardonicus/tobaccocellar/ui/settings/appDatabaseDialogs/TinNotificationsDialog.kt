@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -75,10 +76,14 @@ fun TinNotificationsDialog (
     var showTimePicker by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { onSave(it, notificationTime) }
+    var launchedFromApp by remember { mutableStateOf(false) }
 
     LifecycleResumeEffect(Unit) {
-        val isReady = checkNotificationPermission(notificationManager, context)
-        if (isReady) { onSave(true, notificationTime) }
+        if (launchedFromApp) {
+            val isReady = checkNotificationPermission(notificationManager, context)
+            if (isReady) { onSave(true, notificationTime) }
+            launchedFromApp = false
+        }
         onPauseOrDispose { }
     }
 
@@ -121,31 +126,16 @@ fun TinNotificationsDialog (
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                         Switch(
                             checked = tinNotifications,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                                    } else true
-
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !isRuntime) {
-                                        permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        val appDisabled = !notificationManager.areNotificationsEnabled() // overall notifications disabled
-                                        val channelDisabled = notificationManager.getNotificationChannel(CellarApplication.TIN_NOTIFICATION)?.importance == NotificationManager.IMPORTANCE_NONE
-
-                                        if (appDisabled) {
-                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                            }
-                                            context.startActivity(intent)
-                                        } else if (channelDisabled) {
-                                            val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                                putExtra(Settings.EXTRA_CHANNEL_ID, CellarApplication.TIN_NOTIFICATION)
-                                            }
-                                            context.startActivity(intent)
-                                        }
-                                        else onSave(true, notificationTime)
+                            onCheckedChange = {
+                                if (it) {
+                                    if (requestNotificationPermission(
+                                            context, notificationManager, permissionLauncher)
+                                        ) { onSave(true, notificationTime) }
+                                    else {
+                                        val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                                        } else true
+                                        if (isRuntime) { launchedFromApp = true }
                                     }
                                 }
                                 else onSave(false, notificationTime)
@@ -209,6 +199,38 @@ fun TinNotificationsDialog (
     )
 }
 
+
+fun requestNotificationPermission(
+    context: Context,
+    notificationManager: NotificationManager,
+    permissionLauncher: ActivityResultLauncher<String>
+): Boolean {
+    val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    } else true
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !isRuntime) {
+        permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        return false
+    } else {
+        val appDisabled = !notificationManager.areNotificationsEnabled() // overall notifications disabled
+        val channelDisabled = notificationManager.getNotificationChannel(CellarApplication.TIN_NOTIFICATION)?.importance == NotificationManager.IMPORTANCE_NONE
+
+        if (appDisabled) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName) }
+            context.startActivity(intent)
+            return false
+        } else if (channelDisabled) {
+            val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                putExtra(Settings.EXTRA_CHANNEL_ID, CellarApplication.TIN_NOTIFICATION) }
+            context.startActivity(intent)
+            return false
+        }
+    }
+    return true
+}
 
 fun checkNotificationPermission(
     notificationManager: NotificationManager,
