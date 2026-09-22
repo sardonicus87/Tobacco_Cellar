@@ -27,8 +27,10 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
+import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,6 +41,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
@@ -72,29 +76,44 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             filterViewModel
         }
 
-        // Check Network Flow and trigger upload if there are pending ops,
+        // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
         applicationScope.launch(Dispatchers.Default) {
             val networkMonitor = container.networkMonitor
-            preferencesRepo.crossDeviceSync.collectLatest { enabled ->
-                if (enabled) {
-                    launch {
-                        combine(
-                            networkMonitor.isWifi,
-                            networkMonitor.isConnected,
-                            preferencesRepo.allowMobileData
-                        ) { isWifi, isConnected, allowMobile ->
-                            isWifi || (isConnected && allowMobile)
-                        }.distinctUntilChanged().collect {
-                            if (it && container.itemsRepository.hasPendingOperations()) {
-                                container.itemsRepository.triggerUploadWorker()
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            launch {
+                preferencesRepo.crossDeviceSync.collectLatest { enabled ->
+                    if (enabled) {
+                        launch {
+                            combine(
+                                networkMonitor.isWifi,
+                                networkMonitor.isConnected,
+                                preferencesRepo.allowMobileData
+                            ) { isWifi, isConnected, allowMobile ->
+                                isWifi || (isConnected && allowMobile)
+                            }.distinctUntilChanged().collect {
+                                if (it && container.itemsRepository.hasPendingOperations()) {
+                                    container.itemsRepository.triggerUploadWorker()
+                                }
                             }
                         }
+                        launch {
+                            preferencesRepo.allowMobileData.distinctUntilChanged()
+                                .collect { enqueuePeriodicSync(it) }
+                        }
+                    } else { cancelPeriodicSync() }
+                }
+            }
+            launch {
+                combine(preferencesRepo.tinNotifications, preferencesRepo.tinNotifyTime) { notify, time ->
+                    notify to time
+                }.collectLatest { (notify, time) ->
+                    val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
+                    if (notify) {
+                        if (systemEnabled) { scheduleTinNotificationWorker(time) }
+                        else { preferencesRepo.saveTinNotifications(false); cancelTinNotificationWorker() }
                     }
-                    launch {
-                        preferencesRepo.allowMobileData.distinctUntilChanged()
-                            .collect { enqueuePeriodicSync(it) }
-                    }
-                } else { cancelPeriodicSync() }
+                    else { cancelTinNotificationWorker() }
+                }
             }
         }
     }
@@ -200,7 +219,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             enableVibration(false)
             enableLights(false)
         }
-        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, "Tins ready", NotificationManager.IMPORTANCE_HIGH).apply {
+        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, "Tins ready", NotificationManager.IMPORTANCE_DEFAULT).apply {
             description = "Show a notification when a tin is ready to open."
             setShowBadge(true)
             enableVibration(true)
@@ -210,6 +229,30 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         notificationManager.createNotificationChannel(syncChannel)
         notificationManager.createNotificationChannel(tinReadyChannel)
     }
+
+    fun scheduleTinNotificationWorker(time: Int) {
+        val now = LocalTime.now()
+        val target = LocalTime.ofSecondOfDay(time.toLong() * 60)
+
+        var delay = ChronoUnit.SECONDS.between(now, target)
+        if (delay <= 0) { delay += 86400 }
+
+        val tinReadyRequest = PeriodicWorkRequestBuilder<TinNotificationWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(delay, TimeUnit.SECONDS)
+            .addTag("tin_notification")
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_check_for_tins",
+            ExistingPeriodicWorkPolicy.UPDATE,
+            tinReadyRequest
+        )
+    }
+
+    fun cancelTinNotificationWorker() {
+        WorkManager.getInstance(this).cancelUniqueWork("daily_check_for_tins")
+    }
+
 
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
