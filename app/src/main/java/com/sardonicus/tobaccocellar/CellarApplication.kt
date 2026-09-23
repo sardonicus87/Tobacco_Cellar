@@ -27,7 +27,6 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
-import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
@@ -35,7 +34,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -45,7 +43,6 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.minutes
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
@@ -81,7 +78,6 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
         applicationScope.launch(Dispatchers.Default) {
             val networkMonitor = container.networkMonitor
-            val notificationManager = getSystemService(NotificationManager::class.java)
             launch {
                 preferencesRepo.crossDeviceSync.collectLatest { enabled ->
                     if (enabled) {
@@ -109,12 +105,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 combine(preferencesRepo.tinNotifications, preferencesRepo.tinNotifyTime) { notify, time ->
                     notify to time
                 }.collectLatest { (notify, time) ->
-                    delay(2.minutes)
-                    if (notify) {
-                        val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
-                        if (systemEnabled) { scheduleTinNotificationWorker(time) }
-                        else { preferencesRepo.saveTinNotifications(false); cancelTinNotificationWorker() }
-                    }
+                    if (notify) { scheduleTinNotificationWorker(time) }
                     else { cancelTinNotificationWorker() }
                 }
             }
