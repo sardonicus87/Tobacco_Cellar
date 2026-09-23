@@ -78,6 +78,19 @@ class FilterViewModel (
     private val _isTinSearch = preferencesRepo.searchSetting.map { it == SearchSetting.TinLabel }
         .distinctUntilChanged()
 
+    private val _readyTins = MutableStateFlow(false)
+    val readyTins: StateFlow<Boolean> = _readyTins.asStateFlow()
+
+    private val _readyTinIds = MutableStateFlow<List<Int>>(emptyList())
+
+    fun clearReadyTinsFilter() {
+        _readyTins.value = false
+        _readyTinIds.value = emptyList()
+        updateSearchText("")
+        onSearch("")
+        viewModelScope.launch { EventBus.emit(SearchClearedEvent) }
+    }
+
 
     /** Other UI state persistence needs **/
     val savedExpanded = MutableStateFlow(true)
@@ -162,7 +175,7 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val showTins: StateFlow<Boolean> = combine(
         _selectedContainer, _selectedOpened, _selectedUnopened, _selectedFinished, _selectedUnfinished,
-        _isTinSearch, searchPerformed
+        _isTinSearch, searchPerformed, _readyTins
     ) {
         val container = it[0] as List<String>
         val opened = it[1] as Boolean
@@ -171,8 +184,10 @@ class FilterViewModel (
         val unfinished = it[4] as Boolean
         val isTinSearch = it[5] as Boolean
         val searchPerformed = it[6] as Boolean
+        val isReadyTins = it[7] as Boolean
 
-        (container.isNotEmpty() || opened || unopened || finished || unfinished) || (isTinSearch && searchPerformed)
+        (container.isNotEmpty() || opened || unopened || finished || unfinished) ||
+                (isTinSearch && searchPerformed) || isReadyTins
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
@@ -233,7 +248,7 @@ class FilterViewModel (
                 || it.components.isNotEmpty() || it.flavorings.isNotEmpty() || it.hasTins
                 || it.noTins || it.opened || it.unopened || it.finished || it.unfinished
                 || it.container.isNotEmpty() || it.production || it.outOfProduction
-    }
+    }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
@@ -270,32 +285,26 @@ class FilterViewModel (
     init {
         viewModelScope.launch {
             EventBus.events.collect {
-                if (it is ItemSavedEvent) {
-                    resetFilter()
-                    _shouldScrollUp.value = false
-                    _shouldReturn.value = false
-                    _savedItemId.value = it.savedItemId.toInt()
-                }
-                if (it is ItemUpdatedEvent) {
-                    _shouldReturn.value = true
-                }
-                if (it is SearchClearedEvent) {
-                    searchPerformed.value = false
-                    _searchCleared.value = true
-                    _shouldReturn.value = true
-                }
-                if (it is SearchPerformedEvent) {
-                    searchPerformed.value = true
-                }
-                if (it is DatabaseRestoreEvent) {
-                    resetFilter()
-                    _refresh.emit(Unit)
-                    delay(25.milliseconds)
-                    _refresh.emit(Unit)
-                    _shouldScrollUp.value = true
-                }
-                if (it is SyncDownloadEvent) {
-                    _refresh.emit(Unit)
+                when (it) {
+                    is ItemSavedEvent -> {
+                        resetFilter()
+                        _shouldScrollUp.value = false
+                        _shouldReturn.value = false
+                        _savedItemId.value = it.savedItemId.toInt() }
+                    is ItemUpdatedEvent -> { _shouldReturn.value = true }
+                    is SearchClearedEvent -> {
+                        searchPerformed.value = false
+                        _searchCleared.value = true
+                        _shouldReturn.value = true }
+                    is SearchPerformedEvent -> { searchPerformed.value = true }
+                    is DatabaseRestoreEvent -> {
+                        resetFilter()
+                        _refresh.emit(Unit)
+                        delay(25.milliseconds)
+                        _refresh.emit(Unit)
+                        _shouldScrollUp.value = true }
+                    is SyncDownloadEvent -> { _refresh.emit(Unit) }
+                    is ReadyTinsEvent -> { _readyTinIds.value = it.tinIds; _readyTins.value = true }
                 }
             }
         }
@@ -332,8 +341,7 @@ class FilterViewModel (
     // available fields for filter //
     private val cellarMetaData: StateFlow<CellarMetaData> = everythingFlow.map { data ->
         generateMetaData(data)
-    }
-        .flowOn(Dispatchers.Default)
+    }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CellarMetaData())
 
     private fun generateMetaData(data: List<ItemsComponentsAndTins>): CellarMetaData {
@@ -368,14 +376,10 @@ class FilterViewModel (
             if (item.notes.isNotBlank()) notesAny = true
 
             if (itemFull.components.isEmpty()) { components.add("(None Assigned)") }
-            else {
-                for (comp in itemFull.components) { components.add(comp.componentName) }
-            }
+            else { for (comp in itemFull.components) { components.add(comp.componentName) } }
 
             if (itemFull.flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
-            else {
-                for (flavor in itemFull.flavoring) { flavorings.add(flavor.flavoringName) }
-            }
+            else { for (flavor in itemFull.flavoring) { flavorings.add(flavor.flavoringName) } }
 
             if (itemFull.tins.isNotEmpty()) {
                 tinsAny = true
@@ -529,14 +533,22 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val homeScreenFilteredItems: StateFlow<List<ItemsComponentsAndTins>> =
         combine(
-            everythingFlow, unifiedFilteredItems, searchValue, preferencesRepo.searchSetting
+            everythingFlow, unifiedFilteredItems, searchValue, preferencesRepo.searchSetting,
+            _readyTins, _readyTinIds
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val filteredItems = values[1] as List<ItemsComponentsAndTins>
             val currentSearchValue = values[2] as String
             val currentSearchSetting = values[3] as SearchSetting
+            val isReady = values[4] as Boolean
+            val readyIds = values[5] as List<Int>
 
-            if (currentSearchValue.isNotBlank()) {
+            if (isReady) {
+                if (readyIds.isNotEmpty()) {
+                    allItems.filter { items -> items.tins.any { it.tinId in readyIds } }
+                } else { emptyList() }
+            }
+            else if (currentSearchValue.isNotBlank()) {
                 allItems.filter { items ->
                     when (currentSearchSetting) {
                         SearchSetting.Blend -> items.items.blend.contains(currentSearchValue, true)
@@ -639,14 +651,22 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     val homeScreenFilteredTins: StateFlow<List<Tins>> =
         combine(
-            everythingFlow, unifiedFilteredTins, searchValue, preferencesRepo.searchSetting
+            everythingFlow, unifiedFilteredTins, searchValue, preferencesRepo.searchSetting,
+            _readyTins, _readyTinIds
         ) { values ->
             val allItems = values[0] as List<ItemsComponentsAndTins>
             val filteredTins = values[1] as List<Tins>
             val currentSearchValue = values[2] as String
             val currentSearchSetting = values[3] as SearchSetting
+            val isReadyTins = values[4] as Boolean
+            val readyIds = values[5] as List<Int>
 
-            if (currentSearchValue.isBlank()) { filteredTins }
+            if (isReadyTins) {
+                if (readyIds.isNotEmpty()) {
+                    allItems.flatMap { it.tins }.filter { it.tinId in readyIds }
+                } else { emptyList() }
+            }
+            else if (currentSearchValue.isBlank()) { filteredTins }
             else {
                 if (currentSearchSetting == SearchSetting.TinLabel) {
                     allItems.flatMap { it.tins }
@@ -1172,7 +1192,7 @@ class FilterViewModel (
     // HomeScreen stuff
     val searchState = combine(
         searchPerformed, _isTinSearch, _searchTextDisplay, preferencesRepo.searchSetting,
-        tinsExist, notesExist, emptyDatabase
+        tinsExist, notesExist, emptyDatabase, _readyTins
     ) { it: Array<Any?> ->
         val searchPerformed = it[0] as Boolean
         val isTinSearch = it[1] as Boolean
@@ -1181,6 +1201,7 @@ class FilterViewModel (
         val tinsExist = it[4] as Boolean
         val notesExist = it[5] as Boolean
         val databaseEmpty = it[6] as Boolean
+        val isReadyTins = it[7] as Boolean
 
         val blendSearch = SearchSetting.Blend
         val notesSearch = if (notesExist) SearchSetting.Notes else null
@@ -1190,15 +1211,27 @@ class FilterViewModel (
 
         if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend.value) }
 
-        SearchState(
-            searchPerformed = searchPerformed,
-            isTinSearch = isTinSearch,
-            searchText = searchText,
-            currentSetting = searchSetting,
-            settingsList = SearchSettingList(settingsList),
-            settingsEnabled = settingsEnabled,
-            emptyDatabase = databaseEmpty
-        )
+        if (isReadyTins) {
+            SearchState(
+                searchPerformed = true,
+                isTinSearch = true,
+                searchText = "Ready Tins",
+                currentSetting = searchSetting,
+                settingsList = SearchSettingList(settingsList),
+                settingsEnabled = false,
+                emptyDatabase = databaseEmpty
+            )
+        } else {
+            SearchState(
+                searchPerformed = searchPerformed,
+                isTinSearch = isTinSearch,
+                searchText = searchText,
+                currentSetting = searchSetting,
+                settingsList = SearchSettingList(settingsList),
+                settingsEnabled = settingsEnabled,
+                emptyDatabase = databaseEmpty
+            )
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SearchState())
 
 
@@ -1453,22 +1486,16 @@ class FilterViewModel (
     }
 
     fun updateSelectedBrands(brand: String, isSelected: Boolean) {
-        if (isSelected) {
-            _selectedBrands.value += brand
-        } else {
-            _selectedBrands.value -= brand
-        }
+        if (isSelected) { _selectedBrands.value += brand }
+        else { _selectedBrands.value -= brand }
         trackSelection(FilterCategory.BRAND, brand, isSelected)
 
         _shouldScrollUp.value = true
     }
 
     fun updateSelectedExcludedBrands(brand: String, isSelected: Boolean) {
-        if (isSelected) {
-            _selectedExcludeBrands.value += brand
-        } else {
-            _selectedExcludeBrands.value -= brand
-        }
+        if (isSelected) { _selectedExcludeBrands.value += brand }
+        else { _selectedExcludeBrands.value -= brand }
         trackSelection(FilterCategory.EXCLUDE_BRAND, brand, isSelected)
 
         _shouldScrollUp.value = true
@@ -1942,6 +1969,8 @@ enum class FilterCategory {
 enum class FlowMatchOption(val value: String) { ANY("Any"), ALL("All"), ONLY("Only") }
 
 enum class ClearAll { SUBGENRE, CUT, COMPONENT, FLAVORING, CONTAINER }
+
+data class ReadyTinsEvent(val tinIds: List<Int> = emptyList())
 
 @Stable
 data class SheetSelections(
