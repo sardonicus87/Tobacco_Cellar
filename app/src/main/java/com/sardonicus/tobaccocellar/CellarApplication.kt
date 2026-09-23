@@ -35,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -44,6 +45,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.minutes
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
@@ -107,8 +109,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 combine(preferencesRepo.tinNotifications, preferencesRepo.tinNotifyTime) { notify, time ->
                     notify to time
                 }.collectLatest { (notify, time) ->
-                    val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
+                    delay(2.minutes)
                     if (notify) {
+                        val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
                         if (systemEnabled) { scheduleTinNotificationWorker(time) }
                         else { preferencesRepo.saveTinNotifications(false); cancelTinNotificationWorker() }
                     }
@@ -260,8 +263,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         applicationScope.launch(Dispatchers.Default) {
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             val syncInProgress = SyncStateManager.isSyncing.first()
+            val tinsReady = activity.intent?.getBooleanExtra("FILTER_READY_TINS", false) == true
 
-            if (syncEnabled && !syncInProgress) {
+            if (syncEnabled && !syncInProgress && !tinsReady) {
                 val workManager = WorkManager.getInstance(this@CellarApplication)
                 val allowMobile = preferencesRepo.allowMobileData.first()
                 val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
