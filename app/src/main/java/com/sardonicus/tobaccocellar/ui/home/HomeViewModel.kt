@@ -179,7 +179,8 @@ class HomeViewModel(
         filterViewModel.isFilterApplied,
         filterViewModel.emptyDatabase,
         filterViewModel.homeScreenFilteredItems,
-        preferencesRepo.searchSetting
+        preferencesRepo.searchSetting,
+        filterViewModel.readyTins
     ) { values ->
         val searchText = values[0] as String
         val searchPerformed = values[1] as Boolean
@@ -187,6 +188,7 @@ class HomeViewModel(
         val emptyDatabase = values[3] as Boolean
         val filteredItems = values[4] as List<ItemsComponentsAndTins>
         val searchSetting = values[5] as SearchSetting
+        val readyTins = values[6] as Boolean
 
         val emptyList = filteredItems.isEmpty()
 
@@ -194,6 +196,8 @@ class HomeViewModel(
 
         val emptyMessage =
             if (!emptyList) { "" }
+            else if (readyTins) {
+                "Error loading ready tins." }
             else if (searchPerformed) {
                 "No entries found matching\n\"$savedSearchText\" in ${searchSetting.value}." }
             else if (filteringApplied) {
@@ -332,7 +336,7 @@ class HomeViewModel(
         preferencesRepo.showRating,
         preferencesRepo.typeGenreOption,
         filteredTins,
-        filterViewModel.showTins,
+        filterViewModel.showTins
     ) { array ->
         val items = array[0] as List<ItemsComponentsAndTins>
         val quantities = array[1] as Map<Int, ItemQuantity>
