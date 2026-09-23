@@ -1071,6 +1071,7 @@ data class SettingsBackup (
     val landscapeTwoPane: Boolean = false,
     val tinNotifications: Boolean = false,
     val tinNotifyTime: Int = 600,
+    val lastTinNotifyDate: Long? = null
 )
 
 data class RestoreState(
@@ -1218,7 +1219,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         twoColumnTabs = preferencesRepo.twoColumnTabs.first(),
         landscapeTwoPane = preferencesRepo.landscapeTwoPane.first(),
         tinNotifications = preferencesRepo.tinNotifications.first(),
-        tinNotifyTime = preferencesRepo.tinNotifyTime.first()
+        tinNotifyTime = preferencesRepo.tinNotifyTime.first(),
+        lastTinNotifyDate = preferencesRepo.lastTinNotifyDate.first()
     )
 
     return Json.encodeToString(backup)
@@ -1280,6 +1282,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             saveLandscape(backup.landscapeTwoPane)
             saveTinNotifications(backup.tinNotifications)
             saveTinNotifyTime(backup.tinNotifyTime)
+            if (backup.lastTinNotifyDate != null) saveLastTinNotify(backup.lastTinNotifyDate)
         }
     } else { // support for older backup files
         val lines = settingsText.lines()
