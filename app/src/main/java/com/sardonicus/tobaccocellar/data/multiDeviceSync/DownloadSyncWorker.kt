@@ -172,7 +172,7 @@ class DownloadSyncWorker(
                 SyncStateManager.finished()
                 if (started > 0) {
                     val elapsed = SystemClock.elapsedRealtime() - started
-                    val extend = 3000 - elapsed
+                    val extend = 3500 - elapsed
                     if (extend > 0) { delay(extend.milliseconds) }
                 }
                 notificationManager.cancel(SYNC_NOTIFICATION_ID)
