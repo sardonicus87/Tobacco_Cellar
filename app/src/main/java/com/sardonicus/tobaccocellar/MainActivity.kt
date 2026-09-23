@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -84,7 +85,14 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.drive.DriveScopes
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
+import com.sardonicus.tobaccocellar.ui.ReadyTinsEvent
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
+import com.sardonicus.tobaccocellar.ui.navigation.AboutDestination
+import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
+import com.sardonicus.tobaccocellar.ui.navigation.HomeDestination
+import com.sardonicus.tobaccocellar.ui.navigation.NavigationState
+import com.sardonicus.tobaccocellar.ui.navigation.StatsDestination
+import com.sardonicus.tobaccocellar.ui.navigation.rememberNavigationState
 import com.sardonicus.tobaccocellar.ui.settings.DismissLoading
 import com.sardonicus.tobaccocellar.ui.settings.ShowLoading
 import com.sardonicus.tobaccocellar.ui.settings.SignInCancelled
@@ -251,7 +259,15 @@ class MainActivity : ComponentActivity() {
             }
 
             val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
-            LaunchedEffect(displayCutoutTop) { updateSystemBarsForOrientation(displayCutoutTop) }
+            SideEffect(displayCutoutTop) { updateStatusBarsVisibility(displayCutoutTop) }
+
+            val navigationState = rememberNavigationState(
+                startRoute = HomeDestination,
+                topLevelRoutes = setOf(HomeDestination, StatsDestination, DatesDestination, AboutDestination),
+                twoPaneAllowed = twoPaneAllowed
+            )
+
+            LaunchedEffect(intent) { handleNotificationIntent(intent, navigationState) }
 
             CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
@@ -265,7 +281,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         CellarApp(
                             twoPaneAllowed = twoPaneAllowed,
-                            twoColumnTabs = twoColumnTabs
+                            twoColumnTabs = twoColumnTabs,
+                            navigationState = navigationState,
                         )
 
                         if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
@@ -324,10 +341,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun updateSystemBarsForOrientation(topCutout: Int) {
-        if (topCutout == 0) {
-            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-        } else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    private fun updateStatusBarsVisibility(topCutout: Int) {
+        if (topCutout == 0) { windowInsetsController.hide(WindowInsetsCompat.Type.statusBars()) }
+        else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
+    }
+
+    private fun handleNotificationIntent(intent: Intent, navigationState: NavigationState?) {
+        val destination = intent.getStringExtra("START_DESTINATION")
+        val filterReadyTins = intent.getBooleanExtra("FILTER_READY_TINS", false)
+        val readyIds = intent.getIntArrayExtra("READY_TIN_IDS")?.toList() ?: emptyList()
+
+        if (destination == "home" || filterReadyTins) {
+            navigationState?.let { it.topLevelRoute = HomeDestination }
+            if (filterReadyTins) { EventBus.tryEmit(ReadyTinsEvent(readyIds)) }
+        }
+
+        intent.removeExtra("START_DESTINATION")
+        intent.removeExtra("FILTER_READY_TINS")
+        intent.removeExtra("READY_TIN_IDS")
     }
 
     private fun signIn() {
