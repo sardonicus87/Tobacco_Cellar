@@ -132,7 +132,9 @@ private fun ViewSelect(
     val state by viewModel.viewSelect.collectAsState()
 
     Row(
-        modifier = modifier.padding(0.dp).width(74.dp),
+        modifier = modifier
+            .padding(0.dp)
+            .width(74.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -167,9 +169,10 @@ private fun SearchField (
     saveSearchSetting: (String) -> Unit
 ) {
     val state by filterViewModel.searchState.collectAsState()
+    val readyTins by filterViewModel.readyTins.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var searchMenuExpanded by remember { mutableStateOf(false) }
-    val iconOpacity = if (state.searchPerformed) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
+    val iconOpacity = if (state.searchPerformed && !readyTins) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
 
     CustomBlendSearch(
         value = state.searchText,
@@ -200,7 +203,9 @@ private fun SearchField (
                 Icon(
                     painter = painterResource(id = R.drawable.search),
                     contentDescription = null,
-                    modifier = Modifier.padding(end = 2.dp).size(20.dp),
+                    modifier = Modifier
+                        .padding(end = 2.dp)
+                        .size(20.dp),
                     tint = LocalContentColor.current.copy(alpha = iconOpacity)
                 )
                 Icon(
@@ -239,16 +244,21 @@ private fun SearchField (
                     modifier = Modifier
                         .size(20.dp)
                         .clickable(null, LocalIndication.current) {
-                            updateSearchText(""); onSearch("")
+                            if (readyTins) {
+                                filterViewModel.clearReadyTinsFilter()
+                            } else {
+                                updateSearchText(""); onSearch("")
 
-                            if (state.searchPerformed) {
-                                coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
+                                if (state.searchPerformed) {
+                                    coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
+                                }
                             }
                         }
                 )
             }
         },
         placeholder = "${state.currentSetting.value} Search",
+        readOnly = readyTins
     )
 }
 
@@ -368,6 +378,7 @@ private fun CustomBlendSearch(
     leadingIcon: @Composable () -> Unit = {},
     trailingIcon: @Composable () -> Unit = {},
     onImeAction: () -> Unit = {},
+    readOnly: Boolean = false
 ) {
     var hasFocus by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -394,6 +405,7 @@ private fun CustomBlendSearch(
             onSearch = { onImeAction(); focusManager.clearFocus() }
         ),
         singleLine = true,
+        readOnly = readOnly,
         cursorBrush = SolidColor(if (hasFocus) MaterialTheme.colorScheme.primary else Color.Unspecified),
         decorationBox = { innerTextField ->
             Row(

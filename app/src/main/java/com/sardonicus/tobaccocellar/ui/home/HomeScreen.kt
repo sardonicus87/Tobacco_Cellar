@@ -166,14 +166,18 @@ private fun HomeBackHandler(
 ) {
     val menuState by viewModel.menuState.collectAsState()
     val searchState by filterViewModel.searchState.collectAsState()
+    val readyTins by filterViewModel.readyTins.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     BackHandler(searchFocused || searchState.searchPerformed) {
         if (searchFocused) { clearFocus() }
         else {
-            filterViewModel.updateSearchText(""); filterViewModel.onSearch("")
-            if (searchState.searchPerformed) {
-                coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
+            if (readyTins) { filterViewModel.clearReadyTinsFilter() }
+            else {
+                filterViewModel.updateSearchText(""); filterViewModel.onSearch("")
+                if (searchState.searchPerformed) {
+                    coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
+                }
             }
         }
     }
