@@ -385,7 +385,9 @@ class HomeViewModel(
         emptyMessage,
         resetLoading,
         _isRendered,
-        quantityState
+        quantityState,
+        filterViewModel.readyTins,
+        filteredTins
     ) { array ->
         val sortedItems = array[0] as List<ItemsComponentsAndTins>
         val viewSelect = array[1] as ViewSelect
@@ -394,13 +396,16 @@ class HomeViewModel(
         val resetLoading = array[4] as Boolean
         val isRendered = array[5] as Boolean
         val qtyState = array[6] as Map<Int, ItemQuantity>
+        val readyTins = array[7] as Boolean
+        val tins = array[8] as TinsList
 
         val formatFinished = emptyDatabase || qtyState.isNotEmpty()
-
         if (formatFinished) { _resetLoading.value = false }
 
+        val tinsPending = readyTins && sortedItems.isNotEmpty() && tins.tins.isEmpty()
+
         val dataLoading =
-            if (resetLoading) { true }
+            if (resetLoading || tinsPending) { true }
             else {
                 if (!emptyDatabase && sortedItems.isNotEmpty()) { !isRendered }
                 else { if (emptyDatabase) false else emptyMessage.isBlank() }
