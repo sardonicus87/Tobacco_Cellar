@@ -35,6 +35,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -46,6 +47,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
@@ -94,7 +96,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                                 preferencesRepo.allowMobileData
                             ) { isWifi, isConnected, allowMobile ->
                                 isWifi || (isConnected && allowMobile)
-                            }.distinctUntilChanged().collect {
+                            }.distinctUntilChanged().collectLatest {
+                                delay(500.milliseconds)
                                 if (it && container.itemsRepository.hasPendingOperations()) {
                                     container.itemsRepository.triggerUploadWorker()
                                 }
@@ -115,6 +118,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 ) { notify, time, _ ->
                     notify to time
                 }.collectLatest { (notify, time) ->
+                    delay(500.milliseconds)
                     val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
                     if (notify && systemEnabled) { scheduleTinNotificationWorker(time) }
                     else { cancelTinNotificationWorker() }
@@ -263,6 +267,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         // cold/warm start check for new files
         applicationScope.launch(Dispatchers.Default) {
+            delay(500.milliseconds)
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             val syncInProgress = SyncStateManager.isSyncing.first()
             val tinsReady = activity.intent?.getBooleanExtra("FILTER_READY_TINS", false) == true
