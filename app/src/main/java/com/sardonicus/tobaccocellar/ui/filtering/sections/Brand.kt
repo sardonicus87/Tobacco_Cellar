@@ -293,13 +293,14 @@ private fun SelectableBrandsRow(
 private fun BrandTextButton(
     brand: () -> String,
     onClickAction: () -> Unit,
-    enabled: () -> Boolean,
-    modifier: Modifier = Modifier
+    enabled: () -> Boolean
 ) {
     TextButton(
         onClick = onClickAction,
-        modifier = modifier,
+        modifier = Modifier.padding(4.dp, 4.dp),
         enabled = enabled(),
+        shape = RoundedCornerShape(25),
+        contentPadding = PaddingValues(8.dp, 2.dp)
     ) { Text(brand()) }
 }
 
