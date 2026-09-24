@@ -27,6 +27,7 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
@@ -34,10 +35,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalTime
@@ -61,6 +64,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         const val SYNC_NOTIFICATION = "sync_channel"
         const val TIN_NOTIFICATION = "tin_notification"
     }
+    private val activityResumedTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
 
     override fun onCreate() {
         super.onCreate()
@@ -78,6 +83,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
         applicationScope.launch(Dispatchers.Default) {
             val networkMonitor = container.networkMonitor
+            val notificationManager = getSystemService(NotificationManager::class.java)
             launch {
                 preferencesRepo.crossDeviceSync.collectLatest { enabled ->
                     if (enabled) {
@@ -102,10 +108,15 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                 }
             }
             launch {
-                combine(preferencesRepo.tinNotifications, preferencesRepo.tinNotifyTime) { notify, time ->
+                combine(
+                    preferencesRepo.tinNotifications,
+                    preferencesRepo.tinNotifyTime,
+                    activityResumedTrigger.onStart { emit(Unit) }
+                ) { notify, time, _ ->
                     notify to time
                 }.collectLatest { (notify, time) ->
-                    if (notify) { scheduleTinNotificationWorker(time) }
+                    val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
+                    if (notify && systemEnabled) { scheduleTinNotificationWorker(time) }
                     else { cancelTinNotificationWorker() }
                 }
             }
@@ -226,9 +237,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
     fun scheduleTinNotificationWorker(time: Int) {
         val now = LocalTime.now()
-        val target = LocalTime.ofSecondOfDay(time.toLong() * 60)
+        val targetTime = LocalTime.ofSecondOfDay(time.toLong() * 60)
 
-        var delay = ChronoUnit.SECONDS.between(now, target)
+        var delay = ChronoUnit.SECONDS.between(now, targetTime)
         if (delay <= 0) { delay += 86400 }
 
         val tinReadyRequest = PeriodicWorkRequestBuilder<TinNotificationWorker>(24, TimeUnit.HOURS)
@@ -292,7 +303,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             }
         }
     }
-    override fun onActivityResumed(activity: Activity) {}
+    override fun onActivityResumed(activity: Activity) { activityResumedTrigger.tryEmit(Unit) }
     override fun onActivityPaused(activity: Activity) {}
     override fun onActivityStopped(activity: Activity) {}
     override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
