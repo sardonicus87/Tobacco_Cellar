@@ -194,10 +194,7 @@ private fun SearchField (
             Box(
                 modifier = Modifier
                     .padding(0.dp)
-                    .clickable(
-                        enabled = state.settingsEnabled && !state.emptyDatabase,
-                        indication = LocalIndication.current,
-                        interactionSource = null
+                    .clickable(null, null, state.settingsEnabled && !state.emptyDatabase,
                     ) { searchMenuExpanded = !searchMenuExpanded }
             ) {
                 Icon(
@@ -243,12 +240,10 @@ private fun SearchField (
                     contentDescription = null,
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable(null, LocalIndication.current) {
-                            if (readyTins) {
-                                filterViewModel.clearReadyTinsFilter()
-                            } else {
+                        .clickable(null, null) {
+                            if (readyTins) { filterViewModel.clearReadyTinsFilter() }
+                            else {
                                 updateSearchText(""); onSearch("")
-
                                 if (state.searchPerformed) {
                                     coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
                                 }
