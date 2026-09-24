@@ -1241,7 +1241,8 @@ class FilterViewModel (
         availableBrands
     ) { brandSearchText, allBrands ->
         updateFilterBrands(brandSearchText, allBrands)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
+    }.flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     @Suppress("UNCHECKED_CAST")
     val unselectedBrands = combine(
@@ -1264,7 +1265,7 @@ class FilterViewModel (
             selectedExcludedBrands,
             brandEnabled
         )
-    }
+    }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     val brandEnabled = combine(
