@@ -894,7 +894,11 @@ class FilterViewModel (
                 }
             }
 
-            if (selections.components.isNotEmpty()) {
+            if (selections.components.isEmpty()) {
+                FlowMatchOption.entries.forEach { option ->
+                    collector.compMatchingMap[option] = true
+                }
+            } else {
                 FlowMatchOption.entries.forEach { option ->
                     val match = when (option) {
                         FlowMatchOption.ANY -> (selections.components.contains("(None Assigned)") && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) }
@@ -925,7 +929,11 @@ class FilterViewModel (
                 }
             }
 
-            if (selections.flavorings.isNotEmpty()) {
+            if (selections.flavorings.isEmpty()) {
+                FlowMatchOption.entries.forEach { option ->
+                    collector.flavorMatchingMap[option] = true
+                }
+            } else {
                 FlowMatchOption.entries.forEach { option ->
                     val match = when (option) {
                         FlowMatchOption.ANY -> (selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) }
