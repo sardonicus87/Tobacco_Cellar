@@ -76,6 +76,9 @@ class DownloadSyncWorker(
         var started = 0L
 
         try {
+            val syncEnabled = prefsRepo.crossDeviceSync.first()
+            if (!syncEnabled) { return Result.success(workDataOf(RESULT_KEY to SKIPPED)) }
+
             if (checkNotificationPermission(notificationManager, app)) {
                 started = SystemClock.elapsedRealtime()
                 val title =
@@ -92,8 +95,6 @@ class DownloadSyncWorker(
 
                 notificationManager.notify(SYNC_NOTIFICATION_ID, notification)
             }
-            val syncEnabled = prefsRepo.crossDeviceSync.first()
-            if (!syncEnabled) { return Result.success(workDataOf(RESULT_KEY to SKIPPED)) }
 
             val userEmail = prefsRepo.signedInUserEmail.first()
             if (userEmail.isNullOrBlank()) { return Result.failure(workDataOf(RESULT_KEY to NO_ACCOUNT)) }
