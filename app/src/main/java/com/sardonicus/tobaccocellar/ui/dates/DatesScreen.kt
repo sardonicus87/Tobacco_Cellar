@@ -342,14 +342,14 @@ private fun AgingSection(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Top,
                     modifier = Modifier
-                        .padding(start = 12.dp)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { navigateToDetails(item.id) }
+                        .padding(start = 8.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable(null, LocalIndication.current) { navigateToDetails(item.id) }
+                            .padding(horizontal = 4.dp)
                     ) {
                         Text(
                             text = "• ${item.brand}",
@@ -559,7 +559,7 @@ fun DatesSection(
     SideEffect(items.isEmpty()) { if (items.isEmpty()) expanded = true }
 
     Column(
-        modifier = modifier.padding(horizontal = 12.dp),
+        modifier = modifier.padding(horizontal = 8.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
@@ -567,11 +567,7 @@ fun DatesSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(25))
-                .clickable(
-                    enabled = expandEnabled,
-                    indication = LocalIndication.current,
-                    interactionSource = null
-                ) { expanded = !expanded }
+                .clickable(null, LocalIndication.current, expandEnabled) { expanded = !expanded }
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
@@ -580,8 +576,7 @@ fun DatesSection(
                 text = "$label Date",
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.tertiary,
-                modifier = Modifier
-                    .padding(bottom = 1.dp)
+                modifier = Modifier.padding(bottom = 1.dp)
             )
             Spacer(Modifier.weight(1f))
             Box(
@@ -605,12 +600,9 @@ fun DatesSection(
                             horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.Top,
                             modifier = Modifier
-                                .padding(start = 4.dp, end = 48.dp)
+                                .padding(start = 12.dp, end = 48.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { navigateToDetails(item.id) }
+                                .clickable(null, LocalIndication.current) { navigateToDetails(item.id) }
                                 .padding(start = 8.dp, end = 8.dp, bottom = 1.dp)
                         ) {
                             Row(
