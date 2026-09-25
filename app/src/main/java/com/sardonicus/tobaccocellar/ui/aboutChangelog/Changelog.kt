@@ -14,6 +14,48 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 64,
+        versionNumber = "5.4.0",
+        buildDate = "25 Sep, 2026",
+        changes = listOf(
+            "New Notification and setting for ready tins under \"App & Database\" on the Settings " +
+                    "screen, \"Tin Ready Notifications\". Off by default, turn on and set the time " +
+                    "of day for Tobacco Cellar to check for tins ready to open. Any tins you want " +
+                    "to track aging, set a future date in the \"Open\" date field for the day you " +
+                    "want to open. The time you set in the notification is when the app will wake-" +
+                    "up in the background and check if any tins are ready to open that day (or any " +
+                    "day since the previous notification). Tap the notification to see list of all " +
+                    "tins that are ready. Works offline (it's a quick daily background check)." +
+                    "Notification might lag a minute or two behind the set time (especially if " +
+                    "the devices is in power-saving mode).",
+            "New Background Sync unintrusive status bar notification. Notification in status bar/" +
+                    "shade to indicate when Multi-Device Sync is actively working, automatically " +
+                    "dismisses when finished. Enable or disable in Device Settings > Apps > " +
+                    "Tobacco Cellar > App info (additionally, long-press the app icon and tap \"" +
+                    "App info\" on most devices/launchers to get to the same screen). Notification " +
+                    "will be off by default for existing users running Android 12+."
+        ),
+        improvements = listOf(
+            "Multi-device sync: more robust error handling.",
+            "Minor UI tweaks and improvements.",
+            "More reliability and efficiency improvements."
+        ),
+        bugFixes = listOf(
+            "Filter Selection Validation, fixed a few bugs where the logic sometimes breaks and " +
+                    "fails to deselect invalid filters or deselects still valid filters.",
+            "Backup/Restore, fixed a bug where the signed-in email could be accidentally blanked-" +
+                    "out on a restore, resulting in hanging sync attempts a need to sign-out and " +
+                    "back in.",
+            "Other minor bug fixes."
+        ),
+        releaseNotes = listOf(
+            "New notifications feature. Notifications now available (off by default for existing " +
+                    "users) for tins ready to be opened (aging) and for indicating when the Multi-" +
+                    "Device Sync is active. See the full changelog for more details and instructions."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 63,
         versionNumber = "5.3.3",
         buildDate = "16 Sep, 2026",
