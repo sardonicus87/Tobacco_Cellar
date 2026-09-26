@@ -44,7 +44,7 @@ fun ReleaseNotesDialog(
     val maxHeight = LocalWindowInfo.current.containerDpSize.height * divisor
     val minWidth = if (landscape) 280.dp else Dp.Unspecified
     val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
-    val toLog = releaseNotesState.changelogData.last().versionCode
+    val toLog = if (releaseNotesState.changelogData.size > 1) releaseNotesState.changelogData.last().versionCode else null
 
     AlertDialog(
         onDismissRequest = viewModel::saveReleaseNotesSeen,
