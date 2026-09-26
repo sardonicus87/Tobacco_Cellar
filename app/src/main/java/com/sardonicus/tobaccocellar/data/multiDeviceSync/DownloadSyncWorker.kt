@@ -170,12 +170,12 @@ class DownloadSyncWorker(
             } else Result.retry()
         } finally {
             withContext(NonCancellable) {
-                SyncStateManager.finished()
                 if (started > 0) {
                     val elapsed = SystemClock.elapsedRealtime() - started
-                    val extend = 3500 - elapsed
+                    val extend = 2500 - elapsed
                     if (extend > 0) { delay(extend.milliseconds) }
                 }
+                SyncStateManager.finished()
                 notificationManager.cancel(SYNC_NOTIFICATION_ID)
             }
         }
