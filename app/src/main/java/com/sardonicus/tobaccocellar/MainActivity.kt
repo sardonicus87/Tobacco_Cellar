@@ -69,6 +69,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -386,10 +387,11 @@ class MainActivity : ComponentActivity() {
             try {
                 val result = credentialManager.getCredential(this@MainActivity, request)
                 val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
-                val userEmail = credential.id
+                val userEmail = credential.email
 
-                preferencesRepo.saveLoginState(userEmail, false)
-                authorizeDrive()
+                if (!userEmail.isNullOrBlank()) {
+                    preferencesRepo.saveLoginState(userEmail, false); authorizeDrive()
+                } else { handleSignInFailure(GetCredentialUnknownException()) }
             } catch (e: GetCredentialException) { handleSignInFailure(e) }
         }
     }
