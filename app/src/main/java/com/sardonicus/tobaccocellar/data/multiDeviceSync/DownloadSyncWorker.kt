@@ -79,7 +79,7 @@ class DownloadSyncWorker(
             val syncEnabled = prefsRepo.crossDeviceSync.first()
             if (!syncEnabled) { return Result.success(workDataOf(RESULT_KEY to SKIPPED)) }
 
-            if (checkNotificationPermission(notificationManager, app)) {
+            if (checkNotificationPermission(notificationManager, app, CellarApplication.SYNC_NOTIFICATION)) {
                 started = SystemClock.elapsedRealtime()
                 val title =
                     if (syncType == SYNC_TYPE_PERIODIC) "Tobacco Cellar periodic sync check"

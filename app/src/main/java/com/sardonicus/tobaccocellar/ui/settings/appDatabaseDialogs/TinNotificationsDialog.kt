@@ -80,8 +80,8 @@ fun TinNotificationsDialog (
 
     LifecycleResumeEffect(Unit) {
         if (launchedFromApp) {
-            val isReady = checkNotificationPermission(notificationManager, context)
-            if (isReady) { onSave(true, notificationTime) }
+            val isReady = checkNotificationPermission(notificationManager, context, CellarApplication.TIN_NOTIFICATION)
+            if (isReady) { onSave(true, notificationTime) } else { onSave(false, notificationTime) }
             launchedFromApp = false
         }
         onPauseOrDispose { }
@@ -129,7 +129,7 @@ fun TinNotificationsDialog (
                             onCheckedChange = {
                                 if (it) {
                                     if (requestNotificationPermission(
-                                            context, notificationManager, permissionLauncher)
+                                            context, notificationManager, permissionLauncher, CellarApplication.TIN_NOTIFICATION)
                                         ) { onSave(true, notificationTime) }
                                     else {
                                         val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -203,7 +203,8 @@ fun TinNotificationsDialog (
 fun requestNotificationPermission(
     context: Context,
     notificationManager: NotificationManager,
-    permissionLauncher: ActivityResultLauncher<String>
+    permissionLauncher: ActivityResultLauncher<String>,
+    channel: String
 ): Boolean {
     val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -213,10 +214,14 @@ fun requestNotificationPermission(
         permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         return false
     } else {
-        val appDisabled = !notificationManager.areNotificationsEnabled() // overall notifications disabled
-        val channelDisabled = notificationManager.getNotificationChannel(CellarApplication.TIN_NOTIFICATION)?.importance == NotificationManager.IMPORTANCE_NONE
+        val appDisabled = !notificationManager.areNotificationsEnabled()
+        val requestAll = channel == CellarApplication.ALL_NOTIFICATIONS
 
-        if (appDisabled) {
+        val channelDisabled = if (!requestAll) {
+            notificationManager.getNotificationChannel(channel)?.importance == NotificationManager.IMPORTANCE_NONE
+        } else false
+
+        if (appDisabled || requestAll) {
             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                 putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName) }
             context.startActivity(intent)
@@ -224,7 +229,7 @@ fun requestNotificationPermission(
         } else if (channelDisabled) {
             val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
                 putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                putExtra(Settings.EXTRA_CHANNEL_ID, CellarApplication.TIN_NOTIFICATION) }
+                putExtra(Settings.EXTRA_CHANNEL_ID, channel) }
             context.startActivity(intent)
             return false
         }
@@ -234,17 +239,26 @@ fun requestNotificationPermission(
 
 fun checkNotificationPermission(
     notificationManager: NotificationManager,
-    context: Context
+    context: Context,
+    channel: String
 ): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-            return false
-    }
+            return false }
     if (!notificationManager.areNotificationsEnabled()) return false
 
-    val channel = notificationManager.getNotificationChannel(CellarApplication.TIN_NOTIFICATION)
+    if (channel == CellarApplication.ALL_NOTIFICATIONS) {
+        val tinChan = notificationManager.getNotificationChannel(CellarApplication.TIN_NOTIFICATION)
+        val syncChan = notificationManager.getNotificationChannel(CellarApplication.SYNC_NOTIFICATION)
 
-    return channel != null && channel.importance != NotificationManager.IMPORTANCE_NONE
+        val tinOk = tinChan != null && tinChan.importance != NotificationManager.IMPORTANCE_NONE
+        val syncOk = syncChan != null && syncChan.importance != NotificationManager.IMPORTANCE_NONE
+
+        return tinOk && syncOk
+    }
+
+    val notificationChannel = notificationManager.getNotificationChannel(channel)
+    return notificationChannel != null && notificationChannel.importance != NotificationManager.IMPORTANCE_NONE
 }
 
 private fun formatTime(time: Int?, context: Context): String {

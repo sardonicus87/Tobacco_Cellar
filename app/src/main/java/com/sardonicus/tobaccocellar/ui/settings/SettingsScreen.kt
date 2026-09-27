@@ -89,13 +89,12 @@ fun SettingsScreen(
         onDispose { viewModel.cleanupDismiss(); EventBus.tryEmit(DismissSnackbar) }
     }
 
-    val notificationTime by viewModel.tinNotifyTime.collectAsState()
     val context = LocalContext.current
     val notificationManager = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     var requestEvent by remember { mutableStateOf<RequestNotification?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        if (it) { viewModel.saveTinNotifications(true, notificationTime); requestEvent?.onComplete?.complete(Unit) }
-        else { viewModel.saveTinNotifications(false, notificationTime); requestEvent?.onComplete?.completeExceptionally(Exception("denied")) }
+        if (it) { requestEvent?.onComplete?.complete(Unit) }
+        else { requestEvent?.onComplete?.completeExceptionally(Exception("denied")) }
         requestEvent = null
     }
 
@@ -110,7 +109,7 @@ fun SettingsScreen(
         EventBus.events.collect {
             if (it is RequestNotification) {
                 requestEvent = it
-                val ready = requestNotificationPermission(context, notificationManager, permissionLauncher)
+                val ready = requestNotificationPermission(context, notificationManager, permissionLauncher, it.channel)
                 if (ready) { it.onComplete.complete(Unit); requestEvent = null }
                 else {
                     val isRuntimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

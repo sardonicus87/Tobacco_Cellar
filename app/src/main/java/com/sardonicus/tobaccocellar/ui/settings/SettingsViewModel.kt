@@ -175,7 +175,7 @@ class SettingsViewModel(
                 val notification = preferencesRepo.tinNotifications.first()
                 if (notification) {
                     val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    val system = checkNotificationPermission(notificationManager, application)
+                    val system = checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)
                     if (!system) { preferencesRepo.saveTinNotifications(false) }
                 }
             }
@@ -745,13 +745,29 @@ class SettingsViewModel(
                         if (settingsRestored) {
                             delay(50.milliseconds)
                             val restoredNotify = preferencesRepo.tinNotifications.first()
-                            if (restoredNotify) {
+                            val restoredMultiDevice = preferencesRepo.crossDeviceSync.first()
+                            if (restoredNotify || restoredMultiDevice) {
                                 val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                                if (!checkNotificationPermission(notificationManager, application)) {
+                                val notifyPermission = checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)
+                                val syncPermission = checkNotificationPermission(notificationManager, application, CellarApplication.SYNC_NOTIFICATION)
+
+                                val requestNotify = restoredNotify && !notifyPermission
+                                val requestSync = restoredMultiDevice && !syncPermission
+
+                                if (requestNotify || requestSync) {
+                                    val channelRequest = when {
+                                        requestNotify && requestSync -> CellarApplication.ALL_NOTIFICATIONS
+                                        requestNotify -> CellarApplication.TIN_NOTIFICATION
+                                        else -> CellarApplication.SYNC_NOTIFICATION
+                                    }
+
                                     val signal = CompletableDeferred<Unit>()
-                                    EventBus.emit(RequestNotification(signal))
-                                    try { withTimeoutOrNull(60.seconds) { signal.await() } }
-                                    catch (_: Exception) { preferencesRepo.saveTinNotifications(false) }
+                                    EventBus.emit(RequestNotification(signal, channelRequest))
+
+                                    try { withTimeoutOrNull(60.seconds) { signal.await() } } catch (_: Exception) { }
+
+                                    if (restoredNotify && !checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)) {
+                                        preferencesRepo.saveTinNotifications(false) }
                                 }
                             }
                         }
@@ -1094,7 +1110,10 @@ data object SignInCancelled
 data object SignOutEvent
 data object ShowLoading
 data object DismissLoading
-data class RequestNotification(val onComplete: CompletableDeferred<Unit>)
+data class RequestNotification(
+    val onComplete: CompletableDeferred<Unit>,
+    val channel: String
+)
 
 
 /** Helper functions */

@@ -1,5 +1,11 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +56,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -102,6 +112,21 @@ fun DeviceSyncDialog(
                 }
             }
         }
+    }
+
+    val context = LocalContext.current
+    val notificationManager = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    var syncNotificationEnabled by remember { mutableStateOf(checkNotificationPermission(notificationManager, context, CellarApplication.SYNC_NOTIFICATION)) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    var launchedFromApp by remember { mutableStateOf(false) }
+
+    LifecycleResumeEffect(Unit) {
+        if (launchedFromApp) {
+            val isReady = checkNotificationPermission(notificationManager, context, CellarApplication.SYNC_NOTIFICATION)
+            if (isReady) { syncNotificationEnabled = true }
+            launchedFromApp = false
+        }
+        onPauseOrDispose { }
     }
 
     AlertDialog(
@@ -200,6 +225,14 @@ fun DeviceSyncDialog(
                                             onCheckedChange = {
                                                 if (!connectionEnabled && !deviceSync) { disconnectFailure = it }
                                                 else { onDeviceSync(it) }
+
+                                                if (it && !signingIn && !disconnectFailure && !syncNotificationEnabled) {
+                                                    val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                                                    } else true
+                                                    if (isRuntime) { launchedFromApp = true }
+                                                    requestNotificationPermission(context, notificationManager, permissionLauncher, CellarApplication.SYNC_NOTIFICATION)
+                                                }
                                             },
                                             modifier = Modifier
                                                 .scale(.6f)
@@ -330,6 +363,24 @@ fun DeviceSyncDialog(
                                     fontSize = 15.sp,
                                     modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
                                 )
+                            }
+
+                            // notification
+                            if (deviceSync&& !signingIn && !disconnectFailure && !syncNotificationEnabled) {
+                                TextButton(
+                                    onClick = {
+                                        launchedFromApp = true
+                                        requestNotificationPermission(context, notificationManager, permissionLauncher, CellarApplication.SYNC_NOTIFICATION) },
+                                    enabled = accountLinked && !debouncedLoading,
+                                    contentPadding = PaddingValues(8.dp, 3.dp),
+                                    modifier = Modifier.heightIn(28.dp, 28.dp)
+                                ) {
+                                    Text(
+                                        text = "Enable sync notification?",
+                                        fontSize = 15.sp,
+                                        modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
+                                    )
+                                }
                             }
                         }
                         if (debouncedLoading) { LoadingIndicator(Modifier.matchParentSize(), center = true) }

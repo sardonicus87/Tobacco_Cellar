@@ -65,6 +65,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     companion object {
         const val SYNC_NOTIFICATION = "sync_channel"
         const val TIN_NOTIFICATION = "tin_notification"
+        const val ALL_NOTIFICATIONS = "all_notifications"
     }
     private val activityResumedTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -119,7 +120,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                     notify to time
                 }.collectLatest { (notify, time) ->
                     delay(500.milliseconds)
-                    val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication)
+                    val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication, TIN_NOTIFICATION)
                     if (notify && systemEnabled) { scheduleTinNotificationWorker(time) }
                     else { cancelTinNotificationWorker() }
                 }
