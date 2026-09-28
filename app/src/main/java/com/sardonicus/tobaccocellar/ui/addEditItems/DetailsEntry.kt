@@ -111,10 +111,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Brand:",
-                modifier = Modifier.width(80.dp)
-            )
+            Text("Brand:", Modifier.width(80.dp))
 
             AutoCompleteText(
                 value = itemDetails.brand,
@@ -146,10 +143,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(brand = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(brand = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -171,10 +165,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Blend:",
-                modifier = Modifier.width(80.dp)
-            )
+            Text("Blend:", Modifier.width(80.dp))
             TextField(
                 value = itemDetails.blend,
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
@@ -205,10 +196,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(blend = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(blend = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -218,7 +206,7 @@ fun DetailsEntry(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Next,
                 ),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
@@ -239,10 +227,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Type:",
-                modifier = Modifier.width(80.dp)
-            )
+            Text("Type:", Modifier.width(80.dp))
             CustomDropDown(
                 selectedValue = itemDetails.type,
                 onValueChange = { onValueChange(itemDetails.copy(type = it)) },
@@ -274,10 +259,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(subGenre = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(subGenre = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -287,7 +269,7 @@ fun DetailsEntry(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Next,
                 ),
                 interactionSource = fieldInteractionSource
             )
@@ -299,10 +281,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Cut:",
-                modifier = Modifier.width(80.dp)
-            )
+            Text("Cut:", Modifier.width(80.dp))
 
             AutoCompleteText(
                 value = itemDetails.cut,
@@ -316,10 +295,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(cut = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(cut = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -343,9 +319,7 @@ fun DetailsEntry(
         ) {
             Text(
                 text = "Components: ",
-                style = TextStyle(
-                    color = LocalContentColor.current
-                ),
+                style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
@@ -368,10 +342,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(componentString = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(componentString = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -406,9 +377,7 @@ fun DetailsEntry(
         ) {
             Text(
                 text = "Flavoring: ",
-                style = TextStyle(
-                    color = LocalContentColor.current
-                ),
+                style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
@@ -431,10 +400,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { onValueChange(itemDetails.copy(flavoringString = "")) }
+                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(flavoringString = "")) }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -444,7 +410,7 @@ fun DetailsEntry(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = if (itemDetails.syncTins) ImeAction.Done else ImeAction.Next,
                 ),
                 maxLines = 1,
                 placeholder = {
@@ -463,15 +429,13 @@ fun DetailsEntry(
 
         // No. of Tins //
         Row(
-            modifier = Modifier.padding(0.dp).fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "No. of\nTins:",
-                style = TextStyle(
-                    color = LocalContentColor.current
-                ),
+                style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier
                     .width(80.dp)
                     .heightIn(max = 48.dp)
@@ -485,7 +449,7 @@ fun DetailsEntry(
                 maxLines = 2,
             )
             Row(
-                modifier = Modifier.padding(0.dp).height(IntrinsicSize.Min),
+                modifier = Modifier.height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -505,7 +469,7 @@ fun DetailsEntry(
                             }
                         }
                     },
-                    modifier = Modifier.width(54.dp).padding(0.dp),
+                    modifier = Modifier.width(54.dp),
                     visualTransformation = VisualTransformation.None,
                     enabled = !itemDetails.syncTins,
                     singleLine = true,
@@ -528,7 +492,7 @@ fun DetailsEntry(
 
                 // Tin field options //
                 Row(
-                    modifier = Modifier.padding(0.dp).fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -537,10 +501,7 @@ fun DetailsEntry(
                         increaseClick = {
                             if (itemDetails.quantityString.isEmpty()) {
                                 onValueChange(
-                                    itemDetails.copy(
-                                        quantityString = "1",
-                                        quantity = 1
-                                    )
+                                    itemDetails.copy(quantityString = "1", quantity = 1)
                                 )
                             } else {
                                 if (itemDetails.quantityString.toInt() < 99) {
@@ -552,10 +513,7 @@ fun DetailsEntry(
                                     )
                                 } else {
                                     onValueChange(
-                                        itemDetails.copy(
-                                            quantityString = "99",
-                                            quantity = 99
-                                        )
+                                        itemDetails.copy(quantityString = "99", quantity = 99)
                                     )
                                 }
                             }
@@ -563,10 +521,7 @@ fun DetailsEntry(
                         decreaseClick = {
                             if (itemDetails.quantityString.isEmpty()) {
                                 onValueChange(
-                                    itemDetails.copy(
-                                        quantityString = "0",
-                                        quantity = 0
-                                    )
+                                    itemDetails.copy(quantityString = "0", quantity = 0)
                                 )
                             } else {
                                 if (itemDetails.quantityString.toInt() > 0) {
@@ -578,10 +533,7 @@ fun DetailsEntry(
                                     )
                                 } else if (itemDetails.quantityString.toInt() == 0) {
                                     onValueChange(
-                                        itemDetails.copy(
-                                            quantityString = "0",
-                                            quantity = 0
-                                        )
+                                        itemDetails.copy(quantityString = "0", quantity = 0)
                                     )
                                 }
                             }
@@ -647,8 +599,7 @@ fun DetailsEntry(
                                             "quantities of unfinished tins in the Tins tab.")
                                 }
                             },
-                            state = tooltipState,
-                            modifier = Modifier
+                            state = tooltipState
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -667,8 +618,7 @@ fun DetailsEntry(
                                     onCheckedChange = { onValueChange(itemDetails.copy(syncTins = it)) },
                                     size = 34.dp,
                                     checkedIcon = R.drawable.check_box_24,
-                                    uncheckedIcon = R.drawable.check_box_outline_24,
-                                    modifier = Modifier
+                                    uncheckedIcon = R.drawable.check_box_outline_24
                                 )
                                 val coroutineScope = rememberCoroutineScope()
                                 Box(
@@ -676,9 +626,7 @@ fun DetailsEntry(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .width(40.dp)
-                                        .clickable(indication = null, interactionSource = interactionSource) {
-                                            coroutineScope.launch { tooltipState.show() }
-                                        }
+                                        .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
                                 ) {
                                     Image(
                                         painter = painterResource(id = R.drawable.help_outline),
@@ -706,9 +654,7 @@ fun DetailsEntry(
             )
             Row(
                 modifier = Modifier
-                    .padding(0.dp)
-                    .clickable(indication = null, interactionSource = null) {
-                        onShowRatingPop(true) },
+                    .clickable(null, null) { onShowRatingPop(true) },
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -738,9 +684,7 @@ fun DetailsEntry(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(0.dp)
-                    .clickable(indication = null, interactionSource = null) {
-                        onValueChange(itemDetails.copy(favorite = !itemDetails.favorite)) },
+                    .clickable(null, null) { onValueChange(itemDetails.copy(favorite = !itemDetails.favorite)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -751,21 +695,14 @@ fun DetailsEntry(
                 CustomCheckbox(
                     checked = itemDetails.favorite,
                     onCheckedChange = {
-                        if (itemDetails.favorite) {
-                            onValueChange(itemDetails.copy(favorite = it))
-                        } else {
-                            onValueChange(
-                                itemDetails.copy(
-                                    favorite = it,
-                                    disliked = false
-                                )
-                            )
+                        if (itemDetails.favorite) { onValueChange(itemDetails.copy(favorite = it)) }
+                        else {
+                            onValueChange(itemDetails.copy(favorite = it, disliked = false))
                         }
                     },
                     checkedIcon = R.drawable.heart_filled_24,
                     uncheckedIcon = R.drawable.heart_outline_24,
                     size = 34.dp,
-                    modifier = Modifier.padding(0.dp),
                     colors = IconButtonDefaults.iconToggleButtonColors(
                         checkedContentColor = LocalCustomColors.current.favHeart,
                     )
@@ -773,9 +710,7 @@ fun DetailsEntry(
             }
             Row(
                 modifier = Modifier
-                    .padding(0.dp)
-                    .clickable(indication = null, interactionSource = null) {
-                        onValueChange(itemDetails.copy(disliked = !itemDetails.disliked)) },
+                    .clickable(null, null) { onValueChange(itemDetails.copy(disliked = !itemDetails.disliked)) },
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -786,14 +721,10 @@ fun DetailsEntry(
                 CustomCheckbox(
                     checked = itemDetails.disliked,
                     onCheckedChange = {
-                        if (itemDetails.disliked) {
-                            onValueChange(itemDetails.copy(disliked = it))
-                        } else {
+                        if (itemDetails.disliked) { onValueChange(itemDetails.copy(disliked = it)) }
+                        else {
                             onValueChange(
-                                itemDetails.copy(
-                                    disliked = it,
-                                    favorite = false
-                                )
+                                itemDetails.copy(disliked = it, favorite = false)
                             )
                         }
                     },
@@ -812,8 +743,7 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(indication = null, interactionSource = null) {
-                    onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(null, null) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -826,8 +756,7 @@ fun DetailsEntry(
                 onCheckedChange = { onValueChange(itemDetails.copy(inProduction = it)) },
                 checkedIcon = R.drawable.check_box_24,
                 size = 34.dp,
-                uncheckedIcon = R.drawable.check_box_outline_24,
-                modifier = Modifier
+                uncheckedIcon = R.drawable.check_box_outline_24
             )
         }
     }
