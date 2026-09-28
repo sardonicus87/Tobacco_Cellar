@@ -200,6 +200,11 @@ fun BulkEditBody(
     var tabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState(initialPage = tabIndex) { 2 }
     var textFieldFocused by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
+    LaunchedEffect(saveIndicator) {
+        if (isSaving && !saveIndicator) { tabIndex = 0 }
+        isSaving = saveIndicator
+    }
 
     val fieldInteractionSource = remember { MutableInteractionSource() }
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
@@ -241,9 +246,11 @@ fun BulkEditBody(
                                 .pointerInput(tabIndex) {
                                     if (tabIndex == 1) {
                                         awaitEachGesture {
-                                            val down = awaitFirstDown(pass = PointerEventPass.Initial)
-                                            if (anythingFocused) { focusManager.clearFocus(); down.consume() }
-                                            else tabIndex = 0
+                                            val down =
+                                                awaitFirstDown(pass = PointerEventPass.Initial)
+                                            if (anythingFocused) {
+                                                focusManager.clearFocus(); down.consume()
+                                            } else tabIndex = 0
                                         }
                                     }
                                 }
@@ -363,7 +370,7 @@ fun BulkEditBody(
                                         editingState = editingState,
                                         onValueChange = onValueChange,
                                         enableSave = enableSave,
-                                        batchEdit = { batchEdit(); tabIndex = 0 },
+                                        batchEdit = batchEdit,
                                         autoGenres = autoGenres,
                                         autoCuts = autoCuts,
                                         autoComps = autoComps,
@@ -483,6 +490,16 @@ fun BulkEditing(
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
     var showRatingPop by remember { mutableStateOf(false) }
+    val enabledFields = listOf(
+        editingState.genreSelected,
+        editingState.cutSelected,
+        editingState.compsSelected,
+        editingState.flavorSelected
+    )
+    fun nextOrDone(enabledFields: List<Boolean>, currentIndex: Int): ImeAction {
+        val hasNext = enabledFields.drop(currentIndex + 1).any { it }
+        return if (hasNext) ImeAction.Next else ImeAction.Done
+    }
 
     Column {
         GlowBox(
@@ -625,7 +642,7 @@ fun BulkEditing(
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Sentences,
                                 keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next,
+                                imeAction = nextOrDone(enabledFields, 0)
                             ),
                             enabled = editingState.genreSelected,
                             interactionSource = fieldInteractionSource
@@ -686,7 +703,7 @@ fun BulkEditing(
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
                                 keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next,
+                                imeAction = nextOrDone(enabledFields, 1),
                             ),
                             enabled = editingState.cutSelected,
                             interactionSource = fieldInteractionSource
@@ -766,7 +783,7 @@ fun BulkEditing(
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.None,
                                 keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next,
+                                imeAction = nextOrDone(enabledFields, 2),
                             ),
                             textStyle = LocalTextStyle.current.copy(
                                 color = color.copy(
