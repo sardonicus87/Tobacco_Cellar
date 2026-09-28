@@ -120,7 +120,10 @@ class BulkEditViewModel (
                 )
     }
 
-    private fun resetEditingState() { editingState = EditingState() }
+    private fun resetEditingState() {
+        val selectedItems = editingState.selectedItems
+        editingState = EditingState(selectedItems = selectedItems)
+    }
 
     fun resetSelectedItems() { editingState = editingState.copy(selectedItems = emptySet()) }
 
