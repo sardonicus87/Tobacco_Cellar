@@ -222,7 +222,12 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
     private fun createNotificationChannel() {
         val notificationManager = getSystemService(NotificationManager::class.java)
-        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, "Background sync", NotificationManager.IMPORTANCE_DEFAULT).apply {
+
+        val existingSyncChannel = notificationManager.getNotificationChannel(SYNC_NOTIFICATION)
+        if (existingSyncChannel != null && existingSyncChannel.importance == NotificationManager.IMPORTANCE_DEFAULT) {
+            notificationManager.deleteNotificationChannel(SYNC_NOTIFICATION) }
+
+        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, "Background sync", NotificationManager.IMPORTANCE_LOW).apply {
             description = "Quiet background notification indicating sync working in the background."
             setShowBadge(false)
             setSound(null, null)
