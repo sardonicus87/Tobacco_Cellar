@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.navigation
 
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -428,20 +427,17 @@ fun CellarNavigation(
         }
     }
 
-    SharedTransitionLayout {
-        NavDisplay(
-            entries = navigationState.toEntries(entryProvider),
-            modifier = modifier,
-            onBack = { navigator.goBack() },
-            sceneStrategies = listOf(twoPaneScene, SinglePaneSceneStrategy()),
-            sharedTransitionScope = this,
-            transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
-            popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
-            predictivePopTransitionSpec = {
-                if (isGestureNav && (initialState.entries.size == 1 || targetState.entries.size == 1)) {
-                    fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f) }
-                else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
-            }
-        )
-    }
+    NavDisplay(
+        entries = navigationState.toEntries(entryProvider),
+        modifier = modifier,
+        onBack = { navigator.goBack() },
+        sceneStrategies = listOf(twoPaneScene, SinglePaneSceneStrategy()),
+        transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
+        popTransitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) },
+        predictivePopTransitionSpec = {
+            if (isGestureNav && (initialState.entries.size == 1 || targetState.entries.size == 1)) {
+                fadeIn(tween()) togetherWith scaleOut(targetScale = 0.7f) }
+            else fadeIn(tween(500)) togetherWith fadeOut(tween(500))
+        }
+    )
 }
