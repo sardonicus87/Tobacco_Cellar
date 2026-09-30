@@ -27,5 +27,5 @@ deploymentTargetSelector
 *.json
 *.dm
 /app/release
-/app/src/main/res/values/strings.xml
 /release/app-release.aab
+/app/src/main/res/values/web_client_id.xml
