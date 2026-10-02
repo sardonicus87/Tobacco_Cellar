@@ -371,8 +371,7 @@ class CsvImportViewModel(
         return with(csvUiState) {
             val brandMapped = columnMap[CsvField.Brand]?.isNotBlank() == true
             val blendMapped = columnMap[CsvField.Blend]?.isNotBlank() == true
-            val ratingValid = if (columnMap[CsvField.Rating]?.isNotBlank() == true)
-                { maxValue != null } else { true }
+            val ratingValid = columnMap[CsvField.Rating]?.isNotBlank() != true || maxValue != null
 
             brandMapped && blendMapped && ratingValid
         }
@@ -669,8 +668,7 @@ class CsvImportViewModel(
         return when (option) {
             ImportOption.OVERWRITE -> newNames.sorted() != existing.sorted()
             ImportOption.UPDATE -> {
-                if (newNames.isEmpty()) false
-                else newNames.any { it !in existingNames }
+                newNames.isNotEmpty() && newNames.any { it !in existingNames }
             }
             else -> false
         }
@@ -679,8 +677,7 @@ class CsvImportViewModel(
     private fun compareTins(existing: List<Tins>, csvTins: List<TinData>, option: ImportOption): Boolean {
         return when (option) {
             ImportOption.OVERWRITE -> {
-                if (existing.isEmpty() && csvTins.isEmpty()) false
-                else existing.size != csvTins.size
+                !(existing.isEmpty() && csvTins.isEmpty()) && existing.size != csvTins.size
             }
             ImportOption.UPDATE -> {
                 existing.isEmpty() && csvTins.isNotEmpty()

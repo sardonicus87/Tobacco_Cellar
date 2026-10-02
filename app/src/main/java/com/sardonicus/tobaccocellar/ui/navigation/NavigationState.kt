@@ -113,7 +113,7 @@ class NavigationState(
     val interceptBack: Boolean
         get() {
             val currentStack = backStacks[topLevelRoute] ?: return false
-            return isTwoPane && (if (topLevelRoute == startRoute) currentStack.size > 2 else true)
+            return isTwoPane && (topLevelRoute != startRoute || currentStack.size > 2)
         }
 }
 

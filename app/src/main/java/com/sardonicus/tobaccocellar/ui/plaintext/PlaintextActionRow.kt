@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,7 +74,6 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaintextActionRow(
     viewModel: PlaintextViewModel,
@@ -328,7 +326,7 @@ private fun SortingButton(
                     onClick = {
                         val isNew = sortMenuState.mainSelection != option
                         viewModel.updateSorting(mainOption = option)
-                        subMenu = if (hasSubOptions) { if (isNew) true else !subMenu } else false
+                        subMenu = hasSubOptions && (isNew || !subMenu)
                     },
                     modifier = Modifier
                         .onGloballyPositioned {

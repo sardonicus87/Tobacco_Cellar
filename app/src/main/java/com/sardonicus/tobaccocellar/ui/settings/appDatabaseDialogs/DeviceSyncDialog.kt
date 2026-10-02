@@ -227,9 +227,7 @@ fun DeviceSyncDialog(
                                                 else { onDeviceSync(it) }
 
                                                 if (it && !signingIn && !disconnectFailure && !syncNotificationEnabled) {
-                                                    val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                                                    } else true
+                                                    val isRuntime = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                                                     if (isRuntime) { launchedFromApp = true }
                                                     requestNotificationPermission(context, notificationManager, permissionLauncher, CellarApplication.SYNC_NOTIFICATION)
                                                 }

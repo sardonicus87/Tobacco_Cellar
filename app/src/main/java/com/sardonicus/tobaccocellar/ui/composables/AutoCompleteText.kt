@@ -101,9 +101,7 @@ fun AutoCompleteText(
     }
 
     SideEffect(input, suggestionsState, override, value, focusInteractionCount) {
-        expandedState = if (input.length >= 2 && focusInteractionCount > 2) {
-            suggestionsState.isNotEmpty() && !override && value.isNotBlank()
-        } else { false }
+        expandedState = input.length >= 2 && focusInteractionCount > 2 && suggestionsState.isNotEmpty() && !override && value.isNotBlank()
     }
 
     LaunchedEffect(override) {
@@ -323,7 +321,7 @@ private fun getSuggestions(
     return scoreResults.filter { (score, _) ->
         when (score) {
             0, 1 -> true
-            2 -> if (hasPrimaryMatches) true else input.length > 3
+            2 -> hasPrimaryMatches || input.length > 3
             else -> false
         }
     }.sortedBy { it.first }.map { it.second } - selected

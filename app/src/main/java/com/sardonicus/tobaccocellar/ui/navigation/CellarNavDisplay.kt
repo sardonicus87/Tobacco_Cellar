@@ -396,8 +396,7 @@ fun CellarNavigation(
             val lastKey = currentStack.lastOrNull()
             val pairing = mainSecondaryMap.entries.find { map -> map.key::class == mainKey?.let { it::class } }?.value
 
-            if (mainKey != null && lastKey != null && mainKey::class == lastKey::class) { true }
-            else { pairing?.allowedSeconds?.contains(lastKey?.let { it::class }) ?: true }
+            mainKey != null && lastKey != null && mainKey::class == lastKey::class || pairing?.allowedSeconds?.contains(lastKey?.let { it::class }) ?: true
         }
     }
     val twoPaneScene = rememberTwoPaneStrategy<NavKey>(twoPaneAllowed && validPairing, navigationState.interceptBack)

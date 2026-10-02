@@ -132,9 +132,8 @@ fun TinNotificationsDialog (
                                             context, notificationManager, permissionLauncher, CellarApplication.TIN_NOTIFICATION)
                                         ) { onSave(true, notificationTime) }
                                     else {
-                                        val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                                        } else true
+                                        val isRuntime = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                                                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                                         if (isRuntime) { launchedFromApp = true }
                                     }
                                 }
@@ -206,9 +205,8 @@ fun requestNotificationPermission(
     permissionLauncher: ActivityResultLauncher<String>,
     channel: String
 ): Boolean {
-    val isRuntime = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-    } else true
+    val isRuntime = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !isRuntime) {
         permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
@@ -217,9 +215,7 @@ fun requestNotificationPermission(
         val appDisabled = !notificationManager.areNotificationsEnabled()
         val requestAll = channel == CellarApplication.ALL_NOTIFICATIONS
 
-        val channelDisabled = if (!requestAll) {
-            notificationManager.getNotificationChannel(channel)?.importance == NotificationManager.IMPORTANCE_NONE
-        } else false
+        val channelDisabled = !requestAll && notificationManager.getNotificationChannel(channel)?.importance == NotificationManager.IMPORTANCE_NONE
 
         if (appDisabled || requestAll) {
             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {

@@ -112,9 +112,7 @@ fun SettingsScreen(
                 val ready = requestNotificationPermission(context, notificationManager, permissionLauncher, it.channel)
                 if (ready) { it.onComplete.complete(Unit); requestEvent = null }
                 else {
-                    val isRuntimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    } else true
+                    val isRuntimeGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
                     if (isRuntimeGranted) { waitingSignal = true }
                 }
@@ -211,7 +209,6 @@ private fun SettingsBody(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsRow(
     item: SettingsDialog,
