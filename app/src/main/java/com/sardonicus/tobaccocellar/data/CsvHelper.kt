@@ -54,25 +54,25 @@ class CsvHelper {
 
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
-        for (item in data) {
-            val componentsString = item.components.joinToString(", ") { it.componentName }
-            val flavoringString = item.flavoring.joinToString(", ") { it.flavoringName }
-            val ratingString = exportRatingString(item.items.rating, maxRating, rounding)
+        for ((items, components, flavoring) in data) {
+            val componentsString = components.joinToString(", ") { it.componentName }
+            val flavoringString = flavoring.joinToString(", ") { it.flavoringName }
+            val ratingString = exportRatingString(items.rating, maxRating, rounding)
 
             csvPrinter.printRecord(
-                item.items.brand,
-                item.items.blend,
-                item.items.type,
-                item.items.subGenre,
-                item.items.cut,
+                items.brand,
+                items.blend,
+                items.type,
+                items.subGenre,
+                items.cut,
                 componentsString,
                 flavoringString,
-                item.items.quantity,
+                items.quantity,
                 ratingString,
-                item.items.favorite,
-                item.items.disliked,
-                item.items.inProduction,
-                item.items.notes,
+                items.favorite,
+                items.disliked,
+                items.inProduction,
+                items.notes,
             )
         }
 

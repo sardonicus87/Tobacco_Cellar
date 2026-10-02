@@ -185,16 +185,16 @@ class OfflineItemsRepository(
     override suspend fun deleteComponentsCrossRefByItemId(itemId: Int) {
         val parentItem = itemsDao.getItemById(itemId) ?: return
         val components = itemsDao.getComponentsForItemStream(itemId).first()
-        for (component in components) {
+        for ((componentId, componentName) in components) {
             val syncPayload = CrossRefSyncPayload(
                 itemBrand = parentItem.brand,
                 itemBlend = parentItem.blend,
-                relatedEntityName = component.componentName
+                relatedEntityName = componentName
             )
             val operation = PendingSyncOperation(
                 operationType = "DELETE",
                 entityType = "ItemsComponentsCrossRef",
-                entityId = "${itemId}-${component.componentId}",
+                entityId = "${itemId}-$componentId",
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )
@@ -271,16 +271,16 @@ class OfflineItemsRepository(
     override suspend fun deleteFlavoringCrossRefByItemId(itemId: Int) {
         val parentItem = itemsDao.getItemById(itemId) ?: return
         val flavorings = itemsDao.getFlavoringForItemStream(itemId).first()
-        for (flavoring in flavorings) {
+        for ((flavoringId, flavoringName) in flavorings) {
             val syncPayload = CrossRefSyncPayload(
                 itemBrand = parentItem.brand,
                 itemBlend = parentItem.blend,
-                relatedEntityName = flavoring.flavoringName
+                relatedEntityName = flavoringName
             )
             val operation = PendingSyncOperation(
                 operationType = "DELETE",
                 entityType = "ItemsFlavoringCrossRef",
-                entityId = "${itemId}-${flavoring.flavoringId}",
+                entityId = "${itemId}-$flavoringId",
                 payload = Json.encodeToString(syncPayload),
                 dbVersion = dbVersion
             )

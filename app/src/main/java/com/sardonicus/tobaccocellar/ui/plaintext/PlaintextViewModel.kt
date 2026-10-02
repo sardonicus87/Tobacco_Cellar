@@ -464,20 +464,20 @@ class PlaintextViewModel (
         var cellarExist = false
         var openExist = false
 
-        for (item in filteredItems) {
-            if (item.items.type.isNotBlank()) typesExist = true
-            if (item.items.subGenre.isNotBlank()) subgenresExist = true
-            if (item.items.cut.isNotBlank()) cutsExist = true
-            if (item.items.rating != null) ratingsExist = true
-            if (item.tins.isNotEmpty()) tinsExist = true
+        for ((items, _, _, tins) in filteredItems) {
+            if (items.type.isNotBlank()) typesExist = true
+            if (items.subGenre.isNotBlank()) subgenresExist = true
+            if (items.cut.isNotBlank()) cutsExist = true
+            if (items.rating != null) ratingsExist = true
+            if (tins.isNotEmpty()) tinsExist = true
 
             if (tinsExist) {
-                if (item.tins.any { it.container.isNotBlank() }) containersExist = true
-                if (item.tins.any { it.unit.isNotBlank() }) tinQuantityExist = true
+                if (tins.any { it.container.isNotBlank() }) containersExist = true
+                if (tins.any { it.unit.isNotBlank() }) tinQuantityExist = true
                 if (datesExist) {
-                    if (item.tins.any { it.manufactureDate != null }) manufExist = true
-                    if (item.tins.any { it.cellarDate != null }) cellarExist = true
-                    if (item.tins.any { it.openDate != null }) openExist = true
+                    if (tins.any { it.manufactureDate != null }) manufExist = true
+                    if (tins.any { it.cellarDate != null }) cellarExist = true
+                    if (tins.any { it.openDate != null }) openExist = true
                 }
             }
         }

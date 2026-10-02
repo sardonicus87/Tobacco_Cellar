@@ -64,8 +64,7 @@ class StatsViewModel(
         }
         var weightAccumulator = 0.0
 
-        for (fullItem in allItems) {
-            val item = fullItem.items
+        for ((item, components, flavoring, tins) in allItems) {
             brandSet.add(item.brand)
 
             if (item.favorite) favoriteCount++
@@ -81,26 +80,26 @@ class StatsViewModel(
             subgenreMap.increment(item.subGenre.ifBlank { "(Unassigned)" })
             cutMap.increment(item.cut.ifBlank { "(Unassigned)" })
 
-            if (fullItem.components.isEmpty()) componentMap.increment("(None Assigned)")
-            else fullItem.components.forEach { componentMap.increment(it.componentName) }
+            if (components.isEmpty()) componentMap.increment("(None Assigned)")
+            else components.forEach { componentMap.increment(it.componentName) }
 
-            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
-            else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
+            if (flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
+            else flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
             // Tins
             var itemTinsWeight = 0.0
             var unfinishedCount = 0
             var allValid = true
 
-            if (fullItem.tins.isNotEmpty()) hasTins = true
-            for (tin in fullItem.tins) {
-                if (!tin.finished) {
+            if (tins.isNotEmpty()) hasTins = true
+            for ((_, _, _, container, tinQuantity, unit, _, _, openDate, finished) in tins) {
+                if (!finished) {
                     unfinishedCount++
-                    containerMap.increment(tin.container.ifBlank { "(Unassigned)" })
-                    if (tin.openDate != null) totalOpened++
+                    containerMap.increment(container.ifBlank { "(Unassigned)" })
+                    if (openDate != null) totalOpened++
 
-                    if (tin.unit.isBlank()) allValid = false
-                    itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
+                    if (unit.isBlank()) allValid = false
+                    itemTinsWeight += convertWeight(tinQuantity, unit, quantityRemap)
                 }
             }
 
@@ -209,8 +208,7 @@ class StatsViewModel(
         }
         var weightAccumulator = 0.0
 
-        for (fullItem in allItems) {
-            val item = fullItem.items
+        for ((item, components, flavoring, tins) in allItems) {
             val relevant = item.id in filteredIds
 
             val type = item.type.ifBlank { "(Unassigned)" }
@@ -221,24 +219,24 @@ class StatsViewModel(
             subgenreMap.increment(subgenre)
             cutMap.increment(cut)
 
-            if (fullItem.components.isEmpty()) componentMap.increment("(None Assigned)")
-            else fullItem.components.forEach { componentMap.increment(it.componentName) }
+            if (components.isEmpty()) componentMap.increment("(None Assigned)")
+            else components.forEach { componentMap.increment(it.componentName) }
 
-            if (fullItem.flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
-            else fullItem.flavoring.forEach { flavoringMap.increment(it.flavoringName) }
+            if (flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
+            else flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
-            fullItem.tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "(Unassigned)" }) }
+            tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "(Unassigned)" }) }
 
             if (relevant) {
                 typeMapFiltered.increment(type)
                 subgenreMapFiltered.increment(subgenre)
                 cutMapFiltered.increment(cut)
 
-                if (fullItem.components.isEmpty()) componentMapFiltered.increment("(None Assigned)")
-                else fullItem.components.forEach { componentMapFiltered.increment(it.componentName) }
+                if (components.isEmpty()) componentMapFiltered.increment("(None Assigned)")
+                else components.forEach { componentMapFiltered.increment(it.componentName) }
 
-                if (fullItem.flavoring.isEmpty()) flavoringMapFiltered.increment("(None Assigned)")
-                else fullItem.flavoring.forEach { flavoringMapFiltered.increment(it.flavoringName) }
+                if (flavoring.isEmpty()) flavoringMapFiltered.increment("(None Assigned)")
+                else flavoring.forEach { flavoringMapFiltered.increment(it.flavoringName) }
 
                 if (item.favorite) favoriteCount++
                 if (item.disliked) dislikedCount++
@@ -269,7 +267,7 @@ class StatsViewModel(
                 var unfinishedTinsCount = 0
                 var allValid = true
 
-                fullItem.tins.forEach { tin ->
+                tins.forEach { tin ->
                     if (tin.tinId in filteredTinIds && !tin.finished) {
                         unfinishedTinsCount++
                         relevantTinsWeight.add(tin)
@@ -493,8 +491,7 @@ private fun Map<String, Int>.buildComp(filtered: Map<String, Int>, unassigned: S
     val result = LinkedHashMap<String, Int>(sorted.size)
     var unassignedVal: Int? = null
 
-    for (entry in sorted) {
-        val key = entry.key
+    for ((key) in sorted) {
         val value = filtered[key] ?: 0
 
         if (key == unassigned) { unassignedVal = value }

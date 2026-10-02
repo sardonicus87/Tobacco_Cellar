@@ -169,8 +169,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         val itemsRepo = container.itemsRepository
         val allItems = itemsRepo.getEverythingStream().first()
 
-        for (fullItem in allItems) {
-            val item = fullItem.items
+        for ((item) in allItems) {
             val oldSyncState = preferencesRepo.getItemSyncState(item.id).first()
             if (item.syncTins != oldSyncState) {
                 itemsRepo.updateItem(item.copy(syncTins = oldSyncState))

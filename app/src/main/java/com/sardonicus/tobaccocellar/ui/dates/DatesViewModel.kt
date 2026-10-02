@@ -206,21 +206,20 @@ class DatesViewModel(
         val thisWeekTins = mutableListOf<DateInfoItem>()
         val thisMonthTins = mutableListOf<DateInfoItem>()
 
-        for (item in items) {
-            for (tin in item.tins) {
-                if (tin.finished || tin.openDate == null) continue
+        for ((item, _, _, tins) in items) {
+            for ((_, _, tinLabel, _, _, _, _, _, openMillis, finished) in tins) {
+                if (finished || openMillis == null) continue
 
-                val openMillis = tin.openDate
                 val openDate = Instant.ofEpochMilli(openMillis).atZone(ZoneId.systemDefault()).toLocalDate()
                     .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
                 if (openDate in nowMillis..oneWeek) {
                     thisWeekTins.add(
                         DateInfoItem(
-                            id = item.items.id,
-                            brand = item.items.brand,
-                            blend = item.items.blend,
-                            tinLabel = tin.tinLabel,
+                            id = item.id,
+                            brand = item.brand,
+                            blend = item.blend,
+                            tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
                             timeFrame = calculateAge(openMillis),
                         )
@@ -228,10 +227,10 @@ class DatesViewModel(
                 } else if (openDate in (oneWeek + 1)..endOfMonth) {
                     thisMonthTins.add(
                         DateInfoItem(
-                            id = item.items.id,
-                            brand = item.items.brand,
-                            blend = item.items.blend,
-                            tinLabel = tin.tinLabel,
+                            id = item.id,
+                            brand = item.brand,
+                            blend = item.blend,
+                            tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
                             timeFrame = calculateAge(openMillis),
                         )
