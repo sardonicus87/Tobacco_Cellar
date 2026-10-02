@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.home
 
 import android.net.Uri
 import android.os.Environment
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
@@ -196,15 +197,10 @@ class HomeViewModel(
 
         val emptyMessage =
             if (!emptyList) { "" }
-            else if (readyTins) {
-                "Error loading ready tins." }
-            else if (searchPerformed) {
-                "No entries found matching\n\"$savedSearchText\" in ${searchSetting.value}." }
-            else if (filteringApplied) {
-                "No entries found matching\nselected filters." }
-            else if (emptyDatabase) {
-                "No entries found in cellar.\nClick \"+\" to add items,\n or use options to " +
-                        "import CSV." }
+            else if (readyTins) { application.getString(R.string.empty_tins) }
+            else if (searchPerformed) { application.getString(R.string.empty_search, savedSearchText, application.getString(searchSetting.resId)) }
+            else if (filteringApplied) { application.getString(R.string.empty_filter) }
+            else if (emptyDatabase) { application.getString(R.string.empty_db) }
             else { "" }
 
         val displayedMessage =
@@ -405,11 +401,9 @@ class HomeViewModel(
         val tinsPending = readyTins && sortedItems.isNotEmpty() && tins.tins.isEmpty()
 
         val dataLoading =
-            if (resetLoading || tinsPending) { true }
-            else {
-                if (!emptyDatabase && sortedItems.isNotEmpty()) { !isRendered }
-                else { if (emptyDatabase) false else emptyMessage.isBlank() }
-            }
+            resetLoading || tinsPending ||
+                    if (!emptyDatabase && sortedItems.isNotEmpty()) { !isRendered }
+                    else { !emptyDatabase && emptyMessage.isBlank() }
 
         HomeUiState(
             isTableView = viewSelect.isTableView,
@@ -518,14 +512,14 @@ class HomeViewModel(
     fun updateQuickFavorite(fav: Boolean) {
         _quickEditState.value = _quickEditState.value.copy(
             favorite = fav,
-            disliked = if (fav) false else _quickEditState.value.disliked
+            disliked = !fav && _quickEditState.value.disliked
         )
     }
 
     fun updateQuickDislike(dis: Boolean) {
         _quickEditState.value = _quickEditState.value.copy(
             disliked = dis,
-            favorite = if (dis) false else _quickEditState.value.favorite
+            favorite = !dis && _quickEditState.value.favorite
         )
     }
 
@@ -713,16 +707,14 @@ class HomeViewModel(
             val width = columnMinWidths[it]
             if (width == 0.dp) "" else {
                 when (it) {
-                    0 -> "Brand"
-                    1 -> "Blend"
-                    2 -> "Type"
-                    3 -> "Subgenre"
-                    4 -> "" // rating
-                    5 -> "" // favorite/dislike
-                    6 -> "Note"
-                    7 -> "Qty"
-                    8 -> "Modified"
-                    else -> ""
+                    0 -> application.getString(R.string.brand)
+                    1 -> application.getString(R.string.blend)
+                    2 -> application.getString(R.string.type)
+                    3 -> application.getString(R.string.subgenre)
+                    6 -> application.getString(R.string.note)
+                    7 -> application.getString(R.string.qty)
+                    8 -> application.getString(R.string.modified)
+                    else -> "" // 4 and 5 are rating and "Fav/Dis"
                 }
             }
         }
@@ -882,7 +874,7 @@ class HomeViewModel(
             if (uri != null) {
                 application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(csvData.toByteArray())
-                    EventBus.emit(ShowSnackbar("CSV Exported"))
+                    EventBus.emit(ShowSnackbar(application.getString(R.string.csv_export)))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -908,12 +900,12 @@ class HomeViewModel(
             if (uri != null) {
                 application.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
-                    EventBus.emit(ShowSnackbar("CSV Exported"))
+                    EventBus.emit(ShowSnackbar(application.getString(R.string.csv_export)))
                 }
             } else {
                 val documentsDirectory = Environment
                     .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = File(documentsDirectory, "tobacco_cellar_as_tins.csv")
+                val file = File(documentsDirectory, "tobacco_cellar_tins.csv")
                 file.writeText(tinCsvData)
             }
         }
@@ -924,51 +916,50 @@ class HomeViewModel(
         val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
         val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
 
-        for (item in items) {
-            if (item.tins.isNotEmpty()) {
-                for (tin in item.tins) {
-                    val quantity = if (tin.tinQuantity == floor(tin.tinQuantity)) {
-                        integerFormat.format(tin.tinQuantity.toLong())
-                    } else { numberFormat.format(tin.tinQuantity) }
+        for ((item, components, flavoring, tins) in items) {
+            if (tins.isNotEmpty()) {
+                for ((_, _, _, container, tinQuantity, unit, manufactureDate, cellarDate, openDate, finished) in tins) {
+                    val quantity = if (tinQuantity == floor(tinQuantity)) { integerFormat.format(tinQuantity.toLong()) }
+                    else { numberFormat.format(tinQuantity) }
 
                     val tinExport = TinExportData(
-                        brand = item.items.brand,
-                        blend = item.items.blend,
-                        type = item.items.type,
-                        subGenre = item.items.subGenre,
-                        cut = item.items.cut,
-                        components = item.components.joinToString(", ") { it.componentName },
-                        flavoring = item.flavoring.joinToString(", ") { it.flavoringName },
-                        quantity = item.items.quantity,
-                        rating = exportRatingString(item.items.rating, maxRating, rounding),
-                        favorite = item.items.favorite,
-                        disliked = item.items.disliked,
-                        inProduction = item.items.inProduction,
-                        notes = item.items.notes,
-                        container = tin.container,
-                        tinQuantity = if (tin.unit.isNotBlank()) "$quantity ${tin.unit}" else "",
-                        manufactureDate = formatMediumDate(tin.manufactureDate),
-                        cellarDate = formatMediumDate(tin.cellarDate),
-                        openDate = formatMediumDate(tin.openDate),
-                        finished = tin.finished
+                        brand = item.brand,
+                        blend = item.blend,
+                        type = item.type,
+                        subGenre = item.subGenre,
+                        cut = item.cut,
+                        components = components.joinToString(", ") { it.componentName },
+                        flavoring = flavoring.joinToString(", ") { it.flavoringName },
+                        quantity = item.quantity,
+                        rating = exportRatingString(item.rating, maxRating, rounding),
+                        favorite = item.favorite,
+                        disliked = item.disliked,
+                        inProduction = item.inProduction,
+                        notes = item.notes,
+                        container = container,
+                        tinQuantity = if (unit.isNotBlank()) "$quantity $unit" else "",
+                        manufactureDate = formatMediumDate(manufactureDate),
+                        cellarDate = formatMediumDate(cellarDate),
+                        openDate = formatMediumDate(openDate),
+                        finished = finished
                     )
                     tinExportData.add(tinExport)
                 }
             } else {
                 val tinExport = TinExportData(
-                    brand = item.items.brand,
-                    blend = item.items.blend,
-                    type = item.items.type,
-                    subGenre = item.items.subGenre,
-                    cut = item.items.cut,
-                    components = item.components.joinToString(", ") { it.componentName },
-                    flavoring = item.flavoring.joinToString(", ") { it.flavoringName },
-                    quantity = item.items.quantity,
-                    rating = exportRatingString(item.items.rating, maxRating, rounding),
-                    favorite = item.items.favorite,
-                    disliked = item.items.disliked,
-                    inProduction = item.items.inProduction,
-                    notes = item.items.notes,
+                    brand = item.brand,
+                    blend = item.blend,
+                    type = item.type,
+                    subGenre = item.subGenre,
+                    cut = item.cut,
+                    components = components.joinToString(", ") { it.componentName },
+                    flavoring = flavoring.joinToString(", ") { it.flavoringName },
+                    quantity = item.quantity,
+                    rating = exportRatingString(item.rating, maxRating, rounding),
+                    favorite = item.favorite,
+                    disliked = item.disliked,
+                    inProduction = item.inProduction,
+                    notes = item.notes,
                     container = "",
                     tinQuantity = "",
                     manufactureDate = "",
@@ -1116,22 +1107,22 @@ data class ImportantAlertState(
 )
 
 @Immutable
-enum class ListSortOption(val value: String) {
-    DEFAULT("Default"),
-    BLEND("Blend"),
-    BRAND("Brand"),
-    TYPE("Type"),
-    SUBGENRE("Subgenre"),
-    RATING("Rating"),
-    QUANTITY("Quantity"),
-    EDITED("Modified")
+enum class ListSortOption(@StringRes val resId: Int, val value: String) {
+    DEFAULT(R.string.default_, "Default"),
+    BLEND(R.string.blend, "Blend"),
+    BRAND(R.string.brand, "Brand"),
+    TYPE(R.string.type, "Type"),
+    SUBGENRE(R.string.subgenre, "Subgenre"),
+    RATING(R.string.rating, "Rating"),
+    QUANTITY(R.string.quantity, "Quantity"),
+    EDITED(R.string.modified, "Modified")
 }
 
 @Immutable
-sealed class SearchSetting(val value: String) {
-    data object Blend: SearchSetting("Blend")
-    data object Notes: SearchSetting("Notes")
-    data object TinLabel: SearchSetting("Tin Label")
+sealed class SearchSetting(@StringRes val resId: Int, val value: String) {
+    data object Blend: SearchSetting(R.string.blend, "Blend")
+    data object Notes: SearchSetting(R.string.notes, "Notes")
+    data object TinLabel: SearchSetting(R.string.tin_label, "Tin Label")
 }
 
 /** helper functions for quantity display **/
