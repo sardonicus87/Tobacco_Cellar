@@ -361,8 +361,7 @@ class FilterViewModel (
         var notesAny = false
         var datesAny = false
 
-        for (itemFull in data) {
-            val item = itemFull.items
+        for ((item, component, flavoring, tins) in data) {
 
             brands.add(item.brand)
             types.add(item.type.ifBlank { "(Unassigned)" })
@@ -375,17 +374,17 @@ class FilterViewModel (
             if (item.favorite || item.disliked) favDisAny = true
             if (item.notes.isNotBlank()) notesAny = true
 
-            if (itemFull.components.isEmpty()) { components.add("(None Assigned)") }
-            else { for (comp in itemFull.components) { components.add(comp.componentName) } }
+            if (component.isEmpty()) { components.add("(None Assigned)") }
+            else { for ((_, componentName) in component) { components.add(componentName) } }
 
-            if (itemFull.flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
-            else { for (flavor in itemFull.flavoring) { flavorings.add(flavor.flavoringName) } }
+            if (flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
+            else { for ((_, flavoringName) in flavoring) { flavorings.add(flavoringName) } }
 
-            if (itemFull.tins.isNotEmpty()) {
+            if (tins.isNotEmpty()) {
                 tinsAny = true
-                for (tin in itemFull.tins) {
-                    containers.add(tin.container.ifBlank { "(Unassigned)" })
-                    if (!datesAny && (tin.manufactureDate != null || tin.cellarDate != null || tin.openDate != null)) {
+                for ((_, _, _, container, _, _, manufactureDate, cellarDate, openDate) in tins) {
+                    containers.add(container.ifBlank { "(Unassigned)" })
+                    if (!datesAny && (manufactureDate != null || cellarDate != null || openDate != null)) {
                         datesAny = true
                     }
                 }
@@ -616,15 +615,13 @@ class FilterViewModel (
                         (selections.ratingLow == null || (if (selections.unrated) (items.items.rating == null || ratingRangeLow) else ratingRangeLow)) &&
                         (selections.ratingHigh == null || (if (selections.unrated) (items.items.rating == null || ratingRangeHigh) else ratingRangeHigh))
 
-            val tinsFilterResult = if (!applyTinFilter) true else {
-                (!selections.hasTins || items.tins.isNotEmpty()) &&
-                        (!selections.noTins || items.tins.isEmpty()) &&
-                        (!selections.opened || tinFiltering.isNotEmpty()) &&
-                        (!selections.unopened || tinFiltering.isNotEmpty()) &&
-                        (!selections.finished || tinFiltering.isNotEmpty()) &&
-                        (!selections.unfinished || tinFiltering.isNotEmpty()) &&
-                        (selections.container.isEmpty() || tinFiltering.isNotEmpty())
-            }
+            val tinsFilterResult = !applyTinFilter || (!selections.hasTins || items.tins.isNotEmpty()) &&
+                    (!selections.noTins || items.tins.isEmpty()) &&
+                    (!selections.opened || tinFiltering.isNotEmpty()) &&
+                    (!selections.unopened || tinFiltering.isNotEmpty()) &&
+                    (!selections.finished || tinFiltering.isNotEmpty()) &&
+                    (!selections.unfinished || tinFiltering.isNotEmpty()) &&
+                    (selections.container.isEmpty() || tinFiltering.isNotEmpty())
 
             baseFilters && tinsFilterResult
         }
@@ -683,7 +680,7 @@ class FilterViewModel (
     ): List<Tins> {
         val now = System.currentTimeMillis()
         val checkContainer = container.isNotEmpty()
-        val hasUnassigned = if (checkContainer) container.contains("(Unassigned)") else false
+        val hasUnassigned = checkContainer && container.contains("(Unassigned)")
 
         return allItems.flatMap { it.tins }.filter {
             val mContainer = !checkContainer || (hasUnassigned && it.container.isBlank()) || container.contains(it.container)
@@ -780,7 +777,7 @@ class FilterViewModel (
             val rangePassed = rangeActive && !unrated &&
                     (selections.ratingLow == null || item.rating >= selections.ratingLow) &&
                     (selections.ratingHigh == null || item.rating <= selections.ratingHigh)
-            if (!selections.unrated && !rangeActive) true else (unratedPassed || rangePassed)
+            !selections.unrated && !rangeActive || (unratedPassed || rangePassed)
         }
 
         val itemComps = items.components.map { it.componentName }
@@ -807,9 +804,9 @@ class FilterViewModel (
                     (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
         }
 
-        val mOpen = if (!selections.opened && !selections.unopened) true else mTinsSatisfyAll
-        val mFinish = if (!selections.finished && !selections.unfinished) true else mTinsSatisfyAll
-        val mContainer = if (selections.container.isEmpty()) true else mTinsSatisfyAll
+        val mOpen = !selections.opened && !selections.unopened || mTinsSatisfyAll
+        val mFinish = !selections.finished && !selections.unfinished || mTinsSatisfyAll
+        val mContainer = selections.container.isEmpty() || mTinsSatisfyAll
 
         val quantity = run {
             val tinFiltered = items.tins.filter { tin ->
