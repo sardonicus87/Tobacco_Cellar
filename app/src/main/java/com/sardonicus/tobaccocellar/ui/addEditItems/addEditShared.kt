@@ -46,9 +46,9 @@ fun validateDates(
     val cellar = normalizeDate(cellarDate)
     val open = normalizeDate(openDate)
 
-    val manufCellarValid = if (manuf != null && cellar != null) manuf <= cellar else true
-    val manufOpenValid = if (manuf != null && open != null) manuf <= open else true
-    val cellarOpenValid = if (cellar != null && open != null) cellar <= open else true
+    val manufCellarValid = !(manuf != null && cellar != null) || manuf <= cellar
+    val manufOpenValid = !(manuf != null && open != null) || manuf <= open
+    val cellarOpenValid = !(cellar != null && open != null) || cellar <= open
 
     return Triple(manufCellarValid, manufOpenValid, cellarOpenValid)
 }
@@ -65,8 +65,7 @@ private fun normalizeDate(millis: Long?): Long? {
 
 
 fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): Boolean {
-    if (tinLabel.isBlank()) return true
-    return tins.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
+    return tinLabel.isBlank() || tins.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
 }
 
 
