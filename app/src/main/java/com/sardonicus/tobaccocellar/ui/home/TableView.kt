@@ -488,14 +488,14 @@ private fun TableTinsList(
     }
 }
 
-enum class TableColumn(val title: String) {
-    BRAND("Brand"),
-    BLEND("Blend"),
-    TYPE("Type"),
-    SUBGENRE("Subgenre"),
-    RATING("Rating"),
-    FAV_DIS("Fav/Dis"),
-    NOTE("Notes"),
-    QTY("Quantity"),
-    EDITED("Last Modified")
+enum class TableColumn(val title: Int) {
+    BRAND(R.string.brand),
+    BLEND(R.string.blend),
+    TYPE(R.string.type),
+    SUBGENRE(R.string.subgenre),
+    RATING(R.string.rating),
+    FAV_DIS(R.string.fav_dis),
+    NOTE(R.string.notes),
+    QTY(R.string.quantity),
+    EDITED(R.string.l_modified);
 }
