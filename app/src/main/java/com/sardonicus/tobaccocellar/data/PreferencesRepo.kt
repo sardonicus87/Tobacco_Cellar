@@ -14,7 +14,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.sardonicus.tobaccocellar.ui.home.ListSortOption
 import com.sardonicus.tobaccocellar.ui.home.SearchSetting
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
-import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextSorting
+import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextSortOption
 import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.ThemeSetting
@@ -147,15 +147,16 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map {
-            when (it[SEARCH_SETTING]) {
-                SearchSetting.Blend.value -> SearchSetting.Blend
-                SearchSetting.Notes.value -> SearchSetting.Notes
-                SearchSetting.TinLabel.value -> SearchSetting.TinLabel
-                else -> SearchSetting.Blend
+            val saved = it[SEARCH_SETTING] ?: SearchSetting.Blend.name
+            when (saved) {
+                "Blend" -> SearchSetting.Blend
+                "Notes" -> SearchSetting.Notes
+                "Tin Label" -> SearchSetting.TinLabel
+                else -> runCatching { SearchSetting.valueOf(saved) }.getOrDefault(SearchSetting.Blend)
             }
         }.distinctUntilChanged()
 
-    suspend fun setSearchSetting(setting: String) { dataStore.edit { it[SEARCH_SETTING] = setting } }
+    suspend fun setSearchSetting(setting: SearchSetting) { dataStore.edit { it[SEARCH_SETTING] = setting.name } }
 
     val exportRating: Flow<ExportRating> = dataStore.data
         .catch {
@@ -228,16 +229,17 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map {
-            when (it[LIST_SORTING]) {
-                ListSortOption.DEFAULT.value -> ListSortOption.DEFAULT
-                ListSortOption.BLEND.value -> ListSortOption.BLEND
-                ListSortOption.BRAND.value -> ListSortOption.BRAND
-                ListSortOption.TYPE.value -> ListSortOption.TYPE
-                ListSortOption.SUBGENRE.value -> ListSortOption.SUBGENRE
-                ListSortOption.RATING.value -> ListSortOption.RATING
-                ListSortOption.QUANTITY.value -> ListSortOption.QUANTITY
-                ListSortOption.EDITED.value -> ListSortOption.EDITED
-                else -> ListSortOption.DEFAULT
+            val savedValue = it[LIST_SORTING] ?: ListSortOption.DEFAULT.name
+            when (savedValue) {
+                "Default" -> ListSortOption.DEFAULT
+                "Blend" -> ListSortOption.BLEND
+                "Brand" -> ListSortOption.BRAND
+                "Type" -> ListSortOption.TYPE
+                "Subgenre" -> ListSortOption.SUBGENRE
+                "Rating" -> ListSortOption.RATING
+                "Quantity" -> ListSortOption.QUANTITY
+                "Modified" -> ListSortOption.EDITED
+                else -> runCatching { ListSortOption.valueOf(savedValue) }.getOrDefault(ListSortOption.DEFAULT)
             }
         }.distinctUntilChanged()
 
@@ -249,8 +251,8 @@ class PreferencesRepo(
             } else { throw it }
         }.map { it[LIST_ASCENDING] ?: true }.distinctUntilChanged()
 
-    suspend fun saveListSorting(listSorting: String, ascending: Boolean) {
-        dataStore.edit { it[LIST_SORTING] = listSorting; it[LIST_ASCENDING] = ascending }
+    suspend fun saveListSorting(listSorting: ListSortOption, ascending: Boolean) {
+        dataStore.edit { it[LIST_SORTING] = listSorting.name; it[LIST_ASCENDING] = ascending }
     }
 
 
@@ -262,16 +264,16 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map {
-            val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.value
+            val savedValue = it[THEME_SETTING] ?: ThemeSetting.SYSTEM.name
             when (savedValue) {
-                ThemeSetting.LIGHT.value -> ThemeSetting.LIGHT
-                ThemeSetting.DARK.value -> ThemeSetting.DARK
-                ThemeSetting.SYSTEM.value -> ThemeSetting.SYSTEM
-                else -> ThemeSetting.SYSTEM
+                "Light" -> ThemeSetting.LIGHT
+                "Dark" -> ThemeSetting.DARK
+                "System" -> ThemeSetting.SYSTEM
+                else -> runCatching { ThemeSetting.valueOf(savedValue) }.getOrDefault(ThemeSetting.SYSTEM)
             }
         }.stateIn(applicationScope, SharingStarted.Eagerly, ThemeSetting.SYSTEM)
 
-    suspend fun saveTheme(theme: String) { dataStore.edit { it[THEME_SETTING] = theme } }
+    suspend fun saveTheme(theme: ThemeSetting) { dataStore.edit { it[THEME_SETTING] = theme.name } }
 
     val showRating: Flow<Boolean> = dataStore.data
         .catch {
@@ -290,11 +292,18 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map { setting ->
-            val savedValue = setting[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.value
-            TypeGenreOption.entries.firstOrNull { it.value == savedValue } ?: TypeGenreOption.TYPE
+            val savedValue = setting[TYPE_GENRE_OPTION] ?: TypeGenreOption.TYPE.name
+            when (savedValue) {
+                "Type" -> TypeGenreOption.TYPE
+                "Subgenre" -> TypeGenreOption.SUBGENRE
+                "Both" -> TypeGenreOption.BOTH
+                "Type (fallback)" -> TypeGenreOption.TYPE_FALLBACK
+                "Subgenre (fallback)" -> TypeGenreOption.SUB_FALLBACK
+                else -> runCatching { TypeGenreOption.valueOf(savedValue) }.getOrDefault(TypeGenreOption.TYPE)
+            }
         }.distinctUntilChanged()
 
-    suspend fun saveTypeGenre(option: String) { dataStore.edit { it[TYPE_GENRE_OPTION] = option } }
+    suspend fun saveTypeGenre(option: TypeGenreOption) { dataStore.edit { it[TYPE_GENRE_OPTION] = option.name } }
 
     val quantityOption: Flow<QuantityOption> = dataStore.data
         .catch {
@@ -303,16 +312,16 @@ class PreferencesRepo(
                 emit(emptyPreferences())
             } else { throw it }
         }.map {
-            val savedValue = it[QUANTITY_OPTION] ?: QuantityOption.TINS.value
+            val savedValue = it[QUANTITY_OPTION] ?: QuantityOption.TINS.name
             when (savedValue) {
-                QuantityOption.TINS.value -> QuantityOption.TINS
-                QuantityOption.OUNCES.value -> QuantityOption.OUNCES
-                QuantityOption.GRAMS.value -> QuantityOption.GRAMS
-                else -> QuantityOption.TINS
+                "\"No. of Tins\" (default)" -> QuantityOption.TINS
+                "Ounces/Pounds" -> QuantityOption.OUNCES
+                "Grams" -> QuantityOption.GRAMS
+                else -> runCatching { QuantityOption.valueOf(savedValue) }.getOrDefault(QuantityOption.TINS)
             }
         }.distinctUntilChanged()
 
-    suspend fun saveQuantity(option: String) { dataStore.edit { it[QUANTITY_OPTION] = option } }
+    suspend fun saveQuantity(option: QuantityOption) { dataStore.edit { it[QUANTITY_OPTION] = option.name } }
 
     val parseLinks: Flow<Boolean> = dataStore.data
         .catch {
@@ -524,21 +533,61 @@ class PreferencesRepo(
 
     suspend fun setPtListAs(listAs: Boolean) { dataStore.edit { it[PLAINTEXT_LIST_AS] = listAs } }
 
-    val plaintextSorting: Flow<String> = dataStore.data
+    val plaintextMainSorting: Flow<PlaintextSortOption> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_SORTING] ?: PlaintextSorting.DEFAULT.value }.distinctUntilChanged()
+        }.map {
+            val saved = it[PLAINTEXT_SORTING] ?: PlaintextSortOption.DEFAULT.name
+            when (saved) {
+                "Item Default" -> PlaintextSortOption.DEFAULT
+                "Brand" -> PlaintextSortOption.BRAND
+                "Blend" -> PlaintextSortOption.BLEND
+                "Type" -> PlaintextSortOption.TYPE
+                "Subgenre" -> PlaintextSortOption.SUBGENRE
+                "Cut" -> PlaintextSortOption.CUT
+                "Quantity" -> PlaintextSortOption.QUANTITY
+                "Rating" -> PlaintextSortOption.RATING
+                "Tin Default" -> PlaintextSortOption.TIN_DEFAULT
+                "Tin Label" -> PlaintextSortOption.TIN_LABEL
+                "Tin Container" -> PlaintextSortOption.TIN_CONTAINER
+                "Tin Quantity" -> PlaintextSortOption.TIN_QUANTITY
+                "Manufacture Date" -> PlaintextSortOption.TIN_MANUF
+                "Cellar Date" -> PlaintextSortOption.TIN_CELLAR
+                "Open Date" -> PlaintextSortOption.TIN_OPEN
+                else -> runCatching { PlaintextSortOption.valueOf(saved) }.getOrDefault(PlaintextSortOption.DEFAULT)
+            }
+        }.distinctUntilChanged()
 
-    val plaintextSubSorting: Flow<String> = dataStore.data
+    val plaintextSubSorting: Flow<PlaintextSortOption> = dataStore.data
         .catch {
             if (it is IOException) {
                 Log.e(TAG, "Error reading plaintext formatting preferences.", it)
                 emit(emptyPreferences())
             } else { throw it }
-        }.map { it[PLAINTEXT_SUBSORTING] ?: PlaintextSorting.DEFAULT.value }.distinctUntilChanged()
+        }.map {
+            val saved = it[PLAINTEXT_SUBSORTING] ?: PlaintextSortOption.DEFAULT.name
+            when (saved) {
+                "Item Default" -> PlaintextSortOption.DEFAULT
+                "Brand" -> PlaintextSortOption.BRAND
+                "Blend" -> PlaintextSortOption.BLEND
+                "Type" -> PlaintextSortOption.TYPE
+                "Subgenre" -> PlaintextSortOption.SUBGENRE
+                "Cut" -> PlaintextSortOption.CUT
+                "Quantity" -> PlaintextSortOption.QUANTITY
+                "Rating" -> PlaintextSortOption.RATING
+                "Tin Default" -> PlaintextSortOption.TIN_DEFAULT
+                "Tin Label" -> PlaintextSortOption.TIN_LABEL
+                "Tin Container" -> PlaintextSortOption.TIN_CONTAINER
+                "Tin Quantity" -> PlaintextSortOption.TIN_QUANTITY
+                "Manufacture Date" -> PlaintextSortOption.TIN_MANUF
+                "Cellar Date" -> PlaintextSortOption.TIN_CELLAR
+                "Open Date" -> PlaintextSortOption.TIN_OPEN
+                else -> runCatching { PlaintextSortOption.valueOf(saved) }.getOrDefault(PlaintextSortOption.DEFAULT)
+            }
+        }.distinctUntilChanged()
 
     val plaintextSortAscending: Flow<Boolean> = dataStore.data
         .catch{
@@ -548,11 +597,11 @@ class PreferencesRepo(
             } else { throw it }
         }.map { it[PLAINTEXT_SORT_ASCENDING] ?: true }.distinctUntilChanged()
 
-    suspend fun setPtSort(sort: String, ascend: Boolean) {
-        dataStore.edit { it[PLAINTEXT_SORTING] = sort; it[PLAINTEXT_SORT_ASCENDING] = ascend }
+    suspend fun setPtSort(sort: PlaintextSortOption, ascend: Boolean) {
+        dataStore.edit { it[PLAINTEXT_SORTING] = sort.name; it[PLAINTEXT_SORT_ASCENDING] = ascend }
     }
 
-    suspend fun setPtSubSort(subSort: String) { dataStore.edit { it[PLAINTEXT_SUBSORTING] = subSort } }
+    suspend fun setPtSubSort(subSort: PlaintextSortOption) { dataStore.edit { it[PLAINTEXT_SUBSORTING] = subSort.name } }
 
     val plaintextPrintFontSize: Flow<Float> = dataStore.data
         .catch {
