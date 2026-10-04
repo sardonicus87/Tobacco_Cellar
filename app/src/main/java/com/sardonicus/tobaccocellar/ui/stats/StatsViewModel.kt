@@ -126,7 +126,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, application, filterViewModel.unitsShort),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
@@ -305,7 +305,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, application, filterViewModel.unitsShort),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
@@ -537,13 +537,13 @@ private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: Qua
     }
 }
 
-private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double): String {
+private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double, app: CellarApplication, units: Triple<String, String, String>): String {
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
-            if (totalWeight >= 16.00) { formatDecimal((totalWeight / 16)) + " lbs" }
-            else { formatDecimal(totalWeight) + " oz" }
+            if (totalWeight >= 16.00) { app.getString(R.string.format_quantity, "", formatDecimal((totalWeight / 16)), units.second) }
+            else { app.getString(R.string.format_quantity, "", formatDecimal(totalWeight), units.first) }
         }
-        QuantityOption.GRAMS -> { formatDecimal(totalWeight) + " g" }
+        QuantityOption.GRAMS -> { app.getString(R.string.format_quantity, "", formatDecimal(totalWeight), units.third) }
         else -> null
     } ?: ""
 }

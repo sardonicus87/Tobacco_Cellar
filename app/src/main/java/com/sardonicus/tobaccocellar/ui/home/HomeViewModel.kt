@@ -291,7 +291,7 @@ class HomeViewModel(
         filteredItems.associate { items ->
             val itemTins = items.tins.filter { it in filteredTins }
             val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate, filterViewModel.units)
-            val display = formatQuantity(raw, quantityOption, itemTins)
+            val display = formatQuantity(raw, quantityOption, itemTins, application, filterViewModel.unitsShort)
 
             items.items.id to ItemQuantity(raw, display)
         }
@@ -1175,23 +1175,23 @@ fun calculateGrams(tins: List<Tins>, units: Triple<String, String, String>): Dou
     }
 }
 
-fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>): String {
+fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>, app: CellarApplication, units: Triple<String, String, String>): String {
     return when (quantityOption) {
-        QuantityOption.TINS -> "x${quantity.toInt()}"
+        QuantityOption.TINS -> app.getString(R.string.format_quantity, "x", "${quantity.toInt()}", "")
         QuantityOption.OUNCES -> {
             val pounds = quantity / 16
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 16) { "${formatDecimal(pounds)} lbs" }
-                else { "${formatDecimal(quantity)} oz" }
+                if (quantity >= 16) { app.getString(R.string.format_quantity, "", formatDecimal(pounds), units.second) }
+                else { app.getString(R.string.format_quantity, "", formatDecimal(quantity), units.first) }
             } else {
-                if (quantity >= 16) { "*${formatDecimal(pounds)} lbs" }
-                else { "*${formatDecimal(quantity)} oz" }
+                if (quantity >= 16) { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.second) }
+                else { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.first) }
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                "${formatDecimal(quantity)} g"
-            } else { "*${formatDecimal(quantity)} g" }
+                app.getString(R.string.format_quantity, "", formatDecimal(quantity), units.third) }
+            else { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.third) }
         }
     }
 }
