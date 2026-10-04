@@ -37,8 +37,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
@@ -289,7 +291,7 @@ private fun ColumnVisibilityPopup(
                         horizontalArrangement = Arrangement.Start,
                     ) {
                         CheckboxWithLabel(
-                            text = column.title,
+                            text = stringResource(column.title),
                             checked = visibilityMap[column] ?: true,
                             onCheckedChange = {
                                 val visible = visibilityMap[column] ?: true
@@ -304,6 +306,6 @@ private fun ColumnVisibilityPopup(
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        confirmButton = { TextButton({ onDismiss() }) { Text("Done") } }
+        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.done)) } }
     )
 }

@@ -2,9 +2,10 @@
 
     <string name="app_name">Tobacco Cellar</string>
 
-    // Page Titles //
+    <!-- Page Titles -->
     <string name="home_title">Cellar</string>
     <string name="stats_title">Stats</string>
+    <string name="dates_title">Dates</string>
     <string name="add_entry_title">Add Entry</string>
     <string name="edit_entry_title">Edit Entry</string>
     <string name="csv_import_title">CSV Import Wizard</string>
@@ -14,10 +15,9 @@
     <string name="help_faq_title">Help/FAQ</string>
     <string name="blend_details_title">Blend Details</string>
     <string name="bulk_edit_title">Batch Edit</string>
-    <string name="dates_title">Dates</string>
     <string name="plaintext_title">Plaintext Export</string>
 
-    // Button Text //
+    <!-- Button Text -->
     <string name="filter_items">Filter</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
@@ -28,6 +28,9 @@
     <string name="delete_entry">Delete Entry</string>
     <string name="update">Update</string>
     <string name="ok">OK</string>
+    <string name="done">Done</string>
+    <string name="undo">Undo</string>
+    <string name="confirm">Confirm</string>
 
     <string name="import_csv">Import CSV</string>
     <string name="export_csv">Export CSV</string>
@@ -36,7 +39,7 @@
     <string name="select_csv">Select CSV</string>
 
 
-    // Instructions //
+    <!-- Instructions -->
     <string name="attention">Attention:</string>
     <string name="no_items">No items found in cellar.\nChange filters, click \"+\" to\nadd items,
         or use options\nto import CSV.</string>
@@ -51,23 +54,449 @@
         and map the columns in the CSV to the correct database fields.</string>
 
 
-    /Labels/
+    <!-- Labels -->
     <string name="possible_header">Possible header: </string>
     <string name="possible_record">Record parse test: </string>
-    <string name="quick_stats">Quick Stats</string>
 
 
-    // Content Descriptions //
-    <string name="table_view_toggle">Table View</string>
-    <string name="list_view_toggle">List View</string>
-
-
-    <string name="settings">Settings</string>
     <string name="item_detail_title">Details</string>
-    <string name="settings_nothing">Settings</string>
     <string name="notes_entry">Enter Notes</string>
     <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
 
+    <!-- Global and Special Strings -->
+    <string name="default_">Default</string>
+    <string name="ready_tins">Ready Tins</string>
+
+    <string name="brand">Brand</string>
+    <string name="blend">Blend</string>
+    <string name="type">Type</string>
+    <string name="subgenre">Subgenre</string>
+    <string name="cut">Cut</string>
+    <string name="component">Component</string>
+    <string name="flavoring">Flavoring</string>
+    <string name="note">Note</string>
+    <string name="notes">Notes</string>
+    <string name="rating">Rating</string>
+    <string name="favorite">Favorite</string>
+    <string name="disliked">Disliked</string>
+    <string name="fav_dis">Fav/Dis</string>
+    <string name="neutral">Neutral</string>
+    <string name="quantity">Quantity</string>
+    <string name="qty">Qty</string>
+    <string name="modified">Modified</string>
+    <string name="l_modified">Last Modified</string>
+    <string name="container">Container</string>
+
+    <string name="unassigned">(Unassigned)</string>
+    <string name="none_assigned">(None Assigned)</string>
+
+    <string name="copied_clipboard">Copied to clipboard</string>
+
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="manage_data">Managing Data</string>
+
+    <string name="no_of_tins">No. of Tins</string>
+    <string name="backup_restore">Backup/Restore</string>
+
+    <string name="oz">oz</string>
+    <string name="lbs">lbs</string>
+    <string name="grams">grams</string>
+    <string name="grams_short">g</string>
+
+    <string name="any">Any</string>
+    <string name="all">All</string>
+    <string name="only">Only</string>
+
+
+    <!-- Main Activity Toasts and Snackbars -->
+    <string name="exit">Tap again to exit</string>
+    <string name="sync_enabled">Sync successfully enabled.</string>
+    <string name="drive_denied">Could not get Drive permission.</string>
+    <string name="sign_in_canceled">Sign-in cancelled.</string>
+    <string name="no_accounts">No accounts on this device.</string>
+    <string name="sign_in_failed">Sign-in failed.</string>
+    <string name="logged_out">Logged out.</string>
+    <string name="sign_out_failed">Sign-out failed.</string>
+
+
+    <!-- Home Screen strings -->
+    <string name="table_view_toggle">Table View</string>
+    <string name="list_view_toggle">List View</string>
+    <string name="view">View:</string>
+    <string name="list_sorting">list sorting</string>
+    <string name="t_col_vis">table column visibility</string>
+
+    <string name="edit_item">Edit Item</string>
+    <string name="quick_edit">Quick Edit</string>
+    <string name="rating_dialog">Set a rating (maximum 5). To make an item unrated, make the field
+        blank. Supports fractional ratings (up to 2 decimal places).</string>
+
+    <string name="empty_tins">Error loading ready tins.</string>
+    <string name="empty_search">No entries found matching\n\"%1$s\" in %2$s.</string>
+    <string name="empty_filter">No entries found matching\nselected filters.</string>
+    <string name="empty_db">No entries found in cellar.\nClick \"+\" to add items,\n or use options to import CSV.</string>
+
+    <string name="csv_export">CSV Exported</string>
+    <string name="tin_label">Tin Label</string>
+
+    <string name="important_alert">Important Alert!</string>
+    <string name="one_time_alert">This is a one-time alert.</string>
+    <string name="missed_alert">Missed Alert:</string>
+    <string name="alert_info">%1$s\n(v %2$s)</string>
+    <string name="alert_scroll">You must scroll to the bottom to be able to acknowledge and
+        dismiss this dialog.</string>
+    <string name="next">Next</string>
+
+    <string name="what_new">What\'s New</string>
+    <string name="release_info">Version %1$s (%2$s)</string>
+    <string name="full_change">Full Changelog</string>
+
+    <!-- Help Screen strings -->
+    <string name="cellar_screen">Cellar Screen</string>
+    <string name="stats_screen">Stats Screen</string>,
+    <string name="dates_screen">Dates Screen</string>
+    <string name="filtering">Filtering</string>
+    <string name="adding_entries">Adding Entries</string>
+    <string name="editing_entries">Editing Entries</string>
+    <string name="adding_tins">Adding Tins</string>
+
+    <string name="help_body1">Tobacco Cellar was originally intended to be a basic inventory list
+        and \"tobacco passport\" combined with the ease of searching and filtering, and interesting
+        statics. This remains the primary goal, despite any additional features added since launch,
+        or possible future features.</string>
+    <string name="help_body2">Please see the relevant sections for more detailed information.</string>
+    <string name="help">Help:</string>
+
+    <string name="help_cellar1">\"Cellar\" is the starting point of the app. Some view options are
+        available in the header, while others are in the settings.</string>
+    <string name="help_cellar2">Header</string>
+    <string name="help_cellar3">The header at the top of the screen contains a view mode switch for
+        changing between list and table modes, a \"Quick Search\" with a search field option, a
+        button to change sorting (list view) or table column visibility (table view), and a count of
+        the current entries based on chosen filtering or searching.</string>
+    <string name="help_cellar4">The search bar icon can be selected to change the field to search.
+        Searching works independently of any chosen filters. To clear search results, tap the \"X\"
+        icon, erase the search text, or use the system back navigation. Previously chosen filters
+        will be re-applied.</string>
+    <string name="help_cellar5">List/Table Views</string>
+    <string name="help_cellar6">In either view mode, tapping an entry will navigate to the details
+        screen for that entry, long-pressing will show a menu overlay with an option to edit or
+        quick edit. Quick edit swaps the menu to allow editing a select few things without the need
+        to navigate to the full Edit Entry screen. Clear the menu overlay by tapping outside of it
+        or using the system back navigation.</string>
+    <string name="help_cellar7">Items can be sorted in list mode by tapping the sort button in the
+        header. Tapping an option sorts ascending, tapping it again switches to descending. Tap
+        the sort icon again to close the list view sorting menu. In Table view, sorting is done by
+        tapping the \"Brand\", \"Blend\", \"Type\", \"Rating\", or \"Qty\" column headers. Default
+        sorting is the order the entries were entered into the database. The first tap will sort the
+        column ascending, the second descending, and the third returns to the default sort order.</string>
+    <string name="help_cellar8">The quantity displayed is the \"No. of Tins\" by default. There is
+        an option on the Settings screen to change this to oz/lbs or grams based on the sum of the
+        quantities entered for each tin. If no tins are given for an entry, the \"No. of Tins\"
+        field will be used (converted by the tin conversion rates set on the settings screen.</string>
+
+
+    <string name="help_stats">The \"Stats\" screen gives you an expandable \"Quick Stats\" section
+        (with raw stats on the left and stats based on your filters on the right) and a section of
+        pie charts (which are filter reactive).</string>
+
+
+    <string name="help_dates1">The \"Dates\" screen contains various date-related information, all
+        of which is filter-reactive (except the \"Aging Tracker\", which is based on all un-filtered
+        entries). The Dates navigation button will have an indicator dot if any aging tins will be
+        ready within the next 7 days. Viewing the Dates screen will clear this indicator until any
+        other new tins are ready.</string>
+    <string name="help_dates2">This section shows blends which are ready to be opened within the
+        next week and month, based on any open dates that were previously set to a future date. See
+        the Adding Tins section for more details.</string>
+    <string name="help_dates3">Tapping on any tin listed on this screen will take you to the details
+        page for the blend that the tin belongs to.</string>
+    <string name="help_dates4">Quick Stats</string>
+    <string name="help_dates5">The \"Quick Stats\" are calculated based only on tins which have
+        relevant data added (tins without a date in that field aren\'t counted). Average age is based
+        on manufacturing date, time in cellar only on the cellar date, and time opened based on tins
+        with open dates that aren\'t marked as finished. These calculations also do not factor future
+        tins. Average wait time is calculated based on all future set dates.</string>
+    <string name="help_dates6">Oldest/Future Tins</string>
+    <string name="help_dates7">The next two sections list the 5 tins per each date field of past
+        dates from oldest to youngest, and future dates from soonest to latest.</string>
+
+
+    <string name="help_filtering1">The \"Filter Sheet\" opens on top of the Cellar, Stats and Date
+        screens. Any filters persist through navigation around the app and affect all screens allow
+        filtering (Cellar, Stats, Dates, Bulk Edit, Plaintext), but have no effect on the Cellar
+        screen quick search results. If any filters are applied, this icon will have an indicator dot.</string>
+    <string name="help_filtering2">Basic Use</string>
+    <string name="help_filtering3">Multiple filters can be combined and any filterable screen will
+        react instantly to changes. Once you have selected filters, the sheet can be dismissed by
+        tapping outside of it, tapping the close button, or swiping it down.</string>
+    <string name="help_filtering4">The \"Clear All\" button at the bottom will clear all chosen filters.</string>
+    <string name="help_filtering5">The filter sheet has three pages, swipe or flick left/right to
+        swap between pages, or tap the page indicator dot at the top to swap to that page.</string>
+    <string name="help_filtering6">Selecting Filters</string>
+    <string name="help_filtering7">Filter brands by tapping the name of a brand in the row of brands
+        (row scrolls horizontally). The \"Search Brands\" field is just a filter for this row of
+        brands. Tap the include/exclude button to swap brand filter modes.</string>
+    <string name="help_filtering8">Selected brands are shown in the box below and can be removed by
+        tapping the close icon on each brand. Brands that exceed this space are placed in an
+        overflow. To see the full list of selected brands, tap the overflow button. The \"Clear
+        All\" button here only removes the selected brand filters.</string>
+    <string name="help_filtering9">To filter by type, tap one of the types to add it to the filtering,
+        tap it again to remove it. The \"Unassigned\" button will filter for entries that have a
+        blank blend type.</string>
+    <string name="help_filtering10">Filter \"Favorites\" or \"Dislikes\" by tapping the checkboxes.
+        The first tap will return only those marked as the chosen filter, tapping again will return
+        all entries that are not in that category. Both boxes can be set to include/exclude to see
+        only entries that are marked as being in one or the other, or only entries that aren\'t
+        marked as being in either.</string>
+    <string name="help_filtering11">Below this is the rating range filter, tapping the range display
+        opens a popup for the range options. Unrated will return all entries that haven\'t been
+        rated. The left and right fields are for min/max rating, respectively. Use one or the other
+        to return all entries that are rated at least/most as the chosen value, or use both to
+        return all entries rated between the max/min. The rating range can also be combined with the
+        unrated option (to see all items that are unrated and only those that are rated within the
+        range).</string>
+    <string name="help_filtering12">Filtering by in-stock/out is based on the \"No. of Tins\" field
+        and returns those entries with a value greater than 0 (or 0 for out-of-stock).</string>
+    <string name="help_filtering13">Filters for subgenres, cuts, components and flavorings are on the
+        second page. Tap the overflow chip will to show a full list of available selections for that
+        section.</string>
+    <string name="help_filtering14">There is an additional option in components and flavoring for
+        matching type. Selecting \"Any\" will return blends that contain any of the selections,
+        \"All\" will return only those blends that contain all the selections, and \"Only\" will
+        strictly return those blends that contain only the selections (and no others—exact matching).</string>
+    <string name="help_filtering15">Tin-related parameters are on the third page. Some tins filters
+        will also result in a filtered list of matching tins being shown for the relevant blends on
+        the Cellar screen.</string>
+
+
+    <string name="help_adding1">Items can be added in one of two ways: by tapping the \"Add\" button
+        in the navigation bar, or by importing a CSV file through the top bar overflow menu. For more
+        information on adding items by CSV, please see the \"Help\" section on the CSV import screen.</string>
+    <string name="help_adding2">There are three tabs on the add entry screen that are self-explanatory.
+        Please see the \"Adding Tins\" section for more details on the tins tab.</string>
+    <string name="help_adding3">All entries require a unique combination of \"Brand\" and \"Blend\".
+        Multiple entries can contain the same brand OR blend, but only one entry can contain the same
+        brand AND blend. All other fields are optional.</string>
+    <string name="help_adding4">Most fields that are left blank will remain blank when clicking save,
+        however leaving the \"No. of Tins\" field blank will presume the quantity to be 1; if you wish
+        this quantity to be 0, you must enter 0. Next to this field, there are \"increase/decrease\"
+        buttons for quickly updating the number of tins.</string>
+    <string name="help_adding5">The \"Sync?\" check box allows you to synchronize the \"No. of Tins\"
+        field with the total quantities of individual tins/containers (not counting those tins marked
+        as finished). The total tins are calculated based on the Tin Conversion Rates set in the
+        settings screen (default is 1 tin is equal to 1.75 oz or 50g).</string>
+    <string name="help_adding6">Tapping the rating bar opens a popup with a text field for entering
+        a rating. The range is 0-5 and does allow fractional numbers (up to 2 decimal places). Clear
+        the text field in order to leave an item unrated.</string>
+    <string name="help_adding7">When adding components or flavorings, please separate each with a
+        comma and a space. For example: \"virginia, burley, perique\".</string>
+
+
+    <string name="help_editing1">Entries can be edited by long-pressing the entry in the cellar
+        screen, using the batch edit option in the top bar menu, tapping edit on the details screen,
+        or through a CSV import and selecting the \"Update\" or \"Overwrite\" option (see help on the
+        CSV Import screen for more information).</string>
+    <string name="help_editing2">The edit entry screen is the same as the add entry screen and
+        functions the same way, just with the existing data preloaded in all fields.</string>
+    <string name="help_editing3">Batch editing is limited to a select few fields. The screen contains
+        two tabs, one to select items to edit and another to make the edits. Select the checkbox only
+        for the fields you wish to edit.</string>
+    <string name="help_editing4">WARNING: Selecting a field and leaving it blank will result in
+        erasing that field for the selected entries (except for the components and flavoring fields)!</string>
+    <string name="help_editing5">Batch editing components/flavoring works the same as the Add/Edit
+        screens in regard to entering values into the field (separate each with a comma and a space).
+        However, here, leaving these blank does not erase anything from entries when you hit save.
+        Any entered components/flavorings will be added (or removed) from the existing values of the
+        selected entries if they aren\'t already present (or are present in the case of remove).
+        Switch between add and remove by tapping the +/- icon at the end of the field.</string>
+
+
+    <string name="help_add_tin1">When adding or editing an entry, navigate to the Tins tab on the
+        right and select the \"Add Tin\" button to add a tin. Add additional tins by tapping the
+        \"+\" button below the last tin. To remove a tin, tap the \"-\" icon in the top right corner
+        of the tin.</string>
+    <string name="help_add_tin2">Each \"tin\" within a given entry must have a unique label. The same
+        label(s) can be reused under different entries. All other fields are optional.</string>
+    <string name="help_add_tin3">Expand/collapse the details of any given tin using the icon in the
+        top left, or \"expand\" text at the bottom (if collapsed). The tin list will be scrollable
+        if it exceeds the height of the given area.</string>
+    <string name="help_add_tin4">While amount and unit are optional, if you enter an amount, you must
+        also enter a unit. Entering a unit without an amount will default the amount to 0. Do not use
+        grouping separators for 1000 or more, only numbers and your locale-specific decimal separator
+        are allowed.</string>
+    <string name="help_add_tin5">This value is used for the \"Cellar Quantity Display\" setting on the
+        main Cellar screen, as well as the total quantity displayed on a Blend Details screen. When
+        using \"Sync\" on the Add/Edit details tab, this quantity is also used with the \"Tin
+        Conversion Rates\" setting to set the \"No. of Tins\" field.</string>
+    <string name="help_add_tin6">The date fields on this entry screen will show the chosen date as
+        MM/YY if the field is not wide enough, otherwise will show the date in medium length format
+        based on your locale settings. Regardless of how it displays here, the full selected day,
+        month and year are saved.</string>
+    <string name="help_add_tin7">Date selection for any given field is limited by the other fields.
+        If no dates have been entered, then any past or future date can be selected. The first date
+        field to be entered will then start limiting others. The limit schema: Manufacture must be
+        on/before Cellar/Opened, Cellar must be on/between Manufacture and Opened, Opened must be
+        on/after Cellar/Manufacture.</string>
+    <string name="help_add_tin8">Selecting the \"Finished\" check box will affect some of the stats
+        and dates and the calculated total on Details screens. This checkbox allows you to keep the
+        open date, but exclude the tin from being included in anything related to open dates.</string>
+    <string name="help_add_tin9">If you would like to keep track of aging, set the open date to a
+        future date of when you\'d like to open the tin. The dates screen will have a section for
+        blends that will be ready to open in a given week/month, see the dates section for more details.</string>
+
+
+    <string name="help_settings1">Most settings are self-explanatory, but some may need further
+        clarification.</string>
+    <string name="help_settings2">This option allows you to synchronize changes to your database
+        across multiple devices if you have the app installed on more than one device. Please see
+        the more detailed subsection for this option.</string>
+    <string name="help_settings3">Backup and Restore both give you two options, \"Database\" and
+        \"Settings\". Selecting database will make a copy of the entire database, and settings will
+        save the app settings (like display settings). One backup file is made regardless of whether
+        you select one or both (both backups will be in one).</string>
+    <string name="help_settings4">This is an entirely optional process for creating a manual backup.
+        The app does participate in the automatic Google services backup if you have it enabled in
+        your device\'s settings, and will save the database and settings. However, a Google backup
+        might not represent the latest data, depending on when scheduled backup was last performed.</string>
+    <string name="help_settings5">These backups are saved as \".tcbu\" files, and are given a
+        suggested name (that you don\'t have to use) depending on the selected options.</string>
+    <string name="help_settings6">When restoring, the same options are presented. You can restore
+        the database, settings, or both from a backup file that contains both, but a database backup
+        file will only restore the database, and a settings file will restore only the settings.</string>
+    <string name="help_settings7">Tin Conversion Rates allows you to set the value of what constitutes
+        one \"tin\". You can set the value for ounces and grams separately. This conversion rate is
+        used when calculating the \"No. of Tins\" field when adding individual tins and using the sync
+        option. It is also used on the Statistics screen. Changing the conversion rates will
+        automatically update the \"No. of Tins\" field for all entries with synchronized tins.</string>
+    <string name="help_settings8">These settings should be unnecessary, but are provided nonetheless.
+        \"Clean and Optimize Database\" can clear orphaned data, but the database mostly keeps itself
+        clean. The Fix/Update Tin Sync Quantity is provided in the event that these were out of sync
+        for some reason (an older version of the app didn\'t automatically update the \"No. of Tins\"
+        field for entries with synchronized tins when tin conversion rates were changed for example,
+        though this is automatically done now for all entries when changing rates).</string>
+
+
+    <string name="help_multi1">This option allows you to synchronize changes to your database across
+        multiple devices if you have the app installed on more than one device. This sync is
+        bidirectional, so changes on any device with the option on will be reflected on all other
+        devices that also have the option turned on.</string>
+    <string name="help_multi2">For this option to work, each device must be running a version of the
+        app with the same Database Version (app version doesn\'t matter). The app must also be linked
+        to the same Google account on all devices (even if other devices use a different primary
+        Google account).</string>
+    <string name="help_multi3">Data Safety</string>
+    <string name="help_multi4">Neither myself nor the app has any access to any of your personal data.
+        Authorization just links the app to your Google Account and grants it access to the Google
+        Drive associated with the account for the sole purpose of creating an app-specific folder.
+        The app cannot see anything else in your Google Drive except this app-specific folder.</string>
+    <string name="help_multi5">To rescind this linking or drive permission, you must do so from your
+        Google Account settings. Logging out from the app just prevents transfer, but unlinking can
+        ONLY be done from your Google Account settings (this is a Google requirement for safety).</string>
+    <string name="help_multi6">All data transfer is encrypted and no personal information is even
+        accessed, let alone shared. Database sync data is the only data transferred. Neither I nor
+        any other third-parties cannot access any of your data. The app likewise has no access to any
+        of your account or personal data, it has access only to it\'s own app-specific folder.</string>
+    <string name="help_multi7">Please see the %1$s↗ and %2$s↗ for more details.</string>
+    <string name="help_multi8">How It Works</string>
+    <string name="help_multi9">All Google accounts have a Google Drive associated with them
+        (regardless of whether you\'ve ever used it). This device sync option will request access to
+        Google Drive. You do not need the Google Drive app installed for it to work. Granting access
+        allows the app to create an app-specific folder on your Google Drive as a cloud location to
+        transfer between devices. This app-specific folder is the only folder the app will have access
+        to, and this folder will not count toward your Google Drive storage space.</string>
+    <string name="help_multi10">When you make changes to entries, those changes include a timestamp.
+        The changes will be uploaded to the drive folder according to your data settings (it won\'t
+        use mobile data unless you turn that option on). If it is unable to upload, it will try again
+        later when it can connect based on your settings.</string>
+    <string name="help_multi11">The app checks for sync data (if the option is on) whenever it is
+        started, and additionally checks twice per day (12-hour interval). If conflicting data is
+        found (the same entry was edited in both devices before either had a chance to sync), only the
+        option with the latest timestamp will be used. The changes are considered per entry, so if on
+        one device you write a note, then on the other you change a component, the note will be lost
+        (as the timestamp for that note change is earlier than the component change). The timestamp
+        is per entry, not per logged change!</string>
+    <string name="help_multi12">Remote data can only be cleared within the app. Please clear any data
+        before logging out if you wish to stop using the sync function.</string>
+
+
+    <!-- Stats strings -->
+    <string name="quick_stats">Quick Stats</string>
+    <string name="raw_stats">Raw Stats</string>
+    <string name="filtered_stats">Filtered Stats</string>
+    <string name="stats_blends_brands">%1$s\u00A0blends,\u00A0%2$s\u00A0brands</string>
+    <string name="stats_average_rating">%s\u00A0average rating</string>
+    <string name="stats_favorites_disliked">%1$s\u00A0favorites,\u00A0%2$s\u00A0disliked</string>
+    <string name="stats_total_tins">%s\u00A0total\u00A0\"No. of Tins\"</string>
+    <string name="stats_estimated_weight">%s\u00A0(estimated)</string>
+    <string name="stats_out_of_stock">%s\u00A0out\u00A0of\u00A0stock</string>
+    <string name="stats_opened">%s\u00A0opened</string>
+
+    <string name="charts">Charts</string>
+    <string name="charts_disclaimer">*Charts are filter-reactive. Some charts may be redundant/irrelevant
+        depending on the chosen filters.</string>
+    <string name="brands_entries">Brands by Number of Entries</string>
+    <string name="brands_quantity">Brands by \"No. of Tins\"</string>
+    <string name="types_entries">Types by Entries</string>
+    <string name="types_quantity">Types by \"No. of Tins\"</string>
+    <string name="ratings_distribution">Ratings Distribution</string>
+    <string name="fav_dis_entries">Fav/Dislike by Entries</string>
+    <string name="sub_entries">Subgenres by Entries</string>
+    <string name="sub_quantity">Subgenres by \"No. of Tins\"</string>
+    <string name="cut_entries">Cuts by Entries</string>
+    <string name="cut_quantity">Cuts by \"No. of Tins\"</string>
+    <string name="brands_rating">Brands by Average Rating</string>
+    <string name="actual_count_weighted">(Actual - Count - Weighted)</string>
+    <string name="data_total_count">(Data Total: %s)</string>
+    <string name="data_total_count2">(Data Total: %1$s - %2$s)</string>
+    <string name="show_values">Show Values</string>
+    <string name="hide_values">Hide Values</string>
+    <string name="unrated_count">(Unrated: %s)</string>
+    <string name="frequency">Frequency</string>
+    <string name="rating_ranges">Rating (ranges)</string>
+    <string name="chart_other">(Other)</string>
+
+
+    <!-- Dates Strings -->
+
+
+
+
+
+    <!-- Plaintext Strings -->
+    <string name="item_default">Item Default</string>
+    <string name="tin_default">Tin Default</string>
+    <string name="tin_container">Tin Container</string>
+    <string name="tin_quantity">Tin Quantity</string>
+    <string name="manufacture_date">Manufacture Date</string>
+    <string name="cellar_date">Cellar Date</string>
+    <string name="open_date">Open Date</string>
+
+
+    <!-- Settings Strings -->
+    <string name="multi_device_sync">Multi-Device Sync</string>
+    <string name="tin_conversion_rates">Tin Conversion Rates</string>
+    <string name="default_sync_tin_option">Default \"Sync Tins?\" Option</string>
+    <string name="other_operations">Other Db Operations</string>
+    <string name="light">Light</string>
+    <string name="dark">Dark</string>
+    <string name="system">System</string>
+    <string name="both">Both</string>
+    <string name="type_fallback">Type (fallback)</string>
+    <string name="sub_fallback">Subgenre (fallback)</string>
+    <string name="no_tins_default">\"No. of Tins\" (default)</string>
+    <string name="ounces_pounds">Ounces/Pounds</string>
+    <string name="qt_option_grams">Grams</string>
+
+
+
+
+
+
+
+<!-- variable placeholders: %1$s, %2$s, etc. or just %s for single variable
+    non-breaking space: \u00A0
+ -->
 
 </resources>

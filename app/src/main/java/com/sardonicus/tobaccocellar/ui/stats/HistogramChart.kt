@@ -32,11 +32,13 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -78,7 +80,9 @@ fun HistogramChart(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Box(
-                            modifier = Modifier.width(width).weight(1f),
+                            modifier = Modifier
+                                .width(width)
+                                .weight(1f),
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             if (showValues && count == 0) {
@@ -148,7 +152,7 @@ fun HistogramChart(
             // null count
             if (data.unratedCount > 0) {
                 Text(
-                    text = "(Unrated: ${data.unratedCount})",
+                    text = stringResource(R.string.unrated_count, "${data.unratedCount}"), // "(Unrated: ${data.unratedCount})",
                     color = LocalContentColor.current,
                     fontSize = 12.sp,
                     modifier = Modifier
@@ -159,7 +163,7 @@ fun HistogramChart(
             }
             // count label
             Text(
-                text = "Frequency",
+                text = stringResource(R.string.frequency),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
@@ -223,7 +227,9 @@ fun HistogramChart(
                     val offset = with(density) { 9.sp.toDp() }
                     Text(
                         text = formatDecimal(it, 1),
-                        modifier = Modifier.width(width).offset(y = -offset),
+                        modifier = Modifier
+                            .width(width)
+                            .offset(y = -offset),
                         textAlign = TextAlign.Center,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Normal
@@ -232,12 +238,14 @@ fun HistogramChart(
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Rating (ranges)",
+                text = stringResource(R.string.rating_ranges),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold
             )

@@ -162,7 +162,7 @@ class HomeViewModel(
                     }.distinctUntilChanged()
                         .collectLatest {
                             if (it != preferencesRepo.typeGenreOption.first()) {
-                                preferencesRepo.saveTypeGenre(it.value)
+                                preferencesRepo.saveTypeGenre(it)
                             }
                         }
                 }
@@ -290,7 +290,7 @@ class HomeViewModel(
     ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
         filteredItems.associate { items ->
             val itemTins = items.tins.filter { it in filteredTins }
-            val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate)
+            val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate, filterViewModel.units)
             val display = formatQuantity(raw, quantityOption, itemTins)
 
             items.items.id to ItemQuantity(raw, display)
@@ -754,7 +754,7 @@ class HomeViewModel(
             else { ListSorting(value) }
 
         viewModelScope.launch(Dispatchers.Default) {
-            preferencesRepo.saveListSorting(newListSorting.option.value, newListSorting.listAscending)
+            preferencesRepo.saveListSorting(newListSorting.option, newListSorting.listAscending)
         }
     }
 
@@ -1107,22 +1107,22 @@ data class ImportantAlertState(
 )
 
 @Immutable
-enum class ListSortOption(@StringRes val resId: Int, val value: String) {
-    DEFAULT(R.string.default_, "Default"),
-    BLEND(R.string.blend, "Blend"),
-    BRAND(R.string.brand, "Brand"),
-    TYPE(R.string.type, "Type"),
-    SUBGENRE(R.string.subgenre, "Subgenre"),
-    RATING(R.string.rating, "Rating"),
-    QUANTITY(R.string.quantity, "Quantity"),
-    EDITED(R.string.modified, "Modified")
+enum class ListSortOption(@StringRes val resId: Int) {
+    DEFAULT(R.string.default_),
+    BLEND(R.string.blend),
+    BRAND(R.string.brand),
+    TYPE(R.string.type),
+    SUBGENRE(R.string.subgenre),
+    RATING(R.string.rating),
+    QUANTITY(R.string.quantity),
+    EDITED(R.string.modified)
 }
 
 @Immutable
-sealed class SearchSetting(@StringRes val resId: Int, val value: String) {
-    data object Blend: SearchSetting(R.string.blend, "Blend")
-    data object Notes: SearchSetting(R.string.notes, "Notes")
-    data object TinLabel: SearchSetting(R.string.tin_label, "Tin Label")
+enum class SearchSetting(@StringRes val resId: Int) {
+    Blend(R.string.blend),
+    Notes(R.string.notes),
+    TinLabel(R.string.tin_label)
 }
 
 /** helper functions for quantity display **/
@@ -1131,7 +1131,8 @@ fun calculateTotalQuantity(
     tins: List<Tins>,
     quantityOption: QuantityOption,
     ounceRate: Double,
-    gramRate: Double
+    gramRate: Double,
+    units: Triple<String, String, String>
 ): Double {
     if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
         return when (quantityOption) {
@@ -1143,31 +1144,31 @@ fun calculateTotalQuantity(
 
     return when (quantityOption) {
         QuantityOption.TINS -> items.items.quantity.toDouble()
-        QuantityOption.OUNCES -> calculateOunces(tins)
-        QuantityOption.GRAMS -> calculateGrams(tins)
+        QuantityOption.OUNCES -> calculateOunces(tins, units)
+        QuantityOption.GRAMS -> calculateGrams(tins, units)
     }
 }
 
-fun calculateOunces(tins: List<Tins>): Double {
+fun calculateOunces(tins: List<Tins>, units: Triple<String, String, String>): Double {
     return tins.sumOf {
         if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
-                "oz" -> it.tinQuantity
-                "lbs" -> it.tinQuantity * 16
-                "grams" -> it.tinQuantity / 28.3495
+                units.first -> it.tinQuantity
+                units.second -> it.tinQuantity * 16
+                units.third -> it.tinQuantity / 28.3495
                 else -> 0.0
             }
         } else 0.0
     }
 }
 
-fun calculateGrams(tins: List<Tins>): Double {
+fun calculateGrams(tins: List<Tins>, units: Triple<String, String, String>): Double {
     return tins.sumOf {
         if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
-                "oz" -> it.tinQuantity * 28.3495
-                "lbs" -> it.tinQuantity * 453.592
-                "grams" -> it.tinQuantity
+                units.first -> it.tinQuantity * 28.3495
+                units.second -> it.tinQuantity * 453.592
+                units.third -> it.tinQuantity
                 else -> 0.0
             }
         } else 0.0

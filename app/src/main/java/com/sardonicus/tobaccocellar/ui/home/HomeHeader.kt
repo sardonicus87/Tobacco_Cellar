@@ -92,7 +92,9 @@ fun HomeHeader(
 
         // Search field
         Box(
-            modifier = Modifier.padding(horizontal = 0.dp).weight(1f, false),
+            modifier = Modifier
+                .padding(horizontal = 0.dp)
+                .weight(1f, false),
         ) {
             SearchField(
                 filterViewModel = filterViewModel,
@@ -139,7 +141,7 @@ private fun ViewSelect(
         horizontalArrangement = Arrangement.Start,
     ) {
         Text(
-            text = "View:",
+            text = stringResource(R.string.view),
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
             fontSize = 15.sp,
@@ -166,7 +168,7 @@ private fun SearchField (
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
     getPositionTrigger: () -> Unit,
-    saveSearchSetting: (String) -> Unit
+    saveSearchSetting: (SearchSetting) -> Unit
 ) {
     val state by filterViewModel.searchState.collectAsState()
     val readyTins by filterViewModel.readyTins.collectAsState()
@@ -194,7 +196,8 @@ private fun SearchField (
             Box(
                 modifier = Modifier
                     .padding(0.dp)
-                    .clickable(null, null, state.settingsEnabled && !state.emptyDatabase,
+                    .clickable(
+                        null, null, state.settingsEnabled && !state.emptyDatabase,
                     ) { searchMenuExpanded = !searchMenuExpanded }
             ) {
                 Icon(
@@ -225,8 +228,8 @@ private fun SearchField (
             ) {
                 state.settingsList.settings.forEach {
                     DropdownMenuItem(
-                        text = { Text(it.value) },
-                        onClick = { saveSearchSetting(it.value); searchMenuExpanded = false },
+                        text = { Text(stringResource(it.resId)) },
+                        onClick = { saveSearchSetting(it); searchMenuExpanded = false },
                         modifier = Modifier.padding(0.dp),
                         enabled = true
                     )
@@ -241,8 +244,9 @@ private fun SearchField (
                     modifier = Modifier
                         .size(20.dp)
                         .clickable(null, null) {
-                            if (readyTins) { filterViewModel.clearReadyTinsFilter() }
-                            else {
+                            if (readyTins) {
+                                filterViewModel.clearReadyTinsFilter()
+                            } else {
                                 updateSearchText(""); onSearch("")
                                 if (state.searchPerformed) {
                                     coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
@@ -252,7 +256,7 @@ private fun SearchField (
                 )
             }
         },
-        placeholder = "${state.currentSetting.value} Search",
+        placeholder = "${stringResource(state.currentSetting.resId)} Search",
         readOnly = readyTins
     )
 }
@@ -273,7 +277,7 @@ private fun ListColumnMenu(
         if (!state.isTableView) {
             Icon(
                 painter = painterResource(R.drawable.sort_bars),
-                contentDescription = "List sorting",
+                contentDescription = stringResource(R.string.list_sorting),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .padding(start = 1.dp)
@@ -298,14 +302,14 @@ private fun ListColumnMenu(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(
-                                    text = it.value,
+                                    text = stringResource(it.resId),
                                     fontWeight = FontWeight.Normal
                                 )
                                 Box(
                                     modifier = Modifier.width(14.dp),
                                     contentAlignment = Alignment.CenterEnd
                                 ) {
-                                    if (state.listSorting.option.value == it.value) {
+                                    if (state.listSorting.option.name == it.name) {
                                         val icon = state.listSorting.listIcon
                                         Image(
                                             painter = painterResource(id = icon),
@@ -330,7 +334,7 @@ private fun ListColumnMenu(
         } else {
             Icon(
                 painter = painterResource(R.drawable.table_edit),
-                contentDescription = "Table column visibility",
+                contentDescription = stringResource(R.string.t_col_vis),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .padding(start = 1.dp)
@@ -404,7 +408,9 @@ private fun CustomBlendSearch(
         cursorBrush = SolidColor(if (hasFocus) MaterialTheme.colorScheme.primary else Color.Unspecified),
         decorationBox = { innerTextField ->
             Row(
-                modifier = Modifier.padding(0.dp).fillMaxSize(),
+                modifier = Modifier
+                    .padding(0.dp)
+                    .fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
             ) {

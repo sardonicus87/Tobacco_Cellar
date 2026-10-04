@@ -26,11 +26,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -79,15 +81,13 @@ object OneTimeAlerts {
                     modifier = Modifier
                         .padding(bottom = 6.dp)
                 )
-                SelectionContainer {
-                    Text(
-                        text = "sardonicus.notadev@gmail.com",
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(
+                    text = "sardonicus.notadev@gmail.com",
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
                 Text(
                     text = "(Email address can be found on the app settings screen)",
                     fontSize = 11.sp,
@@ -124,7 +124,7 @@ fun ImportantAlertDialog(
         containerColor = LocalCustomColors.current.darkNeutral,
         title = {
             Text(
-                text = "Important Alert!",
+                text = stringResource(R.string.important_alert),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier
@@ -135,7 +135,7 @@ fun ImportantAlertDialog(
         text = {
             Column {
                 Text(
-                    text = "This is a one-time alert.",
+                    text = stringResource(R.string.one_time_alert),
                     modifier = Modifier
                         .padding(bottom = 12.dp)
                         .fillMaxWidth(),
@@ -159,27 +159,24 @@ fun ImportantAlertDialog(
                         ) {
                             if (!isCurrent) {
                                 Text(
-                                    text = "Missed Alert:",
+                                    text = stringResource(R.string.missed_alert),
                                     modifier = Modifier,
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 15.sp
                                 )
                             }
                             Text(
-                                text = "${alert.date}\n(v ${alert.appVersion})",
-                                modifier = Modifier
-                                    .padding(bottom = 16.dp),
+                                text = stringResource(R.string.alert_info, alert.date, alert.appVersion),
+                                modifier = Modifier.padding(bottom = 16.dp),
                                 fontSize = 14.sp
                             )
                             if (canScroll) {
                                 Text(
-                                    text = "You must scroll to the bottom to be able to acknowledge and " +
-                                            "dismiss this dialog.",
-                                    modifier = Modifier
-                                        .padding(bottom = 16.dp)
+                                    text = stringResource(R.string.alert_scroll),
+                                    modifier = Modifier.padding(bottom = 16.dp)
                                 )
                             }
-                            alert.message(this)
+                            SelectionContainer { alert.message(this) }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                     }
@@ -190,57 +187,37 @@ fun ImportantAlertDialog(
             val isScrollable by remember(alert.id) { derivedStateOf { scrollState.maxValue > 0 } }
             LaunchedEffect(isScrollable, alert.id) {
                 if (!isScrollable) {
-                    while (countdown > 0) {
-                        delay(1000.milliseconds)
-                        countdown--
-                    }
+                    while (countdown > 0) { delay(1000.milliseconds); countdown-- }
                     enabled = true
-                } else {
-                    updateScroll(true)
-                }
+                } else { updateScroll(true) }
             }
             LaunchedEffect(isScrollable, atBottom, alert.id) {
-                if (isScrollable && atBottom) {
-                    enabled = true
-                }
+                if (isScrollable && atBottom) { enabled = true }
             }
+            val nextString = stringResource(R.string.next)
+            val confirmString = stringResource(R.string.confirm)
             val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
                 if (!isCurrent) {
-                    if (isScrollable) {
-                        "Next"
-                    } else {
-                        if (enabled) "Next" else "( $countdown )"
-                    }
+                    if (isScrollable) { nextString }
+                    else { if (enabled) nextString else "( $countdown )" }
                 } else {
-                    if (isScrollable) {
-                        "Confirm"
-                    } else {
-                        if (enabled) "Confirm" else "( $countdown )"
-                    }
+                    if (isScrollable) { confirmString }
+                    else { if (enabled) confirmString else "( $countdown )" }
                 }
             }
 
             Button(
                 onClick = {
                     if (!isCurrent) {
-                        enabled = false
-                        updateScroll(false)
-                        countdown = 5
+                        enabled = false; updateScroll(false); countdown = 5
                         viewModel.saveAlertSeen(alert.id)
-                    } else {
-                        viewModel.saveAlertSeen(alert.id)
-                    }
+                    } else { viewModel.saveAlertSeen(alert.id) }
                 },
                 enabled = enabled
             ) {
                 Box (contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "Confirm",
-                        color = Color.Transparent
-                    )
-                    Text(
-                        text = buttonText
-                    )
+                    Text(stringResource(R.string.confirm), color = Color.Transparent)
+                    Text(buttonText)
                 }
             }
         }

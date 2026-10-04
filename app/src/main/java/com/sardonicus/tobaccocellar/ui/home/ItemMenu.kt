@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -124,7 +125,7 @@ fun ItemMenu(
             if (!quickMenu) {
                 TextButton({ onEditClick(); onMenuDismiss() }) {
                     Text(
-                        text = "Edit Item",
+                        text = stringResource(R.string.edit_item),
                         modifier = Modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(alpha = .8f),
@@ -139,7 +140,7 @@ fun ItemMenu(
 
                 TextButton({ quickEdit = !quickEdit }) {
                     Text(
-                        text = "Quick Edit",
+                        text = stringResource(R.string.quick_edit),
                         modifier = Modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(alpha = .8f),
@@ -292,7 +293,7 @@ fun ItemMenu(
                     enabled = quickEditState.saveEnabled
                 ) {
                     Text(
-                        text = "Save",
+                        text = stringResource(R.string.save),
                         modifier = Modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(alpha = .8f),
@@ -421,7 +422,7 @@ private fun EditRatingPop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = "Rating",
+                text = stringResource(R.string.rating),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -429,8 +430,7 @@ private fun EditRatingPop(
         text = {
             Column {
                 Text(
-                    text = "Set a rating (maximum 5). To make an item unrated, make the field " +
-                            "blank. Supports fractional ratings (up to 2 decimal places).",
+                    text = stringResource(R.string.rating_dialog),
                     fontSize = 15.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -488,7 +488,7 @@ private fun EditRatingPop(
                 onClick = { onRatingEdited(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Done") }
+            ) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
             TextButton(
@@ -496,7 +496,7 @@ private fun EditRatingPop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Undo") }
+            ) { Text(stringResource(R.string.undo)) }
         }
     )
 }
@@ -519,7 +519,7 @@ private fun EditNotePop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = "Notes",
+                text = stringResource(R.string.notes),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -569,7 +569,7 @@ private fun EditNotePop(
                 onClick = { onNoteEdited(textFieldState) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Done") }
+            ) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
             TextButton(
@@ -577,7 +577,7 @@ private fun EditNotePop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Undo") }
+            ) { Text(stringResource(R.string.undo)) }
         }
     )
 }
@@ -604,7 +604,7 @@ private fun EditQuantityPop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = "No. of Tins",
+                text = stringResource(R.string.no_of_tins),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -673,7 +673,7 @@ private fun EditQuantityPop(
                 onClick = { onQtyEdited(textFieldState.toIntOrNull() ?: 1) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Done") }
+            ) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
             TextButton(
@@ -681,7 +681,7 @@ private fun EditQuantityPop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Undo") }
+            ) { Text(stringResource(R.string.undo)) }
         }
     )
 }

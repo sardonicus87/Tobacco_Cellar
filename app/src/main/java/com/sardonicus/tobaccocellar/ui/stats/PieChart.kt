@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlin.math.cos
@@ -51,6 +53,8 @@ fun PieChart(
     val isLightTheme = LocalCustomColors.current.isLightTheme
     val background = colorScheme.background
 
+    val otherLabel = stringResource(R.string.chart_other)
+
     Canvas(
         modifier = modifier
             .aspectRatio(1f)
@@ -66,7 +70,7 @@ fun PieChart(
 
         drawLabels(
             data, total, showValues, textMeasurer, colors, labelBackground,
-            centerX, centerY, insideLabel, outsideLabel, isLightTheme, background
+            centerX, centerY, insideLabel, outsideLabel, isLightTheme, background, otherLabel
         )
     }
 }
@@ -105,6 +109,7 @@ private fun DrawScope.drawLabels(
     outsideRadius: Float,
     isLightTheme: Boolean,
     pageBackground: Color,
+    otherLabel: String
 ) {
     val startAngle = 270f
     var currentStartAngle = startAngle
@@ -156,7 +161,7 @@ private fun DrawScope.drawLabels(
         val sweepAngle = (value.toFloat() / total) * 360f
         val midpointAngle = currentStartAngle + (sweepAngle / 2)
         val normalizedMidpointAngle = (midpointAngle) % 360f
-        val isOther = label == "(Other)"
+        val isOther = label == otherLabel
         if (sweepAngle < outsideLabelThreshold && !isOther) { outsideLabelCount++ }
         if (sweepAngle < 10f && normalizedMidpointAngle > 245f) { thinCount++ }
 

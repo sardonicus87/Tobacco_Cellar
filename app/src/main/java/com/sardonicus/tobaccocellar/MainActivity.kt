@@ -140,7 +140,7 @@ class MainActivity : ComponentActivity() {
                     if (backPressedOnce) { finish(); return }
 
                     backPressedOnce = true
-                    Toast.makeText(this@MainActivity, "Tap again to exit", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, application.getString(R.string.exit), Toast.LENGTH_SHORT).show()
 
                     lifecycleScope.launch(Dispatchers.Default) {
                         delay(2000.milliseconds)
@@ -166,10 +166,10 @@ class MainActivity : ComponentActivity() {
                     if (userEmail != null) {
                         preferencesRepo.saveLoginState(userEmail, true)
                         preferencesRepo.saveCrossDeviceSync(true)
-                        Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled), Toast.LENGTH_SHORT).show()
                     }
                 }
-            } else { Toast.makeText(this@MainActivity, "Drive permission was denied", Toast.LENGTH_SHORT).show() }
+            } else { Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied), Toast.LENGTH_SHORT).show() }
         }
 
 
@@ -398,9 +398,9 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun handleSignInFailure(e: GetCredentialException) {
         val message = when (e) {
-            is GetCredentialCancellationException -> "Sign-in cancelled."
-            is NoCredentialException -> "No accounts on this device."
-            else -> "Sign-in failed."
+            is GetCredentialCancellationException -> application.getString(R.string.sign_in_canceled)
+            is NoCredentialException -> application.getString(R.string.no_accounts)
+            else -> application.getString(R.string.sign_in_failed)
         }
         EventBus.emit(SignInCancelled)
         Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
@@ -413,10 +413,10 @@ class MainActivity : ComponentActivity() {
                 preferencesRepo.saveCrossDeviceSync(false)
                 preferencesRepo.clearLogin()
                 (application as CellarApplication).cancelPeriodicSync()
-                Toast.makeText(this@MainActivity, "Logged out.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, application.getString(R.string.logged_out), Toast.LENGTH_SHORT).show()
             }
             catch (_: Exception) {
-                Toast.makeText(this@MainActivity, "Sign-out failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, application.getString(R.string.sign_out_failed), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -441,7 +441,7 @@ class MainActivity : ComponentActivity() {
                             preferencesRepo.saveLoginState(userEmail, true)
                             preferencesRepo.saveCrossDeviceSync(true)
                             (application as CellarApplication).periodicDownloadSetup()
-                            Toast.makeText(this@MainActivity, "Sync successfully enabled.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -450,7 +450,7 @@ class MainActivity : ComponentActivity() {
                 lifecycleScope.launch {
                     preferencesRepo.saveCrossDeviceSync(false)
                     preferencesRepo.clearLogin()
-                    Toast.makeText(this@MainActivity, "Could not get Drive permission", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied), Toast.LENGTH_SHORT).show()
                 }
             }
     }

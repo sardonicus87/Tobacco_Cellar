@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -22,12 +23,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -62,7 +65,7 @@ fun ReleaseNotesDialog(
         title = {
             Column {
                 Text(
-                    text = "What's New",
+                    text = stringResource(R.string.what_new),
                     textAlign = TextAlign.Start,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
@@ -85,19 +88,19 @@ fun ReleaseNotesDialog(
                     releaseNotesState.changelogData.forEachIndexed { index, log ->
                         val alpha = if (index == 0) 1f else 0.8f
                         Text(
-                            text = "Version ${log.versionNumber} (${log.buildDate})",
+                            text = stringResource(R.string.release_info, log.versionNumber, log.buildDate),
                             modifier = Modifier.padding(bottom = 6.dp),
                             fontSize = if (index == 0) 16.sp else 15.sp,
                             fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Medium,
                             color = LocalContentColor.current.copy(alpha = alpha),
                         )
                         log.releaseNotes.forEach {
-                            Text(
+                            SelectionContainer { Text(
                                 text = "- $it",
                                 fontSize = if (index == 0) 15.sp else 14.sp,
                                 color = LocalContentColor.current.copy(alpha = alpha),
                                 modifier = Modifier.padding(start = 12.dp)
-                            )
+                            ) }
                         }
                         if (index != releaseNotesState.changelogData.lastIndex) {
                             HorizontalDivider(Modifier.padding(vertical = 20.dp))
@@ -112,14 +115,14 @@ fun ReleaseNotesDialog(
                 onClick = viewModel::saveReleaseNotesSeen,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("OK") }
+            ) { Text(stringResource(R.string.ok)) }
         },
         dismissButton = {
             TextButton(
                 onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(toLog) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Full Changelog") }
+            ) { Text(stringResource(R.string.full_change)) }
         }
     )
 }

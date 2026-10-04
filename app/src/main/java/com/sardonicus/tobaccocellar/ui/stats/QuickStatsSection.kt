@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -78,17 +79,17 @@ fun QuickStatsSection(
             .fillMaxWidth()
             .padding(start = 12.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top,
+        verticalArrangement = Arrangement.Top
     ) {
         Row(
             modifier = Modifier
                 .padding(vertical = 2.dp)
                 .padding(start = 12.dp),
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Raw Stats",
+                text = stringResource(R.string.raw_stats),
                 modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
@@ -97,12 +98,12 @@ fun QuickStatsSection(
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "Filtered Stats",
+                text = stringResource(R.string.filtered_stats),
                 modifier = Modifier.weight(1f),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
-                color = colorScheme.onBackground,
+                color = colorScheme.onBackground
             )
         }
         // First Section basic counts
@@ -112,24 +113,27 @@ fun QuickStatsSection(
                 .padding(start = 12.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
+            verticalAlignment = Alignment.Top
         ) {
+            val rawText = buildBroadStats(
+                rawStats.blendsCount, rawStats.brandsCount, rawStats.averageRating,
+                rawStats.favoriteCount, rawStats.dislikedCount, rawStats.totalQuantity,
+                rawStats.estimatedWeight, rawStats.totalZeroQuantity, rawStats.totalOpened)
+            val filteredText = buildBroadStats(
+                filteredStats.blendsCount, filteredStats.brandsCount, filteredStats.averageRating,
+                filteredStats.favoriteCount, filteredStats.dislikedCount, filteredStats.totalQuantity,
+                filteredStats.estimatedWeight, filteredStats.totalZeroQuantity, filteredStats.totalOpened
+            )
             key(selectionKey()) { SelectionContainer(Modifier.weight(1f).onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
-                    text = "${rawStats.blendsCount} blends, ${rawStats.brandsCount} brands\n" +
-                            if (rawStats.averageRating.isNotBlank()) { "${rawStats.averageRating} average rating\n" } else { "" } +
-                            "${rawStats.favoriteCount} favorites, ${rawStats.dislikedCount} disliked\n" +
-                            "${rawStats.totalQuantity} total \"No. of Tins\"\n" +
-                            "${rawStats.estimatedWeight} (estimated)\n" +
-                            "${rawStats.totalZeroQuantity} out of stock" +
-                            if (rawStats.totalOpened != null) "\n${rawStats.totalOpened} opened" else "",
+                    text = rawText,
                     modifier = Modifier
                         .weight(1f)
                         .padding(bottom = 12.dp),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Start,
-                    softWrap = true,
+                    softWrap = true
                 )
             } }
             Spacer(Modifier.width(8.dp))
@@ -138,13 +142,7 @@ fun QuickStatsSection(
                 .onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
-                    text = "${filteredStats.blendsCount} blends, ${filteredStats.brandsCount} brands\n" +
-                            if (rawStats.averageRating.isNotBlank()) { "${filteredStats.averageRating} average rating\n" } else { "" } +
-                            "${filteredStats.favoriteCount} favorites, " + "${filteredStats.dislikedCount} disliked\n" +
-                            "${filteredStats.totalQuantity} total \"No. of Tins\"\n" +
-                            "${filteredStats.estimatedWeight} (estimated)\n" +
-                            "${filteredStats.totalZeroQuantity} out of stock" +
-                            if (rawStats.totalOpened != null)"\n${filteredStats.totalOpened} opened" else "",
+                    text = filteredText,
                     modifier = Modifier
                         .weight(1f),
                     fontSize = 15.sp,
@@ -157,7 +155,7 @@ fun QuickStatsSection(
         // Second Section counts per type
         if (availableSections.type) {
             StatSubSection(
-                label = "Blend Type",
+                label = stringResource(R.string.type),
                 rawField = rawStats.totalByType,
                 filteredField = filteredStats.totalByType,
                 selectionKey = selectionKey,
@@ -204,7 +202,7 @@ fun QuickStatsSection(
                 HorizontalDivider(Modifier.weight(1f), 1.dp)
                 Icon(
                     painter = painterResource(id = if (iconExpanded) R.drawable.double_up else R.drawable.double_down),
-                    contentDescription = "Collapse",
+                    contentDescription = "collapse",
                     modifier = Modifier.padding(horizontal = 4.dp).size(18.dp),
                     tint = LocalContentColor.current.copy(alpha = 0.5f)
                 )
@@ -213,6 +211,35 @@ fun QuickStatsSection(
         }
 
         Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun buildBroadStats(
+    blendsCount: Int,
+    brandsCount: Int,
+    averageRating: String,
+    favoriteCount: Int,
+    dislikedCount: Int,
+    totalQuantity: Int,
+    estimatedWeight: String,
+    totalZeroQuantity: Int,
+    totalOpened: Int?
+): String {
+    val blendsBrands = stringResource(R.string.stats_blends_brands, blendsCount, brandsCount)
+    val avgRatingStr = if (averageRating.isNotBlank()) stringResource(R.string.stats_average_rating, averageRating) else null
+    val favDisStr = stringResource(R.string.stats_favorites_disliked, favoriteCount, dislikedCount)
+    val totalTinsStr = stringResource(R.string.stats_total_tins, totalQuantity)
+    val estWeightStr = stringResource(R.string.stats_estimated_weight, estimatedWeight)
+    val outOfStockStr = stringResource(R.string.stats_out_of_stock, totalZeroQuantity)
+    val openedStr = totalOpened?.let { stringResource(R.string.stats_opened, it) }
+
+    return remember(blendsCount, brandsCount, averageRating, favoriteCount, dislikedCount,
+        totalQuantity, estimatedWeight, totalZeroQuantity, totalOpened) {
+        buildString { append(blendsBrands); if (!avgRatingStr.isNullOrBlank()) append("\n").append(avgRatingStr)
+            append("\n").append(favDisStr).append("\n").append(totalTinsStr).append("\n").append(estWeightStr)
+            append("\n").append(outOfStockStr); if (openedStr != null) append("\n").append(openedStr)
+        }
     }
 }
 

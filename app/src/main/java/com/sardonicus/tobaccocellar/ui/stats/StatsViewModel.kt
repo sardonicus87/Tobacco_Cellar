@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar.ui.stats
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -25,12 +27,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class StatsViewModel(
     filterViewModel: FilterViewModel,
-    preferencesRepo: PreferencesRepo
+    preferencesRepo: PreferencesRepo,
+    application: CellarApplication
 ): ViewModel() {
 
     private val _showLoading = MutableStateFlow(true)
     val showLoading = _showLoading.asStateFlow()
     private fun updateLoading(state: Boolean) { _showLoading.value = state }
+    private val unassignedLabel = application.getString(R.string.unassigned)
+    private val noneAssignedLabel = application.getString(R.string.none_assigned)
 
     /** Raw stats */
     val rawStats: StateFlow<RawStats> = combine (
@@ -76,14 +81,14 @@ class StatsViewModel(
                 ratingSum += item.rating
             }
 
-            typeMap.increment(item.type.ifBlank { "(Unassigned)" })
-            subgenreMap.increment(item.subGenre.ifBlank { "(Unassigned)" })
-            cutMap.increment(item.cut.ifBlank { "(Unassigned)" })
+            typeMap.increment(item.type.ifBlank { unassignedLabel })
+            subgenreMap.increment(item.subGenre.ifBlank { unassignedLabel })
+            cutMap.increment(item.cut.ifBlank { unassignedLabel })
 
-            if (components.isEmpty()) componentMap.increment("(None Assigned)")
+            if (components.isEmpty()) componentMap.increment(noneAssignedLabel)
             else components.forEach { componentMap.increment(it.componentName) }
 
-            if (flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
+            if (flavoring.isEmpty()) flavoringMap.increment(noneAssignedLabel)
             else flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
             // Tins
@@ -95,11 +100,11 @@ class StatsViewModel(
             for ((_, _, _, container, tinQuantity, unit, _, _, openDate, finished) in tins) {
                 if (!finished) {
                     unfinishedCount++
-                    containerMap.increment(container.ifBlank { "(Unassigned)" })
+                    containerMap.increment(container.ifBlank { unassignedLabel })
                     if (openDate != null) totalOpened++
 
                     if (unit.isBlank()) allValid = false
-                    itemTinsWeight += convertWeight(tinQuantity, unit, quantityRemap)
+                    itemTinsWeight += convertWeight(tinQuantity, unit, quantityRemap, filterViewModel.units)
                 }
             }
 
@@ -125,12 +130,12 @@ class StatsViewModel(
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
-            totalByType = remapUnassigned(typeMap.sortByValue(), "(Unassigned)"),
-            totalBySubgenre = remapUnassigned(subgenreMap.sortByValue(), "(Unassigned)"),
-            totalByCut = remapUnassigned(cutMap.sortByValue(), "(Unassigned)"),
-            totalByComponent = remapUnassigned(componentMap.sortByValue(), "(None Assigned)"),
-            totalByFlavoring = remapUnassigned(flavoringMap.sortByValue(), "(None Assigned)"),
-            totalByContainer = remapUnassigned(containerMap.sortByValue(), "(Unassigned)"),
+            totalByType = remapUnassigned(typeMap.sortByValue(), unassignedLabel),
+            totalBySubgenre = remapUnassigned(subgenreMap.sortByValue(), unassignedLabel),
+            totalByCut = remapUnassigned(cutMap.sortByValue(), unassignedLabel),
+            totalByComponent = remapUnassigned(componentMap.sortByValue(), noneAssignedLabel),
+            totalByFlavoring = remapUnassigned(flavoringMap.sortByValue(), noneAssignedLabel),
+            totalByContainer = remapUnassigned(containerMap.sortByValue(), unassignedLabel),
 
             rawLoading = false
         )
@@ -211,31 +216,31 @@ class StatsViewModel(
         for ((item, components, flavoring, tins) in allItems) {
             val relevant = item.id in filteredIds
 
-            val type = item.type.ifBlank { "(Unassigned)" }
-            val subgenre = item.subGenre.ifBlank { "(Unassigned)" }
-            val cut = item.cut.ifBlank { "(Unassigned)" }
+            val type = item.type.ifBlank { unassignedLabel }
+            val subgenre = item.subGenre.ifBlank { unassignedLabel }
+            val cut = item.cut.ifBlank { unassignedLabel }
 
             typeMap.increment(type)
             subgenreMap.increment(subgenre)
             cutMap.increment(cut)
 
-            if (components.isEmpty()) componentMap.increment("(None Assigned)")
+            if (components.isEmpty()) componentMap.increment(noneAssignedLabel)
             else components.forEach { componentMap.increment(it.componentName) }
 
-            if (flavoring.isEmpty()) flavoringMap.increment("(None Assigned)")
+            if (flavoring.isEmpty()) flavoringMap.increment(noneAssignedLabel)
             else flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
-            tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { "(Unassigned)" }) }
+            tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { unassignedLabel }) }
 
             if (relevant) {
                 typeMapFiltered.increment(type)
                 subgenreMapFiltered.increment(subgenre)
                 cutMapFiltered.increment(cut)
 
-                if (components.isEmpty()) componentMapFiltered.increment("(None Assigned)")
+                if (components.isEmpty()) componentMapFiltered.increment(noneAssignedLabel)
                 else components.forEach { componentMapFiltered.increment(it.componentName) }
 
-                if (flavoring.isEmpty()) flavoringMapFiltered.increment("(None Assigned)")
+                if (flavoring.isEmpty()) flavoringMapFiltered.increment(noneAssignedLabel)
                 else flavoring.forEach { flavoringMapFiltered.increment(it.flavoringName) }
 
                 if (item.favorite) favoriteCount++
@@ -271,10 +276,10 @@ class StatsViewModel(
                     if (tin.tinId in filteredTinIds && !tin.finished) {
                         unfinishedTinsCount++
                         relevantTinsWeight.add(tin)
-                        containerMapFiltered.increment(tin.container.ifBlank { "(Unassigned)" })
+                        containerMapFiltered.increment(tin.container.ifBlank { unassignedLabel })
                         if (tin.openDate != null) totalOpened++
                         if (tin.unit.isBlank()) allValid = false
-                        itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
+                        itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap, filterViewModel.units)
                     }
                 }
 
@@ -291,6 +296,7 @@ class StatsViewModel(
         }
 
         val globalAvg = if (ratedCount > 0) ratingSum / ratedCount else 0.0
+        val other = application.getString(R.string.chart_other)
 
         FilteredStats(
             blendsCount = filteredItems.size,
@@ -303,16 +309,16 @@ class StatsViewModel(
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
-            totalByType = typeMap.buildComp(typeMapFiltered, "(Unassigned)"),
-            totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, "(Unassigned)"),
-            totalByCut = cutMap.buildComp(cutMapFiltered, "(Unassigned)"),
-            totalByComponent = componentMap.buildComp(componentMapFiltered, "(None Assigned)"),
-            totalByFlavoring = flavoringMap.buildComp(flavoringMapFiltered, "(None Assigned)"),
-            totalByContainer = containerMap.buildComp(containerMapFiltered, "(Unassigned)"),
+            totalByType = typeMap.buildComp(typeMapFiltered, unassignedLabel),
+            totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, unassignedLabel),
+            totalByCut = cutMap.buildComp(cutMapFiltered, unassignedLabel),
+            totalByComponent = componentMap.buildComp(componentMapFiltered, noneAssignedLabel),
+            totalByFlavoring = flavoringMap.buildComp(flavoringMapFiltered, noneAssignedLabel),
+            totalByContainer = containerMap.buildComp(containerMapFiltered, unassignedLabel),
 
 
-            brandsByEntries = brandsByEntries.reduceToTen(),
-            brandsByQuantity = brandsByQuantity.reduceToTen(),
+            brandsByEntries = brandsByEntries.reduceToTen(other),
+            brandsByQuantity = brandsByQuantity.reduceToTen(other),
             brandsByRating = brandsRatingCount.mapValues { (brand, count) ->
                 val avg = brandsRatingSum[brand]!! / count
                 val m = 2
@@ -326,14 +332,14 @@ class StatsViewModel(
                 unratedCount = unratedCount
             ),
             favDisByEntries = mapOf(
-                "Favorite" to favoriteCount,
-                "Disliked" to dislikedCount,
-                "Neutral" to (filteredItems.size - favoriteCount - dislikedCount)
+                application.getString(R.string.favorite) to favoriteCount,
+                application.getString(R.string.disliked) to dislikedCount,
+                application.getString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
             ).filterValues { it > 0 }.sortByValue(),
-            subgenresByEntries = subgenresByEntries.reduceToTen(),
-            subgenresByQuantity = subgenresByQuantity.reduceToTen(),
-            cutsByEntries = cutsByEntries.reduceToTen(),
-            cutsByQuantity = cutsByQuantity.reduceToTen(),
+            subgenresByEntries = subgenresByEntries.reduceToTen(other),
+            subgenresByQuantity = subgenresByQuantity.reduceToTen(other),
+            cutsByEntries = cutsByEntries.reduceToTen(other),
+            cutsByQuantity = cutsByQuantity.reduceToTen(other),
 
             filteredLoading = false,
         )
@@ -348,12 +354,12 @@ class StatsViewModel(
 
     val availableSections: StateFlow<AvailableSections> =
         combine(rawStats, filteredStats) { raw, filtered ->
-            val type = raw.totalByType.any { it.key != "(Unassigned)" }
-            val subgenre = raw.totalBySubgenre.any { it.key != "(Unassigned)" }
-            val cut = raw.totalByCut.any { it.key != "(Unassigned)" }
-            val component = raw.totalByComponent.any { it.key != "(None Assigned)" }
-            val flavoring = raw.totalByFlavoring.any { it.key != "(None Assigned)" }
-            val container = raw.totalByContainer.any { it.key != "(Unassigned)" }
+            val type = raw.totalByType.any { it.key != unassignedLabel }
+            val subgenre = raw.totalBySubgenre.any { it.key != unassignedLabel }
+            val cut = raw.totalByCut.any { it.key != unassignedLabel }
+            val component = raw.totalByComponent.any { it.key != noneAssignedLabel }
+            val flavoring = raw.totalByFlavoring.any { it.key != noneAssignedLabel }
+            val container = raw.totalByContainer.any { it.key != unassignedLabel }
 
             AvailableSections(
                 anyAvailable = subgenre || cut || component || flavoring || container,
@@ -364,11 +370,11 @@ class StatsViewModel(
                 flavoring = flavoring,
                 container = container,
                 available = listOfNotNull(
-                    if (subgenre) { Triple("Subgenre", raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
-                    if (cut) { Triple("Cut", raw.totalByCut, filtered.totalByCut) } else null,
-                    if (component) { Triple("Component", raw.totalByComponent, filtered.totalByComponent) } else null,
-                    if (flavoring) { Triple("Flavoring", raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
-                    if (container) { Triple("Container", raw.totalByContainer, filtered.totalByContainer) } else null
+                    if (subgenre) { Triple(application.getString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
+                    if (cut) { Triple(application.getString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
+                    if (component) { Triple(application.getString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
+                    if (flavoring) { Triple(application.getString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
+                    if (container) { Triple(application.getString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
                 )
             )
         }
@@ -474,26 +480,24 @@ data class RatingsDistribution(
 
 
 /** Helper functions **/
-private fun Map<String, Int>.reduceToTen(): Map<String, Int> {
+private fun Map<String, Int>.reduceToTen(other: String): Map<String, Int> {
     val sorted = this.entries.sortedByDescending { it.value }
     if (sorted.size <= 10) return sorted.associate { it.key to it.value }
 
     val result = LinkedHashMap<String, Int>(10)
     for (i in 0 until 9) { result[sorted[i].key] = sorted[i].value }
 
-    result["(Other)"] = sorted.drop(9).sumOf { it.value }
+    result[other] = sorted.drop(9).sumOf { it.value }
     return result
 }
 
 private fun Map<String, Int>.buildComp(filtered: Map<String, Int>, unassigned: String): Map<String, Int> {
     val sorted = this.entries.sortedByDescending { it.value }
-
     val result = LinkedHashMap<String, Int>(sorted.size)
     var unassignedVal: Int? = null
 
     for ((key) in sorted) {
         val value = filtered[key] ?: 0
-
         if (key == unassigned) { unassignedVal = value }
         else { result[key] = value }
     }
@@ -506,27 +510,26 @@ private fun Map<String, Int>.buildComp(filtered: Map<String, Int>, unassigned: S
 private fun remapUnassigned(map: Map<String, Int>, unassignedKey: String): Map<String, Int> {
     val mutableMap = map.toMutableMap()
     val unassignedValue = mutableMap.remove(unassignedKey)
-    if (unassignedValue != null) {
-        mutableMap[unassignedKey] = unassignedValue
-    }
+    if (unassignedValue != null) { mutableMap[unassignedKey] = unassignedValue }
+
     return mutableMap
 }
 
-private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: QuantityOption): Double {
+private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: QuantityOption, units: Triple<String, String, String>): Double {
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
             when (unit) {
-                "oz" -> tinQuantity
-                "lbs" -> tinQuantity * 16
-                "grams" -> tinQuantity / 28.3495
+                units.first -> tinQuantity
+                units.second -> tinQuantity * 16
+                units.third -> tinQuantity / 28.3495
                 else -> 0.0
             }
         }
         QuantityOption.GRAMS -> {
             when (unit) {
-                "oz" -> tinQuantity * 28.3495
-                "lbs" -> tinQuantity * 453.592
-                "grams" -> tinQuantity
+                units.first -> tinQuantity * 28.3495
+                units.second -> tinQuantity * 453.592
+                units.third -> tinQuantity
                 else -> 0.0
             }
         }
