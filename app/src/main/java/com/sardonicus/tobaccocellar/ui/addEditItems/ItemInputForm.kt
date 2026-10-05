@@ -91,23 +91,25 @@ fun ItemInputForm(
 
     val largePagerState = rememberPagerState(initialPage = currentLeftTab) { 2 }
     val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex) { 3 }
+    var isProgrammaticScroll by remember { mutableStateOf(false) }
 
     val fieldInteractionSource = remember { MutableInteractionSource() }
     val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
 
     LaunchedEffect(twoColumn) {
         if (twoColumn) {
-            if (largePagerState.currentPage != currentLeftTab) {
+            if (largePagerState.currentPage != currentLeftTab && !isProgrammaticScroll) {
                 largePagerState.scrollToPage(currentLeftTab)
             }
         } else {
-            if (narrowPagerState.currentPage != selectedTabIndex) {
+            if (narrowPagerState.currentPage != selectedTabIndex && !isProgrammaticScroll) {
                 narrowPagerState.scrollToPage(selectedTabIndex)
             }
         }
     }
 
     LaunchedEffect(selectedTabIndex, currentLeftTab) {
+        isProgrammaticScroll = true
         if (twoColumn) {
             if (largePagerState.currentPage != currentLeftTab) {
                 largePagerState.animateScrollToPage(currentLeftTab)
@@ -117,15 +119,16 @@ fun ItemInputForm(
                 narrowPagerState.animateScrollToPage(selectedTabIndex)
             }
         }
+        isProgrammaticScroll = false
     }
 
     LaunchedEffect(largePagerState, narrowPagerState, twoColumn) {
         if (twoColumn) {
             snapshotFlow { largePagerState.currentPage }
-                .collect { if (it != currentLeftTab) updateSelectedTab(it) }
+                .collect { if (it != currentLeftTab && !isProgrammaticScroll) updateSelectedTab(it) }
         } else {
             snapshotFlow { narrowPagerState.currentPage }
-                .collect { if (it != selectedTabIndex) updateSelectedTab(it) }
+                .collect { if (it != selectedTabIndex && !isProgrammaticScroll) updateSelectedTab(it) }
         }
     }
 
