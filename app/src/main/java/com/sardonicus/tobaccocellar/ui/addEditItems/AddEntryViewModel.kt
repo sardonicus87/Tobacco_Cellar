@@ -32,6 +32,8 @@ class AddEntryViewModel(
     val autoCompleteData = filterViewModel.autoComplete.value
     val tinConversion = mutableStateOf(TinConversion())
 
+    private val units = filterViewModel.units
+
     init {
         viewModelScope.launch {
             combine(
@@ -53,7 +55,7 @@ class AddEntryViewModel(
     /** update item state **/
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
-            val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
+            val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value, units)
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins)

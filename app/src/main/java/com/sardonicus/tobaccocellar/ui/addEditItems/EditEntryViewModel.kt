@@ -47,6 +47,8 @@ class EditEntryViewModel(
     val originalComponentList = MutableStateFlow<List<Components>>(emptyList())
     val originalFlavoringList = MutableStateFlow<List<Flavoring>>(emptyList())
 
+    private val units = filterViewModel.units
+
     init {
         viewModelScope.launch {
             loading.value = true
@@ -123,7 +125,7 @@ class EditEntryViewModel(
 
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
-            val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
+            val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value, units)
             itemDetails.copy(
                 quantityString = syncedTins.toString(),
                 quantity = syncedTins)
