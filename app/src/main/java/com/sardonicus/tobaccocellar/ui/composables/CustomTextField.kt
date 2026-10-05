@@ -71,9 +71,7 @@ fun CustomTextField(
             enabled = enabled,
             isError = isError,
             interactionSource = interactionSourceImp,
-            colors = colors.copy(
-                cursorColor = MaterialTheme.colorScheme.primary
-            ),
+            colors = colors.copy(cursorColor = MaterialTheme.colorScheme.primary),
             shape = shape,
             contentPadding = contentPadding,
             placeholder = placeholder,

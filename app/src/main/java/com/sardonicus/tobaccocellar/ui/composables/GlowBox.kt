@@ -26,20 +26,11 @@ fun GlowBox(
     contentAlignment: Alignment = Alignment.TopStart,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Box(
-        modifier = modifier,
-        contentAlignment = contentAlignment
-    ) {
-        Column (
-            modifier = Modifier,
-            content = content
-        )
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .drawBehind {
-                    drawGlow(color, size)
-                }
+    Box(modifier, contentAlignment) {
+        Column (Modifier, content = content)
+        Box(Modifier
+            .matchParentSize()
+            .drawBehind { drawGlow(color, size) }
         )
     }
 }
@@ -112,10 +103,7 @@ private fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
     if (topFade) {
         drawRect(
             brush = Brush.verticalGradient(
-                colors = listOf(
-                    topColor,
-                    Color.Transparent,
-                ),
+                colors = listOf(topColor, Color.Transparent),
                 startY = 0f,
                 endY = topSize.toPx(),
             ),
@@ -126,10 +114,7 @@ private fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
     if (bottomFade) {
         drawRect(
             brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    bottomColor,
-                ),
+                colors = listOf(Color.Transparent, bottomColor),
                 startY = fadeOffsetY,
                 endY = size.height,
             ),
@@ -140,10 +125,7 @@ private fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
     if (startFade) {
         drawRect(
             brush = Brush.horizontalGradient(
-                colors = listOf(
-                    startColor,
-                    Color.Transparent,
-                ),
+                colors = listOf(startColor, Color.Transparent),
                 startX = 0f,
                 endX = startSize.toPx(),
             ),
@@ -154,10 +136,7 @@ private fun DrawScope.drawGlow(glowColor: GlowColor, glowSize: GlowSize) {
     if (endFade) {
         drawRect(
             brush = Brush.horizontalGradient(
-                colors = listOf(
-                    Color.Transparent,
-                    endColor,
-                ),
+                colors = listOf(Color.Transparent, endColor),
                 startX = fadeOffsetX,
                 endX = size.width,
             ),
@@ -204,9 +183,7 @@ sealed class GlowColor {
 }
 
 sealed class GlowSize {
-    data class All(
-        val size: Dp = 0.dp
-    ) : GlowSize()
+    data class All(val size: Dp = 0.dp) : GlowSize()
 
     data class HorizontalVertical(
         val horizontal: Dp = 0.dp,
@@ -221,20 +198,12 @@ sealed class GlowSize {
     ) : GlowSize()
 
     companion object {
-        operator fun invoke(
-            size: Dp = 0.dp
-        ): All = All(size)
+        operator fun invoke(size: Dp = 0.dp): All = All(size)
+
+        operator fun invoke(horizontal: Dp = 0.dp, vertical: Dp = 0.dp): HorizontalVertical = HorizontalVertical(horizontal, vertical)
 
         operator fun invoke(
-            horizontal: Dp = 0.dp,
-            vertical: Dp = 0.dp
-        ): HorizontalVertical = HorizontalVertical(horizontal, vertical)
-
-        operator fun invoke(
-            top: Dp = 0.dp,
-            bottom: Dp = 0.dp,
-            start: Dp = 0.dp,
-            end: Dp = 0.dp
+            top: Dp = 0.dp, bottom: Dp = 0.dp, start: Dp = 0.dp, end: Dp = 0.dp
         ): Edges = Edges(top, bottom, start, end)
     }
 }

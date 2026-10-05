@@ -176,7 +176,7 @@ fun AutoCompleteText(
 
         DropdownMenu(
             expanded = expandedState,
-            onDismissRequest = { /**/ },
+            onDismissRequest = { },
             modifier = Modifier
                 .padding(0.dp)
                 .height(intrinsicSize = IntrinsicSize.Max)
@@ -262,10 +262,7 @@ private fun CustomDropdownMenuItem(
 ) {
     Box(
         modifier = modifier
-            .clickable(
-                indication = LocalIndication.current,
-                interactionSource = null
-            ) { onClick() }
+            .clickable(null, LocalIndication.current) { onClick() }
             .padding(0.dp)
     ) { text() }
 }

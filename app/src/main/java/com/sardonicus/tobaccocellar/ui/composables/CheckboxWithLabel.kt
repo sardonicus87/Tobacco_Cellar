@@ -44,11 +44,7 @@ fun CheckboxWithLabel(
         modifier = modifier
             .height(height)
             .offset(x = (-2).dp)
-            .clickable(
-                indication = null,
-                interactionSource = null,
-                enabled = enabled
-            ) { onCheckedChange(!checked) },
+            .clickable(null, null, enabled) { onCheckedChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -59,8 +55,7 @@ fun CheckboxWithLabel(
             Checkbox(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier
-                    .padding(0.dp),
+                modifier = Modifier.padding(0.dp),
                 enabled = enabled,
                 colors = colors,
                 interactionSource = interactionSource

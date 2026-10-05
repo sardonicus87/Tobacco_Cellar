@@ -25,8 +25,7 @@ fun CustomCheckbox(
     IconToggleButton(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
-        modifier = modifier
-            .size(size),
+        modifier = modifier.size(size),
         colors = colors,
         enabled = enabled
     ) {

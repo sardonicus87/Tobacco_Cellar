@@ -109,9 +109,7 @@ fun RatingRow(
     } else {
         BoxWithConstraints(modifier = modifier) {
             val dynamicSize = remember(maxHeight, maxWidth) {
-                if (maxHeight > 0.dp && maxWidth > 0.dp) {
-                    min(maxHeight, maxWidth / 5)
-                } else { 0.dp }
+                if (maxHeight > 0.dp && maxWidth > 0.dp) { min(maxHeight, maxWidth / 5) } else 0.dp
             }
 
             if (dynamicSize > 0.dp) {
@@ -201,9 +199,8 @@ private fun RatingRowImpl(
         if (showRange) {
             val nullRange = range.first == null && range.second == null
 
-            if (nullRange) {
-                repeat(5) { Star(emptyColor, alpha = emptyAlpha) }
-            } else {
+            if (nullRange) { repeat(5) { Star(emptyColor, alpha = emptyAlpha) } }
+            else {
                 val min = range.first ?: 0.0
                 val max = range.second ?: range.first ?: 5.0
                 val minWhole = min.toInt()
@@ -261,9 +258,7 @@ private fun RatingRowImpl(
                 if (remainder > 0.0) { FractionalStar(remainder, maxColor, emptyColor, 1f, emptyAlpha) }
                 if (showEmpty && empty > 0) { repeat(empty) { Star(emptyColor, alpha = emptyAlpha) } }
 
-            } else {
-                if (showEmpty) { repeat(5) { Star(emptyColor, alpha = emptyAlpha) } }
-            }
+            } else { if (showEmpty) { repeat(5) { Star(emptyColor, alpha = emptyAlpha) } } }
         }
     }
 }

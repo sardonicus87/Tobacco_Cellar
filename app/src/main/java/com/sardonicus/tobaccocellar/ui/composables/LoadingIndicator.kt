@@ -25,35 +25,17 @@ fun LoadingIndicator(
     var bottomWeight: Float
 
     when (center) {
-        true -> {
-            topWeight = 1f
-            bottomWeight = 1f
-        }
-        false -> {
-            topWeight = 1.5f
-            bottomWeight = 2f
-        }
+        true -> { topWeight = 1f; bottomWeight = 1f }
+        false -> { topWeight = 1.5f; bottomWeight = 2f }
     }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxSize()
-            .background(scrimColor)
+        modifier = modifier.fillMaxSize().background(scrimColor)
     ) {
-        Spacer(
-            modifier = Modifier
-                .weight(topWeight)
-        )
-        CircularProgressIndicator(
-            modifier = Modifier
-                .padding(0.dp)
-                .size(48.dp),
-        )
-        Spacer(
-            modifier = Modifier
-                .weight(bottomWeight)
-        )
+        Spacer(Modifier.weight(topWeight))
+        CircularProgressIndicator(Modifier.padding(0.dp).size(48.dp),)
+        Spacer(Modifier.weight(bottomWeight))
     }
 }
