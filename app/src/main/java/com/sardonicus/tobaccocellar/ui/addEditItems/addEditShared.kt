@@ -71,14 +71,15 @@ fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): B
 
 fun calculateSyncTinsDetails(
     tinDetails: List<TinDetails>,
-    conversion: TinConversion
+    conversion: TinConversion,
+    units: Triple<String, String, String>
 ): Int {
     return tinDetails.sumOf {
         if (it.finished) 0.0 else {
             when (it.unit) {
-                "lbs" -> (it.tinQuantity * 16) / conversion.ozRate
-                "oz" -> it.tinQuantity / conversion.ozRate
-                "grams" -> it.tinQuantity / conversion.gramsRate
+                units.first -> it.tinQuantity / conversion.ozRate
+                units.second -> (it.tinQuantity * 16) / conversion.ozRate
+                units.third -> it.tinQuantity / conversion.gramsRate
                 else -> 0.0
             }
         }
