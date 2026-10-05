@@ -35,7 +35,7 @@ fun LoadingIndicator(
         modifier = modifier.fillMaxSize().background(scrimColor)
     ) {
         Spacer(Modifier.weight(topWeight))
-        CircularProgressIndicator(Modifier.padding(0.dp).size(48.dp),)
+        CircularProgressIndicator(Modifier.padding(0.dp).size(48.dp))
         Spacer(Modifier.weight(bottomWeight))
     }
 }
