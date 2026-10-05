@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
@@ -17,6 +18,7 @@ import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -41,6 +43,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class CsvImportViewModel(
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
+    private val app: CellarApplication
 ) : ViewModel() {
 
     private val _csvImportState = mutableStateOf(CsvImportState())
@@ -79,6 +82,7 @@ class CsvImportViewModel(
 
     fun onShowError (show: Boolean) {
         _showErrorDialog.value = show
+        if (!show) { onCsvError("") }
     }
 
     fun onCsvError(message: String?) {
@@ -313,9 +317,7 @@ class CsvImportViewModel(
                 }
                 else -> null
             }
-        } catch (_: Exception) {
-            null
-        }
+        } catch (_: Exception) { null }
     }
 
     private fun String.handleYear(): String {
@@ -341,9 +343,7 @@ class CsvImportViewModel(
                 lastModified = System.currentTimeMillis(),
             )
         }
-        withContext(Dispatchers.Default) {
-            itemsRepository.insertMultipleTins(tinsToInsert)
-        }
+        withContext(Dispatchers.Default) { itemsRepository.insertMultipleTins(tinsToInsert) }
     }
 
     fun calculateSyncTinsQuantity(tinDataList: List<TinData>, ozRate: Double, gramsRate: Double): Int {
@@ -531,9 +531,7 @@ class CsvImportViewModel(
                 _importStatus.value = ImportStatus.Success
                 _navigateToResults.emit(results)
 
-            } catch (e: Exception) {
-                _importStatus.value = ImportStatus.Error(e)
-            }
+            } catch (e: Exception) { _importStatus.value = ImportStatus.Error(e) }
         }
     }
 
@@ -688,9 +686,9 @@ class CsvImportViewModel(
 
     private fun String.capitalizeType(): String {
         val upper = this.uppercase()
-        return if (upper in listOf("AROMATIC", "ENGLISH", "BURLEY", "VIRGINIA", "OTHER")) {
-            this.lowercase().replaceFirstChar { it.uppercase() }
-        } else ""
+        val upperOptions = BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }.map {
+            app.getString(it.resId).uppercase() }
+        return if (upper in upperOptions) { this.lowercase().replaceFirstChar { it.uppercase() } } else ""
     }
 
     private fun parseTinData(record: CSVRecord, indices: Map<CsvField, Int>): TinData {

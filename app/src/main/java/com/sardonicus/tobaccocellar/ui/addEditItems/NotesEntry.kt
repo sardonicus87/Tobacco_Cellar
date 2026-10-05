@@ -13,10 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
 @Composable
@@ -36,7 +38,7 @@ fun NotesEntry(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "Notes:",
+                text = stringResource(R.string.notes),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             TextField(

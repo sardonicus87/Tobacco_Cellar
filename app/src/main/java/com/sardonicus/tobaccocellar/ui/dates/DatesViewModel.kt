@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar.ui.dates
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -27,6 +29,7 @@ import kotlin.math.floor
 class DatesViewModel(
     private val filterViewModel: FilterViewModel,
     private val preferencesRepo: PreferencesRepo,
+    private val app: CellarApplication
 ) : ViewModel() {
 
     val datesUiState: StateFlow<DatesUiState> =
@@ -46,8 +49,8 @@ class DatesViewModel(
             }.filter { it.third != null }
 
             val agingData = agingDue(allItems, now)
-            val weekSection = AgingSection("Tins ready in the next 7 days:", "No tins ready this week.", agingData.first)
-            val monthSection = AgingSection("Other tins ready this month:", "No more tins ready this month.", agingData.second)
+            val weekSection = AgingSection(app.getString(R.string.week_section), app.getString(R.string.week_empty), agingData.first)
+            val monthSection = AgingSection(app.getString(R.string.month_section), app.getString(R.string.month_empty), agingData.second)
 
             val filteredItemTins2 = datedTins.map { it.second }
             val averageManuf = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { it.manufactureDate }
@@ -68,22 +71,22 @@ class DatesViewModel(
                 agingSection = listOf(weekSection, monthSection),
                 agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(),
                 averageAgeSection = listOf(
-                    AverageAgeSection("Average age (manuf): ", averageManuf),
-                    AverageAgeSection("Average time in cellar: ", averageCellar),
-                    AverageAgeSection("Average opened time: ", averageOpen),
-                    AverageAgeSection("Average wait (open): ", averageWait)
+                    AverageAgeSection(app.getString(R.string.average_manuf), averageManuf),
+                    AverageAgeSection(app.getString(R.string.average_cellar), averageCellar),
+                    AverageAgeSection(app.getString(R.string.average_open), averageOpen),
+                    AverageAgeSection(app.getString(R.string.average_wait), averageWait)
                 ),
                 averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
                 oldestTinsSection = listOf(
-                    OldestTinsSection("Manufacture", pastManu),
-                    OldestTinsSection("Cellared", pastCellar),
-                    OldestTinsSection("Opened", pastOpened)
+                    OldestTinsSection(app.getString(R.string.manufacture_date), pastManu),
+                    OldestTinsSection(app.getString(R.string.cellared_date), pastCellar),
+                    OldestTinsSection(app.getString(R.string.opened_date), pastOpened)
                 ),
                 oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
                 futureTinsSection = listOf(
-                    FutureTinsSection("Manufacture", futureManu),
-                    FutureTinsSection("Cellared", futureCellar),
-                    FutureTinsSection("Opened", futureOpen)
+                    FutureTinsSection(app.getString(R.string.manufacture_date), futureManu),
+                    FutureTinsSection(app.getString(R.string.cellared_date), futureCellar),
+                    FutureTinsSection(app.getString(R.string.opened_date), futureOpen)
                 ),
                 futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
                 loading = false,
@@ -138,7 +141,7 @@ class DatesViewModel(
                     blend = item.items.blend,
                     tinLabel = tin.tinLabel,
                     date = formatMediumDate(originalMillis),
-                    timeFrame = calculateAge(originalMillis),
+                    timeFrame = calculateAge(originalMillis, app),
                 ),
                 originalMillis
             )
@@ -191,9 +194,12 @@ class DatesViewModel(
 
         val parts = mutableListOf<String>()
 
-        if (years > 0) { parts.add("$years year${if (years > 1) "s" else ""}") }
-        if (months > 0) { parts.add("$months month${if (months > 1) "s" else ""}") }
-        if (days > 0.09) { parts.add("$dayString day${if (dayString != "1") "s" else ""}") }
+        if (years > 0) { parts.add(app.resources.getQuantityString(R.plurals.years, years, years)) }
+        if (months > 0) { parts.add(app.resources.getQuantityString(R.plurals.months, months, months)) }
+        if (days > 0.09) {
+            val quantity = if (days == 1.0) 1 else 2
+            parts.add(app.resources.getQuantityString(R.plurals.days, quantity, dayString))
+        }
 
         return parts.joinToString(", ")
     }
@@ -221,7 +227,7 @@ class DatesViewModel(
                             blend = item.blend,
                             tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
-                            timeFrame = calculateAge(openMillis),
+                            timeFrame = calculateAge(openMillis, app),
                         )
                     )
                 } else if (openDate in (oneWeek + 1)..endOfMonth) {
@@ -232,7 +238,7 @@ class DatesViewModel(
                             blend = item.blend,
                             tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
-                            timeFrame = calculateAge(openMillis),
+                            timeFrame = calculateAge(openMillis, app),
                         )
                     )
                 }

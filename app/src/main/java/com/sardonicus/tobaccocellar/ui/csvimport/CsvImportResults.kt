@@ -138,16 +138,15 @@ fun ImportResultsBody(
         Spacer(modifier = Modifier.weight(1.5f))
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val resultsTitle = stringResource(R.string.import_results_title)
             // Results header
             if (visibleItemIndex <= 0) {
                 Text(
-                    text = "CSV Import Results",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
+                    text = resultsTitle,
+                    modifier = Modifier.padding(bottom = 16.dp),
                     fontSize = 34.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Transparent
@@ -158,9 +157,8 @@ fun ImportResultsBody(
                 enter = fadeIn(animationSpec = tween(durationMillis = 350))
             ) {
                 Text(
-                    text = "CSV Import Results",
-                    modifier = Modifier
-                        .padding(bottom = 16.dp),
+                    text = resultsTitle,
+                    modifier = Modifier.padding(bottom = 16.dp),
                     fontSize = 34.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -168,275 +166,133 @@ fun ImportResultsBody(
 
             // Data
             Row(
-                modifier = Modifier
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.padding(bottom = 16.dp),
             ) {
                 // Labels
                 Column(
-                    modifier = Modifier
-                        .padding(0.dp),
+                    modifier = Modifier.padding(0.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // Total Records
+                    val totalFound = stringResource(R.string.total_found)
+                    val conversions = stringResource(R.string.successful_conversions)
+                    val totalImported = stringResource(R.string.total_imported)
+
                     if (visibleItemIndex <= 1) {
-                        Text(
-                            text = "Total records found: ",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text(totalFound, fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 1,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                        Text(
-                            text = "Total records found: ",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                        )
-                    }
+                    ) { Text(totalFound, fontSize = 18.sp) }
 
-                    // Successful Conversions
                     if (visibleItemIndex <= 2) {
-                        Text(
-                            text = "Successful conversions: ",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text(conversions, fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 2,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                        Text(
-                            text = "Successful conversions: ",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                        )
-                    }
+                    ) { Text(conversions, fontSize = 18.sp) }
 
-                    // Records Imported
                     if (visibleItemIndex <= 3) {
-                        Text(
-                            text = "Total entries imported: ",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text(totalImported, fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 3,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                        Text(
-                            text = "Total entries imported: ",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                        )
-                    }
+                    ) { Text(totalImported, fontSize = 18.sp) }
 
                     // Updates AND Tins
                     if (indexCondition == 7) {
+                        val totalUpdated = stringResource(R.string.total_updated)
+                        val totalTinsChange = stringResource(R.string.total_tins_change)
+
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
-                            Text(
-                                text = "Total entries updated: ",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text(totalUpdated, Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = "Total entries updated: ",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text(totalUpdated, Modifier.padding(0.dp), fontSize = 18.sp) }
+
                         // Successful Tins
                         if (visibleItemIndex <= 5) {
-                            Text(
-                                text = "Total tins change: ",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text(totalTinsChange, Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 5,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = "Total tins change: ",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text(totalTinsChange, Modifier.padding(0.dp), fontSize = 18.sp) }
                     }
 
                     // Updates OR Tins
                     if (indexCondition == 6) {
-                        val label = if (updateFlag) "Total entries updated: " else "Total tins change: "
+                        val label = if (updateFlag) stringResource(R.string.total_updated) else stringResource(R.string.total_tins_change)
                         if (visibleItemIndex <= 4) {
-                            Text(
-                                text = label,
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text(label, Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = label,
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text(label, Modifier.padding(0.dp), fontSize = 18.sp) }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(Modifier.width(12.dp))
 
                 // Counts
                 Column(
-                    modifier = Modifier
-                        .padding(0.dp),
+                    modifier = Modifier.padding(0.dp),
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     // Total Records
                     if (visibleItemIndex <= 1) {
-                        Text(
-                            text = "$totalRecords",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text("$totalRecords", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 1,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                            Text(
-                                text = "$totalRecords",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                            )
-
-                    }
+                    ) { Text("$totalRecords", Modifier.padding(bottom = 0.dp), fontSize = 18.sp) }
 
                     // Successful Conversions
                     if (visibleItemIndex <= 2) {
-                        Text(
-                            text = "$successfulConversions",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text("$successfulConversions", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 2,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                        Text(
-                            text = "$successfulConversions",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                        )
-                    }
+                    ) { Text("$successfulConversions", Modifier.padding(0.dp), fontSize = 18.sp) }
 
                     // Records Imported
                     if (visibleItemIndex <= 3) {
-                        Text(
-                            text = "$successfulInsertions",
-                            modifier = Modifier
-                                .padding(bottom = 0.dp),
-                            fontSize = 18.sp,
-                            color = Color.Transparent
-                        )
+                        Text("$successfulInsertions", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                     }
                     AnimatedVisibility(
                         visible = visibleItemIndex > 3,
                         enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                    ) {
-                        Text(
-                            text = "$successfulInsertions",
-                            modifier = Modifier
-                                .padding(0.dp),
-                            fontSize = 18.sp,
-                        )
-                    }
+                    ) { Text("$successfulInsertions", Modifier.padding(0.dp), fontSize = 18.sp) }
 
                     // Updates AND Tins
                     if (indexCondition == 7) {
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
-                            Text(
-                                text = "$successfulUpdates",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text("$successfulUpdates", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = "$successfulUpdates",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text("$successfulUpdates", Modifier.padding(0.dp), fontSize = 18.sp) }
 
                         // Successful Tins
                         if (visibleItemIndex <= 5) {
-                            Text(
-                                text = "$successfulTins",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text("$successfulTins", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 5,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = "$successfulTins",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text("$successfulTins", Modifier.padding(0.dp), fontSize = 18.sp) }
                     }
 
                     // Updates OR Tins
@@ -444,25 +300,12 @@ fun ImportResultsBody(
                         val count = if (updateFlag) successfulUpdates else successfulTins
 
                         if (visibleItemIndex <= 4) {
-                            Text(
-                                text = "$count",
-                                modifier = Modifier
-                                    .padding(bottom = 0.dp),
-                                fontSize = 18.sp,
-                                color = Color.Transparent
-                            )
+                            Text("$count", Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
                         AnimatedVisibility(
                             visible = visibleItemIndex > 4,
                             enter = fadeIn(animationSpec = tween(durationMillis = fadeMillis))
-                        ) {
-                            Text(
-                                text = "$count",
-                                modifier = Modifier
-                                    .padding(0.dp),
-                                fontSize = 18.sp,
-                            )
-                        }
+                        ) { Text("$count", Modifier.padding(0.dp), fontSize = 18.sp) }
                     }
                 }
             }
@@ -475,19 +318,13 @@ fun ImportResultsBody(
                     else -> 4
                 }
 
+            val backToCellar = stringResource(R.string.back_to_cellar)
             if (visibleItemIndex <= finalIndex) {
                 TextButton(
                     onClick = {  },
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "Back to Cellar",
-                        fontSize = 25.sp,
-                        color = Color.Transparent
-                    )
-                }
+                ) { Text(backToCellar, fontSize = 25.sp, color = Color.Transparent) }
             }
             AnimatedVisibility(
                 visible = visibleItemIndex > finalIndex,
@@ -495,18 +332,12 @@ fun ImportResultsBody(
             ) {
                 TextButton(
                     onClick = { navigateToHome() },
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        text = "Back to Cellar",
-                        fontSize = 25.sp,
-                    )
-                }
+                ) { Text(backToCellar, fontSize = 25.sp) }
             }
         }
 
-        Spacer(modifier = Modifier.weight(2f))
+        Spacer(Modifier.weight(2f))
     }
 }

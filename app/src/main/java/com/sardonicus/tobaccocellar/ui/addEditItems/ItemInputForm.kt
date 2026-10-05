@@ -45,10 +45,12 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
@@ -117,19 +119,15 @@ fun ItemInputForm(
         }
     }
 
-    val largeDragged by largePagerState.interactionSource.collectIsDraggedAsState()
-    val narrowDragged by narrowPagerState.interactionSource.collectIsDraggedAsState()
-
     LaunchedEffect(largePagerState, narrowPagerState, twoColumn) {
         if (twoColumn) {
             snapshotFlow { largePagerState.currentPage }
-                .collect { if (it != currentLeftTab && largeDragged) updateSelectedTab(it) }
+                .collect { if (it != currentLeftTab) updateSelectedTab(it) }
         } else {
             snapshotFlow { narrowPagerState.currentPage }
-                .collect { if (it != selectedTabIndex && narrowDragged) updateSelectedTab(it) }
+                .collect { if (it != selectedTabIndex) updateSelectedTab(it) }
         }
     }
-
 
     Column(
         modifier = modifier
@@ -313,18 +311,13 @@ private fun AdaptiveTabRow(
     anythingFocused: Boolean,
     updateSelectedTab: (Int) -> Unit,
 ) {
-    val titles = listOf("Details", "Notes", "Tins")
+    val titles = listOf(stringResource(R.string.details), stringResource(R.string.notes), stringResource(R.string.tins))
     var showAdditional by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTabIndex) {
         if (twoColumnTabs) {
-            if (selectedTabIndex == 2) {
-                delay(50.milliseconds)
-                showAdditional = true
-            } else {
-                delay(5.milliseconds)
-                showAdditional = false
-            }
+            if (selectedTabIndex == 2) { delay(50.milliseconds); showAdditional = true }
+            else { delay(5.milliseconds); showAdditional = false }
         }
     }
 

@@ -170,7 +170,7 @@ fun DatesBody(
             // disclaimer
             item(key = "disclaimer") {
                 Text(
-                    text = "*Excluding \"Aging Tracker\", all date information on this screen is filter-reactive.",
+                    text = stringResource(R.string.dates_disclaimer),
                     modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(.9f),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
@@ -180,7 +180,7 @@ fun DatesBody(
 
             // Aging Tracker
             item(key = "header_aging", contentType = "header") {
-                DateSectionHeader("Aging Tracker", separatorColor)
+                DateSectionHeader(stringResource(R.string.aging_tracker), separatorColor)
             }
 
             item(key = "content_aging", contentType = "aging_list") {
@@ -222,7 +222,7 @@ fun DatesBody(
                         Spacer(Modifier.height(20.dp))
                     } else {
                         Text(
-                            text = "No tins coming of age this week or month.",
+                            text = stringResource(R.string.no_aging_found),
                             modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                             textAlign = TextAlign.Center
                         )
@@ -233,7 +233,7 @@ fun DatesBody(
             if (datesUiState.datesExist) {
                 // Quick Stats
                 item(key = "header_stats", contentType = "header") {
-                    DateSectionHeader("Quick Date Stats", separatorColor)
+                    DateSectionHeader(stringResource(R.string.quick_date_stats), separatorColor)
                 }
 
                 item(key = "content_stats", contentType = "stats") {
@@ -248,7 +248,7 @@ fun DatesBody(
 
                 // Oldest Tins
                 item(key = "header_oldest", contentType = "header") {
-                    DateSectionHeader("Oldest Tins", separatorColor)
+                    DateSectionHeader(stringResource(R.string.oldest_tins), separatorColor)
                 }
 
                 item(key = "content_oldest", contentType = "date_info_list") {
@@ -262,7 +262,7 @@ fun DatesBody(
 
                 //  Future tins
                 item(key = "header_future", contentType = "header") {
-                    DateSectionHeader("Future Tins", separatorColor)
+                    DateSectionHeader(stringResource(R.string.future_tins), separatorColor)
                 }
 
                 item(key = "content_future", contentType = "date_info_list") {
@@ -315,7 +315,7 @@ private fun EmptyState() {
         HorizontalDivider(Modifier.fillMaxWidth(), Dp.Hairline, colorScheme.secondary)
         Spacer(Modifier.weight(1f))
         Text(
-            text = "No date information found within filtered entries.",
+            text = stringResource(R.string.dates_no_info_found),
             modifier = Modifier.fillMaxWidth(.75f),
             textAlign = TextAlign.Center,
             fontSize = 24.sp,
@@ -468,7 +468,7 @@ private fun QuickStatsSection(
                 Spacer(Modifier.height(20.dp))
             } else {
                 Text(
-                    text = "No relevant date stats found in entries.",
+                    text = stringResource(R.string.dates_no_stats),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                     textAlign = TextAlign.Center,
                     fontSize = 15.sp,
@@ -504,7 +504,7 @@ private fun OldestTinsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = "No past tin dates found.",
+                text = stringResource(R.string.dates_no_past),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
             )
@@ -537,7 +537,7 @@ private fun FutureTinsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = "No future tin dates found.",
+                text = stringResource(R.string.dates_no_future),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
             )
@@ -573,7 +573,7 @@ fun DatesSection(
             verticalAlignment = Alignment.Top
         ) {
             Text(
-                text = "$label Date",
+                text = label,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.tertiary,
                 modifier = Modifier.padding(bottom = 1.dp)

@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -263,7 +264,7 @@ private fun FlowFilterMatchOptions(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Match:",
+            text = stringResource(R.string.match),
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.padding(start = 3.65.dp),
@@ -281,13 +282,13 @@ private fun FlowFilterMatchOptions(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = it.value,
+                    text = stringResource(it.value),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Transparent,
                 )
                 Text(
-                    text = it.value,
+                    text = stringResource(it.value),
                     fontSize = 14.sp,
                     fontWeight = if (matching == it && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
                     color =
@@ -403,7 +404,7 @@ private fun FlowFilterOverflowPopup(
                             modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
-                            text = "Clear All",
+                            text = stringResource(R.string.clear_all),
                             modifier = Modifier,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
@@ -412,7 +413,7 @@ private fun FlowFilterOverflowPopup(
                 }
             }
         },
-        confirmButton = { Button({ onDismiss() }) { Text("Close") } },
+        confirmButton = { Button({ onDismiss() }) { Text(stringResource(R.string.close)) } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,

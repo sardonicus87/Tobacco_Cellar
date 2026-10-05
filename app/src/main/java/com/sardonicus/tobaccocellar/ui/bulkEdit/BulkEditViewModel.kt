@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -31,6 +33,7 @@ class BulkEditViewModel (
     filterViewModel: FilterViewModel,
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
+    private val app: CellarApplication
 ): ViewModel() {
 
     var editingState by mutableStateOf(EditingState())
@@ -234,7 +237,7 @@ class BulkEditViewModel (
             setLoadingState(false)
             itemsRepository.triggerUploadWorker()
             resetEditingState()
-            EventBus.emit(ShowSnackbar("Batch edits saved."))
+            EventBus.emit(ShowSnackbar(app.getString(R.string.batch_edit_saved)))
         }
     }
 }

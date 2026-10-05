@@ -273,12 +273,7 @@ fun ItemExistsEditDialog(
     AlertDialog(
         onDismissRequest = { },
         title = { Text(stringResource(R.string.attention)) },
-        text = {
-            Text(
-                "An entry already exists with this combination of Brand and Blend (the " +
-                        "combination of Brand and Blend must be unique for each entry).",
-            )
-        },
+        text = { Text(stringResource(R.string.item_exists_edit)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,

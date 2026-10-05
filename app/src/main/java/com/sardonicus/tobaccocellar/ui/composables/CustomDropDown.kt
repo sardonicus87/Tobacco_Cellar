@@ -21,7 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +85,7 @@ fun CustomDropDown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = it.ifBlank { "(Blank)" },
+                            text = it.ifBlank { stringResource(R.string.blank) },
                             color = if (it.isBlank()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                         )
                     },

@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
@@ -121,7 +122,7 @@ fun OtherFiltersSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No ratings assigned.",
+                        text = stringResource(R.string.no_ratings),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Center,
@@ -132,9 +133,7 @@ fun OtherFiltersSection(
         }
 
         // In Stock
-        Box {
-            InStockSection(filterViewModel)
-        }
+        Box { InStockSection(filterViewModel) }
     }
 }
 
@@ -152,7 +151,7 @@ private fun FavoriteDislikeFilters(
     Box {
         Row {
             TriStateCheckWithLabel(
-                text = { "Favorites" },
+                text = { stringResource(R.string.favorites) },
                 state = { favoritesSelection },
                 onClick = filterViewModel::updateFavSelection,
                 colors = {
@@ -170,7 +169,7 @@ private fun FavoriteDislikeFilters(
             )
 
             TriStateCheckWithLabel(
-                text = { "Dislikes" },
+                text = { stringResource(R.string.dislikes) },
                 state = { dislikedsSelection },
                 onClick = filterViewModel::updateDisSelection,
                 colors = {
@@ -199,7 +198,7 @@ private fun FavoriteDislikeFilters(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No favorites/dislikes assigned.",
+                    text = stringResource(R.string.no_fav_dis),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -244,7 +243,7 @@ private fun StarRatingFilters(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Rating:",
+                text = stringResource(R.string.rating) + ":",
                 modifier = Modifier
                     .padding(end = 8.dp),
                 fontSize = 15.sp
@@ -252,12 +251,7 @@ private fun StarRatingFilters(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .clickable(
-                        indication = null,
-                        interactionSource = null,
-                        enabled = rangeEnabled,
-                        onClick = filterViewModel::onShowRatingPop
-                    ),
+                    .clickable(null, null, rangeEnabled, onClick = filterViewModel::onShowRatingPop),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
             ) {
@@ -315,7 +309,7 @@ private fun StarRatingFilters(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No ratings assigned.",
+                    text = stringResource(R.string.no_ratings),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -385,10 +379,9 @@ private fun RatingRangePop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = "Rating",
+                text = stringResource(R.string.rating),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
+                fontSize = 18.sp
             )
         },
         text = {
@@ -398,7 +391,7 @@ private fun RatingRangePop(
                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
             ) {
                 CheckboxWithLabel(
-                    text = "Unrated",
+                    text = stringResource(R.string.unrated),
                     checked = unrated(),
                     onCheckedChange = {
                         updateSelectedUnrated(it)
@@ -578,7 +571,7 @@ private fun RatingRangePop(
                             .alpha(lowAlpha)
                     )
                     Text(
-                        text = "(Limits: ${formatDecimal(minRating).ifBlank { "0.0" }} - ${formatDecimal(maxRating).ifBlank { "5.0" }})",
+                        text = stringResource(R.string.rating_limits, formatDecimal(minRating).ifBlank { "0.0" }, formatDecimal(maxRating).ifBlank { "5.0" }),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
                         modifier = Modifier,
@@ -627,7 +620,7 @@ private fun RatingRangePop(
                             modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
-                            text = "Clear All",
+                            text = stringResource(R.string.clear_all),
                             modifier = Modifier,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
@@ -641,14 +634,14 @@ private fun RatingRangePop(
                 onClick = { updateSelectedRatingRange(selectedLow, selectedHigh); onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Done") }
+            ) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
             TextButton(
                 onClick = { onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text("Cancel") }
+            ) { Text(stringResource(R.string.cancel)) }
         }
     )
 }
@@ -672,7 +665,7 @@ private fun InStockSection(
         horizontalAlignment = Alignment.Start
     ) {
         CheckboxWithLabel(
-            text = "In-stock",
+            text = stringResource(R.string.in_stock),
             checked = inStock,
             onCheckedChange = filterViewModel::updateSelectedInStock,
             modifier = Modifier,
@@ -680,7 +673,7 @@ private fun InStockSection(
             allowResize = true
         )
         CheckboxWithLabel(
-            text = "Out",
+            text = stringResource(R.string.out),
             checked = outOfStock,
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
@@ -693,7 +686,7 @@ private fun InStockSection(
 
 @Composable
 private fun TriStateCheckWithLabel(
-    text: () -> String,
+    text: @Composable () -> String,
     state: () -> ToggleableState,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,

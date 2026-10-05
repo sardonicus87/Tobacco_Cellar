@@ -101,6 +101,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
@@ -136,7 +137,7 @@ fun BulkEditScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.bulk_edit_title),
+                title = stringResource(R.string.batch_edit_title),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier,
@@ -229,7 +230,7 @@ fun BulkEditBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        val titles = listOf("Select Items", "Batch Edit")
+        val titles = listOf(stringResource(R.string.select_items), stringResource(R.string.batch_edit_title))
 
         Box {
             Column(
@@ -422,12 +423,12 @@ fun BulkSelections(
             TextButton(
                 onClick = { selectAll() },
                 modifier = Modifier,
-            ) { Text("Select All") }
+            ) { Text(stringResource(R.string.select_all)) }
             TextButton(
                 onClick = { clearSelections() },
                 modifier = Modifier,
                 enabled = selectedItems.isNotEmpty(),
-            ) { Text("Clear Selections") }
+            ) { Text(stringResource(R.string.clear_selections)) }
             Box (contentAlignment = Alignment.Center) {
                 val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
                 val borderColor = if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -436,7 +437,7 @@ fun BulkSelections(
                 TextButton(
                     onClick = { filterViewModel.openBottomSheet() },
                     modifier = Modifier
-                ) { Text("Filter") }
+                ) { Text(stringResource(R.string.filter)) }
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -525,7 +526,7 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Edit",
+                            text = stringResource(R.string.edit),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             modifier = Modifier
@@ -546,13 +547,10 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
+                            Box(Modifier.width(42.dp)) {
                                 Checkbox(
                                     checked = editingState.typeSelected,
                                     onCheckedChange = {
@@ -561,7 +559,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Type:",
+                                text = stringResource(R.string.type_label),
                                 modifier = Modifier,
                                 color = if (!editingState.typeSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
@@ -571,7 +569,7 @@ fun BulkEditing(
                         CustomDropDown(
                             selectedValue = editingState.type,
                             onValueChange = { onValueChange(editingState.copy(type = it)) },
-                            options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
+                            options = listOf("") + BlendTypes.entries.filter { it != BlendTypes.UNASSIGNED }.map { stringResource(it.resId) },
                             modifier = Modifier.weight(.7f),
                             enabled = editingState.typeSelected
                         )
@@ -587,9 +585,7 @@ fun BulkEditing(
                             modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
+                            Box(Modifier.width(42.dp)) {
                                 Checkbox(
                                     checked = editingState.genreSelected,
                                     onCheckedChange = {
@@ -598,7 +594,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Sub-genre: ",
+                                text = stringResource(R.string.subgenre_label),
                                 style = TextStyle(
                                     color = if (!editingState.genreSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -670,7 +666,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Cut:",
+                                text = stringResource(R.string.cut_label),
                                 modifier = Modifier,
                                 color = if (!editingState.cutSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
@@ -731,7 +727,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Components: ",
+                                text = stringResource(R.string.component_label),
                                 style = TextStyle(
                                     color = if (!editingState.compsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -795,7 +791,7 @@ fun BulkEditing(
                             placeholder = {
                                 if (editingState.compsSelected) {
                                     Text(
-                                        text = "(Separate with comma + space)",
+                                        text = stringResource(R.string.separate_comma),
                                         modifier = Modifier
                                             .alpha(alpha),
                                         fontSize = 13.sp,
@@ -816,14 +812,10 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier
-                                .weight(.3f),
+                            modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .width(42.dp)
-                            ) {
+                            Box(Modifier.width(42.dp)) {
                                 Checkbox(
                                     checked = editingState.flavorSelected,
                                     onCheckedChange = {
@@ -832,7 +824,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Flavoring: ",
+                                text = stringResource(R.string.flavoring_label),
                                 style = TextStyle(
                                     color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -891,7 +883,7 @@ fun BulkEditing(
                             placeholder = {
                                 if (editingState.flavorSelected) {
                                     Text(
-                                        text = "(Separate with comma + space)",
+                                        text = stringResource(R.string.separate_comma),
                                         modifier = Modifier.alpha(alpha),
                                         fontSize = 13.sp,
                                         softWrap = false,
@@ -914,16 +906,14 @@ fun BulkEditing(
                             modifier = Modifier.weight(.3f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
+                            Box(Modifier.width(42.dp)) {
                                 Checkbox(
                                     checked = editingState.ratingSelected,
                                     onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) }
                                 )
                             }
                             Text(
-                                text = "Rating:",
+                                text = stringResource(R.string.rating_label),
                                 modifier = Modifier,
                                 color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
@@ -931,8 +921,7 @@ fun BulkEditing(
                             )
                         }
                         Row(
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -945,11 +934,7 @@ fun BulkEditing(
                                 starSize = 24.dp,
                                 emptyColor = emptyColor,
                                 modifier = Modifier
-                                    .clickable(
-                                        indication = null,
-                                        interactionSource = null,
-                                        onClick = { showRatingPop = true }
-                                    )
+                                    .clickable(null, null, editingState.ratingSelected) { showRatingPop = true }
                             )
                         }
                     }
@@ -973,7 +958,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Fav/Dis?:",
+                                text = stringResource(R.string.fav_dis_label),
                                 style = TextStyle(
                                     color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -1004,7 +989,7 @@ fun BulkEditing(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Favorite?",
+                                    text = stringResource(R.string.favorite),
                                     modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -1038,7 +1023,7 @@ fun BulkEditing(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
-                                    text = "Disliked?",
+                                    text = stringResource(R.string.disliked),
                                     modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -1051,10 +1036,7 @@ fun BulkEditing(
                                             onValueChange(editingState.copy(disliked = it))
                                         } else {
                                             onValueChange(
-                                                editingState.copy(
-                                                    disliked = it,
-                                                    favorite = false
-                                                )
+                                                editingState.copy(disliked = it, favorite = false)
                                             )
                                         }
                                     },
@@ -1092,7 +1074,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Production Status:",
+                                text = stringResource(R.string.production_status_label),
                                 style = TextStyle(
                                     color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -1117,7 +1099,7 @@ fun BulkEditing(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "In Production?",
+                                text = stringResource(R.string.in_production),
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color = if (!editingState.productionSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
@@ -1158,7 +1140,7 @@ fun BulkEditing(
                                 )
                             }
                             Text(
-                                text = "Sync entry/\ntin quantity:",
+                                text = stringResource(R.string.sync_entry_tin_q),
                                 style = TextStyle(
                                     color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
                                         alpha = 0.50f
@@ -1177,8 +1159,7 @@ fun BulkEditing(
                             )
                         }
                         Row(
-                            modifier = Modifier
-                                .weight(.7f),
+                            modifier = Modifier.weight(.7f),
                             horizontalArrangement = Arrangement.spacedBy(
                                 4.dp,
                                 Alignment.CenterHorizontally
@@ -1186,7 +1167,7 @@ fun BulkEditing(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Sync Tins?",
+                                text = stringResource(R.string.sync_q),
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
                                     alpha = 0.50f
@@ -1194,9 +1175,7 @@ fun BulkEditing(
                             )
                             CustomCheckbox(
                                 checked = editingState.syncTins,
-                                onCheckedChange = {
-                                    onValueChange(editingState.copy(syncTins = it))
-                                },
+                                onCheckedChange = { onValueChange(editingState.copy(syncTins = it)) },
                                 checkedIcon = R.drawable.check_box_24,
                                 uncheckedIcon = R.drawable.check_box_outline_24,
                                 modifier = Modifier.padding(0.dp),
@@ -1222,12 +1201,7 @@ fun BulkEditing(
                 .align(Alignment.CenterHorizontally),
             enabled = enableSave,
             shape = MaterialTheme.shapes.small
-        ) {
-            Text(
-                text = "Save",
-                modifier = Modifier
-            )
-        }
+        ) { Text(stringResource(R.string.save)) }
 
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -1258,8 +1232,8 @@ private fun ConfirmEditDialog(
 ) {
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
-        title = { Text("Are you sure?") },
-        text = { Text("Are you sure you want to edit these items?") },
+        title = { Text(stringResource(R.string.are_sure_q)) },
+        text = { Text(stringResource(R.string.are_sure_long)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,

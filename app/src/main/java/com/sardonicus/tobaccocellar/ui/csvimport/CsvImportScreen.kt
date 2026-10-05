@@ -158,6 +158,7 @@ fun CsvImportBody(
     val importStatus by viewModel.importStatus.collectAsState()
     val context = LocalContext.current
     val csvHelper = CsvHelper()
+    val csvEmpty = stringResource(R.string.csv_empty)
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) { result ->
@@ -180,7 +181,7 @@ fun CsvImportBody(
 
                             is CsvResult.Empty -> {
                                 viewModel.onShowError(true)
-                                viewModel.onCsvError("CSV appears empty.")
+                                viewModel.onCsvError(csvEmpty)
                             }
                         }
 
@@ -191,19 +192,14 @@ fun CsvImportBody(
     }
     val onSelectFile = {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/*"
-        }
+            addCategory(Intent.CATEGORY_OPENABLE); type = "text/*" }
         launcher.launch(intent)
     }
 
     if (showErrorDialog) {
         LoadErrorDialog(
             viewModel = viewModel,
-            confirmError = {
-                viewModel.onShowError(false)
-                viewModel.onCsvError("")
-            },
+            confirmError = { viewModel.onShowError(false) },
         )
     }
 
@@ -256,7 +252,7 @@ fun CsvImportBody(
                         )
                     }
                     Text(
-                        text = "* To see help, select a CSV file to start\n(import isn't automatic)",
+                        text = stringResource(R.string.to_see_help),
                         modifier = Modifier
                             .padding(top = 12.dp)
                             .fillMaxWidth(.66f)
@@ -274,7 +270,7 @@ fun CsvImportBody(
                         csvUiState = csvUiState,
                         onSelectFile = onSelectFile,
                         navigateToCsvHelp = navigateToCsvHelp,
-                        modifier = Modifier
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -300,9 +296,7 @@ fun CsvLoadedBody(
     val context = LocalContext.current
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+        modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
     ) { // Screen after CSV loaded //
@@ -342,7 +336,7 @@ fun CsvLoadedBody(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Help ",
+                        text = stringResource(R.string.help_button),
                         fontWeight = FontWeight.SemiBold,
                     )
                     Icon(
@@ -385,7 +379,7 @@ fun CsvLoadedBody(
                     fontWeight = FontWeight.Bold,
                 )
                 val parseTest =
-                    if (csvImportState.firstFullRecord.isEmpty()) "(Parse error)"
+                    if (csvImportState.firstFullRecord.isEmpty()) stringResource(R.string.parse_error)
                     else csvImportState.firstFullRecord.joinToString(", ")
 
                 Text(
@@ -415,7 +409,7 @@ fun CsvLoadedBody(
                         verticalArrangement = Arrangement.Center,
                     ) {
                         LabeledCheckbox(
-                            text = "Has header?",
+                            text = stringResource(R.string.has_header),
                             width = 96.dp,
                             checked = mappingOptions.hasHeader,
                             onCheckedChange = viewModel::updateHeaderOption
@@ -430,8 +424,8 @@ fun CsvLoadedBody(
                         Text(
                             text =
                                 if (mappingOptions.hasHeader) {
-                                    "Record count: ${csvImportState.recordCount - 1}"
-                                } else { "Record count: ${csvImportState.recordCount}" },
+                                    stringResource(R.string.record_count, "${csvImportState.recordCount - 1}")
+                                } else { stringResource(R.string.record_count, "${csvImportState.recordCount}") },
                             textAlign = TextAlign.End
                         )
                     }
@@ -450,14 +444,14 @@ fun CsvLoadedBody(
                         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
                     ) {
                         LabeledCheckbox(
-                            text = "Collate tins?",
+                            text = stringResource(R.string.collate_tins),
                             maxLines = 1,
                             width = 96.dp,
                             checked = mappingOptions.collateTins,
                             onCheckedChange = viewModel::updateCollateTinsOption
                         )
                         LabeledCheckbox(
-                            text = "Sync tins?",
+                            text = stringResource(R.string.sync_tins_q),
                             maxLines = 1,
                             width = 96.dp,
                             checked = mappingOptions.syncTins,
@@ -473,7 +467,7 @@ fun CsvLoadedBody(
                     ) {
                         Text(
                             text = if (mappingOptions.collateTins && importOption == ImportOption.OVERWRITE) {
-                                "Warning: Overwrite will erase existing tins." } else { "" },
+                                stringResource(R.string.overwrite_warning) } else { "" },
                             style = TextStyle(
                                 color = MaterialTheme.colorScheme.error,
                                 textAlign = TextAlign.End
@@ -496,7 +490,7 @@ fun CsvLoadedBody(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Existing entries:")
+                    Text(stringResource(R.string.existing_entries))
                     Row(
                         modifier = Modifier
                             .padding(0.dp)
@@ -507,16 +501,13 @@ fun CsvLoadedBody(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(25))
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { viewModel.updateImportOption(ImportOption.SKIP) }
+                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.SKIP) }
                                 .padding(horizontal = 8.dp)
                                 .width(36.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Skip",
+                                text = stringResource(R.string.skip),
                                 modifier = Modifier,
                                 color =
                                     if (importOption == ImportOption.SKIP) MaterialTheme.colorScheme.primary
@@ -535,16 +526,13 @@ fun CsvLoadedBody(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(25))
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { viewModel.updateImportOption(ImportOption.UPDATE) }
+                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.UPDATE) }
                                 .padding(horizontal = 8.dp)
                                 .width(56.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Update",
+                                text = stringResource(R.string.update),
                                 color =
                                     if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -562,16 +550,13 @@ fun CsvLoadedBody(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(25))
-                                .clickable(
-                                    indication = LocalIndication.current,
-                                    interactionSource = null
-                                ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
+                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
                                 .padding(horizontal = 8.dp)
                                 .width(76.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Overwrite",
+                                text = stringResource(R.string.overwrite),
                                 color =
                                     if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -609,7 +594,7 @@ fun CsvLoadedBody(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Database Field",
+                        text = stringResource(R.string.db_field),
                         style = LocalTextStyle.current.copy(
                             color = MaterialTheme.colorScheme.onBackground,
                             lineBreak = LineBreak.Paragraph,
@@ -626,7 +611,7 @@ fun CsvLoadedBody(
                     )
                     Spacer(Modifier.weight(1.1f))
                     Text(
-                        text = "CSV Column",
+                        text = stringResource(R.string.csv_column),
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
@@ -641,7 +626,7 @@ fun CsvLoadedBody(
                     )
                     Spacer(Modifier.weight(.9f))
                     Text(
-                        text = "Overwrite Allowed",
+                        text = stringResource(R.string.overwrite_allowed),
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.End,
@@ -658,21 +643,36 @@ fun CsvLoadedBody(
                     )
                 }
 
+                val brand = stringResource(R.string.brand_label)
+                val blend = stringResource(R.string.blend_label)
+                val required = stringResource(R.string.required)
+                val type = stringResource(R.string.type_label)
+                val subgenre = stringResource(R.string.subgenre_label)
+                val cut = stringResource(R.string.cut_label)
+                val components = stringResource(R.string.component_label)
+                val flavoring = stringResource(R.string.flavoring_label)
+                val noOfTins = stringResource(R.string.no_of_tins_label)
+                val rating = stringResource(R.string.rating_label)
+                val favorite = stringResource(R.string.favorite_label)
+                val disliked = stringResource(R.string.disliked_label)
+                val production = stringResource(R.string.production_status_label2)
+                val notes = stringResource(R.string.notes_label)
+
                 val mainFields = remember(mappingOptions.syncTins) {
                     listOf(
-                        FieldConfig(CsvField.Brand, "Brand:", showCheckbox = false, placeholder = "Required"),
-                        FieldConfig(CsvField.Blend, "Blend:", showCheckbox = false, placeholder = "Required"),
-                        FieldConfig(CsvField.Type, "Type:"),
-                        FieldConfig(CsvField.SubGenre, "Subgenre:"),
-                        FieldConfig(CsvField.Cut, "Cut:"),
-                        FieldConfig(CsvField.Components, "Components:"),
-                        FieldConfig(CsvField.Flavoring, "Flavoring:"),
-                        FieldConfig(CsvField.Quantity, "No. of Tins:", enabled = !mappingOptions.syncTins),
-                        FieldConfig(CsvField.Rating, "Rating:"),
-                        FieldConfig(CsvField.Favorite, "Favorite:"),
-                        FieldConfig(CsvField.Disliked, "Disliked:"),
-                        FieldConfig(CsvField.Production, "Production\nStatus:", maxLines = 2),
-                        FieldConfig(CsvField.Notes, "Notes:")
+                        FieldConfig(CsvField.Brand, brand, showCheckbox = false, placeholder = required),
+                        FieldConfig(CsvField.Blend, blend, showCheckbox = false, placeholder = required),
+                        FieldConfig(CsvField.Type, type),
+                        FieldConfig(CsvField.SubGenre, subgenre),
+                        FieldConfig(CsvField.Cut, cut),
+                        FieldConfig(CsvField.Components, components),
+                        FieldConfig(CsvField.Flavoring, flavoring),
+                        FieldConfig(CsvField.Quantity, noOfTins, enabled = !mappingOptions.syncTins),
+                        FieldConfig(CsvField.Rating, rating),
+                        FieldConfig(CsvField.Favorite, favorite),
+                        FieldConfig(CsvField.Disliked, disliked),
+                        FieldConfig(CsvField.Production, production, maxLines = 2),
+                        FieldConfig(CsvField.Notes, notes)
                     )
                 }
 
@@ -714,7 +714,7 @@ fun CsvLoadedBody(
             ) {
                 val dateFormatSelected = remember(mappingOptions.dateFormat) { mappingOptions.dateFormat.isNotBlank() }
                 Text(
-                    text = "Tins Mapping",
+                    text = stringResource(R.string.tins_mapping),
                     modifier = Modifier,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.SemiBold,
@@ -722,14 +722,14 @@ fun CsvLoadedBody(
                     else LocalContentColor.current.copy(alpha = 0.5f)
                 )
                 MappingField(
-                    label = "Container:",
+                    label = stringResource(R.string.container_label),
                     selectedColumn = mappingOptions.columnMap[CsvField.Container] ?: "",
                     csvColumns = csvUiState.columns,
                     onColumnSelected = { viewModel.updateFieldMapping(CsvField.Container, it) },
                     enabled = mappingOptions.collateTins
                 )
                 MappingField(
-                    label = "Quantity:",
+                    label = stringResource(R.string.quantity_label),
                     selectedColumn = mappingOptions.columnMap[CsvField.TinQuantity] ?: "",
                     csvColumns = csvUiState.columns,
                     onColumnSelected = { viewModel.updateFieldMapping(CsvField.TinQuantity, it) },
@@ -746,7 +746,7 @@ fun CsvLoadedBody(
                 Box(contentAlignment = Alignment.Center) {
                     Column {
                         MappingField(
-                            label = "Manufacture\nDate:",
+                            label = stringResource(R.string.csv_manuf_label),
                             selectedColumn = mappingOptions.columnMap[CsvField.ManufactureDate] ?: "",
                             csvColumns = csvUiState.columns,
                             onColumnSelected = { viewModel.updateFieldMapping(CsvField.ManufactureDate, it) },
@@ -754,14 +754,14 @@ fun CsvLoadedBody(
                             maxLines = 2
                         )
                         MappingField(
-                            label = "Cellar Date:",
+                            label = stringResource(R.string.cellar_date_label),
                             selectedColumn = mappingOptions.columnMap[CsvField.CellarDate] ?: "",
                             csvColumns = csvUiState.columns,
                             onColumnSelected = { viewModel.updateFieldMapping(CsvField.CellarDate, it) },
                             enabled = mappingOptions.collateTins && dateFormatSelected
                         )
                         MappingField(
-                            label = "Open Date:",
+                            label = stringResource(R.string.open_date_label),
                             selectedColumn = mappingOptions.columnMap[CsvField.OpenDate] ?: "",
                             csvColumns = csvUiState.columns,
                             onColumnSelected = { viewModel.updateFieldMapping(CsvField.OpenDate, it) },
@@ -776,7 +776,7 @@ fun CsvLoadedBody(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "(must select date format)",
+                                text = stringResource(R.string.must_date_format),
                                 modifier = Modifier.background(Color.Black.copy(alpha = 0.33f)),
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.SemiBold,
@@ -785,7 +785,7 @@ fun CsvLoadedBody(
                     }
                 }
                 MappingField(
-                    label = "Finished:",
+                    label = stringResource(R.string.finished_label),
                     selectedColumn = mappingOptions.columnMap[CsvField.Finished] ?: "",
                     csvColumns = csvUiState.columns,
                     onColumnSelected = { viewModel.updateFieldMapping(CsvField.Finished, it) },
@@ -803,7 +803,7 @@ fun CsvLoadedBody(
                     .align(Alignment.CenterHorizontally),
             ) {
                 Text(
-                    text = "Confirm and Import",
+                    text = stringResource(R.string.confirm_import),
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -832,14 +832,8 @@ private fun LoadErrorDialog(
                     fontSize = 15.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Text(
-                    text = "Reported error message:",
-                    fontSize = 15.sp
-                )
-                Text(
-                    text = errorMessage,
-                    fontSize = 15.sp,
-                )
+                Text(stringResource(R.string.reported_error), fontSize = 15.sp)
+                Text(errorMessage, fontSize = 15.sp)
             }
         },
         modifier = modifier,
@@ -865,23 +859,23 @@ private fun ImportError(
     ) {
         Spacer(Modifier.weight(1.5f))
         Text(
-            text = "Error importing CSV!",
+            text = stringResource(R.string.csv_import_error),
             modifier = Modifier.padding(bottom = 16.dp),
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp
         )
         Text(
-            text = "Please try again or return to cellar.",
+            text = stringResource(R.string.csv_try_again),
             modifier = Modifier.padding(bottom = 16.dp),
             fontSize = 18.sp,
         )
         Text(
-            text = "Error for reporting:",
+            text = stringResource(R.string.error_for_reporting),
             fontSize = 14.sp
         )
         SelectionContainer {
             Text(
-                text = "Exception: ${exception.message ?: " unknown error"},\nCause: ${exception.cause?.message ?: " unknown cause"}",
+                text = stringResource(R.string.error_cause, exception.message ?: "unknown error", exception.cause?.message ?: "unknown cause"),
                 fontSize = 14.sp,
                 softWrap = true,
                 modifier = Modifier
@@ -893,22 +887,12 @@ private fun ImportError(
         TextButton(
             onClick = { onTryAgain() },
             shape = MaterialTheme.shapes.small,
-        ) {
-            Text(
-                text = "Reset form",
-                fontSize = 18.sp,
-            )
-        }
+        ) { Text(stringResource(R.string.reset_form), fontSize = 18.sp) }
         TextButton(
             onClick = { navigateToHome() },
             modifier = Modifier,
             shape = MaterialTheme.shapes.small,
-        ) {
-            Text(
-                text = "Go back to Cellar",
-                fontSize = 18.sp,
-            )
-        }
+        ) { Text(stringResource(R.string.go_back_cellar), fontSize = 18.sp) }
         Spacer(Modifier.weight(2f))
     }
 }
@@ -1009,7 +993,7 @@ private fun DateFormatField(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "CSV Date\nFormat:",
+                    text = stringResource(R.string.csv_date_format),
                     modifier = Modifier,
                     style = TextStyle(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
@@ -1093,6 +1077,7 @@ private fun DateFormatField(
     }
 }
 
+
 @Composable
 private fun MaxValueField(
     maxValue: String,
@@ -1121,7 +1106,7 @@ private fun MaxValueField(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
-                    text = "Max Possible\nCSV Rating:",
+                    text = stringResource(R.string.csv_max_rating),
                     modifier = Modifier,
                     softWrap = true,
                     maxLines = 2,
@@ -1161,7 +1146,7 @@ private fun MaxValueField(
                     ),
                     placeholder = {
                         Text(
-                            text = "Required for scaling",
+                            text = stringResource(R.string.required_scaling),
                             color = if (enabled) LocalContentColor.current.copy(alpha = 0.5f) else Color.Transparent,
                             fontSize = 14.sp
                         )
@@ -1269,7 +1254,7 @@ private fun MappingField(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = "(Blank)",
+                                    text = stringResource(R.string.blank),
                                     color = LocalContentColor.current.copy(alpha = 0.5f)
                                 )
                             },

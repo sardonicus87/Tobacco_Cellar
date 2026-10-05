@@ -12,8 +12,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -38,14 +40,14 @@ fun ProductionFilterSection(
         horizontalArrangement = Arrangement.Start
     ) {
         CheckboxWithLabel(
-            text = "In Production",
+            text = stringResource(R.string.in_production),
             checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
             modifier = Modifier,
             enabled = productionEnabled || production
         )
         CheckboxWithLabel(
-            text = "Discontinued",
+            text = stringResource(R.string.discontinued),
             checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
             modifier = Modifier,

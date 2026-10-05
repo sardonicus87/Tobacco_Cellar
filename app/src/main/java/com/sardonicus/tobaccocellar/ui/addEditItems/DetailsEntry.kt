@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
@@ -72,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.AutoCompleteData
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
@@ -111,7 +113,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Brand:", Modifier.width(80.dp))
+            Text(stringResource(R.string.brand_label), Modifier.width(80.dp))
 
             AutoCompleteText(
                 value = itemDetails.brand,
@@ -122,7 +124,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
-                            "(" + itemDetails.originalItem.brand + ")" } else ""
+                            "(${itemDetails.originalItem.brand})" } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -130,7 +132,7 @@ fun DetailsEntry(
                         )
                     } else {
                         Text(
-                            text = "Required",
+                            text = stringResource(R.string.required),
                             modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.error
@@ -143,7 +145,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(brand = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(brand = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -165,7 +171,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Blend:", Modifier.width(80.dp))
+            Text(stringResource(R.string.blend_label), Modifier.width(80.dp))
             TextField(
                 value = itemDetails.blend,
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
@@ -175,7 +181,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
-                            "(" + itemDetails.originalItem.blend + ")" } else ""
+                            "(${itemDetails.originalItem.blend})" } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -183,7 +189,7 @@ fun DetailsEntry(
                         )
                     } else {
                         Text(
-                            text = "Required",
+                            text = stringResource(R.string.required),
                             modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.error
@@ -196,7 +202,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(blend = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(blend = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -227,11 +237,11 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Type:", Modifier.width(80.dp))
+            Text(stringResource(R.string.type_label), Modifier.width(80.dp))
             CustomDropDown(
                 selectedValue = itemDetails.type,
                 onValueChange = { onValueChange(itemDetails.copy(type = it)) },
-                options = listOf("", "Aromatic", "English", "Burley", "Virginia", "Other"),
+                options = listOf("") + BlendTypes.entries.filter { it != BlendTypes.UNASSIGNED }.map { stringResource(it.resId) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -243,7 +253,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Subgenre:",
+                text = stringResource(R.string.subgenre_label),
                 modifier = Modifier.width(80.dp)
             )
 
@@ -259,7 +269,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(subGenre = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(subGenre = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -281,7 +295,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Cut:", Modifier.width(80.dp))
+            Text(stringResource(R.string.cut_label), Modifier.width(80.dp))
 
             AutoCompleteText(
                 value = itemDetails.cut,
@@ -295,7 +309,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(cut = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(cut = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -318,9 +336,11 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Components: ",
+                text = stringResource(R.string.component_label),
                 style = TextStyle(color = LocalContentColor.current),
-                modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
+                modifier = Modifier
+                    .width(80.dp)
+                    .align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
                     maxFontSize = 16.sp,
@@ -342,7 +362,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(componentString = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(componentString = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -357,7 +381,7 @@ fun DetailsEntry(
                 maxLines = 1,
                 placeholder = {
                     Text(
-                        text = "(Separate with comma + space)",
+                        text = stringResource(R.string.separate_comma),
                         modifier = Modifier.alpha(0.66f),
                         fontSize = 13.sp,
                         softWrap = false,
@@ -376,9 +400,11 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Flavoring: ",
+                text = stringResource(R.string.flavoring_label),
                 style = TextStyle(color = LocalContentColor.current),
-                modifier = Modifier.width(80.dp).align(Alignment.CenterVertically),
+                modifier = Modifier
+                    .width(80.dp)
+                    .align(Alignment.CenterVertically),
                 autoSize = TextAutoSize.StepBased(
                     minFontSize = 8.sp,
                     maxFontSize = 16.sp,
@@ -400,7 +426,11 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) { onValueChange(itemDetails.copy(flavoringString = "")) }
+                                .clickable(null, LocalIndication.current) {
+                                    onValueChange(
+                                        itemDetails.copy(flavoringString = "")
+                                    )
+                                }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -415,7 +445,7 @@ fun DetailsEntry(
                 maxLines = 1,
                 placeholder = {
                     Text(
-                        text = "(Separate with comma + space)",
+                        text = stringResource(R.string.separate_comma),
                         modifier = Modifier.alpha(0.66f),
                         fontSize = 13.sp,
                         softWrap = false,
@@ -434,7 +464,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "No. of\nTins:",
+                text = stringResource(R.string.no_of_tins2),
                 style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier
                     .width(80.dp)
@@ -545,7 +575,9 @@ fun DetailsEntry(
 
                     // Sync Tins? //
                     Row(
-                        modifier = Modifier.padding(start = 8.dp).fillMaxHeight(),
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .fillMaxHeight(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally)
                     ) {
@@ -594,10 +626,7 @@ fun DetailsEntry(
                                     ),
                                     modifier = Modifier
                                         .border(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant, TooltipDefaults.richTooltipContainerShape)
-                                ) {
-                                    Text("Synchronize the \"No. of Tins\" field with the total " +
-                                            "quantities of unfinished tins in the Tins tab.")
-                                }
+                                ) { Text(stringResource(R.string.sync_tooltip)) }
                             },
                             state = tooltipState
                         ) {
@@ -606,10 +635,13 @@ fun DetailsEntry(
                                 horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
                                 modifier = Modifier
                                     .hoverable(interactionSource)
-                                    .clickable(interactionSource, null) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
+                                    .clickable(
+                                        interactionSource,
+                                        null
+                                    ) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
                             ) {
                                 Text(
-                                    text = "Sync?",
+                                    text = stringResource(R.string.sync_q),
                                     modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                     fontSize = 14.sp,
                                 )
@@ -626,13 +658,16 @@ fun DetailsEntry(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .width(40.dp)
-                                        .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
+                                        .clickable(interactionSource, null) {
+                                            coroutineScope.launch { tooltipState.show() } }
                                 ) {
                                     Image(
                                         painter = painterResource(id = R.drawable.help_outline),
                                         contentDescription = "Help",
                                         colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
-                                        modifier = Modifier.size(15.dp).offset((-3).dp, (-9).dp)
+                                        modifier = Modifier
+                                            .size(15.dp)
+                                            .offset((-3).dp, (-9).dp)
                                     )
                                 }
                             }
@@ -644,12 +679,14 @@ fun DetailsEntry(
 
         // Rating //
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Rating:",
+                text = stringResource(R.string.rating_label),
                 modifier = Modifier.width(80.dp)
             )
             Row(
@@ -689,16 +726,14 @@ fun DetailsEntry(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Favorite?",
+                    text = stringResource(R.string.favorite),
                     modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
                     checked = itemDetails.favorite,
                     onCheckedChange = {
                         if (itemDetails.favorite) { onValueChange(itemDetails.copy(favorite = it)) }
-                        else {
-                            onValueChange(itemDetails.copy(favorite = it, disliked = false))
-                        }
+                        else { onValueChange(itemDetails.copy(favorite = it, disliked = false)) }
                     },
                     checkedIcon = R.drawable.heart_filled_24,
                     uncheckedIcon = R.drawable.heart_outline_24,
@@ -715,18 +750,14 @@ fun DetailsEntry(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Disliked?",
+                    text = stringResource(R.string.disliked),
                     modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
                     checked = itemDetails.disliked,
                     onCheckedChange = {
                         if (itemDetails.disliked) { onValueChange(itemDetails.copy(disliked = it)) }
-                        else {
-                            onValueChange(
-                                itemDetails.copy(disliked = it, favorite = false)
-                            )
-                        }
+                        else { onValueChange(itemDetails.copy(disliked = it, favorite = false)) }
                     },
                     checkedIcon = R.drawable.heartbroken_filled_24,
                     uncheckedIcon = R.drawable.heartbroken_outlined_24,
@@ -748,7 +779,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "In Production",
+                text = stringResource(R.string.in_production),
                 modifier = Modifier.offset(x = 0.dp, y = 1.dp)
             )
             CustomCheckbox(
@@ -765,9 +796,7 @@ fun DetailsEntry(
         RatingPopup(
             currentRating = itemDetails.rating,
             onDismiss = { onShowRatingPop(false) },
-            onRatingSelected = {
-                onValueChange(itemDetails.copy(rating = it)); onShowRatingPop(false)
-            }
+            onRatingSelected = { onValueChange(itemDetails.copy(rating = it)); onShowRatingPop(false) }
         )
     }
 }

@@ -43,6 +43,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -69,7 +70,7 @@ fun FilterLayout(
     modifier: Modifier = Modifier,
     closeSheet: () -> Unit = {},
     paginateLayout: Boolean = true,
-    pagerState: PagerState = rememberPagerState { 3 },
+    pagerState: PagerState = rememberPagerState { 3 }
 ) {
     val focusManager = LocalFocusManager.current
     var hasFocus by remember { mutableStateOf(false) }
@@ -121,7 +122,7 @@ private fun FilterHeader(
         ) {
             Spacer(Modifier.weight(1f))
             Text(
-                text = "Select Filters",
+                text = stringResource(R.string.select_filters),
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
@@ -156,7 +157,7 @@ private fun FilterHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Select Filters",
+                text = stringResource(R.string.select_filters),
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
                 maxLines = 1,
@@ -183,7 +184,7 @@ private fun FilterFooter(
             modifier = Modifier.padding(end = 3.dp).size(20.dp)
         )
         Text(
-            text = "Clear All",
+            text = stringResource(R.string.clear_all),
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
         )

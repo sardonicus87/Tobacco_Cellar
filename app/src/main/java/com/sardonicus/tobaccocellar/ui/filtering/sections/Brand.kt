@@ -65,6 +65,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -172,7 +173,7 @@ private fun BrandFilterSearch(
                 ) {
                     if (brandSearchText.isEmpty() && !focused) {
                         Text(
-                            text = "Search Brands",
+                            text = stringResource(R.string.search_brands),
                             style = LocalTextStyle.current.copy(
                                 color = LocalContentColor.current.copy(alpha = 0.5f)
                             )
@@ -208,14 +209,14 @@ private fun IncludeExcludeSwitch(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Include",
+            text = stringResource(R.string.include),
             modifier = Modifier.offset(y = 3.dp),
             color = if (!excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (!excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
         )
         Text(
-            text = "Exclude",
+            text = stringResource(R.string.exclude),
             modifier = Modifier.offset(y = (-3).dp),
             color = if (excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (excluded()) FontWeight.SemiBold else FontWeight.Normal,
@@ -396,7 +397,7 @@ private fun SelectedBrandChipBox(
             Box {
                 val anySelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
                 Text(
-                    text = if (anySelected) "" else if (excludeSwitch) "Excluded Brands" else "Included Brands",
+                    text = if (anySelected) "" else if (excludeSwitch) stringResource(R.string.excluded_brands) else stringResource(R.string.included_brands),
                     color = if (anySelected) Color.Transparent else if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
@@ -533,7 +534,7 @@ private fun SelectedBrandOverflow(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (excludeSwitch()) "Excluded Brands" else "Included Brands",
+                text = if (excludeSwitch()) stringResource(R.string.excluded_brands) else stringResource(R.string.included_brands),
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -599,7 +600,7 @@ private fun SelectedBrandOverflow(
                             modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
-                            text = "Clear All",
+                            text = stringResource(R.string.clear_all),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -607,7 +608,7 @@ private fun SelectedBrandOverflow(
                 }
             }
         },
-        confirmButton = { Button(onDismiss) { Text("Close") } },
+        confirmButton = { Button(onDismiss) { Text(stringResource(R.string.close)) } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -671,7 +672,7 @@ fun Chip(
                         .size(iconSize),
                     tint = trailingTint
                 )
-            } else { /** do nothing */ }
+            }
         },
         modifier = modifier.widthIn(max = maxWidth).padding(0.dp),
         enabled = enabled,

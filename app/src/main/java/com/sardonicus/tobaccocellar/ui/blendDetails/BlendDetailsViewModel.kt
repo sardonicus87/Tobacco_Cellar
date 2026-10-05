@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
@@ -39,7 +40,8 @@ import java.util.Locale
 class BlendDetailsViewModel(
     itemsId: Int,
     filterViewModel: FilterViewModel,
-    preferencesRepo: PreferencesRepo
+    preferencesRepo: PreferencesRepo,
+    private val app: CellarApplication
 ) : ViewModel() {
 
     private val _parseLinks = MutableStateFlow(false)
@@ -66,32 +68,32 @@ class BlendDetailsViewModel(
             blend = item.items.blend,
             favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
             itemDetails = setOfNotNull(
-                buildDetailsString("Type: ", item.items.type.ifBlank { "Unassigned" }),
-                buildDetailsString("Subgenre: ", item.items.subGenre),
-                buildDetailsString("Cut: ", item.items.cut),
-                buildDetailsString("Components: ", item.components.map { it.componentName }.sorted().joinToString(", ")),
-                buildDetailsString("Flavors: ", item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
-                buildDetailsString("Production Status: ", if (item.items.inProduction) "in production" else "not in production"),
-                buildDetailsString("No. of Tins: ", item.items.quantity.toString())
+                buildDetailsString(app.getString(R.string.type_label), item.items.type.ifBlank { app.getString(R.string.unassigned) }),
+                buildDetailsString(app.getString(R.string.subgenre_label), item.items.subGenre),
+                buildDetailsString(app.getString(R.string.cut_label), item.items.cut),
+                buildDetailsString(app.getString(R.string.component_label), item.components.map { it.componentName }.sorted().joinToString(", ")),
+                buildDetailsString(app.getString(R.string.flavors_label), item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
+                buildDetailsString(app.getString(R.string.production_status), if (item.items.inProduction) app.getString(R.string.in_production) else app.getString(R.string.discontinued)),
+                buildDetailsString(app.getString(R.string.no_of_tins_label), item.items.quantity.toString())
             ),
             rating = item.items.rating,
             notes = item.items.notes,
             tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
                 buildSet {
-                    buildDetailsString("Container: ", tin.container)?.let { add(DetailLine(it)) }
-                    buildDetailsString("Quantity: ", if (tin.unit.isNotBlank()) { formatDecimal(tin.tinQuantity) + " ${tin.unit}" } else "")?.let { add(DetailLine(it)) }
-                    buildDetailsString("Manufacture Date: ", formatMediumDate(tin.manufactureDate))?.let {
-                        val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, DateField.MANUFACTURE)})", 12.sp)
+                    buildDetailsString(app.getString(R.string.container_label), tin.container)?.let { add(DetailLine(it)) }
+                    buildDetailsString(app.getString(R.string.quantity_label), if (tin.unit.isNotBlank()) { app.getString(R.string.tin_quantity_format, formatDecimal(tin.tinQuantity), tin.unit) } else "")?.let { add(DetailLine(it)) }
+                    buildDetailsString(app.getString(R.string.manufacture_date_label), formatMediumDate(tin.manufactureDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, app, DateField.MANUFACTURE)})", 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString("Cellar Date: ", formatMediumDate(tin.cellarDate))?.let {
-                        val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, DateField.CELLAR)})", 12.sp)
+                    buildDetailsString(app.getString(R.string.cellar_date_label), formatMediumDate(tin.cellarDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, app, DateField.CELLAR)})", 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString("Open Date: ", formatMediumDate(tin.openDate))?.let {
+                    buildDetailsString(app.getString(R.string.open_date_label), formatMediumDate(tin.openDate))?.let {
                         val secondary =
-                            if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, DateField.OPEN)})", 12.sp) }
-                            else { buildDetailsString("", "finished", 12.sp) }
+                            if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, app, DateField.OPEN)})", 12.sp) }
+                            else { buildDetailsString("", app.getString(R.string.finished_lower), 12.sp) }
                         add(DetailLine(it, secondary))
                     }
                 }
@@ -146,12 +148,12 @@ class BlendDetailsViewModel(
         return when (quantityOption) {
             QuantityOption.OUNCES -> {
                 if (sum != null) {
-                    if (sum >= 16.00) { formatDecimal((sum / 16)) + " lbs" }
-                    else { formatDecimal(sum) + " oz" }
+                    if (sum >= 16.00) { app.getString(R.string.format_quantity, "", formatDecimal((sum / 16)), "lb") }
+                    else { app.getString(R.string.format_quantity, "", formatDecimal(sum), "oz") }
                 } else { null }
             }
             QuantityOption.GRAMS -> {
-                if (sum != null) { formatDecimal(sum) + " g" } else { null }
+                if (sum != null) { app.getString(R.string.format_quantity, "", formatDecimal(sum), "g") } else { null }
             }
             else -> { null }
         } ?: ""
@@ -242,7 +244,7 @@ data class DetailLine(
     val secondary: AnnotatedString? = null
 )
 
-fun calculateAge(date: Long?, field: DateField? = null): String {
+fun calculateAge(date: Long?, app: CellarApplication, field: DateField? = null): String {
     if (date == null) { return "" }
 
     val now = LocalDate.now()
@@ -250,18 +252,18 @@ fun calculateAge(date: Long?, field: DateField? = null): String {
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
     val parts = listOfNotNull(
-        if (period.years > 0) { "${period.years} year${if (period.years > 1) "s" else ""}" } else
+        if (period.years > 0) { app.resources.getQuantityString(R.plurals.years, period.years, period.years) } else
             null,
-        if (period.months > 0) { "${period.months} month${if (period.months > 1) "s" else ""}" } else
+        if (period.months > 0) { app.resources.getQuantityString(R.plurals.months, period.months, period.months) } else
             null,
-        if (period.days > 0) { "${period.days} day${if (period.days > 1) "s" else ""}" } else
+        if (period.days > 0) { app.resources.getQuantityString(R.plurals.days, period.days, period.days) } else
             null
     )
 
-    return if (parts.isEmpty()) { "today" } else { parts.joinToString(", ") + when (field) {
-        DateField.MANUFACTURE -> if (then < now) { " old" } else { " until available" }
-        DateField.CELLAR -> if (then < now) { " in cellar" } else { " until available" }
-        DateField.OPEN -> if (then < now) { " open" } else { " until opening" }
+    return if (parts.isEmpty()) { app.resources.getString(R.string.today_lower) } else { parts.joinToString(", ") + when (field) {
+        DateField.MANUFACTURE -> if (then < now) { app.resources.getString(R.string.old) } else { app.resources.getString(R.string.until_available) }
+        DateField.CELLAR -> if (then < now) { app.resources.getString(R.string.in_cellar) } else { app.resources.getString(R.string.until_available) }
+        DateField.OPEN -> if (then < now) { app.resources.getString(R.string.open_age) } else { app.resources.getString(R.string.until_opening) }
         else -> "" }
     }
 }

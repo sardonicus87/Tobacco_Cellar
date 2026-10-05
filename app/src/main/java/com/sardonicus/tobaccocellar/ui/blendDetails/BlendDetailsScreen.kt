@@ -226,7 +226,7 @@ private fun BlendDetailsBody(
                                             fontWeight = FontWeight.Normal,
                                             fontSize = 16.sp,
                                         )
-                                    ) { append("by ") }
+                                    ) { append(stringResource(R.string.by)) }
                                     withStyle(
                                         style = SpanStyle(
                                             fontWeight = FontWeight.Normal,
@@ -289,7 +289,7 @@ private fun BlendDetailsBody(
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = "Details",
+                            text = stringResource(R.string.details),
                             modifier = Modifier
                                 .padding(bottom = 4.dp),
                             fontWeight = FontWeight.Bold,
@@ -309,12 +309,7 @@ private fun BlendDetailsBody(
                                         .fillMaxWidth()
                                         .padding(start = 12.dp)
                                 ) {
-                                    blendDetails.itemDetails.forEach {
-                                        Text(
-                                            text = it,
-                                            modifier = Modifier,
-                                        )
-                                    }
+                                    blendDetails.itemDetails.forEach { Text(it) }
                                     if (blendDetails.rating != null) {
                                         Row(
                                             horizontalArrangement = Arrangement.Start,
@@ -322,7 +317,7 @@ private fun BlendDetailsBody(
                                             modifier = Modifier
                                         ) {
                                             Text(
-                                                text = "Rating: ",
+                                                text = stringResource(R.string.rating_label),
                                                 modifier = Modifier,
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 14.sp,
@@ -352,7 +347,7 @@ private fun BlendDetailsBody(
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             Text(
-                                text = "Modified:",
+                                text = stringResource(R.string.modified),
                                 modifier = Modifier,
                                 fontSize = 12.sp,
                                 lineHeight = 1.em,
@@ -406,7 +401,7 @@ private fun BlendDetailsBody(
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Text(
-                        text = "Notes",
+                        text = stringResource(R.string.notes),
                         modifier = Modifier
                             .padding(bottom = 6.dp),
                         fontWeight = FontWeight.Bold,
@@ -453,7 +448,7 @@ private fun BlendDetailsBody(
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = "Tins",
+                            text = stringResource(R.string.tins),
                             modifier = Modifier
                                 .padding(bottom = 6.dp),
                             fontWeight = FontWeight.Bold,

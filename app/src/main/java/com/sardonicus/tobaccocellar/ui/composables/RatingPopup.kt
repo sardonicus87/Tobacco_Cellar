@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
-import android.util.Log
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -57,7 +57,7 @@ fun RatingPopup(
     modifier: Modifier = Modifier,
     currentRating: Double? = null,
 ) {
-    var currentRatingString by remember { mutableStateOf(formatDecimal(currentRating)) }
+    var currentString by remember { mutableStateOf(formatDecimal(currentRating)) }
     var parsedDouble by remember { mutableStateOf<Double?>(null) }
 
     val focusManager = LocalFocusManager.current
@@ -65,21 +65,16 @@ fun RatingPopup(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = modifier
-            .wrapContentHeight(),
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-        ),
+        modifier = modifier.wrapContentHeight(),
+        properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true),
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = "Rating",
+                text = stringResource(R.string.rating),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                modifier = Modifier
+                fontSize = 18.sp
             )
         },
         text = {
@@ -92,42 +87,32 @@ fun RatingPopup(
                     Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
                 }
                 Text(
-                    text = "Set a rating (maximum 5). To make an item unrated, make the field " +
-                            "blank. Supports fractional ratings (up to 2 decimal places).",
+                    text = stringResource(R.string.rating_desc),
                     fontSize = 15.sp,
-                    modifier = Modifier
-                        .padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
                 Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(Modifier.width(6.dp))
                     TextField(
-                        value = currentRatingString,
+                        value = currentString,
                         onValueChange = {
                             if (it.matches(allowedPattern)) {
-                                currentRatingString = it
+                                currentString = it
 
                                 try {
                                     if (it.isNotBlank()) {
-                                        val preNumber = if (it.startsWith(decimalSeparator)) {
-                                            "0$it"
-                                        } else it
+                                        val preNumber =
+                                            if (it.startsWith(decimalSeparator)) { "0$it" }
+                                            else it
                                         val number = numberFormat.parse(preNumber)
                                         parsedDouble = number?.toDouble() ?: 0.0
-                                        if (parsedDouble!! > 5.0) {
-                                            parsedDouble = 5.0
-                                        }
-                                    } else {
-                                        parsedDouble = null
-                                    }
-
-                                } catch (e: ParseException) {
-                                    Log.e("Rating", "Input: $it", e)
-                                }
+                                        if (parsedDouble!! > 5.0) { parsedDouble = 5.0 }
+                                    } else { parsedDouble = null }
+                                } catch (_: ParseException) { }
                             }
                         },
                         modifier = Modifier
@@ -149,20 +134,14 @@ fun RatingPopup(
                         ),
                         shape = MaterialTheme.shapes.extraSmall
                     )
-                    val alpha = if (currentRatingString.isNotBlank()) .75f else 0.38f
+                    val alpha = if (currentString.isNotBlank()) .75f else 0.38f
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null,
-                                enabled = currentRatingString.isNotBlank()
-                            ) {
-                                currentRatingString = ""
-                                parsedDouble = null
-                            }
+                            .clickable(null, LocalIndication.current, currentString.isNotBlank()) {
+                                currentString = ""; parsedDouble = null }
                             .padding(4.dp)
                             .size(20.dp)
                             .alpha(alpha)
@@ -174,21 +153,15 @@ fun RatingPopup(
             TextButton(
                 onClick = { onRatingSelected(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Done")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(stringResource(R.string.done)) }
         },
         dismissButton = {
             TextButton(
                 onClick = { onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier
-                    .heightIn(32.dp, 32.dp)
-            ) {
-                Text(text = "Cancel")
-            }
+                modifier = Modifier.heightIn(32.dp, 32.dp)
+            ) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

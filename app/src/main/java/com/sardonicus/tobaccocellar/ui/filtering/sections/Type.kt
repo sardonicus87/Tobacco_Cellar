@@ -21,32 +21,30 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 
 @Composable
 fun TypeFilterSection(
     filterViewModel: FilterViewModel,
-    modifier: Modifier = Modifier,
-    types: List<String> = listOf("Aromatic", "English", "Burley", "Virginia", "Other", "(Unassigned)"),
+    modifier: Modifier = Modifier
 ) {
     val selectedTypes by filterViewModel.selectedTypes.collectAsState()
     val enabled by filterViewModel.typesEnabled.collectAsState()
     val typesExist by filterViewModel.typesExist.collectAsState()
 
-    val onClick = remember {
-        { type: String ->
-            filterViewModel.updateSelectedTypes(type, !selectedTypes.contains(type))
-        }
-    }
+    val onClick = remember { { type: String ->
+        filterViewModel.updateSelectedTypes(type, !selectedTypes.contains(type))
+    } }
 
-    Column(
-        modifier = modifier
-    ) {
+    Column(modifier) {
         if (!typesExist) {
             Row(
                 modifier = Modifier
@@ -61,9 +59,7 @@ fun TypeFilterSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "No types assigned to any blends.",
-                    modifier = Modifier
-                        .padding(0.dp),
+                    text = stringResource(id = R.string.no_types),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -72,22 +68,20 @@ fun TypeFilterSection(
             }
         } else {
             FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp, max = 96.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp, max = 96.dp),
                 horizontalArrangement = Arrangement.spacedBy(space = 6.dp, alignment = Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                types.forEach {
-                    val selected by remember(types) { derivedStateOf { selectedTypes.contains(it) } } // selectedTypes
-                    val typeEnabled by remember(types) { derivedStateOf { enabled[it] ?: false } }
+                BlendTypes.entries.forEach {
+                    val type = stringResource(id = it.resId)
+                    val selected by remember(type) { derivedStateOf { selectedTypes.contains(type) } }
+                    val typeEnabled by remember(type) { derivedStateOf { enabled[type] ?: false } }
 
                     FilterChip(
                         selected = selected,
-                        onClick = { onClick(it) },
-                        label = { Text(it, fontSize = 14.sp) },
-                        modifier = Modifier
-                            .padding(0.dp),
+                        onClick = { onClick(type) },
+                        label = { Text(type, fontSize = 14.sp) },
+                        modifier = Modifier.padding(0.dp),
                         shape = MaterialTheme.shapes.small,
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = MaterialTheme.colorScheme.background,

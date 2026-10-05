@@ -19,11 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
@@ -92,7 +94,7 @@ fun TinsFilterSection(
                             ),
                         )
                         CheckboxWithLabel(
-                            text = "Has tins",
+                            text = stringResource(R.string.has_tins),
                             checked = hasTins,
                             onCheckedChange = filterViewModel::updateSelectedHasTins,
                             modifier = Modifier,
@@ -101,7 +103,7 @@ fun TinsFilterSection(
                         )
                     }
                     CheckboxWithLabel(
-                        text = "No tins",
+                        text = stringResource(R.string.no_tins),
                         checked = noTins,
                         onCheckedChange = filterViewModel::updateSelectedNoTins,
                         modifier = Modifier,
@@ -117,7 +119,7 @@ fun TinsFilterSection(
                     horizontalAlignment = Alignment.Start
                 ) {
                     CheckboxWithLabel(
-                        text = "Opened",
+                        text = stringResource(R.string.opened),
                         checked = opened,
                         onCheckedChange = filterViewModel::updateSelectedOpened,
                         modifier = Modifier,
@@ -125,7 +127,7 @@ fun TinsFilterSection(
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
-                        text = "Unopened",
+                        text = stringResource(R.string.unopened),
                         checked = unopened,
                         onCheckedChange = filterViewModel::updateSelectedUnopened,
                         modifier = Modifier,
@@ -141,7 +143,7 @@ fun TinsFilterSection(
                     horizontalAlignment = Alignment.Start
                 ) {
                     CheckboxWithLabel(
-                        text = "Finished",
+                        text = stringResource(R.string.finished),
                         checked = finished,
                         onCheckedChange = filterViewModel::updateSelectedFinished,
                         modifier = Modifier,
@@ -149,7 +151,7 @@ fun TinsFilterSection(
                         fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                     )
                     CheckboxWithLabel(
-                        text = "Unfinished",
+                        text = stringResource(R.string.Unfinished),
                         checked = unfinished,
                         onCheckedChange = filterViewModel::updateSelectedUnfinished,
                         modifier = Modifier,
@@ -181,7 +183,7 @@ fun TinsFilterSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "No tins assigned to any blends.",
+                            text = stringResource(R.string.no_tins_containers),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center,
