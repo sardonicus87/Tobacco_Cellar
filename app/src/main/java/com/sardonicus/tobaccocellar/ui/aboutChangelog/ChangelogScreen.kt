@@ -30,11 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
@@ -79,15 +81,14 @@ fun ChangelogScreen (
     }
 
     Scaffold(
-        modifier = modifier
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = "Changelog",
+                title = stringResource(R.string.changelog_title),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
-                overrideBack = twoPane,
+                overrideBack = twoPane
             )
         },
     ) { innerPadding ->
@@ -142,14 +143,9 @@ fun ChangeLogEntryLayout(
     improvements: List<String> = emptyList(),
     bugFixes: List<String> = emptyList(),
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
-            text = "Version $versionNumber  ($buildDate)",
-            modifier = Modifier,
+            text = stringResource(R.string.changelog_version, versionNumber, buildDate),
             fontSize = 16.sp,
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Black,
@@ -164,106 +160,34 @@ fun ChangeLogEntryLayout(
             verticalArrangement = Arrangement.Top
         ) {
             if (changes.isNotEmpty()) {
-                Text(
-                    text = "Changes:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Text(stringResource(R.string.cl_changes), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     changes.forEach {
                         Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
+                            Column { Text("•  ", fontSize = 14.sp, fontWeight = FontWeight.Normal) }
+                            Column { Text(it, fontSize = 14.sp, fontWeight = FontWeight.Normal ) }
                         }
                     }
                 }
             }
             if (improvements.isNotEmpty()) {
-                Text(
-                    text = "Improvements:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Text(stringResource(R.string.cl_improvements), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     improvements.forEach {
                         Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
+                            Column { Text("•  ", fontSize = 14.sp, fontWeight = FontWeight.Normal) }
+                            Column { Text(it, fontSize = 14.sp, fontWeight = FontWeight.Normal) }
                         }
                     }
                 }
             }
             if (bugFixes.isNotEmpty()) {
-                Text(
-                    text = "Bug Fixes:",
-                    modifier = Modifier,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Text(stringResource(R.string.cl_bug_fix), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     bugFixes.forEach {
                         Row {
-                            Column {
-                                Text(
-                                    text = "•  ",
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                )
-                            }
-                            Column {
-                                Text(
-                                    text = it,
-                                    modifier = Modifier,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    softWrap = true,
-                                )
-                            }
+                            Column { Text("•  ", fontSize = 14.sp, fontWeight = FontWeight.Normal) }
+                            Column { Text(it, fontSize = 14.sp, fontWeight = FontWeight.Normal) }
                         }
                     }
                 }

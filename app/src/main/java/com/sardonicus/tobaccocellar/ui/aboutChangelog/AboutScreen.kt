@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -90,21 +91,22 @@ fun AboutScreen(
         withStyle(
             style = SpanStyle(
                 color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Medium // SemiBold
+                fontWeight = FontWeight.Medium
             )
-        ) { append("App Version: ") }
+        ) { append(stringResource(R.string.app_version)) }
         withStyle(
             style = SpanStyle(
                 color = MaterialTheme.colorScheme.tertiary,
                 fontWeight = FontWeight.Medium
             )
         ) { append(BuildConfig.VERSION_NAME) }
+        append("\n")
         withStyle(
             style = SpanStyle(
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Medium
             )
-        ) { append("\nDatabase Version: ") }
+        ) { append(stringResource(R.string.db_version)) }
         withStyle(
             style = SpanStyle(
                 color = MaterialTheme.colorScheme.tertiary,
@@ -127,7 +129,7 @@ fun AboutScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = "About",
+                title = stringResource(R.string.about_title),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
@@ -184,25 +186,13 @@ fun AboutScreen(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
                 ) {
-                    Text(
-                        text = "Cobbled together by Sardonicus using Kotlin and Jetpack Compose. " +
-                                "Uses Apache Commons CSV for reading and writing CSV files.",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                        lineHeight = 1.5.em,
-                        softWrap = true,
-                    )
+                    Text(stringResource(R.string.about_body, "Sardonicus", "Kotlin", "Jetpack Compose", "Apache Commons CSV"),
+                        fontSize = 15.sp, lineHeight = 1.5.em)
                     FlowRow(
                         modifier = Modifier,
                         horizontalArrangement = Arrangement.Start,
                     ) {
-                        Text(
-                            text = "Contact me if you experience any bugs: ",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                            lineHeight = 1.5.em,
-                            softWrap = true,
-                        )
+                        Text(stringResource(R.string.contact_me), fontSize = 15.sp, lineHeight = 1.5.em)
                         key(selectionKey) { SelectionContainer(
                             Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
                                 Text(
@@ -232,13 +222,10 @@ fun AboutScreen(
 
                 key(selectionKey) { SelectionContainer(
                     Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
-                    Text(
-                        text = versionInfo,
-                        modifier = Modifier,
+                    Text(versionInfo,
                         textAlign = TextAlign.Center,
                         fontSize = 15.sp,
-                        lineHeight = 1.5.em,
-                        softWrap = true,
+                        lineHeight = 1.5.em
                     )
                 } }
 
@@ -259,7 +246,7 @@ fun AboutScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Changelog",
+                            text = stringResource(R.string.changelog_title),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .clickable(

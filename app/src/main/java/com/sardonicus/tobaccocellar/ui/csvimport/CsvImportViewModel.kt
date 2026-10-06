@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
@@ -203,7 +204,7 @@ class CsvImportViewModel(
 
     // tin collation handling //
     private fun generateTinLabels(numTins: Int, startingLabelNumber: Int = 1): List<String> {
-        return (startingLabelNumber until startingLabelNumber + numTins).map { "Lot $it" }
+        return (startingLabelNumber until startingLabelNumber + numTins).map { app.getString(R.string.lot_label, "$it") }
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {

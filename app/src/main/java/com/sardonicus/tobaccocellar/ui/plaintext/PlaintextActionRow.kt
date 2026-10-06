@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -171,12 +172,13 @@ fun PlaintextActionRow(
                 // Sorting
                 SortingButton(viewModel)
 
+                val copied = stringResource(R.string.copied_clipboard)
                 // Copy
                 IconButton(
                     onClick = {
                         coroutineScope.launch {
                             clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Plaintext", plainList)))
-                            Toast.makeText(context, "Copied to clipboard!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, copied, Toast.LENGTH_SHORT).show()
                         }
                     },
                     enabled = plainList.isNotBlank(),
@@ -240,7 +242,7 @@ private fun SortingButton(
     var mainX by remember { mutableStateOf(0.dp) }
     var mainY by remember { mutableStateOf(0.dp) }
     var mainWidth by remember { mutableStateOf(0.dp) }
-    val yPositions = remember { mutableStateMapOf<PlaintextSorting, Dp>() }
+    val yPositions = remember { mutableStateMapOf<PlaintextSortOption, Dp>() }
     val sideSpace = (screenWidth - (mainX + mainWidth)) * .95f
 
     BackHandler(mainMenu) { if (mainMenu) { mainMenu = false; subMenu = false } }
@@ -286,20 +288,20 @@ private fun SortingButton(
             sortOptions.mainOptions.forEach { option ->
                 val hasSubOptions = sortOptions.subOptions.containsKey(option)
 
-                if (sortOptions.mainOptions.contains(PlaintextSorting.TIN_DEFAULT)
-                    && option == PlaintextSorting.DEFAULT) {
+                if (sortOptions.mainOptions.contains(PlaintextSortOption.TIN_DEFAULT)
+                    && option == PlaintextSortOption.DEFAULT) {
                     HorizontalDivider(Modifier.padding(start = 10.dp, end = 24.dp))
                 }
                 DropdownMenuItem(
                     text = {
                         Row(Modifier, Arrangement.Start, Alignment.CenterVertically) {
                             Text(
-                                text = option.value,
+                                text = stringResource(option.resId),
                                 modifier = Modifier.padding(end = 2.dp),
                                 color = LocalContentColor.current.copy(alpha = if (subMenu) 0.85f else 1.0f)
                             )
                             // Sort indicator and/or submenu
-                            if (sortState.value == option.value) {
+                            if (sortState.mainSort == option) {
                                 Box {
                                     Image(
                                         painter = painterResource(id = sortState.icon),
@@ -358,7 +360,7 @@ private fun SortingButton(
                 shadowElevation = 6.dp
             ) {
                 Text(
-                    text = "Sub-sorting",
+                    text = stringResource(R.string.sub_sorting),
                     fontSize = 14.sp,
                     lineHeight = 1.em,
                     letterSpacing = 0.1.sp,
@@ -370,14 +372,14 @@ private fun SortingButton(
                 )
 
                 sortOptions.subOptions[sortMenuState.mainSelection]?.forEach { subOption ->
-                    if (sortOptions.subOptions[sortMenuState.mainSelection]?.contains(PlaintextSorting.TIN_DEFAULT) == true
-                        && subOption == PlaintextSorting.DEFAULT) {
+                    if (sortOptions.subOptions[sortMenuState.mainSelection]?.contains(PlaintextSortOption.TIN_DEFAULT) == true
+                        && subOption == PlaintextSortOption.DEFAULT) {
                         HorizontalDivider(Modifier.padding(start = 12.dp, end = 24.dp))
                     }
                     DropdownMenuItem(
                         text = {
                             Row(Modifier.padding(end = 10.dp), Arrangement.Start, Alignment.CenterVertically) {
-                                Text("  ${subOption.value}", Modifier.padding(end = 8.dp))
+                                Text("  ${stringResource(subOption.resId)}", Modifier.padding(end = 8.dp))
                                 Box(
                                     modifier = Modifier
                                         .size(6.dp)

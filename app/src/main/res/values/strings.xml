@@ -12,6 +12,8 @@
     <string name="import_results_title">CSV Import Results</string>
     <string name="import_help">CSV Import Help</string>
     <string name="settings_title">Settings</string>
+    <string name="about_title">About</string>
+    <string name="changelog_title">Changelog</string>
     <string name="license_title">Licenses</string>
     <string name="help_faq_title">Help/FAQ</string>
     <string name="blend_details_title">Blend Details</string>
@@ -22,6 +24,7 @@
     <string name="filter_items">Filter</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
+    <string name="load">Load</string>
     <string name="delete">Delete</string>
     <string name="delete_all">Clear Database</string>
     <string name="cancel">Cancel</string>
@@ -45,8 +48,6 @@
 
     <!-- Instructions -->
     <string name="attention">Attention:</string>
-    <string name="no_items">No items found in cellar.\nChange filters, click \"+\" to\nadd items,
-        or use options\nto import CSV.</string>
     <string name="delete_question">Are you sure?</string>
     <string name="delete_all_question">Are you sure you want to delete all entries in the database?
         This cannot be undone.</string>
@@ -85,6 +86,7 @@
     <string name="cut">Cut</string>
     <string name="cut_label">Cut:\u00A0</string>
     <string name="component">Component</string>
+    <string name="components">Components</string>
     <string name="component_label">Components:\u00A0</string>
     <string name="flavoring">Flavoring</string>
     <string name="flavoring_label">Flavoring:\u00A0</string>
@@ -105,10 +107,12 @@
     <string name="neutral">Neutral</string>
     <string name="quantity">Quantity</string>
     <string name="quantity_label">Quantity:\u00A0</string>
+    <string name="production">Production</string>
     <string name="tin_quantity_format">%1$s %2$s</string>
     <string name="qty">Qty</string>
     <string name="modified">Modified</string>
     <string name="l_modified">Last Modified</string>
+    <string name="entries">Entries</string>
     <string name="tins">Tins</string>
     <string name="container">Container</string>
     <string name="container_label">Container:\u00A0</string>
@@ -360,6 +364,111 @@
     <string name="open_date">Open Date</string>
     <string name="opened_date">Opened Date</string>
 
+    <string name="list">List</string>
+    <string name="format">Format</string>
+    <string name="no_format_set">Please set a format string.</string>
+    <string name="format_output">Format Output:</string>
+    <string name="pt_string">String:</string>
+    <string name="pt_delimiter">Delimiter:</string>
+    <string name="pt_list_as">List as:</string>
+    <string name="save_preset">Save Preset</string>
+    <string name="load_preset">Load Preset</string>
+    <string name="delete_preset">Delete Preset</string>
+    <string name="preview">Preview:</string>
+    <string name="formatting_placeholders">Formatting Placeholders</string>
+    <string name="click_for_help">Click for Formatting Help</string>
+    <string name="click_hide">Click to Hide</string>
+    <string name="new_line">New Line</string>
+    <string name="number">Number</string>
+    <string name="escape_char">Escape char.</string>
+    <string name="conditional">Conditional</string>
+    <string name="tin_sublist">Tin Sublist</string>
+    <string name="sublist_delim">Sublist delim.</string>
+
+    <string name="print">Print</string>
+    <string name="print_settings">Print Settings</string>
+    <string name="print_dialog">Font size is standard point-font size. Margin value is a multiplier
+        of 1 inch (2.54 cm) with a range of 0-3 (including decimals, for example 0.5 would be 1/2
+        inch or 1.27 cm).</string>
+    <string name="font_size">Font Size:</string>
+    <string name="margins">Margins:</string>
+    <string name="overwrite_q">Overwrite?</string>
+    <string name="delete_preset_dialog">Are you sure you want to delete the preset in Slot %s?</string>
+    <string name="sub_sorting">Sub-sorting</string>
+    <string name="brand_a">Brand A</string>
+    <string name="brand_b">Brand B</string>
+    <string name="blend_1">Blend 1</string>
+    <string name="blend_2">Blend 2</string>
+    <string name="ribbon">ribbon</string>
+    <string name="balkan">Balkan</string>
+    <string name="fake_note">note</string>
+    <string name="lot_1">Lot 1</string>
+    <string name="lot_2">Lot 2</string>
+    <string name="jar">jar</string>
+    <string name="original_tin">original tin</string>
+    <string name="vanilla">vanilla</string>
+    <string name="anise">anise</string>
+    <string name="virginia_lower">virginia</string>
+    <string name="perique">perique</string>
+    <string name="burley_lower">burley</string>
+    <string name="flake_cut">flake cut</string>
+
+
+
+
+
+
+
+    <string name="formatting_help1">Anything typed in the format string will show in the text. To
+        reference specific fields, use the placeholders above. Setting the \"List as\" to tins will
+        explode the tins into individual entries in the text list. The delimiter separates entries and
+        is automatically removed from the end.</string>
+    <string name="formatting_help2">Use the delimiter line for how to separate records in the
+        generated string. Anything typed here will show up in-between each record. So, to separate each
+        record by a blank line, you would need to enter \"%1$s\". When tins are passed as a sublist,
+        mark the start of the tins sublist delimiter with a tilde (%2$s) at the end of the tins-sublist
+        formatting, inside the closing tins as sublist bracket (e.g. \"%3$s\" or \"%4$s\").</string>
+    <string name="stars">stars</string>
+    <string name="formatting_help3">The \"%1$s\" tag is to be used in a specific way. The first
+        zero should be replaced with the desired max rating (for scaling). The second \"%2$s\" is optional
+        for the number of decimal places to be rounded to (max of two, enter \"%3$s\" to round to the nearest
+        whole number). For example, to pass the rating on a scale of 1-4 with whole number rounding,
+        enter \"%4$s\" into the formatting. More advanced examples might be:\n\"%5$s\" (9 stars)
+        or \"%6$s\" (3.25/4).</string>
+    <string name="formatting_help4">\"Number\" is a special tag that counts each record in the given
+        sort order (use multiple %1$s to include leading 0\'s).</string>
+    <string name="formatting_help5">In order to output raw text rather than special characters, escape
+        the special character with the escape character. For example, to output \"%1$s\" in the string,
+        enter: \"%2$s\". Likewise for example, to output brackets around a field, escape the first bracket
+        (e.g. \"%3$s\"). The escape character itself doesn\'t need to be escaped unless you\'re trying to use
+        it before an escapable character (e.g. to render: \"%4$s\" you would need to input \"%5$s\").</string>
+    <string name="formatting_help6">Use the square brackets ( %1$s ) when you conditionally want the text
+        within them to appear only if one or more placeholders (also inside the brackets) are found.
+        For instance, if you want the type shown on a new line, but don\'t want an extra line for a
+        blank type, enter: \"%2$s\". These conditionals can also be nested (e.g.\n\"%3$s\" ).</string>
+    <string name="formatting_help7">When sorting by items, if you want the tins organized as a sublist
+        per each item, use the curly braces around the formatting you want for tins (e.g.
+        \"%s\" ). Conditional brackets can also be used inside the curly braces.</string>
+    <string name="formatting_help8">To set a delimiter for tins as a sublist, at the very end of the
+        tin line formatting, still inside the tins as sublist brackets, place a tilde (%1$s) just before
+        the desired delimiter, followed by delimiter. For example, to separate each tin in the sublist
+        by a new line, enter: \"%2$s\".</string>
+    <string name="formatting_help9">A more advanced example might be to pass the list of tins only if
+        tins exist for that blend and passing the quantity in brackets. For example, entering…</string>
+    <string name="formatting_help10">… would result in:</string>
+
+
+    <!-- About and Changelog Strings -->
+    <string name="app_version">App Version:\u00A0</string>
+    <string name="db_version">Database Version:\u00A0</string>
+    <string name="about_body">Cobbled together by %1$s using %2$s and %3$s. Uses %4$s for reading and
+        writing CSV files.</string>
+    <string name="contact_me">Contact me if you experience any bugs:\u00A0</string>
+    <string name="changelog_version">Version: %1$s\u00A0\u00A0\u00A0(%2$s)</string>
+    <string name="cl_changes">Changes:</string>
+    <string name="cl_improvements">Improvements:</string>
+    <string name="cl_bug_fix">Bug Fixes:</string>
+
 
     <!-- Settings Strings -->
     <string name="multi_device_sync">Multi-Device Sync</string>
@@ -406,6 +515,7 @@
     <string name="go_back_cellar">Go back to Cellar</string>
     <string name="csv_max_rating">Max Possible\nCSV Rating:</string>
     <string name="required_scaling">Required for scaling</string>
+    <string name="lot_label">Lot: %s</string>
 
     <string name="total_found">Total records found:\u00A0</string>
     <string name="successful_conversions">Successful conversions:\u00A0</string>
