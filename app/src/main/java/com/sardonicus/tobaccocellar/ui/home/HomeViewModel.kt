@@ -290,7 +290,7 @@ class HomeViewModel(
     ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
         filteredItems.associate { items ->
             val itemTins = items.tins.filter { it in filteredTins }
-            val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate, filterViewModel.units)
+            val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate)
             val display = formatQuantity(raw, quantityOption, itemTins, application, filterViewModel.unitsShort)
 
             items.items.id to ItemQuantity(raw, display)
@@ -1132,7 +1132,6 @@ fun calculateTotalQuantity(
     quantityOption: QuantityOption,
     ounceRate: Double,
     gramRate: Double,
-    units: Triple<String, String, String>
 ): Double {
     if (tins.isEmpty() || tins.all { it.unit.isBlank() }) {
         return when (quantityOption) {
@@ -1144,31 +1143,31 @@ fun calculateTotalQuantity(
 
     return when (quantityOption) {
         QuantityOption.TINS -> items.items.quantity.toDouble()
-        QuantityOption.OUNCES -> calculateOunces(tins, units)
-        QuantityOption.GRAMS -> calculateGrams(tins, units)
+        QuantityOption.OUNCES -> calculateOunces(tins)
+        QuantityOption.GRAMS -> calculateGrams(tins)
     }
 }
 
-fun calculateOunces(tins: List<Tins>, units: Triple<String, String, String>): Double {
+fun calculateOunces(tins: List<Tins>): Double {
     return tins.sumOf {
         if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
-                units.first -> it.tinQuantity
-                units.second -> it.tinQuantity * 16
-                units.third -> it.tinQuantity / 28.3495
+                "oz" -> it.tinQuantity
+                "lbs" -> it.tinQuantity * 16
+                "grams" -> it.tinQuantity / 28.3495
                 else -> 0.0
             }
         } else 0.0
     }
 }
 
-fun calculateGrams(tins: List<Tins>, units: Triple<String, String, String>): Double {
+fun calculateGrams(tins: List<Tins>): Double {
     return tins.sumOf {
         if (!it.finished && it.tinQuantity > 0.0) {
             when (it.unit) {
-                units.first -> it.tinQuantity * 28.3495
-                units.second -> it.tinQuantity * 453.592
-                units.third -> it.tinQuantity
+                "oz" -> it.tinQuantity * 28.3495
+                "lbs" -> it.tinQuantity * 453.592
+                "grams" -> it.tinQuantity
                 else -> 0.0
             }
         } else 0.0

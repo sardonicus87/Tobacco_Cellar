@@ -78,7 +78,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.composables.AutoCompleteText
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
@@ -429,11 +428,10 @@ private fun IndividualTin(
                         shape = MaterialTheme.shapes.extraSmall
                     )
 
-                    val filterVm = LocalCellarApplication.current.filterViewModel
                     CustomDropDown(
                         selectedValue = tinDetails.unit,
                         onValueChange = { onTinValueChange(tinDetails.copy(unit = it)) },
-                        options = listOf("") + filterVm.units.toList(),
+                        options = listOf("", "oz", "lbs", "grams"),
                         placeholder = {
                             Text(
                                 text = stringResource(R.string.unit),

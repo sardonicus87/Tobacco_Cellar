@@ -104,7 +104,7 @@ class StatsViewModel(
                     if (openDate != null) totalOpened++
 
                     if (unit.isBlank()) allValid = false
-                    itemTinsWeight += convertWeight(tinQuantity, unit, quantityRemap, filterViewModel.units)
+                    itemTinsWeight += convertWeight(tinQuantity, unit, quantityRemap)
                 }
             }
 
@@ -279,7 +279,7 @@ class StatsViewModel(
                         containerMapFiltered.increment(tin.container.ifBlank { unassignedLabel })
                         if (tin.openDate != null) totalOpened++
                         if (tin.unit.isBlank()) allValid = false
-                        itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap, filterViewModel.units)
+                        itemTinsWeight += convertWeight(tin.tinQuantity, tin.unit, quantityRemap)
                     }
                 }
 
@@ -515,21 +515,21 @@ private fun remapUnassigned(map: Map<String, Int>, unassignedKey: String): Map<S
     return mutableMap
 }
 
-private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: QuantityOption, units: Triple<String, String, String>): Double {
+private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: QuantityOption): Double {
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
             when (unit) {
-                units.first -> tinQuantity
-                units.second -> tinQuantity * 16
-                units.third -> tinQuantity / 28.3495
+                "oz" -> tinQuantity
+                "lbs" -> tinQuantity * 16
+                "grams" -> tinQuantity / 28.3495
                 else -> 0.0
             }
         }
         QuantityOption.GRAMS -> {
             when (unit) {
-                units.first -> tinQuantity * 28.3495
-                units.second -> tinQuantity * 453.592
-                units.third -> tinQuantity
+                "oz" -> tinQuantity * 28.3495
+                "lbs" -> tinQuantity * 453.592
+                "grams" -> tinQuantity
                 else -> 0.0
             }
         }
