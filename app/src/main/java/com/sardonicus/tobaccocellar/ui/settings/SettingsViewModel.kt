@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
@@ -72,7 +74,7 @@ class SettingsViewModel(
     private val itemsRepository: ItemsRepository,
     val filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-    private val application: CellarApplication,
+    private val app: CellarApplication,
     savedDialog: DialogType?,
     private val updateDialog: (DialogType?) -> Unit
 ): ViewModel() {
@@ -166,7 +168,7 @@ class SettingsViewModel(
                 if (event is SignOutEvent) { _signingIn.value = false }
             }
         }
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             launch {
                 val email = preferencesRepo.signedInUserEmail.first()
                 if (email?.isBlank() == true) { clearLoginState() }
@@ -174,15 +176,15 @@ class SettingsViewModel(
             launch {
                 val notification = preferencesRepo.tinNotifications.first()
                 if (notification) {
-                    val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                    val system = checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)
+                    val notificationManager = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                    val system = checkNotificationPermission(notificationManager, app, CellarApplication.TIN_NOTIFICATION)
                     if (!system) { preferencesRepo.saveTinNotifications(false) }
                 }
             }
         }
     }
 
-    private val networkMonitor = application.container.networkMonitor
+    private val networkMonitor = app.container.networkMonitor
     val networkEnabled: StateFlow<Boolean> = combine(
         preferencesRepo.allowMobileData,
         networkMonitor.isConnected,
@@ -202,18 +204,18 @@ class SettingsViewModel(
         parseLinks
     ) { theme, showRatings, typeGenre, quantity, parseLinks ->
         listOf(
-            SettingsDialog("Theme", "Change the theme of the app.", theme.value, DialogType.Theme),
-            SettingsDialog("Cellar Ratings Visibility", "Show/hide ratings in list view.", showRatings.let { if (it) "On" else "Off" }, DialogType.Ratings),
-            SettingsDialog("Cellar Type/Genre Display", "Set type/genre display for Cellar screen.", typeGenre.value, DialogType.TypeGenre),
-            SettingsDialog("Cellar Quantity Display", "Change quantity display on Cellar screen.", quantity.let {
+            SettingsDialog(app.getString(R.string.theme_option), app.getString(R.string.theme_description), app.getString(theme.resId), DialogType.Theme),
+            SettingsDialog(app.getString(R.string.ratings_option), app.getString(R.string.ratings_description), showRatings.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.Ratings),
+            SettingsDialog(app.getString(R.string.type_genre_option), app.getString(R.string.type_genre_description), app.getString(typeGenre.resId), DialogType.TypeGenre),
+            SettingsDialog(app.getString(R.string.quantity_option), app.getString(R.string.quantity_description), quantity.let {
                 when (it) {
-                    QuantityOption.TINS -> "Tins"
-                    QuantityOption.OUNCES -> "Oz/lbs"
-                    QuantityOption.GRAMS -> "Grams"
+                    QuantityOption.TINS -> app.getString(R.string.tins)
+                    QuantityOption.OUNCES -> app.getString(R.string.oz_lbs)
+                    QuantityOption.GRAMS -> app.getString(R.string.grams)
                 }
             }, DialogType.QuantityDisplay),
-            SettingsDialog("Parse Links in Notes", "Enable/disable link parsing in notes.", parseLinks.let { if (it) "On" else "Off" }, DialogType.ParseLinks),
-            SettingsDialog("Large Screen Options", "Large screen adaptive layout options.", null, DialogType.GlobalTwoPane)
+            SettingsDialog(app.getString(R.string.parse_links_option), app.getString(R.string.parse_links_description), parseLinks.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.ParseLinks),
+            SettingsDialog(app.getString(R.string.large_screen_option), app.getString(R.string.large_screen_description), null, DialogType.LargeScreenOptions)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -236,17 +238,17 @@ class SettingsViewModel(
         val defaultSync = values[6] as Boolean
 
         listOf(
-            SettingsDialog("Multi-Device Sync", "Enable/disable cross-device sync.", crossDeviceSync.let {
+            SettingsDialog(app.getString(R.string.multi_device_sync), app.getString(R.string.multi_device_sync_description), crossDeviceSync.let {
                 if (it) {
-                    if (!connected) "Disconnected" else "On (${if (mobileData) "mobile" else "WiFi"})"
-                } else "Off"
+                    if (!connected) app.getString(R.string.disconnected) else app.getString(R.string.multi_device_on, if (mobileData) app.getString(R.string.mobile) else app.getString(R.string.wifi))
+                } else app.getString(R.string.off)
             }, DialogType.DeviceSync),
-            SettingsDialog("Tin Ready Notifications", "Enable/disable tin notifications.", tinNotifications.let { if (it) "On" else "Off" }, DialogType.TinNotifications),
-            SettingsDialog("Tin Conversion Rates", "Change tin conversion rates.", "$ozRate oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
-            SettingsDialog("Default \"Sync Tins?\" Option", "Set default tin sync option.", defaultSync.let { if (it) "On" else "Off" }, DialogType.TinSyncDefault),
-            SettingsDialog("Backup/Restore", "Backup or restore database and/or settings.", null, DialogType.BackupRestore),
-            SettingsDialog("Other Db Operations", "Fix sync quantities and optimize database.", null, DialogType.DbOperations),
-            SettingsDialog("Delete Database", "Delete all entries.", null, DialogType.DeleteAll)
+            SettingsDialog(app.getString(R.string.tin_ready_option), app.getString(R.string.tin_ready_description), tinNotifications.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.TinNotifications),
+            SettingsDialog(app.getString(R.string.conversion_option), app.getString(R.string.conversion_description), "${formatDecimal(ozRate)} oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
+            SettingsDialog(app.getString(R.string.default_sync_option), app.getString(R.string.default_sync_description), defaultSync.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.TinSyncDefault),
+            SettingsDialog(app.getString(R.string.backup_restore_option), app.getString(R.string.backup_restore_description), null, DialogType.BackupRestore),
+            SettingsDialog(app.getString(R.string.other_operations), app.getString(R.string.other_operations_description), null, DialogType.DbOperations),
+            SettingsDialog(app.getString(R.string.delete_db), app.getString(R.string.delete_db_description), null, DialogType.DeleteAll)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -267,48 +269,48 @@ class SettingsViewModel(
 
 
     /** Display Settings **/
-    fun saveThemeSetting(setting: String) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTheme(setting) }
+    fun saveThemeSetting(setting: ThemeSetting) {
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTheme(setting) }
     }
 
-    fun saveQuantityOption(option: String) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveQuantity(option) }
+    fun saveQuantityOption(option: QuantityOption) {
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveQuantity(option) }
     }
 
     fun saveShowRatingOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveShowRating(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveShowRating(option) }
     }
 
-    fun saveTypeGenreOption(option: String) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTypeGenre(option) }
+    fun saveTypeGenreOption(option: TypeGenreOption) {
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTypeGenre(option) }
     }
 
     fun saveParseLinksOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveParseLinks(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveParseLinks(option) }
     }
 
     fun saveGlobalTwoPane(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveGlobalTP(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveGlobalTP(option) }
     }
 
     fun saveLandscapeTwoPane(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveLandscape(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveLandscape(option) }
     }
 
     fun saveTwoColumnTabs(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTwoColumn(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveTwoColumn(option) }
     }
 
 
     /** Database Settings **/
     fun saveCrossDeviceAcknowledged() {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveCDAcknowledge(true) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveCDAcknowledge(true) }
     }
 
     fun saveCrossDeviceSync(enable: Boolean) {
-        application.applicationScope.launch {
+        app.applicationScope.launch {
             if (enable) {
-                if (!userEmail.value.isNullOrEmpty()) { application.periodicDownloadSetup() }
+                if (!userEmail.value.isNullOrEmpty()) { app.periodicDownloadSetup() }
                 _signingIn.value = userEmail.value.isNullOrEmpty()
                 EventBus.emit(SignInEvent)
             } else {
@@ -320,22 +322,22 @@ class SettingsViewModel(
     }
 
     fun saveAllowMobileData(enable: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveAllowMobile(enable) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveAllowMobile(enable) }
     }
 
     fun manualSync() {
-        application.applicationScope.launch {
-            if (isSyncing.first()) { showSnackbar("Sync already in progress."); return@launch }
+        app.applicationScope.launch {
+            if (isSyncing.first()) { showSnackbar(app.getString(R.string.sync_in_progress)); return@launch }
 
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
             if (!networkEnabled.value) {
-                val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
-                    else "check connection"
-                showSnackbar("Failed: $message."); return@launch
+                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off)
+                    else app.getString(R.string.check_connection)
+                showSnackbar(app.getString(R.string.failed, message)); return@launch
             }
 
-            val workManager = WorkManager.getInstance(application)
+            val workManager = WorkManager.getInstance(app)
             val allowMobile = preferencesRepo.allowMobileData.first()
             val networkType = if (allowMobile) NetworkType.CONNECTED else NetworkType.UNMETERED
 
@@ -359,7 +361,7 @@ class SettingsViewModel(
                 val workInfo = workManager.getWorkInfoById(workRequest.id).get()
                 if (workInfo?.state == WorkInfo.State.ENQUEUED) {
                     workManager.cancelWorkById(workRequest.id)
-                    showSnackbar("Sync failed (connection timeout).")
+                    showSnackbar(app.getString(R.string.connection_timeout))
                 }
             }
 
@@ -375,17 +377,12 @@ class SettingsViewModel(
                                 timeoutJob.cancel()
                                 val success = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
                                 val message = when (success) {
-                                    DownloadSyncWorker.SYNC_COMPLETE -> {
-                                        "Sync complete." }
-                                    DownloadSyncWorker.REMOTE_EMPTY -> {
-                                        "Remote files not found." }
-                                    DownloadSyncWorker.NETWORK_ERROR -> {
-                                        "No or lost connection." }
-                                    DownloadSyncWorker.SKIPPED -> {
-                                        "Sync became disabled." }
-                                    DownloadSyncWorker.UP_TO_DATE -> {
-                                        "No new sync data available." }
-                                    else -> "Sync complete."
+                                    DownloadSyncWorker.SYNC_COMPLETE -> { app.getString(R.string.sync_complete) }
+                                    DownloadSyncWorker.REMOTE_EMPTY -> { app.getString(R.string.remote_not_found) }
+                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.lost_connection) }
+                                    DownloadSyncWorker.SKIPPED -> { app.getString(R.string.became_disabled) }
+                                    DownloadSyncWorker.UP_TO_DATE -> { app.getString(R.string.nothing_new) }
+                                    else -> app.getString(R.string.sync_complete)
                                 }
                                 showSnackbar(message)
                             }
@@ -394,15 +391,11 @@ class SettingsViewModel(
                                 timeoutJob.cancel()
                                 val error = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
                                 val message = when (error) {
-                                    DownloadSyncWorker.NO_ACCOUNT -> {
-                                        "Sync failed, not signed in." }
-                                    DownloadSyncWorker.AUTH_ERROR -> {
-                                        "Authentication error, try signing out and back in." }
-                                    DownloadSyncWorker.SERVER_ERROR -> {
-                                        "Remote connection failed." }
-                                    DownloadSyncWorker.NETWORK_ERROR -> {
-                                        "Sync failed, please check connection." }
-                                    else -> "Sync failed (unknown error)."
+                                    DownloadSyncWorker.NO_ACCOUNT -> { app.getString(R.string.sync_failed_sign_in) }
+                                    DownloadSyncWorker.AUTH_ERROR -> { app.getString(R.string.authentication_error) }
+                                    DownloadSyncWorker.SERVER_ERROR -> { app.getString(R.string.remote_failed) }
+                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.failed_check_connection) }
+                                    else -> app.getString(R.string.failed_unknown)
                                 }
                                 showSnackbar(message)
                             }
@@ -417,28 +410,26 @@ class SettingsViewModel(
     }
 
     fun clearRemoteData() {
-        application.applicationScope.launch {
+        app.applicationScope.launch {
             if (isSyncing.first()) {
-                showSnackbar("Sync in progress, please wait for it to finish.")
-                return@launch
+                showSnackbar(app.getString(R.string.clear_remote_wait)); return@launch
             }
 
             if (!networkEnabled.value) {
-                val message = if (!networkMonitor.isWifi.first()) "allow mobile data is off"
-                    else "check connection"
-                showSnackbar("Failed: $message.")
-                return@launch
+                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off)
+                    else app.getString(R.string.check_connection)
+                showSnackbar(app.getString(R.string.failed, message)); return@launch
             }
 
             val email = preferencesRepo.signedInUserEmail.first()
-            if (email == null) { showSnackbar("No user signed in."); return@launch }
+            if (email == null) { showSnackbar(app.getString(R.string.not_signed_in)); return@launch }
 
             SyncStateManager.started()
 
             withContext(Dispatchers.IO) {
 
                 try {
-                    val driveService = GoogleDriveServiceHelper.getDriveService(application, email)
+                    val driveService = GoogleDriveServiceHelper.getDriveService(app, email)
 
                     val files = driveService.files().list()
                         .setSpaces("appDataFolder")
@@ -446,7 +437,7 @@ class SettingsViewModel(
                         .execute()
 
                     if (files.files.isNullOrEmpty()) {
-                        showSnackbar("No data to delete.")
+                        showSnackbar(app.getString(R.string.remote_not_found))
                         return@withContext
                     }
 
@@ -468,30 +459,30 @@ class SettingsViewModel(
                     }
 
                     batch.execute()
-                    showSnackbar("Remote data deleted.")
+                    showSnackbar(app.getString(R.string.remote_deleted))
 
                 }
-                catch (_: Exception) { showSnackbar("Error deleting remote data.") }
+                catch (_: Exception) { showSnackbar(app.getString(R.string.remote_error)) }
                 finally { SyncStateManager.finished() }
             }
         }
     }
 
-    fun clearLoginState() { application.applicationScope.launch { EventBus.emit(SignOutEvent) } }
+    fun clearLoginState() { app.applicationScope.launch { EventBus.emit(SignOutEvent) } }
 
     private fun stopWorkers() {
-        application.applicationScope.launch { application.cancelPeriodicSync() }
+        app.applicationScope.launch { app.cancelPeriodicSync() }
     }
 
     fun saveTinNotifications(option: Boolean, time: Int) {
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             preferencesRepo.saveTinNotifications(option)
             preferencesRepo.saveTinNotifyTime(time)
         }
     }
 
     fun setTinConversionRates(ozRate: Double, gramsRate: Double) {
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             preferencesRepo.setOzRate(ozRate)
             preferencesRepo.setGramRate(gramsRate)
 
@@ -500,11 +491,11 @@ class SettingsViewModel(
     }
 
     fun setDefaultSyncOption(option: Boolean) {
-        application.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveDefaultSyncOption(option) }
+        app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveDefaultSyncOption(option) }
     }
 
     fun updateTinSync(ozConversion: Double? = null, gramsConversion: Double? = null, runSilent: Boolean = false) {
-        application.applicationScope.launch {
+        app.applicationScope.launch {
             if (!runSilent) { setLoadingState(true) }
             SyncStateManager.schedulingPaused = true
 
@@ -522,11 +513,11 @@ class SettingsViewModel(
                 }
 
                 message = if (ozConversion != null || gramsConversion != null) {
-                    "Conversion rates and synced entry quantities updated."
-                } else { "Synced entry quantities updated." }
+                    app.getString(R.string.conversion_updated)
+                } else { app.getString(R.string.quantities_updated) }
             } catch (_: Exception) {
                 SyncStateManager.schedulingPaused = false
-                message = "Error updating sync quantities."
+                message = app.getString(R.string.sync_tins_update_error)
             } finally {
                 if (!runSilent) {
                     setLoadingState(false)
@@ -539,19 +530,19 @@ class SettingsViewModel(
     }
 
     fun optimizeDatabase() {
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             setLoadingState(true)
             itemsRepository.optimizeDatabase()
             setLoadingState(false)
-            showSnackbar("Optimization complete.")
+            showSnackbar(app.getString(R.string.optimize_complete))
         }
     }
 
     fun deleteAllItems() {
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             itemsRepository.deleteAllItems()
-            saveTypeGenreOption(TypeGenreOption.TYPE.value)
-            showSnackbar("Database deleted!")
+            saveTypeGenreOption(TypeGenreOption.TYPE)
+            showSnackbar(app.getString(R.string.db_deleted))
         }
     }
 
@@ -606,7 +597,7 @@ class SettingsViewModel(
     }
 
     fun createBackupBinary(uri: Uri, context: Context) {
-        application.applicationScope.launch {
+        app.applicationScope.launch {
             var loadingTriggered = false
             val loadingTimer = launch {
                 delay(200.milliseconds)
@@ -646,12 +637,12 @@ class SettingsViewModel(
                 settingsBytes.copyInto(combinedBytes, header.size + combinedDatabaseBytes.size)
 
                 writeBytesToFile(uri, combinedBytes, context)
-                message = "Backup complete."
+                message = app.getString(R.string.backup_complete)
             } catch (_: Exception) {
                 try {
                     DocumentsContract.deleteDocument(context.contentResolver, uri)
                 } catch (_: Exception) { }
-                message = "Backup failed."
+                message = app.getString(R.string.backup_failed)
             } finally {
                 loadingTimer.cancel()
                 deleteTempFile(tempDbZip)
@@ -668,7 +659,7 @@ class SettingsViewModel(
 
     // Restore //
     fun restoreBackup(context: Context, uri: Uri) {
-        application.applicationScope.launch(Dispatchers.Default) {
+        app.applicationScope.launch(Dispatchers.Default) {
             var loadingTriggered = false
             val loadingTimer = launch {
                 delay(200.milliseconds)
@@ -683,18 +674,18 @@ class SettingsViewModel(
 
             try {
                 val bytes = readBytesFromFile(uri, context)
-                if (bytes == null) { message = "Invalid file."; return@launch }
+                if (bytes == null) { message = app.getString(R.string.invalid_file); return@launch }
 
                 val fileContentState = validateBackupFile(bytes)
                 val restoreState = _restoreState.value
                 val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
 
                 if (!fileContentState.magicNumberValid) {
-                    message = "Restore failed: file is invalid."
+                    message = app.getString(R.string.invalid_file)
                 } else if (!fileContentState.versionValid) {
-                    message = "Restore failed: file is for an unsupported version."
+                    message = app.getString(R.string.restore_failed_version)
                 } else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
-                    message = "Restore failed: file does not contain database or settings data."
+                    message = app.getString(R.string.restore_failed_no_data)
                 } else {
                     var dbRestored = false
                     var settingsRestored = false
@@ -716,23 +707,23 @@ class SettingsViewModel(
                     message = when {
                         restoreState.databaseChecked && restoreState.settingsChecked -> {
                             when {
-                                dbRestored && settingsRestored -> "Database and settings restored."
-                                dbRestored -> "File missing settings data, database restored."
-                                settingsRestored -> "File missing database data, settings restored."
-                                else -> "Restore failed."
+                                dbRestored && settingsRestored -> app.getString(R.string.db_settings_restored)
+                                dbRestored -> app.getString(R.string.db_restored_no_settings)
+                                settingsRestored -> app.getString(R.string.settings_restored_no_db)
+                                else -> app.getString(R.string.restore_failed)
                             }
                         }
                         restoreState.databaseChecked -> {
-                            if (dbRestored) "Database restored."
-                            else if (!fileContentState.databasePresent) "Backup file does not contain database data."
-                            else "Error restoring database."
+                            if (dbRestored) app.getString(R.string.db_restored)
+                            else if (!fileContentState.databasePresent) app.getString(R.string.no_db_data)
+                            else app.getString(R.string.db_restore_error)
                         }
                         restoreState.settingsChecked -> {
-                            if (settingsRestored) "Settings restored."
-                            else if (!fileContentState.settingsPresent) "Backup file does not contain settings data."
-                            else "Error restoring settings."
+                            if (settingsRestored) app.getString(R.string.settings_restored)
+                            else if (!fileContentState.settingsPresent) app.getString(R.string.no_settings_data)
+                            else app.getString(R.string.settings_restore_error)
                         }
-                        else -> "Restore failed."
+                        else -> app.getString(R.string.restore_failed)
                     }
 
                     if (dbRestored || settingsRestored) {
@@ -747,9 +738,9 @@ class SettingsViewModel(
                             val restoredNotify = preferencesRepo.tinNotifications.first()
                             val restoredMultiDevice = preferencesRepo.crossDeviceSync.first()
                             if (restoredNotify || restoredMultiDevice) {
-                                val notificationManager = application.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                                val notifyPermission = checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)
-                                val syncPermission = checkNotificationPermission(notificationManager, application, CellarApplication.SYNC_NOTIFICATION)
+                                val notificationManager = app.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                val notifyPermission = checkNotificationPermission(notificationManager, app, CellarApplication.TIN_NOTIFICATION)
+                                val syncPermission = checkNotificationPermission(notificationManager, app, CellarApplication.SYNC_NOTIFICATION)
 
                                 val requestNotify = restoredNotify && !notifyPermission
                                 val requestSync = restoredMultiDevice && !syncPermission
@@ -766,7 +757,7 @@ class SettingsViewModel(
 
                                     try { withTimeoutOrNull(60.seconds) { signal.await() } } catch (_: Exception) { }
 
-                                    if (restoredNotify && !checkNotificationPermission(notificationManager, application, CellarApplication.TIN_NOTIFICATION)) {
+                                    if (restoredNotify && !checkNotificationPermission(notificationManager, app, CellarApplication.TIN_NOTIFICATION)) {
                                         preferencesRepo.saveTinNotifications(false) }
                                 }
                             }
@@ -774,7 +765,7 @@ class SettingsViewModel(
                     }
                 }
             } catch (e: Exception) {
-                message = "Restore failed: ${e.message}"
+                message = app.getString(R.string.restore_failed_message, e.message)
             } finally {
                 delay(500.milliseconds)
                 loadingTimer.cancel()
@@ -867,8 +858,8 @@ class SettingsViewModel(
                 copyFile(File(tempDir, "tobacco_database"), dbFile)
                 if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
                 if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
-
-            } else if (backupDbVersion < existingDbVersion) {
+            }
+            else if (backupDbVersion < existingDbVersion) {
                 tempMigrationDir = File(context.cacheDir, "temp_migration_dir")
                 tempMigrationDir.mkdirs()
 
@@ -880,10 +871,8 @@ class SettingsViewModel(
 
                 copyMigratedDb(migratedDb, dbFile, walFile, shmFile)
                 migratedDb.close()
-
-            } else {
-                throw Exception("Backup database version is invalid.")
             }
+            else { throw Exception(app.getString(R.string.backup_db_invalid)) }
 
         } catch (e: Exception) {
             copyFile(backupDbFile, dbFile)
@@ -1003,7 +992,7 @@ sealed class DialogType {
     object TypeGenre : DialogType()
     object QuantityDisplay : DialogType()
     object ParseLinks : DialogType()
-    object GlobalTwoPane: DialogType()
+    object LargeScreenOptions: DialogType()
 
     object DeviceSync : DialogType()
     object TinNotifications : DialogType()
@@ -1014,24 +1003,24 @@ sealed class DialogType {
     object DeleteAll : DialogType()
 }
 
-enum class ThemeSetting(val value: String) {
-    LIGHT("Light"),
-    DARK("Dark"),
-    SYSTEM("System")
+enum class ThemeSetting(@StringRes val resId: Int) {
+    LIGHT(R.string.light),
+    DARK(R.string.dark),
+    SYSTEM(R.string.system)
 }
 
-enum class QuantityOption(val value: String) {
-    TINS("\"No. of Tins\" (default)"),
-    OUNCES("Ounces/Pounds"),
-    GRAMS("Grams")
+enum class QuantityOption(@StringRes val resId: Int) {
+    TINS(R.string.no_tins_default),
+    OUNCES(R.string.ounces_pounds),
+    GRAMS(R.string.qt_option_grams)
 }
 
-enum class TypeGenreOption(val value: String) {
-    TYPE("Type"),
-    SUBGENRE("Subgenre"),
-    BOTH("Both"),
-    TYPE_FALLBACK("Type (fallback)"),
-    SUB_FALLBACK("Subgenre (fallback)")
+enum class TypeGenreOption(@StringRes val resId: Int) {
+    TYPE(R.string.type),
+    SUBGENRE(R.string.subgenre),
+    BOTH(R.string.both),
+    TYPE_FALLBACK(R.string.type_fallback),
+    SUB_FALLBACK(R.string.sub_fallback)
 }
 
 data class TinConversionRates(
@@ -1059,8 +1048,8 @@ data class BackupState(
 data class SettingsBackup (
     val tableView: Boolean = false,
     val tableColumnsHidden: Set<String> = emptySet(),
-    val quantityOption: String = QuantityOption.TINS.value,
-    val themeSetting: String = ThemeSetting.SYSTEM.value,
+    val quantityOption: QuantityOption = QuantityOption.TINS,
+    val themeSetting: ThemeSetting = ThemeSetting.SYSTEM,
     val tinOzConversionRate: Double = 1.75,
     val tinGramsConversionRate: Double = 50.0,
     val plaintextFormatString: String = "",
@@ -1070,7 +1059,7 @@ data class SettingsBackup (
     val plaintextPrintFontSize: Float = 12f,
     val plaintextPrintMargin: Double = 1.0,
     val showRatingOption: Boolean = true,
-    val typeGenreOption: String = TypeGenreOption.TYPE.value,
+    val typeGenreOption: TypeGenreOption = TypeGenreOption.TYPE,
     val exportRating: ExportRating = ExportRating(),
     val defaultSyncTinsOption: Boolean = false,
     val columnVisibility: Set<String> = emptySet(),
@@ -1167,16 +1156,12 @@ fun zipFiles(files: List<File>, zipFile: File) {
 }
 
 fun unzipFile(zipFile: File, destinationDir: File) {
-    if (!destinationDir.exists()) {
-        destinationDir.mkdirs()
-    }
+    if (!destinationDir.exists()) { destinationDir.mkdirs() }
     ZipInputStream(FileInputStream(zipFile)).use { zipStream ->
         var zipEntry = zipStream.nextEntry
         while (zipEntry != null) {
             val newFile = File(destinationDir, zipEntry.name)
-            FileOutputStream(newFile).use { outStream ->
-                zipStream.copyTo(outStream)
-            }
+            FileOutputStream(newFile).use { outStream -> zipStream.copyTo(outStream) }
             zipStream.closeEntry()
             zipEntry = zipStream.nextEntry
         }
@@ -1202,17 +1187,15 @@ fun backupDatabase(context: Context, backupFile: File) {
 
         zipFiles(dbFiles, backupFile)
 
-    } catch (e: Exception) {
-        throw e
-    }
+    } catch (e: Exception) { throw e }
 }
 
 suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
     val backup = SettingsBackup(
         tableView = preferencesRepo.isTableView.first(),
         tableColumnsHidden = preferencesRepo.tableColumnsHidden.first(),
-        quantityOption = preferencesRepo.quantityOption.first().value,
-        themeSetting = preferencesRepo.themeSetting.first().value,
+        quantityOption = preferencesRepo.quantityOption.first(),
+        themeSetting = preferencesRepo.themeSetting.first(),
         tinOzConversionRate = preferencesRepo.tinOzConversionRate.first(),
         tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.first(),
         plaintextFormatString = preferencesRepo.plaintextFormatString.first(),
@@ -1222,7 +1205,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         plaintextPrintFontSize = preferencesRepo.plaintextPrintFontSize.first(),
         plaintextPrintMargin = preferencesRepo.plaintextPrintMargin.first(),
         showRatingOption = preferencesRepo.showRating.first(),
-        typeGenreOption = preferencesRepo.typeGenreOption.first().value,
+        typeGenreOption = preferencesRepo.typeGenreOption.first(),
         exportRating = preferencesRepo.exportRating.first(),
         defaultSyncTinsOption = preferencesRepo.defaultSyncOption.first(),
         columnVisibility = preferencesRepo.tableColumnsHidden.first(),
@@ -1316,8 +1299,6 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     "tableColumnsHidden" -> preferencesRepo.saveTableColumnsHidden(
                         Json.decodeFromString<Set<String>>(value)
                     )
-                    "quantityOption" -> preferencesRepo.saveQuantity(value)
-                    "themeSetting" -> preferencesRepo.saveTheme(value)
                     "tinOzConversionRate" -> preferencesRepo.setOzRate(value.toDouble())
                     "tinGramsConversionRate" -> preferencesRepo.setGramRate(value.toDouble())
                     "plaintextFormatString" -> preferencesRepo.setPtFormat(value)
@@ -1339,7 +1320,6 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                         preferencesRepo.setPtPrintOptions(font, margin)
                     }
                     "showRatingOption" -> preferencesRepo.saveShowRating(value.toBoolean())
-                    "typeGenreOption" -> preferencesRepo.saveTypeGenre(value)
                     "exportRating" -> {
                         val options = Json.decodeFromString<ExportRating>(value)
                         preferencesRepo.saveExportRating(options.maxRating, options.rounding)
@@ -1370,8 +1350,8 @@ fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int 
     return tins.sumOf {
         if (it.finished) 0.0 else {
             when (it.unit) {
-                "lbs" -> (it.tinQuantity * 16) / ozRate
                 "oz" -> it.tinQuantity / ozRate
+                "lbs" -> (it.tinQuantity * 16) / ozRate
                 "grams" -> it.tinQuantity / gramsRate
                 else -> 0.0
             }
@@ -1380,10 +1360,9 @@ fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int 
 }
 
 fun exportRatingString(rating: Double?, maxRating: Int, rounding: Int): String {
-    val scaling = maxRating / 5.0
-
     if (rating == null) { return "" }
 
+    val scaling = maxRating / 5.0
     val scaledRating = (rating * scaling)
     val places = rounding.takeIf { it <= 2 } ?: 2
 

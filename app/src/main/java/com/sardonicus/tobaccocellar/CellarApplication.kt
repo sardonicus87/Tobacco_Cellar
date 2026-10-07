@@ -56,7 +56,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     lateinit var container: AppContainer
     lateinit var preferencesRepo: PreferencesRepo
     lateinit var csvHelper: CsvHelper
-    val filterViewModel: FilterViewModel by lazy { FilterViewModel(container.itemsRepository, preferencesRepo) }
+    val filterViewModel: FilterViewModel by lazy { FilterViewModel(container.itemsRepository, preferencesRepo, this) }
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var verificationJob: Job? = null
@@ -116,9 +116,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                     preferencesRepo.tinNotifications,
                     preferencesRepo.tinNotifyTime,
                     activityResumedTrigger.onStart { emit(Unit) }
-                ) { notify, time, _ ->
-                    notify to time
-                }.collectLatest { (notify, time) ->
+                ) { notify, time, _ -> notify to time }.collectLatest { (notify, time) ->
                     delay(500.milliseconds)
                     val systemEnabled = checkNotificationPermission(notificationManager, this@CellarApplication, TIN_NOTIFICATION)
                     if (notify && systemEnabled) { scheduleTinNotificationWorker(time) }
@@ -216,7 +214,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         val workManager = WorkManager.getInstance(this@CellarApplication)
         workManager.cancelUniqueWork("download_sync_work")
-        EventBus.emit(ShowToast("Sync disabled, please sign in again."))
+        EventBus.emit(ShowToast(this.getString(R.string.sync_disabled)))
     }
 
     private fun createNotificationChannel() {
@@ -226,15 +224,17 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         if (existingSyncChannel != null && existingSyncChannel.importance == NotificationManager.IMPORTANCE_DEFAULT) {
             notificationManager.deleteNotificationChannel(SYNC_NOTIFICATION) }
 
-        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, "Background sync", NotificationManager.IMPORTANCE_LOW).apply {
-            description = "Quiet background notification indicating sync working in the background."
+        val syncDescription = this.getString(R.string.sync_channel_description)
+        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, this.getString(R.string.sync_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+            description = syncDescription
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)
             enableLights(false)
         }
-        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, "Tins ready", NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "Show a notification when a tin is ready to open."
+        val tinDescription = this.getString(R.string.tin_channel_description)
+        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, this.getString(R.string.tin_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+            description = tinDescription
             setShowBadge(true)
             enableVibration(true)
             enableLights(true)

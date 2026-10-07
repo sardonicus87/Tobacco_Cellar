@@ -55,11 +55,7 @@ fun BackupRestoreDialog(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = "Would you like to Backup or Restore?",
-                            fontSize = 15.sp,
-                            color = LocalContentColor.current
-                        )
+                        Text(stringResource(R.string.backup_restore_dialog), fontSize = 15.sp, color = LocalContentColor.current)
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -70,12 +66,12 @@ fun BackupRestoreDialog(
                                 onClick = { option = BackupRestoreOption.BACKUP },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) { Text("Backup", fontSize = 15.sp) }
+                            ) { Text(stringResource(R.string.backup), fontSize = 15.sp) }
                             TextButton(
                                 onClick = { option = BackupRestoreOption.RESTORE },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) { Text("Restore", fontSize = 15.sp) }
+                            ) { Text(stringResource(R.string.backup), fontSize = 15.sp) }
                         }
                     }
                 }
@@ -105,7 +101,7 @@ fun BackupRestoreDialog(
                     TextButton(
                         onClick = { onRestore() },
                         enabled = restoreState.databaseChecked || restoreState.settingsChecked
-                    ) { Text("Open") }
+                    ) { Text(stringResource(R.string.open)) }
                 }
                 null -> { }
             }
@@ -131,21 +127,18 @@ private fun BackupDialog(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text(
-            text = "Select what to backup. If you check both boxes, a single file will " +
-                    "be created that holds both. The restore function can optionally " +
-                    "restore either the database or the settings from the joint backup " +
-                    "file.",
+            text = stringResource(R.string.backup_dialog),
             modifier = Modifier.padding(bottom = 12.dp),
             fontSize = 15.sp,
             color = LocalContentColor.current
         )
         CheckboxWithLabel(
-            text = "Database",
+            text = stringResource(R.string.database),
             checked = backupState.databaseChecked,
             onCheckedChange = { viewModel.onBackupOptionChanged(backupState.copy(databaseChecked = !backupState.databaseChecked)) }
         )
         CheckboxWithLabel(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             checked = backupState.settingsChecked,
             onCheckedChange = { viewModel.onBackupOptionChanged(backupState.copy(settingsChecked = !backupState.settingsChecked)) }
         )
@@ -166,21 +159,18 @@ private fun RestoreDialog(
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text(
-            text = "Select what to restore.\n\nWARNING: Restore will overwrite any existing " +
-                    "settings and/or database data (depending on which is selected). " +
-                    "Either or both can be restored from a joint database/settings backup " +
-                    "file.",
+            text = stringResource(R.string.restore_dialog),
             modifier = Modifier.padding(bottom = 12.dp),
             fontSize = 15.sp,
             color = LocalContentColor.current
         )
         CheckboxWithLabel(
-            text = "Database",
+            text = stringResource(R.string.database),
             checked = restoreState.databaseChecked,
             onCheckedChange = { viewModel.onRestoreOptionChanged(restoreState.copy(databaseChecked = !restoreState.databaseChecked)) }
         )
         CheckboxWithLabel(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             checked = restoreState.settingsChecked,
             onCheckedChange = { viewModel.onRestoreOptionChanged(restoreState.copy(settingsChecked = !restoreState.settingsChecked)) }
         )

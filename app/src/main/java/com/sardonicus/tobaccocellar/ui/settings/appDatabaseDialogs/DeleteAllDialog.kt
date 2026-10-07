@@ -17,12 +17,7 @@ fun DeleteAllDialog(
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
         title = { Text(stringResource(R.string.delete_all)) },
-        text = {
-            Text(
-                text = stringResource(R.string.delete_all_question),
-                fontSize = 15.sp
-            )
-        },
+        text = { Text(stringResource(R.string.delete_all_question), fontSize = 15.sp) },
         dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
         confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes)) } },
         containerColor = MaterialTheme.colorScheme.background,

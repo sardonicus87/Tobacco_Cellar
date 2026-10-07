@@ -51,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,6 +59,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -102,13 +104,7 @@ fun TinNotificationsDialog (
                 verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(
-                    text = "Show a notification whenever tins are ready. Notifications are local, " +
-                            "they do not require internet access. Check that notifications for " +
-                            "the app are enabled in your device settings.",
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+                Text(stringResource(R.string.tin_notification_dialog), Modifier.padding(bottom = 12.dp), fontSize = 15.sp)
                 Row(
                     modifier = Modifier
                         .height(28.dp)
@@ -117,12 +113,7 @@ fun TinNotificationsDialog (
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Notifications:",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Text(stringResource(R.string.tin_notification_option), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                         Switch(
                             checked = tinNotifications,
@@ -152,14 +143,9 @@ fun TinNotificationsDialog (
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     val formattedTime = formatTime(notificationTime, context)
+                    Text(stringResource(R.string.tin_notification_time), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        text = "Notification time:",
-                        modifier = Modifier,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = formattedTime.ifBlank { "Set Time" },
+                        text = formattedTime.ifBlank { stringResource(R.string.tin_notification_set) },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
@@ -189,9 +175,7 @@ fun TinNotificationsDialog (
                 )
             }
         },
-        confirmButton = {
-            TextButton(onClick = { onDismiss() }) { Text("Done") }
-        },
+        confirmButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.done)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
@@ -334,9 +318,8 @@ private fun CustomTimePickerDialog(
                         TextButton(
                             onClick = { onDismiss() },
                             contentPadding = PaddingValues(12.dp, 4.dp),
-                            modifier = Modifier
-                                .heightIn(32.dp, 32.dp)
-                        ) { Text("Cancel") }
+                            modifier = Modifier.heightIn(32.dp, 32.dp)
+                        ) { Text(stringResource(R.string.cancel)) }
                         TextButton(
                             onClick = {
                                 onTimeChange((pickerState.hour * 60) + pickerState.minute)
@@ -344,7 +327,7 @@ private fun CustomTimePickerDialog(
                             },
                             contentPadding = PaddingValues(12.dp, 4.dp),
                             modifier = Modifier.heightIn(32.dp, 32.dp)
-                        ) { Text("OK") }
+                        ) { Text(stringResource(R.string.ok)) }
                     }
                 }
             }

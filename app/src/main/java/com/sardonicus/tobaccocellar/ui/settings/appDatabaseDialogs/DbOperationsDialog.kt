@@ -18,8 +18,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -48,9 +50,7 @@ fun DbOperationsDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "These options shouldn't be necessary. Fix tin sync quantity corrects " +
-                                "the \"No. of Tins\" for entries with quantity sync checked. Optimize " +
-                                "database cleans up any potentially orphaned data.",
+                        text = stringResource(R.string.other_operations_dialog),
                         fontSize = 15.sp,
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
@@ -62,29 +62,19 @@ fun DbOperationsDialog(
                         enabled = !debouncedLoading,
                         contentPadding = PaddingValues(8.dp, 3.dp),
                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                    ) {
-                        Text(
-                            text = "Fix/Update Tin Sync Quantity",
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                        )
-                    }
+                    ) { Text(stringResource(R.string.other_operations_fix), fontSize = 15.sp) }
+
                     TextButton(
                         onClick = { optimizeDatabase() },
                         enabled = !debouncedLoading,
                         contentPadding = PaddingValues(8.dp, 3.dp),
                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                    ) {
-                        Text(
-                            text = "Clean and Optimize Database",
-                            fontSize = 15.sp,
-                        )
-                    }
+                    ) { Text(stringResource(R.string.other_operations_clean), fontSize = 15.sp) }
                 }
                 if (debouncedLoading) { LoadingIndicator(center = true, modifier = Modifier.matchParentSize()) }
             }
         },
-        confirmButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text("Done") } },
+        confirmButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

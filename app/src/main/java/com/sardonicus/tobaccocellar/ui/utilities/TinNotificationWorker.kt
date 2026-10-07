@@ -4,7 +4,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -38,26 +37,25 @@ class TinNotificationWorker(
 
         if (readyNow.isNotEmpty()) {
             val readyIds = readyNow.map { it.tinId }.toIntArray()
-            Log.d("Notification debug", "readyIds in worker: ${readyIds.joinToString(", ")}")
             val readyString = readyNow.map { tin ->
                 val parent = items.first { it.tins.contains(tin) }
                 "${parent.items.brand} - ${parent.items.blend}"
             }
 
-            showNotification(readyString, readyIds)
+            showNotification(readyString, readyIds, app)
             prefs.saveLastTinNotify(todayStartMillis)
         }
 
         return Result.success()
     }
 
-    private fun showNotification(list: List<String>, readyIds: IntArray) {
+    private fun showNotification(list: List<String>, readyIds: IntArray, app: CellarApplication) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val title = "Tobacco Cellar found tins ready to open"
+        val title = app.getString(R.string.tin_notification_title)
 
-        val content = list.take(3).joinToString("\n").plus(if (list.size > 3) "\n... (and ${list.size - 3} more)" else "")
-        val summaryContent = if (list.size == 1) "${list[0]} ready to open." else "${list.size} tins ready to open."
+        val content = list.take(3).joinToString("\n").plus(if (list.size > 3) app.getString(R.string.tin_notification_extended, "${list.size - 3}") else "")
+        val summaryContent = if (list.size == 1) app.getString(R.string.tin_notification_summary_single, list[0]) else app.getString(R.string.tin_notification_summary_plural, "${list.size}")
 
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             putExtra("START_DESTINATION", "home")

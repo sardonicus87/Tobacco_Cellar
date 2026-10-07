@@ -165,7 +165,7 @@ private fun SettingsBody(
 
         item {
             Text(
-                text = "Display Settings",
+                text = stringResource(R.string.display_settings),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
                 fontSize = 17.sp,
@@ -185,7 +185,7 @@ private fun SettingsBody(
 
         item {
             Text(
-                text = "App & Database Settings",
+                text = stringResource(R.string.app_db_settings),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
                 fontSize = 17.sp,
@@ -322,13 +322,13 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                 onDismiss = viewModel::dismissDialog,
                 options = ThemeSetting.entries,
                 selectedOption = themeSetting,
-                onOptionSelected = { viewModel.saveThemeSetting(it.value) },
-                optionLabel = { it.value }
+                onOptionSelected = viewModel::saveThemeSetting,
+                optionLabel = { stringResource(it.resId) }
             )
         }
         DialogType.Ratings -> {
             ToggleDialog(
-                description = "Display ratings on cellar screen:",
+                description = stringResource(R.string.ratings_dialog),
                 onDismiss = viewModel::dismissDialog,
                 checked = showRatings,
                 onCheckedChange = viewModel::saveShowRatingOption
@@ -336,54 +336,44 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.TypeGenre -> {
             SelectionDialog(
-                description = "This option sets the display of Type, Subgenre or both on the " +
-                        "Cellar screen. Fallback options display the option and if it's unused " +
-                        "on an entry, fallback to the other (e.g. Subgenre (fallback) would " +
-                        "display the subgenre but if an entry has no subgenre, will instead show " +
-                        "the type value in parenthesis). This also affects table view when only " +
-                        "one or the other of Type or Subgenre columns are shown.",
+                description = stringResource(R.string.type_genre_dialog),
                 onDismiss = viewModel::dismissDialog,
                 options = TypeGenreOption.entries,
                 selectedOption = typeGenreOption,
-                onOptionSelected = { viewModel.saveTypeGenreOption(it.value) },
-                optionLabel = { it.value },
+                onOptionSelected = viewModel::saveTypeGenreOption,
+                optionLabel = { stringResource(it.resId) },
                 optionEnabled = { typeGenreEnablement[it] ?: false }
             )
         }
         DialogType.QuantityDisplay -> {
             SelectionDialog(
-                description = "Displayed quantities for ounces and grams are based on the summed " +
-                        "quantities of tins. If no tins are present, \"No. of Tins\" value will " +
-                        "be converted and displayed with an asterisk.",
+                description = stringResource(R.string.quantity_display_dialog),
                 onDismiss = viewModel::dismissDialog,
                 options = QuantityOption.entries,
                 selectedOption = quantityOption,
-                onOptionSelected = { viewModel.saveQuantityOption(it.value) },
-                optionLabel = { it.value }
+                onOptionSelected = viewModel::saveQuantityOption,
+                optionLabel = { stringResource(it.resId) }
             )
         }
         DialogType.ParseLinks -> {
             ToggleDialog(
-                description = "Parse links in notes:",
+                description = stringResource(R.string.parse_links_dialog),
                 onDismiss = viewModel::dismissDialog,
                 checked = parseLinks,
                 onCheckedChange = viewModel::saveParseLinksOption
             )
         }
-        DialogType.GlobalTwoPane -> {
+        DialogType.LargeScreenOptions -> {
             BaseSettingsDialog(viewModel::dismissDialog) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "Adaptive layout options for large screens. The dual-pane and " +
-                                "expand tabs are separate options (disabling one will not affect " +
-                                "the other). \"Adapt in landscape only\" affects both. Foldable " +
-                                "devices are considered landscape when the hinge is vertical.",
+                        text = stringResource(R.string.large_screen_dialog),
                         modifier = Modifier.padding(bottom = 10.dp),
                         fontSize = 15.sp
                     )
-                    ToggleRow("Dual pane layouts:", globalTwoPane, viewModel::saveGlobalTwoPane)
-                    ToggleRow("Expand tabs to two columns:", twoColumnTabs, viewModel::saveTwoColumnTabs)
-                    ToggleRow("Adapt in landscape only:", landscapeTwoPane, viewModel::saveLandscapeTwoPane, (globalTwoPane || twoColumnTabs))
+                    ToggleRow(stringResource(R.string.large_screen_dual), globalTwoPane, viewModel::saveGlobalTwoPane)
+                    ToggleRow(stringResource(R.string.large_screen_columns), twoColumnTabs, viewModel::saveTwoColumnTabs)
+                    ToggleRow(stringResource(R.string.large_screen_landscape), landscapeTwoPane, viewModel::saveLandscapeTwoPane, (globalTwoPane || twoColumnTabs))
                 }
             }
         }
@@ -427,18 +417,10 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.TinSyncDefault -> {
             ToggleDialog(
-                description = "Set \"Sync Tins\" default on or off when adding new entries:",
+                description = stringResource(R.string.default_sync_tin_dialog),
                 onDismiss = viewModel::dismissDialog,
                 checked = defaultSyncOption,
                 onCheckedChange = viewModel::setDefaultSyncOption
-            )
-        }
-        DialogType.DbOperations -> {
-            DbOperationsDialog(
-                onDismiss = viewModel::dismissDialog,
-                loading = loading,
-                updateTinSync = viewModel::updateTinSync,
-                optimizeDatabase = viewModel::optimizeDatabase
             )
         }
         DialogType.BackupRestore -> {
@@ -450,6 +432,14 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                     viewModel.dismissDialog()
                 },
                 viewModel = viewModel
+            )
+        }
+        DialogType.DbOperations -> {
+            DbOperationsDialog(
+                onDismiss = viewModel::dismissDialog,
+                loading = loading,
+                updateTinSync = viewModel::updateTinSync,
+                optimizeDatabase = viewModel::optimizeDatabase
             )
         }
         DialogType.DeleteAll -> {
@@ -482,7 +472,7 @@ private fun <T> SelectionDialog(
     options: List<T>,
     selectedOption: T,
     onOptionSelected: (T) -> Unit,
-    optionLabel: (T) -> String,
+    optionLabel: @Composable (T) -> String,
     optionEnabled: (T) -> Boolean = { true }
 ) {
     BaseSettingsDialog(onDismiss = onDismiss) {
@@ -547,7 +537,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         val offAlpha = if (!checked) 1f else .5f
         val onAlpha = if (checked) 1f else .5f
         Text(
-            text = "Off",
+            text = stringResource(R.string.off),
             fontSize = 14.sp,
             fontWeight = if (!checked) FontWeight.SemiBold else FontWeight.Normal,
             color = LocalContentColor.current.copy(alpha = offAlpha)
@@ -560,7 +550,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             )
         }
         Text(
-            text = "On",
+            text = stringResource(R.string.on),
             fontSize = 14.sp,
             fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal,
             color = LocalContentColor.current.copy(alpha = onAlpha)

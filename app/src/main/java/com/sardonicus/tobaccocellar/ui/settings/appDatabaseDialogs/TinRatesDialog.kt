@@ -109,16 +109,13 @@ fun TinRatesDialog(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "One Tin = ",
+                            text = stringResource(R.string.tin_conversion_one_is),
                             modifier = Modifier.padding(end = 8.dp),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp
                         )
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(
-                                2.dp,
-                                Alignment.CenterVertically
-                            ),
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.Start
                         ) {
                             val symbols =

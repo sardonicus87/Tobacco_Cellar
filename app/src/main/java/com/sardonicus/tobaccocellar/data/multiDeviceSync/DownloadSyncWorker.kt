@@ -11,6 +11,7 @@ import androidx.work.workDataOf
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.CrossRefSyncPayload
 import com.sardonicus.tobaccocellar.data.Flavoring
@@ -82,8 +83,8 @@ class DownloadSyncWorker(
             if (checkNotificationPermission(notificationManager, app, CellarApplication.SYNC_NOTIFICATION)) {
                 started = SystemClock.elapsedRealtime()
                 val title =
-                    if (syncType == SYNC_TYPE_PERIODIC) "Tobacco Cellar periodic sync check"
-                    else "Tobacco Cellar sync check"
+                    if (syncType == SYNC_TYPE_PERIODIC) app.getString(R.string.sync_notification_title_periodic, "Tobacco Cellar")
+                    else app.getString(R.string.sync_notification_title_regular, "Tobacco Cellar")
                 val notification = NotificationCompat.Builder(applicationContext, CellarApplication.SYNC_NOTIFICATION)
                     .setContentTitle(title)
                     .setSmallIcon(android.R.drawable.stat_notify_sync)

@@ -13,15 +13,17 @@
     <string name="import_help">CSV Import Help</string>
     <string name="settings_title">Settings</string>
     <string name="about_title">About</string>
+    <string name="about_settings">About/Settings</string>
     <string name="changelog_title">Changelog</string>
     <string name="license_title">Licenses</string>
     <string name="help_faq_title">Help/FAQ</string>
     <string name="blend_details_title">Blend Details</string>
     <string name="batch_edit_title">Batch Edit</string>
+    <string name="plaintext">Plaintext</string>
     <string name="plaintext_title">Plaintext Export</string>
 
     <!-- Button Text -->
-    <string name="filter_items">Filter</string>
+    <string name="filter">Filter</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
     <string name="load">Load</string>
@@ -29,6 +31,7 @@
     <string name="delete_all">Clear Database</string>
     <string name="cancel">Cancel</string>
     <string name="yes">Yes</string>
+    <string name="agree">Agree</string>
     <string name="delete_entry">Delete Entry</string>
     <string name="update">Update</string>
     <string name="ok">OK</string>
@@ -44,6 +47,15 @@
     <string name="help_faq">Help/FAQ</string>
 
     <string name="select_csv">Select CSV</string>
+
+    <string name="normal">Normal</string>
+    <string name="as_tins">As Tins</string>
+    <string name="export_csv_options">Export CSV Options</string>
+    <string name="export_csv_dialog">Choose which entries to export (all or currently filtered) and
+        scaling options for ratings.</string>
+    <string name="filtered">Filtered</string>
+    <string name="max_rating_label">Max Rating:</string>
+    <string name="decimal_places">Decimal Places:\u00A0</string>
 
 
     <!-- Instructions -->
@@ -65,11 +77,21 @@
     <string name="possible_header">Possible header: </string>
     <string name="possible_record">Record parse test: </string>
 
-
     <string name="item_detail_title">Details</string>
     <string name="notes_entry">Enter Notes</string>
     <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
+
+
+    <!-- Notification Strings -->
+    <string name="tin_notification_title">Tobacco Cellar found tins ready to open</string>
+    <string name="tin_notification_extended">\n… (and %s more)</string>
+    <string name="tin_notification_summary_single">"%s ready to open.</string>
+    <string name="tin_notification_summary_plural">"%s tins ready to open.</string>
+
+    <string name="sync_notification_title_periodic">%s periodic sync check</string>
+    <string name="sync_notification_title_regular">%s sync check</string>
+
 
     <!-- Global and Special Strings -->
     <string name="default_">Default</string>
@@ -128,6 +150,8 @@
     <string name="none_assigned">(None Assigned)</string>
 
     <string name="copied_clipboard">Copied to clipboard</string>
+    <string name="off">Off</string>
+    <string name="on">On</string>
 
     <string name="privacy_policy">Privacy Policy</string>
     <string name="manage_data">Managing Data</string>
@@ -138,6 +162,7 @@
     <string name="oz" translatable="false">oz</string>
     <string name="lb" translatable="false">lb</string>
     <string name="lbs" translatable="false">lbs</string>
+    <string name="oz_lbs">oz/lbs</string>
     <string name="grams">grams</string>
     <string name="grams_short" translatable="false">g</string>
     <string name="format_quantity">%1$s%2$s %3$s</string>
@@ -168,6 +193,53 @@
     <string name="sign_in_failed">Sign-in failed.</string>
     <string name="logged_out">Logged out.</string>
     <string name="sign_out_failed">Sign-out failed.</string>
+    <string name="sync_in_progress">Sync already in progress</string>
+    <string name="allow_mobile_off">allow mobile data is off</string>
+    <string name="check_connection">check connection</string>
+    <string name="failed">Failed: %s.</string>
+    <string name="connection_timeout">Sync failed (connection timeout).</string>
+    <string name="sync_disabled">Sync disabled, please sign-in again.</string>
+    <string name="sync_channel_name">Background sync</string>
+    <string name="sync_channel_description">Quiet background notification indicating sync working in the background.</string>
+    <string name="tin_channel_name">Tins ready</string>
+    <string name="tin_channel_description">Show a notification when a tin is ready to open.</string>
+    <string name="sync_complete">Sync complete.</string>
+    <string name="remote_not_found">No remote files found.</string>
+    <string name="lost_connection">No or lost connection.</string>
+    <string name="became_disabled">Sync became disabled.</string>
+    <string name="nothing_new">No new data available.</string>
+    <string name="sync_failed_sign_in">Sync failed (not signed-in).</string>
+    <string name="authentication_error">Authentication error, try signing in again.</string>
+    <string name="remote_failed">Remote connection failed.</string>
+    <string name="failed_check_connection">Sync failed, please check connection.</string>
+    <string name="failed_unknown">Sync failed (unknown error).</string>
+    <string name="clear_remote_wait">Sync in progress, please wait for it to finish.</string>
+    <string name="not_signed_in">No user signed in.</string>
+    <string name="remote_deleted">Remote data deleted.</string>
+    <string name="remote_error">Error deleting remote data.</string>
+    <string name="conversion_updated">Conversion rates and synced quantities updated.</string>
+    <string name="quantities_updated">Synced quantities updated.</string>
+    <string name="sync_tins_update_error">Error updating synced quantities</string>
+    <string name="optimize_complete">Optimization complete.</string>
+    <string name="db_deleted">Database deleted!</string>
+    <string name="backup_complete">Backup complete.</string>
+    <string name="backup_failed">Backup failed.</string>
+    <string name="restore_complete">Restore complete.</string>
+    <string name="restore_failed">Restore failed.</string>
+    <string name="invalid_file">Invalid file.</string>
+    <string name="restore_failed_version">Restore failed: file for unsupported version.</string>
+    <string name="restore_failed_no_data">Restore failed: file contains no database or settings data.</string>
+    <string name="db_settings_restored">Database and settings restored.</string>
+    <string name="db_restored">Database restored.</string>
+    <string name="settings_restored">Settings restored.</string>
+    <string name="db_restored_no_settings">File missing settings data, database restored.</string>
+    <string name="settings_restored_no_db">File missing database data, settings restored.</string>
+    <string name="no_db_data">File does not contain database data.</string>
+    <string name="backup_db_invalid">Backup database version is invalid.</string>
+    <string name="no_settings_data">File does not contain settings data.</string>
+    <string name="db_restore_error">Error restoring database,</string>
+    <string name="settings_restore_error">Error restoring settings,</string>
+    <string name="restore_failed_message">Restore failed: %s</string>
 
 
     <!-- Filter Pane/Sheet Strings -->
@@ -343,7 +415,6 @@
     <!-- Batch Edit strings -->
     <string name="select_items">Select Items</string>
     <string name="clear_selections">Clear Selections</string>
-    <string name="filter">Filter</string>
     <string name="edit">Edit</string>
     <string name="production_status_label">Production Status:\u00A0</string>
     <string name="production_status_label2">Production\nStatus:\u00A0</string>
@@ -413,12 +484,6 @@
     <string name="burley_lower">burley</string>
     <string name="flake_cut">flake cut</string>
 
-
-
-
-
-
-
     <string name="formatting_help1">Anything typed in the format string will show in the text. To
         reference specific fields, use the placeholders above. Setting the \"List as\" to tins will
         explode the tins into individual entries in the text list. The delimiter separates entries and
@@ -471,19 +536,142 @@
 
 
     <!-- Settings Strings -->
-    <string name="multi_device_sync">Multi-Device Sync</string>
-    <string name="tin_conversion_rates">Tin Conversion Rates</string>
-    <string name="default_sync_tin_option">Default \"Sync Tins?\" Option</string>
-    <string name="other_operations">Other Db Operations</string>
+    <string name="display_settings">Display Settings</string>
+    <string name="app_db_settings">App &amp; Database Settings</string>
+
+    <string name="theme_option">Theme</string>
+    <string name="theme_description">Change the theme of the app.</string>
     <string name="light">Light</string>
     <string name="dark">Dark</string>
     <string name="system">System</string>
+
+    <string name="ratings_option">Cellar Ratings Visibility</string>
+    <string name="ratings_description">Show/hide ratings in list view.</string>
+    <string name="ratings_dialog">Display ratings on cellar screen:</string>
+
+    <string name="type_genre_option">Cellar Type/Genre Display</string>
+    <string name="type_genre_description">Set type/genre display for Cellar screen.</string>
+    <string name="type_genre_dialog">This option sets the display of Type, Subgenre or both on the
+        Cellar screen. Fallback options display the option and if it\'s unused on an entry, fallback
+        to the other (e.g. Subgenre (fallback) would display the subgenre but if an entry has no
+        subgenre, will instead show the type value in parentheses). This also affects table view when
+        only one or the other of Type or Subgenre columns are shown.</string>
     <string name="both">Both</string>
     <string name="type_fallback">Type (fallback)</string>
     <string name="sub_fallback">Subgenre (fallback)</string>
+
+    <string name="quantity_option">Cellar Quantity Option</string>
+    <string name="quantity_description">Set quantity display for Cellar screen.</string>
+    <string name="quantity_display_dialog">Displayed quantities for ounces and grams are based on the
+        summed quantities of tins. If no tins are present, \"No. of Tins\" value will be converted and
+        displayed with an asterisk.</string>
     <string name="no_tins_default">\"No. of Tins\" (default)</string>
     <string name="ounces_pounds">Ounces/Pounds</string>
     <string name="qt_option_grams">Grams</string>
+
+    <string name="parse_links_option">Parse Links in Notes</string>
+    <string name="parse_links_description">Enable/disable link parsing in notes.</string>
+    <string name="parse_links_dialog">Parse links in notes:</string>
+
+    <string name="large_screen_option">Large Screen Options</string>
+    <string name="large_screen_description">Large screen adaptive layout options</string>
+    <string name="large_screen_dialog">Adaptive layout options for large screens. The dual-pane and
+        expand tabs are separate options (disabling one will not affect the other). \"Adapt in landscape
+        only\" affects both. Foldable devices are considered landscape when the hinge is vertical.</string>
+    <string name="large_screen_dual">Dual pane layouts:</string>
+    <string name="large_screen_columns">Expand tabs to two columns:</string>
+    <string name="large_screen_landscape">Adapt in landscape only:</string>
+
+    <string name="multi_device_sync">Multi-Device Sync</string>
+    <string name="multi_device_sync_description">Enable/disable cross-device sync.</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="multi_device_on">On (%s)</string>
+    <string name="mobile">mobile</string>
+    <string name="wifi">WiFi</string>
+    <string name="multi_device_sync_label">Multi-Device Sync:</string>
+    <string name="multi_device_acknowledge_title">About Multi Device Sync</string>
+    <string name="scroll_to_accept">(You must scroll to the bottom to accept)</string>
+    <string name="multi_device_acknowledge_body1">To auto-synchronize collection changes across devices,
+        you must enable this option and sign-in with the same Google account on each device you want
+        sync\'ed. This will also authorize the app to have Google Drive access (you do not need the
+        Google Drive app for this functionality to work). This feature also requires all synced devices
+        to be running a version of the app with the same Database Version.</string>
+    <string name="multi_device_acknowledge_body2">Developer and/or any third parties will not have access
+        to your login or drive. This authorization just allows the app to use your Google Drive as a
+        cloud location for storing and retrieving data changes between devices. The app will create a
+        hidden folder on your Google Drive, and this folder is the only part of your Drive that the app
+        can access. Login and remote sync data can be cleared at any time in this setting dialog (clear
+        remote data before clearing login). If you wish to revoke Drive authorization, this must be
+        done in your Google Account settings (Services → Connected Apps).</string>
+    <string name="multi_device_acknowledge_body3">Sync data does not count toward your Google Drive
+        storage quota. Data is checked once at every app start (including \"warm starts\" if it has
+        been at least one hour since initial app start), and cyclically once every 12 hours as long
+        as the device is powered on and connected. All data checks respect your settings regarding
+        mobile data or WIFI-only (will never use mobile data unless enabled).</string>
+    <string name="multi_device_acknowledge_body4">It is recommended to create a manual database backup
+        of the device with the most up-to-date information, then transfer to and restore on the other
+        device(s) before enabling this setting.</string>
+    <string name="multi_device_check_connection">(Check Connection)</string>
+    <string name="multi_device_allow_mobile">Allow Mobile Data:</string>
+    <string name="multi_device_manual_sync">Manual Sync</string>
+    <string name="multi_device_clear_remote">Clear Remote Data</string>
+    <string name="multi_device_sign_out">Sign-Out</string>
+    <string name="multi_device_enable_notification">Enable sync notification?</string>
+
+    <string name="tin_ready_option">Tin Ready Notifications</string>
+    <string name="tin_ready_description">Enable/disable tin notifications.</string>
+    <string name="tin_notification_dialog">Show a notification whenever tins are ready. Notifications
+        are local, they do not require internet access. Check that notifications for the app are enabled
+        in your device settings.</string>
+    <string name="tin_notification_option">Notifications:</string>
+    <string name="tin_notification_time">Notification time:</string>
+    <string name="tin_notification_set">Set Time</string>
+
+    <string name="conversion_option">Tin Conversion Rates</string>
+    <string name="conversion_description">Set tin conversion rates.</string>
+    <string name="tin_conversion_rates">Tin Conversion Rates</string>
+    <string name="tin_conversion_one_is">One Tin =\u00A0</string>
+
+    <string name="default_sync_option">Default \"Sync Tins?\" Option</string>
+    <string name="default_sync_description">Set default sync tins option.</string>
+    <string name="default_sync_tin_dialog">Set \"Sync Tins\" default on or off when adding new entries:</string>
+
+    <string name="backup_restore_option">Backup/Restore</string>
+    <string name="backup_restore_description">Backup or restore database and/or settings.</string>
+    <string name="backup_restore_dialog">Would you like to Backup or Restore?</string>
+    <string name="backup">Backup</string>
+    <string name="restore">Restore</string>
+    <string name="backup_dialog">Select what to backup. If you check both boxes, a single file will
+        be created that holds both. The restore function can optionally restore either the database
+        or the settings from the joint backup file.</string>
+    <string name="restore_dialog">Select what to restore.\n\nWARNING: Restore will overwrite any existing
+        settings and/or database data (depending on which is selected). Either or both can be restored
+        from a joint database/settings backup file.</string>
+    <string name="database">Database</string>
+
+    <string name="other_operations">Other Db Operations</string>
+    <string name="other_operations_description">Fix sync quantities and optimize database.</string>
+    <string name="other_operations_dialog">These options shouldn\'t be necessary. \"Fix tin sync
+        quantity\" corrects the \"No. of Tins\" for entries with quantity sync checked. \"Optimize
+        database\" cleans up any potentially orphaned data.</string>
+    <string name="other_operations_fix">Fix/Update Tin Sync Quantity</string>
+    <string name="other_operations_clean">Clean and Optimize Database</string>
+
+    <string name="delete_db">Delete Database</string>
+    <string name="delete_db_description">"Delete all entries.</string>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     <!-- CSV Import strings -->

@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -136,7 +137,7 @@ fun DeviceSyncDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!acknowledgement) {
                     Text(
-                        text = "About Multi Device Sync",
+                        text = stringResource(R.string.multi_device_acknowledge_title),
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
@@ -147,55 +148,19 @@ fun DeviceSyncDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = "(You must scroll to the bottom to accept)",
+                            text = stringResource(R.string.scroll_to_accept),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             fontSize = 13.sp,
                             color = LocalContentColor.current
                         )
-                        Text(
-                            text = "To auto-synchronize collection changes across devices, you " +
-                                    "must enable this option and sign-in with the same Google " +
-                                    "account on each device you want sync'ed. This will also " +
-                                    "authorize the app to have Google Drive access (you do not " +
-                                    "need the Google Drive app for this functionality to work). " +
-                                    "This feature also requires all synced devices to be " +
-                                    "running a version of the app with the same Database Version.",
-                            fontSize = 14.sp,
-                            color = LocalContentColor.current
-                        )
-                        Text(
-                            text = "Developer and/or any third parties will not have access to " +
-                                    "your login or drive. This authorization just allows the app " +
-                                    "to use your Google Drive as a cloud location for storing and " +
-                                    "retrieving data changes between devices. The app will create " +
-                                    "a hidden folder on your Google Drive, and this folder is the " +
-                                    "only part of your Drive that the app can access. Login and " +
-                                    "remote sync data can be cleared at any time in this setting " +
-                                    "dialog (clear remote data before clearing login). If you " +
-                                    "wish to revoke Drive authorization, this must be done in " +
-                                    "your Google Account settings (Services → Connected Apps).",
-                            fontSize = 14.sp,
-                            color = LocalContentColor.current
-                        )
-                        Text(
-                            text = "Sync data does not count toward your Google Drive storage " +
-                                    "quota. Data is checked once at every app start (including " +
-                                    "\"warm starts\" if it has been at least one hour since " +
-                                    "initial app start), and cyclically once every 12 hours as " +
-                                    "long as the device is powered on and connected. All data " +
-                                    "checks respect your settings regarding mobile data or WIFI " +
-                                    "only (will never use mobile data unless enabled).",
-                            fontSize = 14.sp,
-                            color = LocalContentColor.current
-                        )
-                        Text(
-                            text = "It is recommended to create a manual database backup of the " +
-                                    "device with the most up-to-date information, then transfer " +
-                                    "to and restore on the other device(s) before enabling this " +
-                                    "setting.",
-                            fontSize = 14.sp,
-                            color = LocalContentColor.current
-                        )
+                        Text(stringResource(R.string.multi_device_acknowledge_body1),
+                            fontSize = 14.sp, color = LocalContentColor.current)
+                        Text(stringResource(R.string.multi_device_acknowledge_body2),
+                            fontSize = 14.sp, color = LocalContentColor.current)
+                        Text(stringResource(R.string.multi_device_acknowledge_body3),
+                            fontSize = 14.sp, color = LocalContentColor.current)
+                        Text(stringResource(R.string.multi_device_acknowledge_body4),
+                            fontSize = 14.sp, color = LocalContentColor.current)
                     }
                 } else {
                     Box {
@@ -214,7 +179,7 @@ fun DeviceSyncDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Multi-Device Sync:",
+                                        text = stringResource(R.string.multi_device_sync_label),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = LocalContentColor.current.copy(alpha = if (debouncedLoading) .38f else 1f)
@@ -268,7 +233,7 @@ fun DeviceSyncDialog(
                                 }
                                 if ((deviceSync && !connectionEnabled) || disconnectFailure) {
                                     Text(
-                                        text = "(Check Connection)",
+                                        text = stringResource(R.string.multi_device_check_connection),
                                         fontSize = 14.sp,
                                         textAlign = TextAlign.Center,
                                         lineHeight = 1.em,
@@ -293,7 +258,7 @@ fun DeviceSyncDialog(
                             ) {
                                 val alpha = if (!deviceSync || debouncedLoading) .38f else 1f
                                 Text(
-                                    text = "Allow Mobile Data:",
+                                    text = stringResource(R.string.multi_device_allow_mobile),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = LocalContentColor.current.copy(alpha = alpha)
@@ -326,12 +291,7 @@ fun DeviceSyncDialog(
                                         enabled = deviceSync && accountLinked && connectionEnabled && !debouncedLoading,
                                         contentPadding = PaddingValues(8.dp, 3.dp),
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                                    ) {
-                                        Text(
-                                            text = "Manual Sync",
-                                            fontSize = 15.sp,
-                                        )
-                                    }
+                                    ) { Text(stringResource(R.string.multi_device_manual_sync), fontSize = 15.sp,) }
 
                                     // Clear remote data
                                     TextButton(
@@ -339,13 +299,7 @@ fun DeviceSyncDialog(
                                         enabled = accountLinked && connectionEnabled && !debouncedLoading,
                                         contentPadding = PaddingValues(8.dp, 3.dp),
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                                    ) {
-                                        Text(
-                                            text = "Clear Remote Data",
-                                            fontSize = 15.sp,
-                                            maxLines = 1
-                                        )
-                                    }
+                                    ) { Text(stringResource(R.string.multi_device_clear_remote), fontSize = 15.sp, maxLines = 1) }
                                 }
                             }
 
@@ -357,7 +311,7 @@ fun DeviceSyncDialog(
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
                             ) {
                                 Text(
-                                    text = "Sign-Out",
+                                    text = stringResource(R.string.multi_device_sign_out),
                                     fontSize = 15.sp,
                                     modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
                                 )
@@ -374,7 +328,7 @@ fun DeviceSyncDialog(
                                     modifier = Modifier.heightIn(28.dp, 28.dp)
                                 ) {
                                     Text(
-                                        text = "Enable sync notification?",
+                                        text = stringResource(R.string.multi_device_enable_notification),
                                         fontSize = 15.sp,
                                         modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
                                     )
@@ -388,12 +342,12 @@ fun DeviceSyncDialog(
         },
         confirmButton = {
             if (!acknowledgement) {
-                TextButton({ confirmAcknowledgement() }, enabled = atBottom) { Text("Agree") }
+                TextButton({ confirmAcknowledgement() }, enabled = atBottom) { Text(stringResource(R.string.agree)) }
             }
-            else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text("Done") } }
+            else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done)) } }
         },
         dismissButton =
-            if (!acknowledgement) { { TextButton({ onDismiss() }) { Text("Cancel") } } }
+            if (!acknowledgement) { { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } } }
             else null,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
