@@ -167,6 +167,7 @@
     <string name="opened">Opened</string>
     <string name="unopened">Unopened</string>
     <string name="finished">Finished</string>
+    <string name="finished_parentheses">(Finished)</string>
     <string name="finished_label">Finished:\u00A0</string>
     <string name="Unfinished">Unfinished</string>
 
