@@ -24,6 +24,7 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -68,7 +69,7 @@ class BlendDetailsViewModel(
             blend = item.items.blend,
             favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
             itemDetails = setOfNotNull(
-                buildDetailsString(app.getString(R.string.type_label), item.items.type.ifBlank { app.getString(R.string.unassigned) }),
+                buildDetailsString(app.getString(R.string.type_label), getLocalizedType(item.items.type, app)),
                 buildDetailsString(app.getString(R.string.subgenre_label), item.items.subGenre),
                 buildDetailsString(app.getString(R.string.cut_label), item.items.cut),
                 buildDetailsString(app.getString(R.string.component_label), item.components.map { it.componentName }.sorted().joinToString(", ")),

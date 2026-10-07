@@ -73,14 +73,14 @@ fun TypeFilterSection(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 BlendTypes.entries.forEach {
-                    val type = stringResource(id = it.resId)
+                    val type = it.name
                     val selected by remember(type) { derivedStateOf { selectedTypes.contains(type) } }
                     val typeEnabled by remember(type) { derivedStateOf { enabled[type] ?: false } }
 
                     FilterChip(
                         selected = selected,
                         onClick = { onClick(type) },
-                        label = { Text(type, fontSize = 14.sp) },
+                        label = { Text(stringResource(id = it.resId), fontSize = 14.sp) },
                         modifier = Modifier.padding(0.dp),
                         shape = MaterialTheme.shapes.small,
                         colors = FilterChipDefaults.filterChipColors(

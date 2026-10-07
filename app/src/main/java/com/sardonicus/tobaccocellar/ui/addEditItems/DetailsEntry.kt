@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.AutoCompleteData
 import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
@@ -82,6 +83,7 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingPopup
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -237,12 +239,18 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val app = LocalCellarApplication.current
+            val typeMap = remember {
+                BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }
+                    .associate { app.getString(it.resId) to it.name }
+            }
+
             Text(stringResource(R.string.type_label), Modifier.width(80.dp))
             CustomDropDown(
-                selectedValue = itemDetails.type,
-                onValueChange = { onValueChange(itemDetails.copy(type = it)) },
-                options = listOf("") + BlendTypes.entries.filter { it != BlendTypes.UNASSIGNED }.map { stringResource(it.resId) },
-                modifier = Modifier.fillMaxWidth(),
+                selectedValue = getLocalizedType(itemDetails.type, app, false),
+                onValueChange = { onValueChange(itemDetails.copy(type = typeMap[it] ?: "")) },
+                options = listOf("") + typeMap.keys.toList(),
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
@@ -252,10 +260,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(R.string.subgenre_label),
-                modifier = Modifier.width(80.dp)
-            )
+            Text(stringResource(R.string.subgenre_label), Modifier.width(80.dp))
 
             AutoCompleteText(
                 value = itemDetails.subGenre,

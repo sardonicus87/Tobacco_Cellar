@@ -601,7 +601,7 @@ class CsvImportViewModel(
         return Items(
             brand = brand,
             blend = blend,
-            type = record.getMapped(CsvField.Type, indices).capitalizeType(),
+            type = record.getMapped(CsvField.Type, indices).toBlendKey(),
             subGenre = record.getMapped(CsvField.SubGenre, indices),
             cut = record.getMapped(CsvField.Cut, indices),
             quantity = if (syncTins) calculateSyncTinsQuantity(tins, ozRate, gramsRate) else if (quantity > 99) 1 else quantity,
@@ -642,7 +642,7 @@ class CsvImportViewModel(
             else { existing.syncTins || (mappingOptions.syncTins && tins.isNotEmpty()) }
 
         return existing.copy(
-            type = if (shouldUpdate(CsvField.Type, existing.type)) record.getMapped(CsvField.Type, indices).capitalizeType() else existing.type,
+            type = if (shouldUpdate(CsvField.Type, existing.type)) record.getMapped(CsvField.Type, indices).toBlendKey() else existing.type,
             subGenre = if (shouldUpdate(CsvField.SubGenre, existing.subGenre)) record.getMapped(CsvField.SubGenre, indices) else existing.subGenre,
             cut = if (shouldUpdate(CsvField.Cut, existing.cut)) record.getMapped(CsvField.Cut, indices) else existing.cut,
             quantity =
@@ -685,11 +685,19 @@ class CsvImportViewModel(
         }
     }
 
-    private fun String.capitalizeType(): String {
-        val upper = this.uppercase()
-        val upperOptions = BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }.map {
-            app.getString(it.resId).uppercase() }
-        return if (upper in upperOptions) { this.lowercase().replaceFirstChar { it.uppercase() } } else ""
+    private fun String.toBlendKey(): String {
+        if (this.isBlank()) return ""
+        val trimmed = this.trim()
+
+        for (type in BlendTypes.entries) {
+            if (type == BlendTypes.UNASSIGNED) continue
+            val localized = app.getString(type.resId)
+
+            if (trimmed.equals(localized, ignoreCase = true) || trimmed.equals(type.name, ignoreCase = true)) {
+                return type.name
+            }
+        }
+        return ""
     }
 
     private fun parseTinData(record: CSVRecord, indices: Map<CsvField, Int>): TinData {

@@ -371,9 +371,9 @@ class FilterViewModel (
         for ((item, component, flavoring, tins) in data) {
 
             brands.add(item.brand)
-            types.add(item.type.ifBlank { unassignedLabel })
-            subgenres.add(item.subGenre.ifBlank { unassignedLabel })
-            cuts.add(item.cut.ifBlank { unassignedLabel })
+            types.add(item.type.ifBlank { BlendTypes.UNASSIGNED.name })
+            subgenres.add(item.subGenre.ifBlank { BlendTypes.UNASSIGNED.name })
+            cuts.add(item.cut.ifBlank { BlendTypes.UNASSIGNED.name })
 
             if (item.type.isNotBlank()) typesAny = true
             if (item.subGenre.isNotBlank()) subgenresAny = true
@@ -403,8 +403,7 @@ class FilterViewModel (
         }.thenBy { it.lowercase() }
 
         val typesComparator = compareBy<String> { string ->
-            BlendTypes.entries.indexOfFirst { application.getString(it.resId) == string }.let {
-                if (it == -1) Int.MAX_VALUE else it }
+            runCatching { BlendTypes.valueOf(string).ordinal }.getOrDefault(Int.MAX_VALUE)
         }
 
         return CellarMetaData(
@@ -610,7 +609,7 @@ class FilterViewModel (
             val baseFilters =
                 (selections.brands.isEmpty() || selections.brands.contains(items.items.brand)) &&
                         (selections.excludeBrands.isEmpty() || !selections.excludeBrands.contains(items.items.brand)) &&
-                        (selections.types.isEmpty() || selections.types.contains(items.items.type.ifBlank { unassignedLabel })) &&
+                        (selections.types.isEmpty() || selections.types.contains(items.items.type.ifBlank { BlendTypes.UNASSIGNED.name })) &&
                         (!selections.favorites || if (selections.dislikeds) (items.items.disliked || items.items.favorite) else items.items.favorite) &&
                         (!selections.excludeFavorites || !items.items.favorite) &&
                         (!selections.dislikeds || if (selections.favorites) (items.items.favorite || items.items.disliked) else items.items.disliked) &&
@@ -769,7 +768,7 @@ class FilterViewModel (
 
         val mBrand = selections.brands.isEmpty() || selections.brands.contains(item.brand)
         val mExBrand = selections.excludeBrands.isEmpty() || !selections.excludeBrands.contains(item.brand)
-        val mType = selections.types.isEmpty() || (selections.types.contains(item.type.ifBlank { unassignedLabel }))
+        val mType = selections.types.isEmpty() || (selections.types.contains(item.type.ifBlank { BlendTypes.UNASSIGNED.name }))
         val mProd = (!selections.production || item.inProduction) && (!selections.outOfProduction || !item.inProduction)
         val mSubgenre = selections.subgenres.isEmpty() || selections.subgenres.contains(item.subGenre.ifBlank { unassignedLabel })
         val mCut = selections.cuts.isEmpty() || selections.cuts.contains(item.cut.ifBlank { unassignedLabel })
@@ -852,7 +851,7 @@ class FilterViewModel (
 
         if (canEnable(0)) collector.brandsMap[item.brand] = true
         if (canEnable(1)) collector.excludeBrandsMap[item.brand] = true
-        if (canEnable(2)) collector.typesMap[item.type.ifBlank { unassignedLabel }] = true
+        if (canEnable(2)) collector.typesMap[item.type.ifBlank { BlendTypes.UNASSIGNED.name }] = true
 
         if (canEnable(3)) {
             if (item.favorite) collector.favorites = true

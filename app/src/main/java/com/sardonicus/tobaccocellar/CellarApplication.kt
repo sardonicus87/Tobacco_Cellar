@@ -26,6 +26,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.DownloadSyncWorker
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelper
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -187,21 +188,15 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         val itemsRepo = container.itemsRepository
         val allItems = itemsRepo.getEverythingStream().first()
 
-        val aromatic = getString(R.string.aromatic)
-        val english = getString(R.string.english)
-        val burley = getString(R.string.burley)
-        val virginia = getString(R.string.virginia)
-        val other = getString(R.string.other)
-
         val lastModified = System.currentTimeMillis()
 
         for ((item) in allItems) {
-            val mappedType = when (item.type.trim().lowercase()) {
-                "aromatic" -> aromatic
-                "english" -> english
-                "burley" -> burley
-                "virginia" -> virginia
-                "other" -> other
+            val mappedType = when (item.type.trim()) {
+                "Aromatic" -> BlendTypes.AROMATIC.name
+                "English" -> BlendTypes.ENGLISH.name
+                "Burley" -> BlendTypes.BURLEY.name
+                "Virginia" -> BlendTypes.VIRGINIA.name
+                "Other" -> BlendTypes.OTHER.name
                 else -> continue
             }
 

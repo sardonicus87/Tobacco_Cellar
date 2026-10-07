@@ -12,6 +12,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.blendDetails.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,14 +29,14 @@ import kotlin.time.Duration.Companion.milliseconds
 class StatsViewModel(
     filterViewModel: FilterViewModel,
     preferencesRepo: PreferencesRepo,
-    application: CellarApplication
+    app: CellarApplication
 ): ViewModel() {
 
     private val _showLoading = MutableStateFlow(true)
     val showLoading = _showLoading.asStateFlow()
     private fun updateLoading(state: Boolean) { _showLoading.value = state }
-    private val unassignedLabel = application.getString(R.string.unassigned)
-    private val noneAssignedLabel = application.getString(R.string.none_assigned)
+    private val unassignedLabel = app.getString(R.string.unassigned)
+    private val noneAssignedLabel = app.getString(R.string.none_assigned)
 
     /** Raw stats */
     val rawStats: StateFlow<RawStats> = combine (
@@ -81,7 +82,7 @@ class StatsViewModel(
                 ratingSum += item.rating
             }
 
-            typeMap.increment(item.type.ifBlank { unassignedLabel })
+            typeMap.increment(getLocalizedType(item.type, app))
             subgenreMap.increment(item.subGenre.ifBlank { unassignedLabel })
             cutMap.increment(item.cut.ifBlank { unassignedLabel })
 
@@ -126,7 +127,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, application, filterViewModel.unitsShort),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app, filterViewModel.unitsShort),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
@@ -216,7 +217,7 @@ class StatsViewModel(
         for ((item, components, flavoring, tins) in allItems) {
             val relevant = item.id in filteredIds
 
-            val type = item.type.ifBlank { unassignedLabel }
+            val type = getLocalizedType(item.type, app)
             val subgenre = item.subGenre.ifBlank { unassignedLabel }
             val cut = item.cut.ifBlank { unassignedLabel }
 
@@ -262,7 +263,7 @@ class StatsViewModel(
 
                 if (item.quantity > 0) {
                     brandsByQuantity[item.brand] = (brandsByQuantity[item.brand] ?: 0) + item.quantity
-                    typesByQuantity[type] = (typesByQuantity[item.type] ?: 0) + item.quantity
+                    typesByQuantity[type] = (typesByQuantity[type] ?: 0) + item.quantity
                     subgenresByQuantity[subgenre] = (subgenresByQuantity[item.subGenre] ?: 0) + item.quantity
                     cutsByQuantity[cut] = (cutsByQuantity[item.cut] ?: 0) + item.quantity
                 }
@@ -296,7 +297,7 @@ class StatsViewModel(
         }
 
         val globalAvg = if (ratedCount > 0) ratingSum / ratedCount else 0.0
-        val other = application.getString(R.string.chart_other)
+        val other = app.getString(R.string.chart_other)
 
         FilteredStats(
             blendsCount = filteredItems.size,
@@ -305,7 +306,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, application, filterViewModel.unitsShort),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app, filterViewModel.unitsShort),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
@@ -332,9 +333,9 @@ class StatsViewModel(
                 unratedCount = unratedCount
             ),
             favDisByEntries = mapOf(
-                application.getString(R.string.favorite) to favoriteCount,
-                application.getString(R.string.disliked) to dislikedCount,
-                application.getString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
+                app.getString(R.string.favorite) to favoriteCount,
+                app.getString(R.string.disliked) to dislikedCount,
+                app.getString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
             ).filterValues { it > 0 }.sortByValue(),
             subgenresByEntries = subgenresByEntries.reduceToTen(other),
             subgenresByQuantity = subgenresByQuantity.reduceToTen(other),
@@ -370,11 +371,11 @@ class StatsViewModel(
                 flavoring = flavoring,
                 container = container,
                 available = listOfNotNull(
-                    if (subgenre) { Triple(application.getString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
-                    if (cut) { Triple(application.getString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
-                    if (component) { Triple(application.getString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
-                    if (flavoring) { Triple(application.getString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
-                    if (container) { Triple(application.getString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
+                    if (subgenre) { Triple(app.getString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
+                    if (cut) { Triple(app.getString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
+                    if (component) { Triple(app.getString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
+                    if (flavoring) { Triple(app.getString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
+                    if (container) { Triple(app.getString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
                 )
             )
         }

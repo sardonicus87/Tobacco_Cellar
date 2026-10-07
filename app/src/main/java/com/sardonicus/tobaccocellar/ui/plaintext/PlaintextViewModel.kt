@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
@@ -22,6 +23,7 @@ import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -42,7 +44,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class PlaintextViewModel (
     filterViewModel: FilterViewModel,
     val preferencesRepo: PreferencesRepo,
-    app: CellarApplication
+    private val app: CellarApplication
 ) : ViewModel() {
 
     private val _isInitialized = MutableStateFlow(false)
@@ -70,12 +72,13 @@ class PlaintextViewModel (
     }
 
     // Preview data
+
     private val previewItems = listOf(
         Items(
             id = 1,
             brand = app.getString(R.string.brand_a),
             blend = app.getString(R.string.blend_1),
-            type = app.getString(R.string.virginia),
+            type = BlendTypes.VIRGINIA.name,
             subGenre = "VA/per",
             cut = app.getString(R.string.flake_cut),
             inProduction = true,
@@ -91,7 +94,7 @@ class PlaintextViewModel (
             id = 2,
             brand = app.getString(R.string.brand_a),
             blend = app.getString(R.string.blend_2),
-            type = app.getString(R.string.burley),
+            type = BlendTypes.BURLEY.name,
             subGenre = "",
             cut = app.getString(R.string.ribbon),
             inProduction = true,
@@ -107,7 +110,7 @@ class PlaintextViewModel (
             id = 3,
             brand = app.getString(R.string.brand_b),
             blend = app.getString(R.string.blend_1),
-            type = app.getString(R.string.english),
+            type = BlendTypes.ENGLISH.name,
             subGenre = app.getString(R.string.balkan),
             cut = app.getString(R.string.ribbon),
             inProduction = false,
@@ -223,6 +226,7 @@ class PlaintextViewModel (
             tins = previewTins.filter { it.itemsId == item.id }
         )
     }
+
 
     companion object {
         private val RATING_PLACEHOLDER = Regex("""@rating_(\d+)(?:_(\d))?""")
@@ -362,7 +366,7 @@ class PlaintextViewModel (
                     PlaintextSortOption.DEFAULT -> itemData.items.id
                     PlaintextSortOption.BRAND -> itemData.items.brand
                     PlaintextSortOption.BLEND -> itemData.items.blend
-                    PlaintextSortOption.TYPE -> itemData.items.type
+                    PlaintextSortOption.TYPE -> getLocalizedType(itemData.items.type, app, false)
                     PlaintextSortOption.SUBGENRE -> itemData.items.subGenre
                     PlaintextSortOption.CUT -> itemData.items.cut
                     PlaintextSortOption.RATING -> {
@@ -377,7 +381,7 @@ class PlaintextViewModel (
                     PlaintextSortOption.DEFAULT -> itemData.items.id
                     PlaintextSortOption.BRAND -> itemData.items.brand
                     PlaintextSortOption.BLEND -> itemData.items.blend
-                    PlaintextSortOption.TYPE -> itemData.items.type
+                    PlaintextSortOption.TYPE -> getLocalizedType(itemData.items.type, app, false)
                     PlaintextSortOption.SUBGENRE -> itemData.items.subGenre
                     PlaintextSortOption.CUT -> itemData.items.cut
                     PlaintextSortOption.QUANTITY -> {
@@ -398,7 +402,7 @@ class PlaintextViewModel (
                 PlaintextSortOption.DEFAULT -> if (asc) compareBy { it.first.items.id } else compareByDescending { it.first.items.id }
                 PlaintextSortOption.BRAND -> if (asc) compareBy { it.first.items.brand } else compareByDescending { it.first.items.brand }
                 PlaintextSortOption.BLEND -> if (asc) compareBy { it.first.items.blend } else compareByDescending { it.first.items.blend }
-                PlaintextSortOption.TYPE -> if (asc) compareBy { it.first.items.type } else compareByDescending { it.first.items.type }
+                PlaintextSortOption.TYPE -> if (asc) compareBy { getLocalizedType(it.first.items.type, app, false) } else compareByDescending { getLocalizedType(it.first.items.type, app, false) }
                 PlaintextSortOption.SUBGENRE -> if (asc) compareBy { it.first.items.subGenre } else compareByDescending { it.first.items.subGenre }
                 PlaintextSortOption.CUT -> if (asc) compareBy { it.first.items.cut } else compareByDescending { it.first.items.cut }
                 PlaintextSortOption.QUANTITY -> compareBy<Pair<ItemsComponentsAndTins, Tins?>> { quantitiesData[it.first.items.id]?.first == 0.0 }
@@ -681,13 +685,13 @@ class PlaintextViewModel (
             when (placeholder) {
                 "@brand" -> return itemData.items.brand
                 "@blend" -> return itemData.items.blend
-                "@type" -> return itemData.items.type
+                "@type" -> return getLocalizedType(itemData.items.type, app, false)
                 "@subgenre" -> return itemData.items.subGenre
                 "@cut" -> return itemData.items.cut
                 "@comps" -> return itemData.components.joinToString(", ") { it.componentName }
                 "@flavors" -> return itemData.flavoring.joinToString(", ") { it.flavoringName }
                 "@qty" -> return formattedQuantities[itemData.items.id] ?: ""
-                "@prod" -> return if (itemData.items.inProduction) "In Production" else "Discontinued"
+                "@prod" -> return if (itemData.items.inProduction) app.getString(R.string.in_production) else app.getString(R.string.discontinued)
             }
         }
         if (tinData != null) {
@@ -698,7 +702,7 @@ class PlaintextViewModel (
                 "@manufacture" -> return formatMediumDate(tinData.manufactureDate)
                 "@cellar" -> return formatMediumDate(tinData.cellarDate)
                 "@open" -> return formatMediumDate(tinData.openDate)
-                "@finished" -> return if (tinData.finished) "(Finished)" else ""
+                "@finished" -> return if (tinData.finished) app.getString(R.string.finished_parentheses) else ""
             }
         }
         return placeholder

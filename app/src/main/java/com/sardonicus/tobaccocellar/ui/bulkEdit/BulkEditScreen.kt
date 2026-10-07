@@ -114,6 +114,7 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -566,10 +567,15 @@ fun BulkEditing(
                                 ) else LocalContentColor.current
                             )
                         }
+                        val app = LocalCellarApplication.current
+                        val typeMap = remember {
+                            BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }
+                                .associate { app.getString(it.resId) to it.name }
+                        }
                         CustomDropDown(
-                            selectedValue = editingState.type,
+                            selectedValue = getLocalizedType(editingState.type, app, false),
                             onValueChange = { onValueChange(editingState.copy(type = it)) },
-                            options = listOf("") + BlendTypes.entries.filter { it != BlendTypes.UNASSIGNED }.map { stringResource(it.resId) },
+                            options = listOf("") + typeMap.keys.toList(),
                             modifier = Modifier.weight(.7f),
                             enabled = editingState.typeSelected
                         )
