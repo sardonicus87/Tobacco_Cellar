@@ -1,10 +1,13 @@
 package com.sardonicus.tobaccocellar.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.ExportType
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.TopMenuState
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
 import com.sardonicus.tobaccocellar.data.ItemsRepository
@@ -51,7 +54,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class FilterViewModel (
     private val itemsRepository: ItemsRepository,
-    private val preferencesRepo: PreferencesRepo
+    private val preferencesRepo: PreferencesRepo,
+    private val application: CellarApplication
 ): ViewModel() {
 
     /** BottomSheet State **/
@@ -63,7 +67,7 @@ class FilterViewModel (
 
 
     /** HomeScreen HomeHeader blend search **/
-    fun saveSearchSetting(setting: String) {
+    fun saveSearchSetting(setting: SearchSetting) {
         viewModelScope.launch(Dispatchers.Default) { preferencesRepo.setSearchSetting(setting) }
     }
 
@@ -96,6 +100,9 @@ class FilterViewModel (
     val savedExpanded = MutableStateFlow(true)
     fun saveExpandedState(state: Boolean) { savedExpanded.value = state }
 
+    val unitsShort = Triple(application.getString(R.string.oz), application.getString(R.string.lb), application.getString(R.string.grams_short))
+    val unassignedLabel = application.getString(R.string.unassigned)
+    val noneAssignedLabel = application.getString(R.string.none_assigned)
 
     /** Filter states **/
     val brandSearchText = MutableStateFlow("")
@@ -364,9 +371,9 @@ class FilterViewModel (
         for ((item, component, flavoring, tins) in data) {
 
             brands.add(item.brand)
-            types.add(item.type.ifBlank { "(Unassigned)" })
-            subgenres.add(item.subGenre.ifBlank { "(Unassigned)" })
-            cuts.add(item.cut.ifBlank { "(Unassigned)" })
+            types.add(item.type.ifBlank { unassignedLabel })
+            subgenres.add(item.subGenre.ifBlank { unassignedLabel })
+            cuts.add(item.cut.ifBlank { unassignedLabel })
 
             if (item.type.isNotBlank()) typesAny = true
             if (item.subGenre.isNotBlank()) subgenresAny = true
@@ -374,16 +381,16 @@ class FilterViewModel (
             if (item.favorite || item.disliked) favDisAny = true
             if (item.notes.isNotBlank()) notesAny = true
 
-            if (component.isEmpty()) { components.add("(None Assigned)") }
+            if (component.isEmpty()) { components.add(noneAssignedLabel) }
             else { for ((_, componentName) in component) { components.add(componentName) } }
 
-            if (flavoring.isEmpty()) { flavorings.add("(None Assigned)") }
+            if (flavoring.isEmpty()) { flavorings.add(noneAssignedLabel) }
             else { for ((_, flavoringName) in flavoring) { flavorings.add(flavoringName) } }
 
             if (tins.isNotEmpty()) {
                 tinsAny = true
                 for ((_, _, _, container, _, _, manufactureDate, cellarDate, openDate) in tins) {
-                    containers.add(container.ifBlank { "(Unassigned)" })
+                    containers.add(container.ifBlank { unassignedLabel })
                     if (!datesAny && (manufactureDate != null || cellarDate != null || openDate != null)) {
                         datesAny = true
                     }
@@ -392,12 +399,17 @@ class FilterViewModel (
         }
 
         val placeComparator = compareBy<String> {
-            if (it == "(Unassigned)" || it == "(None Assigned)") 1 else 0
+            if (it == unassignedLabel || it == noneAssignedLabel) 1 else 0
         }.thenBy { it.lowercase() }
+
+        val typesComparator = compareBy<String> { string ->
+            BlendTypes.entries.indexOfFirst { application.getString(it.resId) == string }.let {
+                if (it == -1) Int.MAX_VALUE else it }
+        }
 
         return CellarMetaData(
             availableBrands = brands.sorted(),
-            availableTypes = types.sortedWith(compareBy { typeOrder[it] ?: typeOrder.size }),
+            availableTypes = types.sortedWith(typesComparator),
             availableSubgenres = subgenres.sortedWith(placeComparator),
             availableCuts = cuts.sortedWith(placeComparator),
             availableComponents = components.sortedWith(placeComparator),
@@ -412,11 +424,11 @@ class FilterViewModel (
             datesExist = datesAny,
             autoCompleteData = AutoCompleteData(
                 brands = brands.sorted(),
-                subgenres = subgenres.filter { it != "(Unassigned)" }.sorted(),
-                cuts = cuts.filter { it != "(Unassigned)" }.sorted(),
-                components = components.filter { it != "(None Assigned)" }.sorted(),
-                flavorings = flavorings.filter { it != "(None Assigned)" }.sorted(),
-                tinContainers = containers.filter { it != "(Unassigned)" }.sorted()
+                subgenres = subgenres.filter { it != unassignedLabel }.sorted(),
+                cuts = cuts.filter { it != unassignedLabel }.sorted(),
+                components = components.filter { it != noneAssignedLabel }.sorted(),
+                flavorings = flavorings.filter { it != noneAssignedLabel }.sorted(),
+                tinContainers = containers.filter { it != unassignedLabel }.sorted()
             ),
             emptyDatabase = data.isEmpty()
         )
@@ -575,18 +587,18 @@ class FilterViewModel (
                         (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
                         (!selections.finished || tin.finished) &&
                         (!selections.unfinished || !tin.finished) &&
-                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
             }
 
             val compMatch = when (selections.compMatching) {
-                FlowMatchOption.ALL -> (selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(selections.components))
-                FlowMatchOption.ONLY -> (selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (items.components.map { it.componentName }.containsAll(selections.components) && items.components.size == selections.components.size))
-                else -> (selections.components.isEmpty() || ((selections.components.contains("(None Assigned)") && items.components.isEmpty()) || items.components.map { it.componentName }.any { selections.components.contains(it) }))
+                FlowMatchOption.ALL -> (selections.components.isEmpty() || (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || items.components.map { it.componentName }.containsAll(selections.components))
+                FlowMatchOption.ONLY -> (selections.components.isEmpty() || (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || (items.components.map { it.componentName }.containsAll(selections.components) && items.components.size == selections.components.size))
+                else -> (selections.components.isEmpty() || ((selections.components.contains(noneAssignedLabel) && items.components.isEmpty()) || items.components.map { it.componentName }.any { selections.components.contains(it) }))
             }
             val flavorMatch = when (selections.flavorMatching) {
-                FlowMatchOption.ALL -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings))
-                FlowMatchOption.ONLY -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings) && items.flavoring.size == selections.flavorings.size))
-                else -> (selections.flavorings.isEmpty() || ((selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { selections.flavorings.contains(it) }))
+                FlowMatchOption.ALL -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings))
+                FlowMatchOption.ONLY -> (selections.flavorings.isEmpty() || (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || (items.flavoring.map { it.flavoringName }.containsAll(selections.flavorings) && items.flavoring.size == selections.flavorings.size))
+                else -> (selections.flavorings.isEmpty() || ((selections.flavorings.contains(noneAssignedLabel) && items.flavoring.isEmpty()) || items.flavoring.map { it.flavoringName }.any { selections.flavorings.contains(it) }))
             }
 
             val quantity = calculateTotalQuantity(items, tinFiltering, quantityOption, ozRate, gramsRate)
@@ -598,7 +610,7 @@ class FilterViewModel (
             val baseFilters =
                 (selections.brands.isEmpty() || selections.brands.contains(items.items.brand)) &&
                         (selections.excludeBrands.isEmpty() || !selections.excludeBrands.contains(items.items.brand)) &&
-                        (selections.types.isEmpty() || selections.types.contains(items.items.type.ifBlank { "(Unassigned)" })) &&
+                        (selections.types.isEmpty() || selections.types.contains(items.items.type.ifBlank { unassignedLabel })) &&
                         (!selections.favorites || if (selections.dislikeds) (items.items.disliked || items.items.favorite) else items.items.favorite) &&
                         (!selections.excludeFavorites || !items.items.favorite) &&
                         (!selections.dislikeds || if (selections.favorites) (items.items.favorite || items.items.disliked) else items.items.disliked) &&
@@ -607,8 +619,8 @@ class FilterViewModel (
                         (!selections.outOfStock || !isInStock) &&
                         compMatch &&
                         flavorMatch &&
-                        (selections.subgenres.isEmpty() || selections.subgenres.contains(items.items.subGenre.ifBlank { "(Unassigned)" })) &&
-                        (selections.cuts.isEmpty() || selections.cuts.contains(items.items.cut.ifBlank { "(Unassigned)" })) &&
+                        (selections.subgenres.isEmpty() || selections.subgenres.contains(items.items.subGenre.ifBlank { unassignedLabel })) &&
+                        (selections.cuts.isEmpty() || selections.cuts.contains(items.items.cut.ifBlank { unassignedLabel })) &&
                         (!selections.production || items.items.inProduction) &&
                         (!selections.outOfProduction || !items.items.inProduction) &&
                         (!selections.unrated || (items.items.rating == null || ratingRangeLow || ratingRangeHigh)) &&
@@ -680,7 +692,7 @@ class FilterViewModel (
     ): List<Tins> {
         val now = System.currentTimeMillis()
         val checkContainer = container.isNotEmpty()
-        val hasUnassigned = checkContainer && container.contains("(Unassigned)")
+        val hasUnassigned = checkContainer && container.contains(unassignedLabel)
 
         return allItems.flatMap { it.tins }.filter {
             val mContainer = !checkContainer || (hasUnassigned && it.container.isBlank()) || container.contains(it.container)
@@ -757,10 +769,10 @@ class FilterViewModel (
 
         val mBrand = selections.brands.isEmpty() || selections.brands.contains(item.brand)
         val mExBrand = selections.excludeBrands.isEmpty() || !selections.excludeBrands.contains(item.brand)
-        val mType = selections.types.isEmpty() || (selections.types.contains(item.type.ifBlank { "(Unassigned)" }))
+        val mType = selections.types.isEmpty() || (selections.types.contains(item.type.ifBlank { unassignedLabel }))
         val mProd = (!selections.production || item.inProduction) && (!selections.outOfProduction || !item.inProduction)
-        val mSubgenre = selections.subgenres.isEmpty() || selections.subgenres.contains(item.subGenre.ifBlank { "(Unassigned)" })
-        val mCut = selections.cuts.isEmpty() || selections.cuts.contains(item.cut.ifBlank { "(Unassigned)" })
+        val mSubgenre = selections.subgenres.isEmpty() || selections.subgenres.contains(item.subGenre.ifBlank { unassignedLabel })
+        val mCut = selections.cuts.isEmpty() || selections.cuts.contains(item.cut.ifBlank { unassignedLabel })
 
         val mFavDis = run {
             val fav = !selections.favorites || (if (selections.dislikeds) (item.disliked || item.favorite) else item.favorite)
@@ -782,16 +794,16 @@ class FilterViewModel (
 
         val itemComps = items.components.map { it.componentName }
         val mComp = when (selections.compMatching) {
-            FlowMatchOption.ALL -> selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || itemComps.containsAll(selections.components)
-            FlowMatchOption.ONLY -> selections.components.isEmpty() || (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && items.components.size == selections.components.size)
-            else -> selections.components.isEmpty() || ((selections.components.contains("(None Assigned)") && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) })
+            FlowMatchOption.ALL -> selections.components.isEmpty() || (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || itemComps.containsAll(selections.components)
+            FlowMatchOption.ONLY -> selections.components.isEmpty() || (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && items.components.size == selections.components.size)
+            else -> selections.components.isEmpty() || ((selections.components.contains(noneAssignedLabel) && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) })
         }
 
         val itemFlavor = items.flavoring.map { it.flavoringName }
         val mFlavor = when (selections.flavorMatching) {
-            FlowMatchOption.ALL -> selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
-            FlowMatchOption.ONLY -> selections.flavorings.isEmpty() || (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
-            else -> selections.flavorings.isEmpty() || ((selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) })
+            FlowMatchOption.ALL -> selections.flavorings.isEmpty() || (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
+            FlowMatchOption.ONLY -> selections.flavorings.isEmpty() || (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
+            else -> selections.flavorings.isEmpty() || ((selections.flavorings.contains(noneAssignedLabel) && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) })
         }
 
         val mTinExist = (!selections.hasTins || items.tins.isNotEmpty()) && (!selections.noTins || items.tins.isEmpty())
@@ -801,7 +813,7 @@ class FilterViewModel (
                     (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
                     (!selections.finished || tin.finished) &&
                     (!selections.unfinished || !tin.finished) &&
-                    (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                    (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
         }
 
         val mOpen = !selections.opened && !selections.unopened || mTinsSatisfyAll
@@ -814,7 +826,7 @@ class FilterViewModel (
                         (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
                         (!selections.finished || tin.finished) &&
                         (!selections.unfinished || !tin.finished) &&
-                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
             }
             calculateTotalQuantity(items, tinFiltered, quantityOption, ozRate, gramsRate)
         }
@@ -840,7 +852,7 @@ class FilterViewModel (
 
         if (canEnable(0)) collector.brandsMap[item.brand] = true
         if (canEnable(1)) collector.excludeBrandsMap[item.brand] = true
-        if (canEnable(2)) collector.typesMap[item.type.ifBlank { "(Unassigned)" }] = true
+        if (canEnable(2)) collector.typesMap[item.type.ifBlank { unassignedLabel }] = true
 
         if (canEnable(3)) {
             if (item.favorite) collector.favorites = true
@@ -863,23 +875,23 @@ class FilterViewModel (
                         (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
                         (!selections.finished || tin.finished) &&
                         (!selections.unfinished || !tin.finished) &&
-                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                        (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
             }
             val qty = calculateTotalQuantity(items, tinFiltered, quantityOption, ozRate, gramsRate)
             if (qty == 0.0) collector.outOfStock = true else collector.inStock = true
         }
 
-        if (canEnable(6)) collector.subgenresMap[item.subGenre.ifBlank { "(Unassigned)" }] = true
-        if (canEnable(7)) collector.cutsMap[item.cut.ifBlank { "(Unassigned)" }] = true
+        if (canEnable(6)) collector.subgenresMap[item.subGenre.ifBlank { unassignedLabel }] = true
+        if (canEnable(7)) collector.cutsMap[item.cut.ifBlank { unassignedLabel }] = true
 
         if (canEnable(8)) {
             val itemComps = items.components.map { it.componentName }
-            val noneMatch = items.components.isEmpty() && (selections.components.isEmpty() || selections.components == listOf("(None Assigned)"))
+            val noneMatch = items.components.isEmpty() && (selections.components.isEmpty() || selections.components == listOf(noneAssignedLabel))
             if (noneMatch && (selections.compMatching == FlowMatchOption.ANY || items.components.isEmpty())) {
-                collector.componentsMap["(None Assigned)"] = true
+                collector.componentsMap[noneAssignedLabel] = true
             }
 
-            if (!selections.components.contains("(None Assigned)")) {
+            if (!selections.components.contains(noneAssignedLabel)) {
                 itemComps.forEach { comp ->
                     val potential = (selections.components + comp).distinct()
                     val isEnabled = when (selections.compMatching) {
@@ -898,9 +910,9 @@ class FilterViewModel (
             } else {
                 FlowMatchOption.entries.forEach { option ->
                     val match = when (option) {
-                        FlowMatchOption.ANY -> (selections.components.contains("(None Assigned)") && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) }
-                        FlowMatchOption.ALL -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || itemComps.containsAll(selections.components)
-                        FlowMatchOption.ONLY -> (selections.components == listOf("(None Assigned)") && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && itemComps.size == selections.components.size)
+                        FlowMatchOption.ANY -> (selections.components.contains(noneAssignedLabel) && items.components.isEmpty()) || itemComps.any { selections.components.contains(it) }
+                        FlowMatchOption.ALL -> (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || itemComps.containsAll(selections.components)
+                        FlowMatchOption.ONLY -> (selections.components == listOf(noneAssignedLabel) && items.components.isEmpty()) || (itemComps.containsAll(selections.components) && itemComps.size == selections.components.size)
                     }
                     if (match) collector.compMatchingMap[option] = true
                 }
@@ -909,12 +921,12 @@ class FilterViewModel (
 
         if (canEnable(9)) {
             val itemFlavor = items.flavoring.map { it.flavoringName }
-            val noneMatch = items.flavoring.isEmpty() && (selections.flavorings.isEmpty() || selections.flavorings == listOf("(None Assigned)"))
+            val noneMatch = items.flavoring.isEmpty() && (selections.flavorings.isEmpty() || selections.flavorings == listOf(noneAssignedLabel))
             if (noneMatch && (selections.flavorMatching == FlowMatchOption.ANY || items.flavoring.isEmpty())) {
-                collector.flavoringsMap["(None Assigned)"] = true
+                collector.flavoringsMap[noneAssignedLabel] = true
             }
 
-            if (!selections.flavorings.contains("(None Assigned)")) {
+            if (!selections.flavorings.contains(noneAssignedLabel)) {
                 itemFlavor.forEach { flavor ->
                     val potential = (selections.flavorings + flavor).distinct()
                     val isEnabled = when (selections.flavorMatching) {
@@ -933,9 +945,9 @@ class FilterViewModel (
             } else {
                 FlowMatchOption.entries.forEach { option ->
                     val match = when (option) {
-                        FlowMatchOption.ANY -> (selections.flavorings.contains("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) }
-                        FlowMatchOption.ALL -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
-                        FlowMatchOption.ONLY -> (selections.flavorings == listOf("(None Assigned)") && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
+                        FlowMatchOption.ANY -> (selections.flavorings.contains(noneAssignedLabel) && items.flavoring.isEmpty()) || itemFlavor.any { selections.flavorings.contains(it) }
+                        FlowMatchOption.ALL -> (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || itemFlavor.containsAll(selections.flavorings)
+                        FlowMatchOption.ONLY -> (selections.flavorings == listOf(noneAssignedLabel) && items.flavoring.isEmpty()) || (itemFlavor.containsAll(selections.flavorings) && itemFlavor.size == selections.flavorings.size)
                     }
                     if (match) collector.flavorMatchingMap[option] = true
                 }
@@ -948,7 +960,7 @@ class FilterViewModel (
             items.tins.forEach { tin ->
                 if (canEnable(11)) {
                     val valid = (!selections.finished || tin.finished) && (!selections.unfinished || !tin.finished) &&
-                            (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                            (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
                     if (valid && tin.openDate != null && tin.openDate < now) collector.opened = true
                     if (valid && (tin.openDate == null || tin.openDate >= now) && !tin.finished) collector.unopened = true
                 }
@@ -956,7 +968,7 @@ class FilterViewModel (
                 if (canEnable(12)) {
                     val valid = (!selections.opened || (tin.openDate != null && tin.openDate < now)) &&
                             (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
-                            (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { "(Unassigned)" }))
+                            (selections.container.isEmpty() || selections.container.contains(tin.container.ifBlank { unassignedLabel }))
                     if (valid && tin.finished) collector.finished = true
                     if (valid && !tin.finished ) collector.unfinished = true
                 }
@@ -966,7 +978,7 @@ class FilterViewModel (
                             (!selections.unopened || ((tin.openDate == null || tin.openDate >= now) && !tin.finished)) &&
                             (!selections.finished || tin.finished) &&
                             (!selections.unfinished || !tin.finished)
-                    if (valid) collector.containersMap[tin.container.ifBlank { "(Unassigned)" }] = true
+                    if (valid) collector.containersMap[tin.container.ifBlank { unassignedLabel }] = true
                 }
             }
         }
@@ -1214,13 +1226,13 @@ class FilterViewModel (
         val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
         val settingsEnabled = settingsList.size > 1
 
-        if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend.value) }
+        if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend) }
 
         if (isReadyTins) {
             SearchState(
                 searchPerformed = true,
                 isTinSearch = true,
-                searchText = "Ready Tins",
+                searchText = application.getString(R.string.ready_tins),
                 currentSetting = searchSetting,
                 settingsList = SearchSettingList(settingsList),
                 settingsEnabled = false,
@@ -1972,7 +1984,7 @@ enum class FilterCategory {
     NO_TINS, OPENED, UNOPENED, FINISHED, UNFINISHED, CONTAINER, PRODUCTION, OUT_OF_PRODUCTION,
 }
 
-enum class FlowMatchOption(val value: String) { ANY("Any"), ALL("All"), ONLY("Only") }
+enum class FlowMatchOption(@StringRes val value: Int) { ANY(R.string.any), ALL(R.string.all), ONLY(R.string.only) }
 
 enum class ClearAll { SUBGENRE, CUT, COMPONENT, FLAVORING, CONTAINER }
 
@@ -2134,11 +2146,11 @@ private class EnablementCollector {
     var minR: Double? = null; var maxR: Double? = null
 }
 
-val typeOrder = mapOf(
-    "Aromatic" to 0,
-    "English" to 1,
-    "Burley" to 2,
-    "Virginia" to 3,
-    "Other" to 4,
-    "(Unassigned)" to 5
-)
+enum class BlendTypes (@StringRes val resId: Int) {
+    AROMATIC(R.string.aromatic),
+    ENGLISH(R.string.english),
+    BURLEY(R.string.burley),
+    VIRGINIA(R.string.virginia),
+    OTHER(R.string.other),
+    UNASSIGNED(R.string.unassigned)
+}
