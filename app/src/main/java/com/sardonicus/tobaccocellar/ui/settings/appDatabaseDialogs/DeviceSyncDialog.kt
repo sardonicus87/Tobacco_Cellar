@@ -291,7 +291,7 @@ fun DeviceSyncDialog(
                                         enabled = deviceSync && accountLinked && connectionEnabled && !debouncedLoading,
                                         contentPadding = PaddingValues(8.dp, 3.dp),
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                                    ) { Text(stringResource(R.string.multi_device_manual_sync), fontSize = 15.sp,) }
+                                    ) { Text(stringResource(R.string.multi_device_manual_sync), fontSize = 15.sp) }
 
                                     // Clear remote data
                                     TextButton(
