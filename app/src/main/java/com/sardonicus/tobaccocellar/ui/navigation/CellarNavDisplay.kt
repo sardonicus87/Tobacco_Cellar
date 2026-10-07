@@ -163,7 +163,7 @@ fun CellarNavigation(
                     key = key.itemsId.toString(),
                     factory = viewModelFactory {
                         initializer {
-                            BlendDetailsViewModel(key.itemsId, filterVM, prefsRepo)
+                            BlendDetailsViewModel(key.itemsId, filterVM, prefsRepo, app)
                         }
                     }
                 )
@@ -181,7 +181,7 @@ fun CellarNavigation(
             is StatsDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: StatsViewModel = viewModel(
                     factory = viewModelFactory {
-                        initializer { StatsViewModel(filterVM, prefsRepo) }
+                        initializer { StatsViewModel(filterVM, prefsRepo, app) }
                     }
                 )
 
@@ -197,7 +197,7 @@ fun CellarNavigation(
             is DatesDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: DatesViewModel = viewModel(
                     factory = viewModelFactory {
-                        initializer { DatesViewModel(filterVM, prefsRepo) }
+                        initializer { DatesViewModel(filterVM, prefsRepo, app) }
                     }
                 )
 
@@ -252,7 +252,7 @@ fun CellarNavigation(
             is BulkEditDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: BulkEditViewModel = viewModel(
                     factory = viewModelFactory {
-                        initializer { BulkEditViewModel(filterVM, itemsRepo, prefsRepo) }
+                        initializer { BulkEditViewModel(filterVM, itemsRepo, prefsRepo, app) }
                     }
                 )
 
@@ -266,7 +266,7 @@ fun CellarNavigation(
             is CsvImportDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: CsvImportViewModel = viewModel(
                     factory = viewModelFactory {
-                        initializer { CsvImportViewModel(itemsRepo, prefsRepo) }
+                        initializer { CsvImportViewModel(itemsRepo, prefsRepo, app) }
                     }
                 )
 
@@ -322,7 +322,7 @@ fun CellarNavigation(
             is PlaintextDestination -> NavEntry(key, metadata = paneInfo) {
                 val viewModel: PlaintextViewModel = viewModel(
                     factory = viewModelFactory {
-                        initializer { PlaintextViewModel(filterVM, prefsRepo) }
+                        initializer { PlaintextViewModel(filterVM, prefsRepo, app) }
                     }
                 )
 
