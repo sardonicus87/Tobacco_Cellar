@@ -79,8 +79,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         createNotificationChannel()
 
         applicationScope.launch(Dispatchers.Default) {
-            if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() }
             filterViewModel
+            launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
+            launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
         }
 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
@@ -177,6 +178,41 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         SyncStateManager.loggingPaused = false
         SyncStateManager.schedulingPaused = false
         preferencesRepo.setSyncSettingsMigrated()
+    }
+
+    private suspend fun migrateBlendTypes() {
+        SyncStateManager.loggingPaused = true
+        SyncStateManager.schedulingPaused = true
+
+        val itemsRepo = container.itemsRepository
+        val allItems = itemsRepo.getEverythingStream().first()
+
+        val aromatic = getString(R.string.aromatic)
+        val english = getString(R.string.english)
+        val burley = getString(R.string.burley)
+        val virginia = getString(R.string.virginia)
+        val other = getString(R.string.other)
+
+        val lastModified = System.currentTimeMillis()
+
+        for ((item) in allItems) {
+            val mappedType = when (item.type.trim().lowercase()) {
+                "aromatic" -> aromatic
+                "english" -> english
+                "burley" -> burley
+                "virginia" -> virginia
+                "other" -> other
+                else -> continue
+            }
+
+            if (item.type != mappedType) {
+                itemsRepo.updateItem(item.copy(type = mappedType, lastModified = lastModified))
+            }
+        }
+
+        SyncStateManager.loggingPaused = false
+        SyncStateManager.schedulingPaused = false
+        preferencesRepo.setBlendTypesMigrated()
     }
 
     private suspend fun verifySyncStatus(context: Context) {
