@@ -71,7 +71,7 @@ fun BackupRestoreDialog(
                                 onClick = { option = BackupRestoreOption.RESTORE },
                                 contentPadding = PaddingValues(8.dp, 3.dp),
                                 modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) { Text(stringResource(R.string.backup), fontSize = 15.sp) }
+                            ) { Text(stringResource(R.string.restore), fontSize = 15.sp) }
                         }
                     }
                 }
