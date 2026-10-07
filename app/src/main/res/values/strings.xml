@@ -15,7 +15,6 @@
     <string name="about_title">About</string>
     <string name="about_settings">About/Settings</string>
     <string name="changelog_title">Changelog</string>
-    <string name="license_title">Licenses</string>
     <string name="help_faq_title">Help/FAQ</string>
     <string name="blend_details_title">Blend Details</string>
     <string name="batch_edit_title">Batch Edit</string>
@@ -66,19 +65,12 @@
     <string name="item_exists">This item already exists, would you like to edit it instead?</string>
     <string name="item_exists_edit">An entry already exists with this combination of Brand and Blend
         (the combination of Brand and Blend must be unique for each entry).</string>
-    <string name="csv_import_instructions">Select a CSV file to import, then review mapping options.
-        If the record test looks wrong, please reformat your CSV using standard RFC 4180
-        formatting to guarantee a successful import.</string>
-    <string name="csv_import_mapping">Indicate if the CSV has a header, select import options,
-        and map the columns in the CSV to the correct database fields.</string>
 
 
     <!-- Labels -->
-    <string name="possible_header">Possible header: </string>
-    <string name="possible_record">Record parse test: </string>
+    <string name="possible_header">Possible header:\u00A0</string>
+    <string name="possible_record">Record parse test:\u00A0</string>
 
-    <string name="item_detail_title">Details</string>
-    <string name="notes_entry">Enter Notes</string>
     <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
 
@@ -177,7 +169,6 @@
     <string name="finished">Finished</string>
     <string name="finished_label">Finished:\u00A0</string>
     <string name="Unfinished">Unfinished</string>
-    <string name="aging">Aging</string>
 
     <string name="clear_all">Clear All</string>
     <string name="select_all">Select All</string>
@@ -198,7 +189,7 @@
     <string name="check_connection">check connection</string>
     <string name="failed">Failed: %s.</string>
     <string name="connection_timeout">Sync failed (connection timeout).</string>
-    <string name="sync_disabled">Sync disabled, please sign-in again.</string>
+    <string name="sync_disabled">Sync disabled, please sign in again.</string>
     <string name="sync_channel_name">Background sync</string>
     <string name="sync_channel_description">Quiet background notification indicating sync working in the background.</string>
     <string name="tin_channel_name">Tins ready</string>
@@ -224,7 +215,6 @@
     <string name="db_deleted">Database deleted!</string>
     <string name="backup_complete">Backup complete.</string>
     <string name="backup_failed">Backup failed.</string>
-    <string name="restore_complete">Restore complete.</string>
     <string name="restore_failed">Restore failed.</string>
     <string name="invalid_file">Invalid file.</string>
     <string name="restore_failed_version">Restore failed: file for unsupported version.</string>
@@ -302,13 +292,13 @@
         dismiss this dialog.</string>
     <string name="next">Next</string>
 
-    <string name="what_new">What\'s New</string>
+    <string name="what_new">What’s New</string>
     <string name="release_info">Version %1$s (%2$s)</string>
     <string name="full_change">Full Changelog</string>
 
 
     <!-- Blend Details -->
-    <string name="by">by </string>
+    <string name="by">by\u00A0</string>
     <string name="production_status">Production Status:\u00A0</string>
     <string name="manufacture_date_label">Manufacture Date:\u00A0</string>
     <string name="cellar_date_label">Cellar Date:\u00A0</string>
@@ -371,7 +361,6 @@
     <string name="dates_no_stats">No relevant date stats found in entries.</string>
     <string name="dates_no_past">No past tin dates found.</string>
     <string name="dates_no_future">No future tin dates found.</string>
-    <string name="dates_section_header">%s Date</string>
     <string name="week_section">Tins ready in the next 7 days:</string>
     <string name="week_empty">No tins ready this week.</string>
     <string name="month_section">Other tins ready this month:</string>
@@ -501,15 +490,15 @@
         enter \"%4$s\" into the formatting. More advanced examples might be:\n\"%5$s\" (9 stars)
         or \"%6$s\" (3.25/4).</string>
     <string name="formatting_help4">\"Number\" is a special tag that counts each record in the given
-        sort order (use multiple %1$s to include leading 0\'s).</string>
+        sort order (use multiple %1$s to include leading 0’s).</string>
     <string name="formatting_help5">In order to output raw text rather than special characters, escape
         the special character with the escape character. For example, to output \"%1$s\" in the string,
         enter: \"%2$s\". Likewise for example, to output brackets around a field, escape the first bracket
-        (e.g. \"%3$s\"). The escape character itself doesn\'t need to be escaped unless you\'re trying to use
+        (e.g. \"%3$s\"). The escape character itself doesn’t need to be escaped unless you’re trying to use
         it before an escapable character (e.g. to render: \"%4$s\" you would need to input \"%5$s\").</string>
     <string name="formatting_help6">Use the square brackets ( %1$s ) when you conditionally want the text
         within them to appear only if one or more placeholders (also inside the brackets) are found.
-        For instance, if you want the type shown on a new line, but don\'t want an extra line for a
+        For instance, if you want the type shown on a new line, but don’t want an extra line for a
         blank type, enter: \"%2$s\". These conditionals can also be nested (e.g.\n\"%3$s\" ).</string>
     <string name="formatting_help7">When sorting by items, if you want the tins organized as a sublist
         per each item, use the curly braces around the formatting you want for tins (e.g.
@@ -552,7 +541,7 @@
     <string name="type_genre_option">Cellar Type/Genre Display</string>
     <string name="type_genre_description">Set type/genre display for Cellar screen.</string>
     <string name="type_genre_dialog">This option sets the display of Type, Subgenre or both on the
-        Cellar screen. Fallback options display the option and if it\'s unused on an entry, fallback
+        Cellar screen. Fallback options display the option and if it’s unused on an entry, fallback
         to the other (e.g. Subgenre (fallback) would display the subgenre but if an entry has no
         subgenre, will instead show the type value in parentheses). This also affects table view when
         only one or the other of Type or Subgenre columns are shown.</string>
@@ -593,7 +582,7 @@
     <string name="scroll_to_accept">(You must scroll to the bottom to accept)</string>
     <string name="multi_device_acknowledge_body1">To auto-synchronize collection changes across devices,
         you must enable this option and sign-in with the same Google account on each device you want
-        sync\'ed. This will also authorize the app to have Google Drive access (you do not need the
+        synced. This will also authorize the app to have Google Drive access (you do not need the
         Google Drive app for this functionality to work). This feature also requires all synced devices
         to be running a version of the app with the same Database Version.</string>
     <string name="multi_device_acknowledge_body2">Developer and/or any third parties will not have access
@@ -651,7 +640,7 @@
 
     <string name="other_operations">Other Db Operations</string>
     <string name="other_operations_description">Fix sync quantities and optimize database.</string>
-    <string name="other_operations_dialog">These options shouldn\'t be necessary. \"Fix tin sync
+    <string name="other_operations_dialog">These options shouldn’t be necessary. \"Fix tin sync
         quantity\" corrects the \"No. of Tins\" for entries with quantity sync checked. \"Optimize
         database\" cleans up any potentially orphaned data.</string>
     <string name="other_operations_fix">Fix/Update Tin Sync Quantity</string>
@@ -676,7 +665,7 @@
 
     <!-- CSV Import strings -->
     <string name="csv_empty">CSV appears empty.</string>
-    <string name="to_see_help">* To see help, select a CSV file to start\n(import isn\'t automatic)</string>
+    <string name="to_see_help">* To see help, select a CSV file to start\n(import isn’t automatic)</string>
     <string name="help_button">Help\u00A0</string>
     <string name="parse_error">(Parse error)</string>
     <string name="has_header">Has header?</string>
@@ -708,7 +697,6 @@
     <string name="total_found">Total records found:\u00A0</string>
     <string name="successful_conversions">Successful conversions:\u00A0</string>
     <string name="total_imported">Total entries imported:\u00A0</string>
-    <string name="total_skipped">Total records skipped:\u00A0</string>
     <string name="total_updated">Total entries updated:\u00A0</string>
     <string name="total_tins_change">Total tins change:\u00A0</string>
     <string name="back_to_cellar">Back to Cellar</string>
@@ -762,7 +750,7 @@
     <string name="csv_help15">For the rating, select the column that contains the rating and in the
         \"Max Value\" field, enter the highest possible rating you could give (used for re-scaling
         your rating system to the one used in the app).</string>
-    <string name="csv_help16">\"Tins\" here represents any container, it doesn\'t have to actually be
+    <string name="csv_help16">\"Tins\" here represents any container, it doesn’t have to actually be
         in a tin.</string>
     <string name="csv_help17">The tins mapping fields are enabled by selecting the \"collate tins\"
         option. When collating, the CSV is iterated through and 1 tin is added per each line that
@@ -780,13 +768,13 @@
     <string name="csv_help20">Date mapping is not guaranteed. Select the date format that was used in
         the CSV column that contains the date. Several date formats are currently supported. Date
         formats will work regardless of month/day/year delimiter (/, -, .), or if days have leading
-        0\'s. The date format applies to all three fields.</string>
+        0’s. The date format applies to all three fields.</string>
     <string name="csv_help21">Only map dates if your manufacture, cellar or open date values each have
         their own columns and that the date parts themselves are in one column (month/day/year in same
         column)—date parsing where day/month/years are split across different columns is not supported.</string>
     <string name="csv_help22">For dates that have two digit years, all years are presumed to be after
         1900 and before the current year. If the two digit year value is greater than the current year,
-        it\'s presumed to be 19__; if it is less than or equal to the current year, it is presumed to
+        it’s presumed to be 19__; if it is less than or equal to the current year, it is presumed to
         be 20__.</string>
 
 
@@ -850,9 +838,9 @@
         page for the blend that the tin belongs to.</string>
     <string name="help_dates4">Quick Stats</string>
     <string name="help_dates5">The \"Quick Stats\" are calculated based only on tins which have
-        relevant data added (tins without a date in that field aren\'t counted). Average age is based
+        relevant data added (tins without a date in that field aren’t counted). Average age is based
         on manufacturing date, time in cellar only on the cellar date, and time opened based on tins
-        with open dates that aren\'t marked as finished. These calculations also do not factor future
+        with open dates that aren’t marked as finished. These calculations also do not factor future
         tins. Average wait time is calculated based on all future set dates.</string>
     <string name="help_dates6">Oldest/Future Tins</string>
     <string name="help_dates7">The next two sections list the 5 tins per each date field of past
@@ -883,10 +871,10 @@
     <string name="help_filtering10">Filter \"Favorites\" or \"Dislikes\" by tapping the checkboxes.
         The first tap will return only those marked as the chosen filter, tapping again will return
         all entries that are not in that category. Both boxes can be set to include/exclude to see
-        only entries that are marked as being in one or the other, or only entries that aren\'t
+        only entries that are marked as being in one or the other, or only entries that aren’t
         marked as being in either.</string>
     <string name="help_filtering11">Below this is the rating range filter, tapping the range display
-        opens a popup for the range options. Unrated will return all entries that haven\'t been
+        opens a popup for the range options. Unrated will return all entries that haven’t been
         rated. The left and right fields are for min/max rating, respectively. Use one or the other
         to return all entries that are rated at least/most as the chosen value, or use both to
         return all entries rated between the max/min. The rating range can also be combined with the
@@ -942,7 +930,7 @@
         screens in regard to entering values into the field (separate each with a comma and a space).
         However, here, leaving these blank does not erase anything from entries when you hit save.
         Any entered components/flavorings will be added (or removed) from the existing values of the
-        selected entries if they aren\'t already present (or are present in the case of remove).
+        selected entries if they aren’t already present (or are present in the case of remove).
         Switch between add and remove by tapping the +/- icon at the end of the field.</string>
 
     <string name="help_add_tin1">When adding or editing an entry, navigate to the Tins tab on the
@@ -975,7 +963,7 @@
         and dates and the calculated total on Details screens. This checkbox allows you to keep the
         open date, but exclude the tin from being included in anything related to open dates.</string>
     <string name="help_add_tin9">If you would like to keep track of aging, set the open date to a
-        future date of when you\'d like to open the tin. The dates screen will have a section for
+        future date of when you’d like to open the tin. The dates screen will have a section for
         blends that will be ready to open in a given week/month, see the dates section for more details.</string>
 
     <string name="help_settings1">Most settings are self-explanatory, but some may need further
@@ -989,10 +977,10 @@
         you select one or both (both backups will be in one).</string>
     <string name="help_settings4">This is an entirely optional process for creating a manual backup.
         The app does participate in the automatic Google services backup if you have it enabled in
-        your device\'s settings, and will save the database and settings. However, a Google backup
+        your device’s settings, and will save the database and settings. However, a Google backup
         might not represent the latest data, depending on when scheduled backup was last performed.</string>
     <string name="help_settings5">These backups are saved as \".tcbu\" files, and are given a
-        suggested name (that you don\'t have to use) depending on the selected options.</string>
+        suggested name (that you don’t have to use) depending on the selected options.</string>
     <string name="help_settings6">When restoring, the same options are presented. You can restore
         the database, settings, or both from a backup file that contains both, but a database backup
         file will only restore the database, and a settings file will restore only the settings.</string>
@@ -1004,7 +992,7 @@
     <string name="help_settings8">These settings should be unnecessary, but are provided nonetheless.
         \"Clean and Optimize Database\" can clear orphaned data, but the database mostly keeps itself
         clean. The Fix/Update Tin Sync Quantity is provided in the event that these were out of sync
-        for some reason (an older version of the app didn\'t automatically update the \"No. of Tins\"
+        for some reason (an older version of the app didn’t automatically update the \"No. of Tins\"
         field for entries with synchronized tins when tin conversion rates were changed for example,
         though this is automatically done now for all entries when changing rates).</string>
 
@@ -1013,7 +1001,7 @@
         bidirectional, so changes on any device with the option on will be reflected on all other
         devices that also have the option turned on.</string>
     <string name="help_multi2">For this option to work, each device must be running a version of the
-        app with the same Database Version (app version doesn\'t matter). The app must also be linked
+        app with the same Database Version (app version doesn’t matter). The app must also be linked
         to the same Google account on all devices (even if other devices use a different primary
         Google account).</string>
     <string name="help_multi3">Data Safety</string>
@@ -1027,23 +1015,23 @@
     <string name="help_multi6">All data transfer is encrypted and no personal information is even
         accessed, let alone shared. Database sync data is the only data transferred. Neither I nor
         any other third-parties cannot access any of your data. The app likewise has no access to any
-        of your account or personal data, it has access only to it\'s own app-specific folder.</string>
+        of your account or personal data, it has access only to it’s own app-specific folder.</string>
     <string name="help_multi7">Please see the %1$s↗ and %2$s↗ for more details.</string>
     <string name="help_multi8">How It Works</string>
     <string name="help_multi9">All Google accounts have a Google Drive associated with them
-        (regardless of whether you\'ve ever used it). This device sync option will request access to
+        (regardless of whether you’ve ever used it). This device sync option will request access to
         Google Drive. You do not need the Google Drive app installed for it to work. Granting access
         allows the app to create an app-specific folder on your Google Drive as a cloud location to
         transfer between devices. This app-specific folder is the only folder the app will have access
         to, and this folder will not count toward your Google Drive storage space.</string>
     <string name="help_multi10">When you make changes to entries, those changes include a timestamp.
-        The changes will be uploaded to the drive folder according to your data settings (it won\'t
+        The changes will be uploaded to the drive folder according to your data settings (it won’t
         use mobile data unless you turn that option on). If it is unable to upload, it will try again
         later when it can connect based on your settings.</string>
     <string name="help_multi11">The app checks for sync data (if the option is on) whenever it is
         started, and additionally checks twice per day (12-hour interval). If conflicting data is
         found (the same entry was edited in both devices before either had a chance to sync), only the
-        option with the latest timestamp will be used. The changes are considered per entry, so if on
+        option with the latest timestamp will be used. The changes are considered per entry! So if on
         one device you write a note, then on the other you change a component, the note will be lost
         (as the timestamp for that note change is earlier than the component change). The timestamp
         is per entry, not per logged change!</string>
