@@ -21,7 +21,7 @@
     <string name="plaintext">Plaintext</string>
     <string name="plaintext_title">Plaintext Export</string>
 
-    <!-- Button Text -->
+    <!-- Button and Top/Bottom App Bar Texts -->
     <string name="filter">Filter</string>
     <string name="add">Add</string>
     <string name="save">Save</string>
@@ -65,14 +65,6 @@
     <string name="item_exists">This item already exists, would you like to edit it instead?</string>
     <string name="item_exists_edit">An entry already exists with this combination of Brand and Blend
         (the combination of Brand and Blend must be unique for each entry).</string>
-
-
-    <!-- Labels -->
-    <string name="possible_header">Possible header:\u00A0</string>
-    <string name="possible_record">Record parse test:\u00A0</string>
-
-    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
-        incorrect format.</string>
 
 
     <!-- Notification Strings -->
@@ -175,8 +167,7 @@
     <string name="select_all">Select All</string>
 
 
-
-    <!-- Main Activity Toasts and Snackbars -->
+    <!-- Main Activity, Toasts and Snackbars -->
     <string name="exit">Tap again to exit</string>
     <string name="sync_enabled">Sync successfully enabled.</string>
     <string name="drive_denied">Could not get Drive permission.</string>
@@ -289,8 +280,8 @@
     <string name="one_time_alert">This is a one-time alert.</string>
     <string name="missed_alert">Missed Alert:</string>
     <string name="alert_info">%1$s\n(v %2$s)</string>
-    <string name="alert_scroll">You must scroll to the bottom to be able to acknowledge and
-        dismiss this dialog.</string>
+    <string name="alert_scroll">You must scroll to the bottom to be able to acknowledge and dismiss
+        this dialog.</string>
     <string name="next">Next</string>
 
     <string name="what_new">What’s New</string>
@@ -651,19 +642,6 @@
     <string name="delete_db_description">"Delete all entries.</string>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     <!-- CSV Import strings -->
     <string name="csv_empty">CSV appears empty.</string>
     <string name="to_see_help">* To see help, select a CSV file to start\n(import isn’t automatic)</string>
@@ -693,7 +671,10 @@
     <string name="go_back_cellar">Go back to Cellar</string>
     <string name="csv_max_rating">Max Possible\nCSV Rating:</string>
     <string name="required_scaling">Required for scaling</string>
-    <string name="lot_label">Lot: %s</string>
+    <string name="lot_label">Lot: %s</string><string name="possible_header">Possible header:\u00A0</string>
+    <string name="possible_record">Record parse test:\u00A0</string>
+    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
+        incorrect format.</string>
 
     <string name="total_found">Total records found:\u00A0</string>
     <string name="successful_conversions">Successful conversions:\u00A0</string>
@@ -1016,7 +997,7 @@
     <string name="help_multi6">All data transfer is encrypted and no personal information is even
         accessed, let alone shared. Database sync data is the only data transferred. Neither I nor
         any other third-parties cannot access any of your data. The app likewise has no access to any
-        of your account or personal data, it has access only to it’s own app-specific folder.</string>
+        of your account or personal data, it has access only to its own app-specific folder.</string>
     <string name="help_multi7">Please see the %1$s↗ and %2$s↗ for more details.</string>
     <string name="help_multi8">How It Works</string>
     <string name="help_multi9">All Google accounts have a Google Drive associated with them
@@ -1038,7 +1019,6 @@
         is per entry, not per logged change!</string>
     <string name="help_multi12">Remote data can only be cleared within the app. Please clear any data
         before logging out if you wish to stop using the sync function.</string>
-
 
 
 <!--
