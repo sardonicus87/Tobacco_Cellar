@@ -28,6 +28,7 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.GoogleDriveServiceHelpe
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
@@ -82,7 +83,13 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         applicationScope.launch(Dispatchers.Default) {
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
-            launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
+            launch {
+                combine(preferencesRepo.blendTypesMigrated, EventBus.events) { migrated, event ->
+                    migrated to event
+                }.collectLatest { (migrated, event) ->
+                    if (!migrated || event is DatabaseRestoreEvent) { migrateBlendTypes() }
+                }
+            }
         }
 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
