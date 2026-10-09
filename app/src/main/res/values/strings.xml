@@ -526,6 +526,12 @@
     <string name="dark">Dark</string>
     <string name="system">System</string>
 
+    <string name="language_option">Language</string>
+    <string name="language_description">Set preferred app language. If the language is different from
+        the system language and has never been selected before, it may take a moment to download and
+        apply the language changes.</string>
+    <string name="system_language">System (%s)</string>
+
     <string name="ratings_option">Cellar Ratings Visibility</string>
     <string name="ratings_description">Show/hide ratings in list view.</string>
     <string name="ratings_dialog">Display ratings on cellar screen:</string>

@@ -69,6 +69,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.BackupRestore
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DbOperationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeleteAllDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDialog
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.LanguageDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinNotificationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
@@ -325,6 +326,9 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                 onOptionSelected = viewModel::saveThemeSetting,
                 optionLabel = { stringResource(it.resId) }
             )
+        }
+        DialogType.Language -> {
+            LanguageDialog(onDismiss = viewModel::dismissDialog)
         }
         DialogType.Ratings -> {
             ToggleDialog(

@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.annotation.StringRes
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -33,6 +34,7 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.SupportedLanguages
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
@@ -203,8 +205,18 @@ class SettingsViewModel(
         quantityOption,
         parseLinks
     ) { theme, showRatings, typeGenre, quantity, parseLinks ->
+        val installedOptions = AppCompatDelegate.getApplicationLocales()
+        val langSetting = if (installedOptions.isEmpty) {
+            val localCode = Locale.getDefault().language
+            val systemCode = if (localCode in SupportedLanguages.codes) localCode else "en"
+            app.getString(R.string.system_language, systemCode)
+        } else {
+            val code = installedOptions[0]?.language ?: "en"
+            SupportedLanguages.getDisplayString(code) ?: code
+        }
         listOf(
             SettingsDialog(app.getString(R.string.theme_option), app.getString(R.string.theme_description), app.getString(theme.resId), DialogType.Theme),
+            SettingsDialog(app.getString(R.string.language_option), app.getString(R.string.language_description), langSetting, DialogType.Language),
             SettingsDialog(app.getString(R.string.ratings_option), app.getString(R.string.ratings_description), showRatings.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.Ratings),
             SettingsDialog(app.getString(R.string.type_genre_option), app.getString(R.string.type_genre_description), app.getString(typeGenre.resId), DialogType.TypeGenre),
             SettingsDialog(app.getString(R.string.quantity_option), app.getString(R.string.quantity_description), quantity.let {
@@ -988,6 +1000,7 @@ data class SettingsDialog(
 @Stable
 sealed class DialogType {
     object Theme : DialogType()
+    object Language : DialogType()
     object Ratings : DialogType()
     object TypeGenre : DialogType()
     object QuantityDisplay : DialogType()
