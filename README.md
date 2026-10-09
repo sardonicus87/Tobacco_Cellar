@@ -1,1 +1,1 @@
-A tobacco collection tracking database I'm working on.
+A tobacco collection tracking database, passion project from an amateur hobbyist, nothing special here.
