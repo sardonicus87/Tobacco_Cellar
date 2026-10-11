@@ -2,6 +2,7 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.Resources
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -173,7 +174,10 @@ class SettingsViewModel(
         app.applicationScope.launch(Dispatchers.Default) {
             launch {
                 val email = preferencesRepo.signedInUserEmail.first()
-                if (email?.isBlank() == true) { clearLoginState() }
+                if (email?.isBlank() == true) {
+                    preferencesRepo.saveCrossDeviceSync(false)
+                    preferencesRepo.clearLogin()
+                }
             }
             launch {
                 val notification = preferencesRepo.tinNotifications.first()
@@ -198,22 +202,36 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
-    val displaySettings = combine(
-        themeSetting,
-        showRatings,
-        typeGenreOption,
-        quantityOption,
-        parseLinks
-    ) { theme, showRatings, typeGenre, quantity, parseLinks ->
+    private val _langSetting = MutableStateFlow(getCurrentLangSetting())
+    fun updateLangSetting() { _langSetting.value = getCurrentLangSetting() }
+
+    fun getCurrentLangSetting(): String {
         val installedOptions = AppCompatDelegate.getApplicationLocales()
-        val langSetting = if (installedOptions.isEmpty) {
-            val localCode = Locale.getDefault().language
-            val systemCode = if (localCode in SupportedLanguages.codes) localCode else "en"
+        return if (installedOptions.isEmpty) {
+            val localeCode = Resources.getSystem().configuration.locales[0].language
+            val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
             app.getString(R.string.system_language, systemCode)
         } else {
             val code = installedOptions[0]?.language ?: "en"
             SupportedLanguages.getDisplayString(code) ?: code
         }
+    }
+
+    val displaySettings = combine(
+        themeSetting,
+        showRatings,
+        typeGenreOption,
+        quantityOption,
+        parseLinks,
+        _langSetting
+    ) { it: Array<Any> ->
+        val theme = it[0] as ThemeSetting
+        val showRatings = it[1] as Boolean
+        val typeGenre = it[2] as TypeGenreOption
+        val quantity = it[3] as QuantityOption
+        val parseLinks = it[4] as Boolean
+        val langSetting = it[5] as String
+
         listOf(
             SettingsDialog(app.getString(R.string.theme_option), app.getString(R.string.theme_description), app.getString(theme.resId), DialogType.Theme),
             SettingsDialog(app.getString(R.string.language_option), app.getString(R.string.language_description), langSetting, DialogType.Language),
@@ -700,27 +718,31 @@ class SettingsViewModel(
                     message = app.getString(R.string.restore_failed_no_data)
                 } else {
                     var dbRestored = false
+                    var dbError = false
                     var settingsRestored = false
+                    var settingsError = false
 
                     if (restoreState.databaseChecked && fileContentState.databasePresent) {
                         try {
                             restoreDatabase(context, databaseBytes)
                             if (fileContentState.version == 2) { restoreItemSyncState(itemSyncStateBytes) }
                             dbRestored = true
-                        } catch (_: Exception) { }
+                        } catch (_: Exception) { dbError = true }
                     }
                     if (restoreState.settingsChecked && fileContentState.settingsPresent) {
                         try {
                             restoreSettings(settingsBytes, fileContentState.version)
                             settingsRestored = true
-                        } catch (_: Exception) { }
+                        } catch (_: Exception) { settingsError = true }
                     }
 
                     message = when {
                         restoreState.databaseChecked && restoreState.settingsChecked -> {
                             when {
                                 dbRestored && settingsRestored -> app.getString(R.string.db_settings_restored)
+                                dbRestored && settingsError -> app.getString(R.string.db_restored_settings_error)
                                 dbRestored -> app.getString(R.string.db_restored_no_settings)
+                                settingsRestored && dbError -> app.getString(R.string.settings_restored_db_error)
                                 settingsRestored -> app.getString(R.string.settings_restored_no_db)
                                 else -> app.getString(R.string.restore_failed)
                             }
@@ -1238,7 +1260,7 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         lastTinNotifyDate = preferencesRepo.lastTinNotifyDate.first()
     )
 
-    return Json.encodeToString(backup)
+    return jsonFormat.encodeToString(backup)
 }
 
 fun writeBytesToFile(uri: Uri, bytes: ByteArray, context: Context) {
@@ -1263,7 +1285,7 @@ fun readBytesFromFile(uri: Uri, context: Context): ByteArray? {
 suspend fun parseSettingsText(settingsText: String, preferencesRepo: PreferencesRepo, version: Int) {
     if (version >= 4) {
         val userEmail = preferencesRepo.signedInUserEmail.first()
-        val backup = Json.decodeFromString<SettingsBackup>(settingsText)
+        val backup = jsonFormat.decodeFromString<SettingsBackup>(settingsText)
         with(preferencesRepo) {
             saveView(backup.tableView)
             saveTableColumnsHidden(backup.tableColumnsHidden)
@@ -1380,4 +1402,10 @@ fun exportRatingString(rating: Double?, maxRating: Int, rounding: Int): String {
     val places = rounding.takeIf { it <= 2 } ?: 2
 
     return formatDecimal(scaledRating, places)
+}
+
+private val jsonFormat = Json {
+    ignoreUnknownKeys = true
+    coerceInputValues = true
+    isLenient = true
 }
