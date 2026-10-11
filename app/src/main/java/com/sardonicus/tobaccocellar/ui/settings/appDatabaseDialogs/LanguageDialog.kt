@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
+import android.content.res.Resources
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -32,7 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,13 +46,14 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageDialog(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onLanguageChange: () -> Unit
 ) {
     val installedOptions = AppCompatDelegate.getApplicationLocales()
     val currentCode = if (installedOptions.isEmpty) "system" else installedOptions[0]?.language ?: "system"
 
-    val localCode = LocalLocale.current.platformLocale.language
-    val systemCode = if (localCode in SupportedLanguages.codes) localCode else "en"
+    val localeCode = Resources.getSystem().configuration.locales[0].language
+    val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
 
     val options = listOf(LanguageOption(stringResource(R.string.system_language, systemCode), "system")) +
             SupportedLanguages.list.map { LanguageOption(it.displayString, it.code) }
@@ -134,6 +135,7 @@ fun LanguageDialog(
                                                             LocaleListCompat.forLanguageTags(option.code)
                                                         )
                                                     }
+                                                    onLanguageChange()
                                                     expanded = false
                                                 }
                                                 .padding(horizontal = 16.dp),

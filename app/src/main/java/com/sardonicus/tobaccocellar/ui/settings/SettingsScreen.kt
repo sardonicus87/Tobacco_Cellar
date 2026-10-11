@@ -328,7 +328,10 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             )
         }
         DialogType.Language -> {
-            LanguageDialog(onDismiss = viewModel::dismissDialog)
+            LanguageDialog(
+                onDismiss = viewModel::dismissDialog,
+                onLanguageChange = viewModel::updateLangSetting
+            )
         }
         DialogType.Ratings -> {
             ToggleDialog(
