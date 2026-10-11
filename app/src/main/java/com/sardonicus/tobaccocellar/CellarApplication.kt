@@ -83,12 +83,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         applicationScope.launch(Dispatchers.Default) {
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
+            launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
             launch {
-                combine(preferencesRepo.blendTypesMigrated, EventBus.events) { migrated, event ->
-                    migrated to event
-                }.collectLatest { (migrated, event) ->
-                    if (!migrated || event is DatabaseRestoreEvent) { migrateBlendTypes() }
-                }
+                EventBus.events.collect{ if (it is DatabaseRestoreEvent) { migrateBlendTypes() } }
             }
         }
 
@@ -195,8 +192,6 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         val itemsRepo = container.itemsRepository
         val allItems = itemsRepo.getEverythingStream().first()
 
-        val lastModified = System.currentTimeMillis()
-
         for ((item) in allItems) {
             val mappedType = when (item.type.trim()) {
                 "Aromatic" -> BlendTypes.AROMATIC.name
@@ -208,7 +203,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             }
 
             if (item.type != mappedType) {
-                itemsRepo.updateItem(item.copy(type = mappedType, lastModified = lastModified))
+                itemsRepo.updateItem(item.copy(type = mappedType))
             }
         }
 
