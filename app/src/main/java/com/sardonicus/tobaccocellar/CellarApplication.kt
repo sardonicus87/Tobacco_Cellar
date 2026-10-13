@@ -6,6 +6,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -71,6 +73,16 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     }
     private val activityResumedTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+
+        val prefs = base.getSharedPreferences("app_settings", MODE_PRIVATE)
+        val savedLang = prefs.getString("app_language", "system") ?: "system"
+
+        if (savedLang != "system") {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -84,9 +96,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
-            launch {
-                EventBus.events.collect{ if (it is DatabaseRestoreEvent) { migrateBlendTypes() } }
-            }
+            launch { EventBus.events.collect{ if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
         }
 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
@@ -303,7 +313,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        // cold/warm start check for new files
+        if (savedInstanceState != null) return
+
         applicationScope.launch(Dispatchers.Default) {
             delay(500.milliseconds)
             val syncEnabled = preferencesRepo.crossDeviceSync.first()

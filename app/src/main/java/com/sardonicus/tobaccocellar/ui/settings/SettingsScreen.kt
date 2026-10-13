@@ -232,14 +232,14 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = item.title,
+            text = stringResource(item.title),
             fontWeight = FontWeight.Medium,
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(
                     indication = if (item.currentSetting == null) LocalIndication.current else null,
                     interactionSource = interactionSource,
-                    onClickLabel = item.description,
+                    onClickLabel = stringResource(item.description),
                 ) { onClick(item.dialogType) }
                 .padding(8.dp, 5.dp)
                 .width(IntrinsicSize.Max),
@@ -248,7 +248,15 @@ private fun SettingsRow(
             color = color
         )
 
-        if (item.currentSetting != null) {
+        val settingText = when {
+            item.currentSetting != null -> {
+                if (item.currentSettingArgs != null) {
+                    stringResource(item.currentSetting, *item.currentSettingArgs.toTypedArray()) }
+                else { stringResource(item.currentSetting) }
+            }
+            else -> item.currentSettingRaw ?: ""
+        }
+        if (settingText.isNotBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -256,13 +264,13 @@ private fun SettingsRow(
                     .clickable(
                         indication = null,
                         interactionSource = interactionSource,
-                        onClickLabel = item.description,
+                        onClickLabel = stringResource(item.description),
                     ) { onClick(item.dialogType) }
                     .padding(horizontal = 8.dp),
                 contentAlignment = Alignment.CenterEnd
-            ){
+            ) {
                 Text(
-                    text = item.currentSetting,
+                    text = settingText,
                     modifier = Modifier,
                     fontSize = 14.sp,
                     autoSize = TextAutoSize.StepBased(
@@ -327,12 +335,6 @@ private fun DialogManager(viewModel: SettingsViewModel) {
                 optionLabel = { stringResource(it.resId) }
             )
         }
-        DialogType.Language -> {
-            LanguageDialog(
-                onDismiss = viewModel::dismissDialog,
-                onLanguageChange = viewModel::updateLangSetting
-            )
-        }
         DialogType.Ratings -> {
             ToggleDialog(
                 description = stringResource(R.string.ratings_dialog),
@@ -386,6 +388,12 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
 
         // App/Database Settings
+        DialogType.Language -> {
+            LanguageDialog(
+                onDismiss = viewModel::dismissDialog,
+                onLanguageChange = viewModel::updateLangSetting
+            )
+        }
         DialogType.DeviceSync -> {
             DeviceSyncDialog(
                 onDismiss = viewModel::dismissDialog,

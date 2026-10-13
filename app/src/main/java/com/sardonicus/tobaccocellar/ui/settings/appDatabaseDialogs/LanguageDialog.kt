@@ -1,6 +1,5 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
-import android.content.res.Resources
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -40,19 +39,22 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Popup
 import androidx.core.os.LocaleListCompat
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LanguageDialog(
     onDismiss: () -> Unit,
-    onLanguageChange: () -> Unit
+    onLanguageChange: (String) -> Unit
 ) {
     val installedOptions = AppCompatDelegate.getApplicationLocales()
     val currentCode = if (installedOptions.isEmpty) "system" else installedOptions[0]?.language ?: "system"
+    val context = LocalCellarApplication.current
 
-    val localeCode = Resources.getSystem().configuration.locales[0].language
+    val localeCode = getSystemLanguage(context)
     val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
 
     val options = listOf(LanguageOption(stringResource(R.string.system_language, systemCode), "system")) +
@@ -135,7 +137,7 @@ fun LanguageDialog(
                                                             LocaleListCompat.forLanguageTags(option.code)
                                                         )
                                                     }
-                                                    onLanguageChange()
+                                                    onLanguageChange(option.code)
                                                     expanded = false
                                                 }
                                                 .padding(horizontal = 16.dp),

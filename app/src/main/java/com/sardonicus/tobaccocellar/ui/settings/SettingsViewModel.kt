@@ -2,13 +2,15 @@ package com.sardonicus.tobaccocellar.ui.settings
 
 import android.app.NotificationManager
 import android.content.Context
-import android.content.res.Resources
+import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Stable
+import androidx.core.content.edit
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -39,6 +41,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.SupportedLang
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -158,6 +161,7 @@ class SettingsViewModel(
 
     val defaultSyncOption = preferencesRepo.defaultSyncOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    private val _langSetting = MutableStateFlow("system")
 
     /** General UI control **/
     private val _loading = MutableStateFlow(false)
@@ -172,9 +176,10 @@ class SettingsViewModel(
             }
         }
         app.applicationScope.launch(Dispatchers.Default) {
+            launch { _langSetting.value = preferencesRepo.appLanguage.first() }
             launch {
                 val email = preferencesRepo.signedInUserEmail.first()
-                if (email?.isBlank() == true) {
+                if (email != null && email.isBlank()) {
                     preferencesRepo.saveCrossDeviceSync(false)
                     preferencesRepo.clearLogin()
                 }
@@ -202,17 +207,20 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
-    private val _langSetting = MutableStateFlow(getCurrentLangSetting())
-    fun updateLangSetting() { _langSetting.value = getCurrentLangSetting() }
+    val sharedPrefs: SharedPreferences = app.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
 
-    fun getCurrentLangSetting(): String {
-        val installedOptions = AppCompatDelegate.getApplicationLocales()
-        return if (installedOptions.isEmpty) {
-            val localeCode = Resources.getSystem().configuration.locales[0].language
+    fun updateLangSetting(code: String) {
+        _langSetting.value = code
+        sharedPrefs.edit { putString("app_language", code) }
+        app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
+    }
+
+    private fun getLangSetting(code: String): String {
+        return if (code == "system") {
+            val localeCode = getSystemLanguage(app)
             val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
             app.getString(R.string.system_language, systemCode)
         } else {
-            val code = installedOptions[0]?.language ?: "en"
             SupportedLanguages.getDisplayString(code) ?: code
         }
     }
@@ -223,29 +231,26 @@ class SettingsViewModel(
         typeGenreOption,
         quantityOption,
         parseLinks,
-        _langSetting
     ) { it: Array<Any> ->
         val theme = it[0] as ThemeSetting
         val showRatings = it[1] as Boolean
         val typeGenre = it[2] as TypeGenreOption
         val quantity = it[3] as QuantityOption
         val parseLinks = it[4] as Boolean
-        val langSetting = it[5] as String
 
         listOf(
-            SettingsDialog(app.getString(R.string.theme_option), app.getString(R.string.theme_description), app.getString(theme.resId), DialogType.Theme),
-            SettingsDialog(app.getString(R.string.language_option), app.getString(R.string.language_description), langSetting, DialogType.Language),
-            SettingsDialog(app.getString(R.string.ratings_option), app.getString(R.string.ratings_description), showRatings.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.Ratings),
-            SettingsDialog(app.getString(R.string.type_genre_option), app.getString(R.string.type_genre_description), app.getString(typeGenre.resId), DialogType.TypeGenre),
-            SettingsDialog(app.getString(R.string.quantity_option), app.getString(R.string.quantity_description), quantity.let {
+            SettingsDialog(R.string.theme_option, R.string.theme_description, theme.resId, DialogType.Theme),
+            SettingsDialog(R.string.ratings_option, R.string.ratings_description, showRatings.let { if (it) R.string.on else R.string.off }, DialogType.Ratings),
+            SettingsDialog(R.string.type_genre_option, R.string.type_genre_description, typeGenre.resId, DialogType.TypeGenre),
+            SettingsDialog(R.string.quantity_option, R.string.quantity_description, quantity.let {
                 when (it) {
-                    QuantityOption.TINS -> app.getString(R.string.tins)
-                    QuantityOption.OUNCES -> app.getString(R.string.oz_lbs)
-                    QuantityOption.GRAMS -> app.getString(R.string.grams)
+                    QuantityOption.TINS -> R.string.tins
+                    QuantityOption.OUNCES -> R.string.oz_lbs
+                    QuantityOption.GRAMS -> R.string.grams
                 }
             }, DialogType.QuantityDisplay),
-            SettingsDialog(app.getString(R.string.parse_links_option), app.getString(R.string.parse_links_description), parseLinks.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.ParseLinks),
-            SettingsDialog(app.getString(R.string.large_screen_option), app.getString(R.string.large_screen_description), null, DialogType.LargeScreenOptions)
+            SettingsDialog(R.string.parse_links_option, R.string.parse_links_description, parseLinks.let { if (it) R.string.on else R.string.off }, DialogType.ParseLinks),
+            SettingsDialog(R.string.large_screen_option, R.string.large_screen_description, null, DialogType.LargeScreenOptions)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -258,6 +263,7 @@ class SettingsViewModel(
         tinOzConversionRate,
         tinGramsConversionRate,
         defaultSyncOption,
+        _langSetting
     ) { values: Array<Any> ->
         val crossDeviceSync = values[0] as Boolean
         val mobileData = values[1] as Boolean
@@ -266,19 +272,19 @@ class SettingsViewModel(
         val ozRate = values[4] as Double
         val gramsRate = values[5] as Double
         val defaultSync = values[6] as Boolean
+        val code = values[7] as String
 
         listOf(
-            SettingsDialog(app.getString(R.string.multi_device_sync), app.getString(R.string.multi_device_sync_description), crossDeviceSync.let {
-                if (it) {
-                    if (!connected) app.getString(R.string.disconnected) else app.getString(R.string.multi_device_on, if (mobileData) app.getString(R.string.mobile) else app.getString(R.string.wifi))
-                } else app.getString(R.string.off)
-            }, DialogType.DeviceSync),
-            SettingsDialog(app.getString(R.string.tin_ready_option), app.getString(R.string.tin_ready_description), tinNotifications.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.TinNotifications),
-            SettingsDialog(app.getString(R.string.conversion_option), app.getString(R.string.conversion_description), "${formatDecimal(ozRate)} oz/${formatDecimal(gramsRate)} g", DialogType.TinRates),
-            SettingsDialog(app.getString(R.string.default_sync_option), app.getString(R.string.default_sync_description), defaultSync.let { if (it) app.getString(R.string.on) else app.getString(R.string.off) }, DialogType.TinSyncDefault),
-            SettingsDialog(app.getString(R.string.backup_restore_option), app.getString(R.string.backup_restore_description), null, DialogType.BackupRestore),
-            SettingsDialog(app.getString(R.string.other_operations), app.getString(R.string.other_operations_description), null, DialogType.DbOperations),
-            SettingsDialog(app.getString(R.string.delete_db), app.getString(R.string.delete_db_description), null, DialogType.DeleteAll)
+            SettingsDialog(R.string.language_option, R.string.language_description, null, DialogType.Language, currentSettingRaw = getLangSetting(code)),
+            SettingsDialog(R.string.multi_device_sync, R.string.multi_device_sync_description, when {
+                !crossDeviceSync -> R.string.off; !connected -> R.string.disconnected; mobileData -> R.string.multi_device_on_mobile
+                else -> R.string.multi_device_on_wifi }, DialogType.DeviceSync),
+            SettingsDialog(R.string.tin_ready_option, R.string.tin_ready_description, tinNotifications.let { if (it) R.string.on else R.string.off }, DialogType.TinNotifications),
+            SettingsDialog(R.string.conversion_option, R.string.conversion_description, R.string.tin_conversion_rates, DialogType.TinRates, listOf(formatDecimal(ozRate), formatDecimal(gramsRate))),
+            SettingsDialog(R.string.default_sync_option, R.string.default_sync_description, defaultSync.let { if (it) R.string.on else R.string.off }, DialogType.TinSyncDefault),
+            SettingsDialog(R.string.backup_restore_option, R.string.backup_restore_description, null, DialogType.BackupRestore),
+            SettingsDialog(R.string.other_operations, R.string.other_operations_description, null, DialogType.DbOperations),
+            SettingsDialog(R.string.delete_db, R.string.delete_db_description, null, DialogType.DeleteAll)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -1013,10 +1019,12 @@ class SettingsViewModel(
 
 @Stable
 data class SettingsDialog(
-    val title: String,
-    val description: String,
-    val currentSetting: String?,
-    val dialogType: DialogType
+    @StringRes val title: Int,
+    @StringRes val description: Int,
+    @StringRes val currentSetting: Int?,
+    val dialogType: DialogType,
+    val currentSettingArgs: List<Any>? = null,
+    val currentSettingRaw: String? = null
 )
 
 @Stable
@@ -1111,12 +1119,13 @@ data class SettingsBackup (
     val landscapeTwoPane: Boolean = false,
     val tinNotifications: Boolean = false,
     val tinNotifyTime: Int = 600,
-    val lastTinNotifyDate: Long? = null
+    val lastTinNotifyDate: Long? = null,
+    val appLanguage: String = "system"
 )
 
 data class RestoreState(
     val databaseChecked: Boolean = false,
-    val settingsChecked: Boolean = false,
+    val settingsChecked: Boolean = false
 )
 
 data class FileContentState(
@@ -1257,7 +1266,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         landscapeTwoPane = preferencesRepo.landscapeTwoPane.first(),
         tinNotifications = preferencesRepo.tinNotifications.first(),
         tinNotifyTime = preferencesRepo.tinNotifyTime.first(),
-        lastTinNotifyDate = preferencesRepo.lastTinNotifyDate.first()
+        lastTinNotifyDate = preferencesRepo.lastTinNotifyDate.first(),
+        appLanguage = preferencesRepo.appLanguage.first()
     )
 
     return jsonFormat.encodeToString(backup)
@@ -1320,6 +1330,14 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
             saveTinNotifications(backup.tinNotifications)
             saveTinNotifyTime(backup.tinNotifyTime)
             if (backup.lastTinNotifyDate != null) saveLastTinNotify(backup.lastTinNotifyDate)
+            if (backup.appLanguage != preferencesRepo.appLanguage.first()) {
+                saveAppLanguage(backup.appLanguage)
+                if (backup.appLanguage == "system") {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                } else {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(backup.appLanguage))
+                }
+            }
         }
     } else { // support for older backup files
         val lines = settingsText.lines()

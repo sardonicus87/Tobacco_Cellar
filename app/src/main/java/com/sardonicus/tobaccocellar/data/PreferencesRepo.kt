@@ -54,11 +54,11 @@ class PreferencesRepo(
         val TYPE_GENRE_OPTION = stringPreferencesKey("type_genre_option")
         val QUANTITY_OPTION = stringPreferencesKey("quantity_option")
         val PARSE_LINKS = booleanPreferencesKey("parse_links")
-
         val GLOBAL_TWO_PANE = booleanPreferencesKey("two_pane_global")
         val TWO_COLUMN_TABS = booleanPreferencesKey("two_column_tabs")
         val LANDSCAPE_TWO_PANE = booleanPreferencesKey("two_pane_landscape")
 
+        val APP_LANGUAGE = stringPreferencesKey("app_language")
         val CROSS_DEVICE_ACKNOWLEDGED = booleanPreferencesKey("cross_device_acknowledged")
         val CROSS_DEVICE_SYNC = booleanPreferencesKey("cross_device_sync")
         val ALLOW_MOBILE_DATA = booleanPreferencesKey("allow_mobile_data")
@@ -369,6 +369,16 @@ class PreferencesRepo(
 
 
     /** Database Settings **/
+    val appLanguage: Flow<String> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading language preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[APP_LANGUAGE] ?: "system" }.distinctUntilChanged()
+
+    suspend fun saveAppLanguage(lang: String) { dataStore.edit { it[APP_LANGUAGE] = lang } }
+
     // multi-device sync settings
     val crossDeviceAcknowledged: Flow<Boolean> = dataStore.data
         .catch {
