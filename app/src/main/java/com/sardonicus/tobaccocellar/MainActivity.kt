@@ -8,7 +8,6 @@ import android.view.Gravity
 import android.view.RoundedCorner
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -16,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -30,11 +30,15 @@ import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.AutofillKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -56,7 +60,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -109,6 +115,8 @@ import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -116,8 +124,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import kotlin.time.Duration.Companion.milliseconds
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
+    private val _noAccountsDialog = MutableStateFlow(false)
+    val noAccountsDialog = _noAccountsDialog.asStateFlow()
     private var backPressedOnce = false
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
     private lateinit var credentialManager: CredentialManager
@@ -337,6 +347,40 @@ class MainActivity : ComponentActivity() {
                     }
 
                     SystemBarsProtection()
+
+                    val showDialog by noAccountsDialog.collectAsState()
+                    if (showDialog) {
+                        AlertDialog(
+                            onDismissRequest = {
+                                _noAccountsDialog.value = false
+                                Toast.makeText(this@MainActivity, getString(R.string.no_accounts), Toast.LENGTH_SHORT).show()
+                            },
+                            properties = DialogProperties(
+                                dismissOnBackPress = false,
+                                dismissOnClickOutside = false
+                            ),
+                            title = { Text(stringResource(R.string.add_account_device), fontSize = 18.sp) },
+                            text = {
+                                Text(stringResource(R.string.add_account_body), fontSize = 15.sp)
+                            },
+                            confirmButton = {
+                                TextButton(
+                                    onClick = { _noAccountsDialog.value = false; signIn(true) }
+                                ) { Text(stringResource(R.string.add_account)) }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        _noAccountsDialog.value = false; EventBus.tryEmit(SignInCancelled)
+                                        Toast.makeText(this@MainActivity, getString(R.string.no_accounts), Toast.LENGTH_SHORT).show()
+                                    }
+                                ) { Text(stringResource(R.string.cancel)) }
+                            },
+                            containerColor = MaterialTheme.colorScheme.background,
+                            textContentColor = MaterialTheme.colorScheme.onBackground,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                    }
                 }
             }
         }
@@ -367,7 +411,7 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra("READY_TIN_IDS")
     }
 
-    private fun signIn() {
+    private fun signIn(noAccounts: Boolean = false) {
         lifecycleScope.launch {
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
@@ -379,10 +423,16 @@ class MainActivity : ComponentActivity() {
                 serverClientId = getString(R.string.web_client_id),
             ).build()
 
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(googleIdOption)
-                .addCredentialOption(signInOption)
-                .build()
+            val request = if (noAccounts) {
+                GetCredentialRequest.Builder()
+                    .addCredentialOption(signInOption)
+                    .build()
+            } else {
+                GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .addCredentialOption(signInOption)
+                    .build()
+            }
 
             try {
                 val result = credentialManager.getCredential(this@MainActivity, request)
@@ -396,14 +446,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+
     private suspend fun handleSignInFailure(e: GetCredentialException) {
-        val message = when (e) {
-            is GetCredentialCancellationException -> application.getString(R.string.sign_in_canceled)
-            is NoCredentialException -> application.getString(R.string.no_accounts)
-            else -> application.getString(R.string.sign_in_failed)
+        if (e is NoCredentialException) { _noAccountsDialog.value = true }
+        else {
+            val message = when (e) {
+                is GetCredentialCancellationException -> application.getString(R.string.sign_in_canceled)
+                else -> application.getString(R.string.sign_in_failed)
+            }
+            EventBus.emit(SignInCancelled)
+            Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
         }
-        EventBus.emit(SignInCancelled)
-        Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
     }
 
     fun signOut() {
