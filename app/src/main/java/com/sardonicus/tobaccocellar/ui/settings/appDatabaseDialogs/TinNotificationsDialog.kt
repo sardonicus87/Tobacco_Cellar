@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -124,7 +125,7 @@ fun TinNotificationsDialog (
                                         ) { onSave(true, notificationTime) }
                                     else {
                                         val isRuntime = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                                                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                                                ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                                         if (isRuntime) { launchedFromApp = true }
                                     }
                                 }
@@ -190,10 +191,10 @@ fun requestNotificationPermission(
     channel: String
 ): Boolean {
     val isRuntime = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !isRuntime) {
-        permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        permissionLauncher.launch(POST_NOTIFICATIONS)
         return false
     } else {
         val appDisabled = !notificationManager.areNotificationsEnabled()
@@ -223,7 +224,7 @@ fun checkNotificationPermission(
     channel: String
 ): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+        if (ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             return false }
     if (!notificationManager.areNotificationsEnabled()) return false
 
