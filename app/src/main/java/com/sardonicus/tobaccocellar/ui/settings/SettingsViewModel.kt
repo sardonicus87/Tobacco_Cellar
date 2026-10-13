@@ -123,19 +123,15 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TypeGenreOption.TYPE)
 
     val quantityOption = preferencesRepo.quantityOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), QuantityOption.TINS)
-
     val parseLinks = preferencesRepo.parseLinks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
     val globalTwoPane = preferencesRepo.globalTwoPane
-
     val landscapeTwoPane = preferencesRepo.landscapeTwoPane
-
     val twoColumnTabs = preferencesRepo.twoColumnTabs
-
     val isSyncing = SyncStateManager.isSyncing.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
     /** App & Database settings */
+    private val _langSetting = MutableStateFlow("system")
     val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val crossDeviceSync = preferencesRepo.crossDeviceSync
@@ -144,24 +140,15 @@ class SettingsViewModel(
 
     private val _signingIn = MutableStateFlow(false)
     val signingIn = _signingIn.asStateFlow()
-
     val allowMobileData = preferencesRepo.allowMobileData.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val userEmail = preferencesRepo.signedInUserEmail.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
     val hasScope = preferencesRepo.hasDriveScope.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val tinNotifications = preferencesRepo.tinNotifications.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val tinNotifyTime = preferencesRepo.tinNotifyTime.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 600)
-
     val tinOzConversionRate = preferencesRepo.tinOzConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.ozRate)
-
     val tinGramsConversionRate = preferencesRepo.tinGramsConversionRate.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TinConversionRates.DEFAULT.gramsRate)
-
     val defaultSyncOption = preferencesRepo.defaultSyncOption.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _langSetting = MutableStateFlow("system")
 
     /** General UI control **/
     private val _loading = MutableStateFlow(false)
@@ -263,7 +250,8 @@ class SettingsViewModel(
         tinOzConversionRate,
         tinGramsConversionRate,
         defaultSyncOption,
-        _langSetting
+        _langSetting,
+        preferencesRepo.appLanguage // needed to force re-run formatDecimal in new locale after language change
     ) { values: Array<Any> ->
         val crossDeviceSync = values[0] as Boolean
         val mobileData = values[1] as Boolean
