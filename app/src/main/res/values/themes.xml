@@ -7,7 +7,7 @@
         <item name="postSplashScreenTheme">@style/Theme.TobaccoCellar</item>
     </style>
 
-    <style name="Theme.TobaccoCellar" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.TobaccoCellar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@color/dark</item>
     </style>
