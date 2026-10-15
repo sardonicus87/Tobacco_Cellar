@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
             var loading by remember { mutableStateOf(false) }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(Unit, Dispatchers.Default) {
                 var snackbarJob: Job? = null
                 EventBus.events.collect { event ->
                     when (event) {
@@ -261,7 +261,7 @@ class MainActivity : AppCompatActivity() {
             var twoPaneAllowed by remember { mutableStateOf(targetTwoPane) }
             var twoColumnTabs by remember { mutableStateOf(targetTwoColumn) }
 
-            LaunchedEffect(targetTwoPane, targetTwoColumn) {
+            LaunchedEffect(targetTwoPane, targetTwoColumn, Dispatchers.Default) {
                 if (twoPaneAllowed != targetTwoPane || twoColumnTabs != targetTwoColumn) {
                     yield()
                     twoPaneAllowed = targetTwoPane
@@ -270,7 +270,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
-            SideEffect(displayCutoutTop) { updateStatusBarsVisibility(displayCutoutTop) }
+            SideEffect(displayCutoutTop) { updateStatusBarsVisibility(displayCutoutTop, windowInsetsController) }
 
             val navigationState = rememberNavigationState(
                 startRoute = HomeDestination,
@@ -391,10 +391,10 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
     }
 
-    private fun updateStatusBarsVisibility(topCutout: Int) {
-        if (topCutout == 0) { windowInsetsController.hide(WindowInsetsCompat.Type.statusBars()) }
-        else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
-    }
+//    private fun updateStatusBarsVisibility(topCutout: Int) {
+//        if (topCutout == 0) { windowInsetsController.hide(WindowInsetsCompat.Type.statusBars()) }
+//        else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
+//    }
 
     private fun handleNotificationIntent(intent: Intent, navigationState: NavigationState?) {
         val destination = intent.getStringExtra("START_DESTINATION")
@@ -542,4 +542,9 @@ fun gestureNavigation(): Boolean {
         val right = insets.getRight(density, direction)
         return left > 0 && right > 0
     }
+}
+
+fun updateStatusBarsVisibility(topCutout: Int, insetsController: WindowInsetsControllerCompat) {
+    if (topCutout == 0) { insetsController.hide(WindowInsetsCompat.Type.statusBars()) }
+    else { insetsController.show(WindowInsetsCompat.Type.statusBars()) }
 }

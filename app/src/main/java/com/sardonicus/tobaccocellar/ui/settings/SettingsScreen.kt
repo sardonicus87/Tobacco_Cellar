@@ -49,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -76,6 +77,11 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialo
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
+import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,7 +145,9 @@ fun SettingsScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             SettingsBody(
                 viewModel = viewModel,
@@ -169,7 +177,7 @@ private fun SettingsBody(
             Text(
                 text = stringResource(R.string.display_settings),
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
                 fontSize = 17.sp,
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -181,6 +189,7 @@ private fun SettingsBody(
                 onClick = viewModel::showDialog,
                 modifier = Modifier.padding(horizontal = 12.dp)
             )
+            if (it != displaySettings.last()) Spacer(Modifier.height(1.5.dp))
         }
 
         item { Spacer(Modifier.height(24.dp)) }
@@ -189,9 +198,9 @@ private fun SettingsBody(
             Text(
                 text = stringResource(R.string.app_db_settings),
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
                 fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.tertiary // MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -204,10 +213,22 @@ private fun SettingsBody(
                     else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 12.dp)
             )
+            if (it != databaseSettings.last()) Spacer(Modifier.height(1.5.dp))
         }
 
         item { Spacer(Modifier.height(16.dp)) }
     }
+
+    val context = LocalContext.current
+    LaunchedEffect(displaySettings, databaseSettings) {
+        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.collectLatest {
+            delay(100.milliseconds)
+            EventBus.emit(MainActivityReady)
+            delay(200.milliseconds)
+            TransitionCache.deleteScreenshot(context)
+        }
+    }
+
 }
 
 
@@ -219,6 +240,14 @@ private fun SettingsRow(
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val settingText = when {
+        item.currentSetting != null -> {
+            if (item.currentSettingArgs != null) {
+                stringResource(item.currentSetting, *item.currentSettingArgs.toTypedArray()) }
+            else { stringResource(item.currentSetting) }
+        }
+        else -> item.currentSettingRaw ?: ""
+    }
 
     Row(
         modifier = modifier
@@ -227,41 +256,35 @@ private fun SettingsRow(
             .clip(RoundedCornerShape(8.dp))
             .indication(
                 interactionSource = interactionSource,
-                indication = if (item.currentSetting != null) LocalIndication.current else null
+                indication = if (settingText.isNotBlank()) LocalIndication.current else null
             ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = stringResource(item.title),
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .clickable(
-                    indication = if (item.currentSetting == null) LocalIndication.current else null,
-                    interactionSource = interactionSource,
-                    onClickLabel = stringResource(item.description),
-                ) { onClick(item.dialogType) }
-                .padding(8.dp, 5.dp)
-                .width(IntrinsicSize.Max),
-            fontSize = 16.sp,
-            maxLines = 1,
-            color = color
-        )
-
-        val settingText = when {
-            item.currentSetting != null -> {
-                if (item.currentSettingArgs != null) {
-                    stringResource(item.currentSetting, *item.currentSettingArgs.toTypedArray()) }
-                else { stringResource(item.currentSetting) }
-            }
-            else -> item.currentSettingRaw ?: ""
+        Box(Modifier.weight(.70f), Alignment.CenterStart) {
+            Text(
+                text = stringResource(item.title),
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(
+                        indication = if (settingText.isBlank()) LocalIndication.current else null,
+                        interactionSource = interactionSource,
+                        onClickLabel = stringResource(item.description),
+                    ) { onClick(item.dialogType) }
+                    .padding(8.dp, 5.dp)
+                    .width(IntrinsicSize.Max),
+                fontSize = 15.sp,
+                autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
+                maxLines = 1,
+                color = color
+            )
         }
         if (settingText.isNotBlank()) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .weight(1f)
+                    .weight(.30f)
                     .clickable(
                         indication = null,
                         interactionSource = interactionSource,
@@ -284,7 +307,7 @@ private fun SettingsRow(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
-        }
+        } else Spacer(Modifier.weight(.30f))
     }
 }
 
@@ -519,8 +542,11 @@ private fun <T> SelectionDialog(
                     )
                     Text(
                         text = optionLabel(option),
-                        modifier = Modifier.padding(end = 4.dp).alpha(if (enabled) 1f else .38f),
-                        fontSize = 15.sp,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .alpha(if (enabled) 1f else .38f),
+                        autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
+                        maxLines = 1
                     )
                 }
             }
@@ -562,7 +588,9 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                modifier = Modifier.requiredHeight(20.dp).scale(.6f)
+                modifier = Modifier
+                    .requiredHeight(20.dp)
+                    .scale(.6f)
             )
         }
         Text(
@@ -584,7 +612,13 @@ private fun ToggleRow(label: String, checked: Boolean, onCheckedChange: (Boolean
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = LocalContentColor.current.copy(alpha = if (enabled) 1f else .38f))
+        Text(
+            text = label,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
+            color = LocalContentColor.current.copy(alpha = if (enabled) 1f else .38f)
+        )
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
             Switch(checked, onCheckedChange, enabled = enabled, modifier = Modifier
                 .scale(.6f)

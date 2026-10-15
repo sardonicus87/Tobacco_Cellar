@@ -4,18 +4,15 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 object EventBus {
-    private val _events = MutableSharedFlow<Any>(extraBufferCapacity = 64)
+    private val _events = MutableSharedFlow<Any>(1, 64)
     val events = _events.asSharedFlow()
 
-    suspend fun emit(event: Any) {
-        _events.emit(event)
-    }
-
-    fun tryEmit(event: Any) {
-        _events.tryEmit(event)
-    }
+    suspend fun emit(event: Any) { _events.emit(event) }
+    fun tryEmit(event: Any) { _events.tryEmit(event) }
 }
 
 data class ShowSnackbar (val message: String)
 data class ShowToast (val message: String)
 data object DismissSnackbar
+data object TransitionCoverReady
+data object MainActivityReady

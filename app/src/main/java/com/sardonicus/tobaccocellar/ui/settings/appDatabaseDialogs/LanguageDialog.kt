@@ -1,5 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
+import android.app.Activity
+import android.app.ActivityOptions
+import android.content.Intent
+import androidx.activity.compose.LocalActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -28,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,11 +43,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Popup
 import androidx.core.os.LocaleListCompat
+import androidx.core.view.drawToBitmap
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.TransitionActivity
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
+import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +68,8 @@ fun LanguageDialog(
     val installedOptions = AppCompatDelegate.getApplicationLocales()
     val currentCode = if (installedOptions.isEmpty) "system" else installedOptions[0]?.language ?: "system"
     val context = LocalCellarApplication.current
+    val activity = LocalActivity.current as Activity
+    val scope = rememberCoroutineScope()
 
     val localeCode = getSystemLanguage(context)
     val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
@@ -109,49 +126,43 @@ fun LanguageDialog(
                         Popup(
                             alignment = Alignment.Center,
                             onDismissRequest = { expanded = false }
+                        ) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier
+                                    .width(175.dp)
+                                    .heightIn(max = 168.dp)
+                                    .background(
+                                        LocalCustomColors.current.textField,
+                                        MaterialTheme.shapes.extraSmall
+                                    )
+                                    .padding(vertical = 4.dp)
                             ) {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier
-                                        .width(175.dp)
-                                        .heightIn(max = 168.dp)
-                                        .background(
-                                            LocalCustomColors.current.textField,
-                                            MaterialTheme.shapes.extraSmall
-                                        )
-                                        .padding(vertical = 4.dp)
-                                ) {
-                                    items(options.size) {
-                                        val option = options[it]
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(40.dp)
-                                                .clickable(null, LocalIndication.current) {
-                                                    if (option.code == "system") {
-                                                        AppCompatDelegate.setApplicationLocales(
-                                                            LocaleListCompat.getEmptyLocaleList()
-                                                        )
-                                                    } else {
-                                                        AppCompatDelegate.setApplicationLocales(
-                                                            LocaleListCompat.forLanguageTags(option.code)
-                                                        )
-                                                    }
+                                items(options.size) {
+                                    val option = options[it]
+                                    Box(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(40.dp)
+                                            .clickable(null, LocalIndication.current) {
+                                                if (option.code != currentCode) {
+                                                    scope.launch { changeLanguage(activity, option.code) }
                                                     onLanguageChange(option.code)
-                                                    expanded = false
                                                 }
-                                                .padding(horizontal = 16.dp),
-                                            Alignment.CenterStart
-                                        ) {
-                                            Text(
-                                                text = option.label,
-                                                lineHeight = 1.em,
-                                                fontWeight = if (option.code == currentCode) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        }
+                                                expanded = false
+                                            }
+                                            .padding(horizontal = 16.dp),
+                                        Alignment.CenterStart
+                                    ) {
+                                        Text(
+                                            text = option.label,
+                                            lineHeight = 1.em,
+                                            fontWeight = if (option.code == currentCode) FontWeight.Bold else FontWeight.Normal
+                                        )
                                     }
                                 }
                             }
+                        }
                     }
                 }
             }
@@ -171,17 +182,41 @@ data class AppLanguage(val label: String, val code: String) {
 }
 
 object SupportedLanguages {
-    val list = listOf(
-        AppLanguage("English", "en"),
-        AppLanguage("Español", "es"),
-        AppLanguage("Deutsch", "de"),
-        AppLanguage("Français", "fr"),
-        AppLanguage("日本語", "ja")
+    val codes = listOf(
+        "ar", "bn", "bg", "ca", "zh-CN", "hr", "cs", "da", "nl", "en",
+        "et", "fi", "fr", "de", "el", "gu", "he", "hi", "hu", "is",
+        "id", "it", "ja", "kn", "ko", "lv", "lt", "ml", "mr", "no",
+        "fa", "pl", "pt", "pa", "ro", "ru", "sk", "sl", "es", "sw",
+        "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "zu"
     )
-    val codes = list.map { it.code }.toSet()
+
+    val list: List<AppLanguage> = codes.map { code ->
+        val locale = Locale.forLanguageTag(code)
+        val nativeName = locale.getDisplayName(locale).replaceFirstChar { it.uppercase() }
+        AppLanguage(nativeName, code)
+    }
 
     fun getDisplayString(code: String): String? {
         val lang = list.find { it.code == code }
         return lang?.displayString
+    }
+}
+
+suspend fun changeLanguage(activity: Activity, code: String) {
+    val decorView = activity.window.decorView
+    val bitmap = decorView.drawToBitmap()
+
+    TransitionCache.saveScreenshot(activity, bitmap)
+
+    val intent = Intent(activity, TransitionActivity::class.java)
+    val options = ActivityOptions.makeCustomAnimation(activity, 0, 0)
+    activity.startActivity(intent, options.toBundle())
+
+    EventBus.events.first { it is TransitionCoverReady }
+    delay(25.milliseconds)
+    if (code == "system") {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+    } else {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
     }
 }

@@ -29,6 +29,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".TransitionActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:theme="@style/Theme.Start">
+        </activity>
     </application>
 
 </manifest>
