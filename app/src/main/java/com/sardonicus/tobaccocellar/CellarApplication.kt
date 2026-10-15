@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
@@ -76,11 +77,13 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
 
-        val prefs = base.getSharedPreferences("app_settings", MODE_PRIVATE)
-        val savedLang = prefs.getString("app_language", "system") ?: "system"
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            val prefs = base.getSharedPreferences("app_settings", MODE_PRIVATE)
+            val savedLang = prefs.getString("app_language", "system") ?: "system"
 
-        if (savedLang != "system") {
-            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
+            if (savedLang != "system") {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
+            }
         }
     }
 
