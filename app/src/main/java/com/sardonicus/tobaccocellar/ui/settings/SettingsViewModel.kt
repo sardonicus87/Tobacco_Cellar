@@ -207,9 +207,7 @@ class SettingsViewModel(
             val localeCode = getSystemLanguage(app)
             val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
             app.getString(R.string.system_language, systemCode)
-        } else {
-            SupportedLanguages.getDisplayString(code) ?: code
-        }
+        } else { SupportedLanguages.getDisplayString(code) ?: code }
     }
 
     val displaySettings = combine(

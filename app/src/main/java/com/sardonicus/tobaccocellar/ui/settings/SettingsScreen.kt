@@ -200,7 +200,7 @@ private fun SettingsBody(
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
                 fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.tertiary // MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
@@ -228,7 +228,6 @@ private fun SettingsBody(
             TransitionCache.deleteScreenshot(context)
         }
     }
-
 }
 
 
@@ -254,10 +253,7 @@ private fun SettingsRow(
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(8.dp))
-            .indication(
-                interactionSource = interactionSource,
-                indication = if (settingText.isNotBlank()) LocalIndication.current else null
-            ),
+            .indication(interactionSource, if (settingText.isNotBlank()) LocalIndication.current else null),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -267,9 +263,7 @@ private fun SettingsRow(
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable(
-                        indication = if (settingText.isBlank()) LocalIndication.current else null,
-                        interactionSource = interactionSource,
+                    .clickable(interactionSource, if (settingText.isBlank()) LocalIndication.current else null,
                         onClickLabel = stringResource(item.description),
                     ) { onClick(item.dialogType) }
                     .padding(8.dp, 5.dp)
@@ -285,9 +279,7 @@ private fun SettingsRow(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(.30f)
-                    .clickable(
-                        indication = null,
-                        interactionSource = interactionSource,
+                    .clickable(interactionSource, null,
                         onClickLabel = stringResource(item.description),
                     ) { onClick(item.dialogType) }
                     .padding(horizontal = 8.dp),
