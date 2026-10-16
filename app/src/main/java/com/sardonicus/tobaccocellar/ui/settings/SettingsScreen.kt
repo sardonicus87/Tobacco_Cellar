@@ -227,8 +227,8 @@ private fun SettingsBody(
 
     LaunchedEffect(displaySettings, databaseSettings, listState) {
         snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.collectLatest {
-            snapshotFlow { listState.layoutInfo.totalItemsCount == displaySettings.size + databaseSettings.size + 5 }.first()
-            delay(10.milliseconds)
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo.size > 2 }.first()
+            delay(50.milliseconds)
             EventBus.emit(MainActivityReady)
             delay(200.milliseconds)
             TransitionCache.deleteScreenshot(context)
