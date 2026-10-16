@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -84,23 +86,22 @@ fun DeviceSyncDialog(
     clearRemoteData: () -> Unit,
     clearLoginState: () -> Unit
 ) {
+    val density = LocalDensity.current
+    val context = LocalContext.current
+
     val accountLinked by remember (email, hasScope) { mutableStateOf(!email.isNullOrBlank() || hasScope) }
 
     val scrollState = rememberScrollState()
     var atBottom by remember { mutableStateOf(false) }
     val scrolled by remember { derivedStateOf { !scrollState.canScrollForward } }
     if (scrolled) { atBottom = true }
-    val density = LocalDensity.current
-    val checkOffset = remember { with(density) { 14.sp.toDp() } }
 
     var debouncedLoading by remember { mutableStateOf(false) }
     var disconnectFailure by remember { mutableStateOf(false) }
 
     LaunchedEffect(loading) {
-        if (loading) {
-            delay(50.milliseconds)
-            debouncedLoading = true
-        } else { debouncedLoading = false }
+        if (loading) { delay(50.milliseconds); debouncedLoading = true }
+        else { debouncedLoading = false }
     }
 
     LaunchedEffect(disconnectFailure, connectionEnabled) {
@@ -108,14 +109,12 @@ fun DeviceSyncDialog(
             snapshotFlow { connectionEnabled }.collect {
                 if (it) {
                     delay(1000.milliseconds)
-                    disconnectFailure = false
-                    onDeviceSync(true)
+                    disconnectFailure = false; onDeviceSync(true)
                 }
             }
         }
     }
 
-    val context = LocalContext.current
     val notificationManager = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     var syncNotificationEnabled by remember { mutableStateOf(checkNotificationPermission(notificationManager, context, CellarApplication.SYNC_NOTIFICATION)) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -126,8 +125,7 @@ fun DeviceSyncDialog(
             val isReady = checkNotificationPermission(notificationManager, context, CellarApplication.SYNC_NOTIFICATION)
             if (isReady) { syncNotificationEnabled = true }
             launchedFromApp = false
-        }
-        onPauseOrDispose { }
+        }; onPauseOrDispose { }
     }
 
     AlertDialog(
@@ -163,10 +161,11 @@ fun DeviceSyncDialog(
                             fontSize = 14.sp, color = LocalContentColor.current)
                     }
                 } else {
+                    var switchWidth by remember { mutableStateOf(0.dp) }
+                    val checkOffset = remember { with(density) { 14.sp.toDp() } }
+
                     Box {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Spacer(Modifier.height(4.dp))
                             // Enable Sync
                             Box {
@@ -180,7 +179,8 @@ fun DeviceSyncDialog(
                                 ) {
                                     Text(
                                         text = stringResource(R.string.multi_device_sync_label),
-                                        fontSize = 15.sp,
+                                        maxLines = 1,
+                                        autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                         fontWeight = FontWeight.Medium,
                                         color = LocalContentColor.current.copy(alpha = if (debouncedLoading) .38f else 1f)
                                     )
@@ -259,7 +259,8 @@ fun DeviceSyncDialog(
                                 val alpha = if (!deviceSync || debouncedLoading) .38f else 1f
                                 Text(
                                     text = stringResource(R.string.multi_device_allow_mobile),
-                                    fontSize = 15.sp,
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                     fontWeight = FontWeight.Medium,
                                     color = LocalContentColor.current.copy(alpha = alpha)
                                 )
@@ -268,7 +269,9 @@ fun DeviceSyncDialog(
                                         checked = allowMobileData,
                                         onCheckedChange = { onAllowMobileData(it) },
                                         enabled = deviceSync && !debouncedLoading,
-                                        modifier = Modifier.scale(.6f).padding(start = 10.dp),
+                                        modifier = Modifier.scale(.6f).padding(start = 10.dp).onGloballyPositioned {
+                                            switchWidth = with(density) { it.size.width.toDp() }
+                                        },
                                         colors = SwitchDefaults.colors()
                                     )
                                 }
@@ -284,14 +287,20 @@ fun DeviceSyncDialog(
                             ) {
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.width(IntrinsicSize.Max)
+                                    modifier = Modifier.weight(1f)
                                 ) {
                                     TextButton(
                                         onClick = { onManualSync() },
                                         enabled = deviceSync && accountLinked && connectionEnabled && !debouncedLoading,
                                         contentPadding = PaddingValues(8.dp, 3.dp),
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                                    ) { Text(stringResource(R.string.multi_device_manual_sync), fontSize = 15.sp) }
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.multi_device_manual_sync),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp)
+                                        )
+                                    }
 
                                     // Clear remote data
                                     TextButton(
@@ -299,40 +308,49 @@ fun DeviceSyncDialog(
                                         enabled = accountLinked && connectionEnabled && !debouncedLoading,
                                         contentPadding = PaddingValues(8.dp, 3.dp),
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                                    ) { Text(stringResource(R.string.multi_device_clear_remote), fontSize = 15.sp, maxLines = 1) }
-                                }
-                            }
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.multi_device_clear_remote),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp)
+                                        )
+                                    }
 
-                            // Clear Login
-                            TextButton(
-                                onClick = { clearLoginState(); onDeviceSync(false) },
-                                enabled = accountLinked && !debouncedLoading,
-                                contentPadding = PaddingValues(8.dp, 3.dp),
-                                modifier = Modifier.heightIn(28.dp, 28.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.multi_device_sign_out),
-                                    fontSize = 15.sp,
-                                    modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
-                                )
-                            }
+                                    // Clear Login
+                                    TextButton(
+                                        onClick = { clearLoginState(); onDeviceSync(false) },
+                                        enabled = accountLinked && !debouncedLoading,
+                                        contentPadding = PaddingValues(8.dp, 3.dp),
+                                        modifier = Modifier.heightIn(28.dp, 28.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.multi_device_sign_out),
+                                            maxLines = 1,
+                                            autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
+                                            modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
+                                        )
+                                    }
 
-                            // notification
-                            if (deviceSync&& !signingIn && !disconnectFailure && !syncNotificationEnabled) {
-                                TextButton(
-                                    onClick = {
-                                        launchedFromApp = true
-                                        requestNotificationPermission(context, notificationManager, permissionLauncher, CellarApplication.SYNC_NOTIFICATION) },
-                                    enabled = accountLinked && !debouncedLoading,
-                                    contentPadding = PaddingValues(8.dp, 3.dp),
-                                    modifier = Modifier.heightIn(28.dp, 28.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.multi_device_enable_notification),
-                                        fontSize = 15.sp,
-                                        modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
-                                    )
+                                    // notification
+                                    if (deviceSync && !signingIn && !disconnectFailure && !syncNotificationEnabled) {
+                                        TextButton(
+                                            onClick = {
+                                                launchedFromApp = true
+                                                requestNotificationPermission(context, notificationManager, permissionLauncher, CellarApplication.SYNC_NOTIFICATION) },
+                                            enabled = accountLinked && !debouncedLoading,
+                                            contentPadding = PaddingValues(8.dp, 3.dp),
+                                            modifier = Modifier.heightIn(28.dp, 28.dp)
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.multi_device_enable_notification),
+                                                maxLines = 1,
+                                                autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
+                                                modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
+                                            )
+                                        }
+                                    }
                                 }
+                                Spacer(Modifier.width(switchWidth))
                             }
                         }
                         if (debouncedLoading) { LoadingIndicator(Modifier.matchParentSize(), center = true) }
