@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -53,6 +54,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
+import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -74,8 +76,16 @@ fun LanguageDialog(
     val localeCode = getSystemLanguage(context)
     val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
 
-    val options = listOf(LanguageOption(stringResource(R.string.system_language, systemCode), "system")) +
-            SupportedLanguages.list.map { LanguageOption(it.displayString, it.code) }
+    val deviceLocales = getSystemLocales(context)
+    val supportedDeviceLocales = deviceLocales.map { it.language.lowercase() }
+        .filter { it in SupportedLanguages.codes }
+        .mapNotNull { code -> SupportedLanguages.list.find { it.code == code } }
+
+    val remaining = SupportedLanguages.list.filter { lang -> lang.code !in supportedDeviceLocales.map { it.code } }
+
+    val options = listOf(
+        LanguageOption(stringResource(R.string.system_language, systemCode), "system")) +
+            (supportedDeviceLocales + remaining).map { LanguageOption(it.displayString, it.code) }
 
     val selected = options.find { it.code == currentCode } ?: options[0]
     var expanded by remember { mutableStateOf(false) }
@@ -140,6 +150,12 @@ fun LanguageDialog(
                             ) {
                                 items(options.size) {
                                     val option = options[it]
+
+                                    val showDivider = supportedDeviceLocales.isNotEmpty() &&
+                                            remaining.isNotEmpty() &&
+                                            option.code == remaining.first().code
+                                    if (showDivider) { HorizontalDivider(Modifier.padding(vertical = 2.dp)) }
+
                                     Box(
                                         Modifier
                                             .fillMaxWidth()
