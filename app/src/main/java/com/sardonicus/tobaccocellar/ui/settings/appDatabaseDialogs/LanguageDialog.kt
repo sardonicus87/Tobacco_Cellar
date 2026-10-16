@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,9 +90,10 @@ fun LanguageDialog(
 
     val selected = options.find { it.code == currentCode } ?: options[0]
     var expanded by remember { mutableStateOf(false) }
-    val startIndex = options.indexOfFirst { it.code == currentCode }.coerceAtLeast(0)
+    val startIndex = options.indexOfFirst { it.code == currentCode }.minus(1).coerceAtLeast(0)
 
     val listState = rememberLazyListState(startIndex)
+    LaunchedEffect(Unit) { if (!expanded) { listState.scrollToItem(startIndex) } }
 
     AlertDialog(
         onDismissRequest = onDismiss,
