@@ -99,7 +99,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
-            launch { EventBus.events.collect{ if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
+            launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
         }
 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification
