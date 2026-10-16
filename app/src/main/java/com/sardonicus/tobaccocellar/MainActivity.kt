@@ -152,7 +152,7 @@ class MainActivity : AppCompatActivity() {
                     backPressedOnce = true
                     Toast.makeText(this@MainActivity, application.getString(R.string.exit), Toast.LENGTH_SHORT).show()
 
-                    lifecycleScope.launch(Dispatchers.Default) {
+                    lifecycleScope.launch {
                         delay(2000.milliseconds)
                         backPressedOnce = false
                     }
@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        lifecycleScope.launch(Dispatchers.Default) {
+        lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 EventBus.events.collect { event ->
                     if (event is SignInEvent) {
@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
             val snackbarHostState = remember { SnackbarHostState() }
             var loading by remember { mutableStateOf(false) }
 
-            LaunchedEffect(Unit, Dispatchers.Default) {
+            LaunchedEffect(Unit) {
                 var snackbarJob: Job? = null
                 EventBus.events.collect { event ->
                     when (event) {
@@ -390,11 +390,6 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
     }
-
-//    private fun updateStatusBarsVisibility(topCutout: Int) {
-//        if (topCutout == 0) { windowInsetsController.hide(WindowInsetsCompat.Type.statusBars()) }
-//        else { windowInsetsController.show(WindowInsetsCompat.Type.statusBars()) }
-//    }
 
     private fun handleNotificationIntent(intent: Intent, navigationState: NavigationState?) {
         val destination = intent.getStringExtra("START_DESTINATION")
