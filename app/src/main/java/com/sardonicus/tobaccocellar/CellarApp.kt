@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
@@ -74,6 +76,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
@@ -358,7 +361,14 @@ fun ExportCsvDialog(
 
     AlertDialog(
         onDismissRequest = { showExportCsv() },
-        title = { Text(stringResource(R.string.export_csv_options)) },
+        title = {
+            Text(
+                text = stringResource(R.string.export_csv_options),
+                maxLines = 1,
+                lineHeight = 1.em,
+                autoSize = TextAutoSize.StepBased(18.sp, 24.sp)
+            )
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -378,8 +388,15 @@ fun ExportCsvDialog(
                             onClick = { filterViewModel.selectAll(index == 0) },
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = 2),
                             contentPadding = PaddingValues(8.dp, 4.dp),
-                            icon = { }
-                        ) { Text(label) }
+                            icon = { },
+                            label = {
+                                Text(
+                                    label,
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(12.sp, 14.sp)
+                                )
+                            }
+                        )
                     }
                 }
 
@@ -389,16 +406,15 @@ fun ExportCsvDialog(
                         .width(IntrinsicSize.Min)
                         .align(Alignment.CenterHorizontally),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top)
+                    verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Top)
                 ) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.max_rating_label),
-                            modifier = Modifier.width(95.dp),
+                            modifier = Modifier.width(95.dp).padding(end = 8.dp),
                             fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                            maxLines = 1,
-                            softWrap = false
+                            autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
+                            maxLines = 2
                         )
                         TextField(
                             value = dialogState.exportRatingString.first,
@@ -432,10 +448,10 @@ fun ExportCsvDialog(
                     ) {
                         Text(
                             text = stringResource(R.string.decimal_places),
-                            modifier = Modifier.width(95.dp),
+                            modifier = Modifier.width(95.dp).padding(end = 8.dp),
                             fontWeight = FontWeight.Normal,
-                            fontSize = 15.sp,
-                            maxLines = 2,
+                            autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
+                            maxLines = 2
                         )
                         CustomDropDown(
                             selectedValue = dialogState.exportRatingString.second,
@@ -507,7 +523,7 @@ fun CellarBottomAppBar(
             ) {
                 // Home
                 BottomBarButton(
-                    title = { stringResource(R.string.cellar) },
+                    title = { stringResource(R.string.home_title) },
                     icon = { R.drawable.table_view_old },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
                     color = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
@@ -617,9 +633,9 @@ private fun BottomBarButton(
         val interactionSource = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(50))
+                .clip(RoundedCornerShape(8.dp))
                 .indication(interactionSource, LocalIndication.current)
-                .padding(2.dp),
+                .padding(4.dp, 2.dp),
             contentAlignment = Alignment.Center
         ) {
             if (showIndicator()) {
@@ -637,13 +653,12 @@ private fun BottomBarButton(
                 IconButton(
                     onClick = onClick,
                     interactionSource = interactionSource,
-                    enabled = enabled(),
-                    modifier = Modifier.padding(0.dp)
+                    enabled = enabled()
                 ) {
                     Icon(
                         painter = painterResource(id = icon()),
                         contentDescription = title(),
-                        modifier = Modifier.size(26.dp).offset(y = (-8).dp),
+                        modifier = Modifier.requiredSize(26.dp).offset(y = (-8).dp),
                         tint = color()
                     )
                 }
@@ -652,7 +667,9 @@ private fun BottomBarButton(
             Text(
                 text = title(),
                 modifier = Modifier.offset(y = 13.dp),
-                fontSize = 11.sp,
+                autoSize = TextAutoSize.StepBased(9.5.sp, 11.sp),
+                maxLines = 1,
+                lineHeight = 1.em,
                 fontWeight = if (color() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
                 color = color()
             )

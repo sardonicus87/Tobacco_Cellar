@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
@@ -86,7 +89,7 @@ fun HomeHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         // Select view
-        ViewSelect(viewModel, Modifier.width(74.dp))
+        ViewSelect(viewModel)
 
         Spacer(Modifier.width(8.dp))
 
@@ -127,16 +130,11 @@ fun HomeHeader(
 }
 
 @Composable
-private fun ViewSelect(
-    viewModel: HomeViewModel,
-    modifier: Modifier = Modifier,
-) {
+private fun ViewSelect(viewModel: HomeViewModel) {
     val state by viewModel.viewSelect.collectAsState()
 
     Row(
-        modifier = modifier
-            .padding(0.dp)
-            .width(74.dp),
+        modifier = Modifier.widthIn(min = 74.dp, max = 81.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {
@@ -144,8 +142,8 @@ private fun ViewSelect(
             text = stringResource(R.string.view),
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
-            fontSize = 15.sp,
-            modifier = Modifier.padding(0.dp)
+            softWrap = false,
+            autoSize = TextAutoSize.StepBased(12.sp, 15.sp)
         )
         Icon(
             painter = painterResource(state.toggleIcon),
@@ -156,7 +154,7 @@ private fun ViewSelect(
                 .clip(CircleShape)
                 .clickable(null, LocalIndication.current) { viewModel.selectView() }
                 .padding(4.dp)
-                .size(20.dp)
+                .requiredSize(20.dp)
         )
     }
 }
@@ -284,7 +282,7 @@ private fun ListColumnMenu(
                     .clip(CircleShape)
                     .clickable(null, LocalIndication.current) { sortingMenu = !sortingMenu }
                     .padding(4.dp)
-                    .size(20.dp)
+                    .requiredSize(20.dp)
             )
             DropdownMenu(
                 expanded = sortingMenu,
@@ -341,7 +339,7 @@ private fun ListColumnMenu(
                     .clip(CircleShape)
                     .clickable(null, LocalIndication.current) { onShowColumnPop() }
                     .padding(4.dp)
-                    .size(20.dp)
+                    .requiredSize(20.dp)
             )
         }
     }
@@ -421,8 +419,11 @@ private fun CustomBlendSearch(
                         Text(
                             text = placeholder,
                             style = LocalTextStyle.current.copy(
-                                color = LocalContentColor.current.copy(alpha = 0.5f)
-                            )
+                                color = LocalContentColor.current.copy(alpha = 0.5f),
+                                lineHeight = 1.em
+                            ),
+                            softWrap = false,
+                            autoSize = TextAutoSize.StepBased(11.sp, 15.sp)
                         )
                     }
                     innerTextField()
