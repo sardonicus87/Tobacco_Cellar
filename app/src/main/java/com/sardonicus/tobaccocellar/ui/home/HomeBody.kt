@@ -147,8 +147,7 @@ private fun BodyContent(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = modifier
-                .fillMaxSize()
+            modifier = modifier.fillMaxSize()
         ) {
             val emptyMessage by viewModel.emptyMessage.collectAsState()
 
@@ -157,7 +156,7 @@ private fun BodyContent(
                 text = emptyMessage,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(0.dp),
+                modifier = Modifier.padding(horizontal = 12.dp)
             )
             Spacer(Modifier.weight(1.25f))
         }
