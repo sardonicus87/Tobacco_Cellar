@@ -34,6 +34,7 @@ import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -654,10 +655,10 @@ class HomeViewModel(
             val visible = columnVisibility[it] ?: true
             if (!visible) { 0.dp } else {
                 when (it) {
-                    TableColumn.BRAND -> 180.dp
-                    TableColumn.BLEND -> 300.dp
-                    TableColumn.TYPE -> 108.dp
-                    TableColumn.SUBGENRE -> 120.dp
+                    TableColumn.BRAND -> 200.dp
+                    TableColumn.BLEND -> 330.dp
+                    TableColumn.TYPE -> 140.dp
+                    TableColumn.SUBGENRE -> 140.dp
                     TableColumn.RATING -> 64.dp
                     TableColumn.FAV_DIS -> 64.dp
                     TableColumn.NOTE -> 64.dp
@@ -667,6 +668,7 @@ class HomeViewModel(
             }
         }
         val totalWidth = columnMinWidths.sumOf { it.value.toDouble() }.dp
+
 
         val fallbackType = typeGenreOption == TypeGenreOption.TYPE_FALLBACK && columnVisibility[TableColumn.SUBGENRE] == false
         val fallbackGenre = typeGenreOption == TypeGenreOption.SUB_FALLBACK && columnVisibility[TableColumn.TYPE] == false
@@ -704,17 +706,18 @@ class HomeViewModel(
             }
         }
 
+        val localized = getLocalizedContext(app)
         val headerText = columnMinWidths.indices.map {
             val width = columnMinWidths[it]
             if (width == 0.dp) "" else {
                 when (it) {
-                    0 -> app.getString(R.string.brand)
-                    1 -> app.getString(R.string.blend)
-                    2 -> app.getString(R.string.type)
-                    3 -> app.getString(R.string.subgenre)
-                    6 -> app.getString(R.string.note)
-                    7 -> app.getString(R.string.qty)
-                    8 -> app.getString(R.string.modified)
+                    0 -> localized.getString(R.string.brand)
+                    1 -> localized.getString(R.string.blend)
+                    2 -> localized.getString(R.string.type)
+                    3 -> localized.getString(R.string.subgenre)
+                    6 -> localized.getString(R.string.note)
+                    7 -> localized.getString(R.string.qty)
+                    8 -> localized.getString(R.string.modified)
                     else -> "" // 4 and 5 are rating and "Fav/Dis"
                 }
             }

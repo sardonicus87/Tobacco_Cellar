@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,6 +53,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -233,11 +236,13 @@ private fun TableItem(
                 ) {
                     when (columnIndex) {
                         0, 1, 2, 3, 4, 8 -> { // brand, blend, type, subgenre, rating last modified
+                            val min = if (columnIndex == 2) 13.sp else 14.sp
                             Text(
                                 text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                autoSize = TextAutoSize.StepBased(min, 16.sp),
+                                overflow = TextOverflow.Ellipsis
                             )
                         } // brand, blend, type, subgenre, rating
                         5 -> { // fav/disliked
@@ -266,14 +271,14 @@ private fun TableItem(
                                 text = item.formattedQuantity,
                                 color = if (item.outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Ellipsis
                             )
                         } // quantity
                         else -> {
                             Text(
                                 text = layoutData.columnMapping.values[columnIndex](item.item.items)?.toString() ?: "",
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -334,6 +339,9 @@ private fun TableHeaderRow(
                                     text = layoutData.headerText.values[columnIndex],
                                     modifier = Modifier,
                                     fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 if (sorting.columnIndex == columnIndex) {
                                     Image(
@@ -399,6 +407,9 @@ private fun TableHeaderRow(
                             Text(
                                 text = layoutData.headerText.values[columnIndex],
                                 fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -440,41 +451,34 @@ private fun TableTinsList(
                         fontSize = 13.sp
                     )
                     if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
-                        Text(
-                            text = " (",
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 13.sp
-                        )
-                        if (it.container.isNotEmpty()) {
-                            Text(
-                                text = it.container,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 13.sp
-                            )
-                        }
-                        if (it.container.isNotEmpty() && it.unit.isNotEmpty()) {
-                            Text(
-                                text = " - ",
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 13.sp
-                            )
-                        }
-                        if (it.unit.isNotEmpty()) {
-                            val quantity = formatDecimal(it.tinQuantity)
-                            val unit = when (it.unit) {
-                                "grams" -> "g"
-                                else -> it.unit
+                        val tinInfo = remember(it.container, it.tinQuantity, it.unit) {
+                            buildString {
+                                append("(")
+                                if (it.container.isNotEmpty()) { append(it.container) }
+                                if (it.container.isNotEmpty() && it.unit.isNotEmpty()) { append(" - ") }
+                                if (it.unit.isNotEmpty()) {
+                                    val quantity = formatDecimal(it.tinQuantity)
+                                    val unit = if (it.unit == "grams") "g" else it.unit
+                                    append("$quantity $unit")
+                                }
+                                append(")")
                             }
-                            Text(
-                                text = "$quantity $unit",
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 13.sp
-                            )
                         }
                         Text(
-                            text = ")",
+                            text = tinInfo,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            modifier = Modifier.padding(start = 5.dp)
+                        )
+                    }
+                    if (it.finished) {
+                        Text(
+                            text = stringResource(id = R.string.finished_parentheses),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 13.sp,
+                            fontStyle = Italic,
+                            color = LocalContentColor.current.copy(alpha = .5f),
+                            modifier = Modifier.padding(start = 5.dp)
                         )
                     }
                     if (index != filteredTins.tins.lastIndex) {

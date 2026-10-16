@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -68,9 +69,10 @@ fun ReleaseNotesDialog(
                     text = stringResource(R.string.what_new),
                     textAlign = TextAlign.Start,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
+                    autoSize = TextAutoSize.StepBased(16.sp, 18.sp),
+                    maxLines = 1,
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.tertiary)
             }

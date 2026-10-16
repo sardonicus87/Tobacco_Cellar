@@ -127,9 +127,9 @@ fun ImportantAlertDialog(
                 text = stringResource(R.string.important_alert),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.error,
+                maxLines = 1
             )
         },
         text = {
@@ -141,28 +141,24 @@ fun ImportantAlertDialog(
                         .fillMaxWidth(),
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    maxLines = 1
                 )
                 GlowBox(
                     color = GlowColor(LocalCustomColors.current.darkNeutral),
                     size = GlowSize(vertical = 6.dp),
-                    modifier = Modifier
-                        .height(175.dp)
+                    modifier = Modifier.height(175.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(scrollState),
-                    ) {
+                    Column(Modifier.verticalScroll(scrollState)) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        Column(
-                            modifier = Modifier
-                        ) {
+                        Column {
                             if (!isCurrent) {
                                 Text(
                                     text = stringResource(R.string.missed_alert),
                                     modifier = Modifier,
                                     fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp
+                                    fontSize = 15.sp,
+                                    maxLines = 1
                                 )
                             }
                             Text(

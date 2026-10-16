@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -375,7 +376,7 @@ private fun TinList(
                 if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
                     val tinInfo = remember(it.container, it.tinQuantity, it.unit) {
                         buildString {
-                            append(" (")
+                            append("(")
                             if (it.container.isNotEmpty()) { append(it.container) }
                             if (it.container.isNotEmpty() && it.unit.isNotEmpty()) { append(" - ") }
                             if (it.unit.isNotEmpty()) {
@@ -390,16 +391,18 @@ private fun TinList(
                     Text(
                         text = tinInfo,
                         fontWeight = FontWeight.Normal,
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(start = 5.dp)
                     )
                 }
                 if (it.finished) {
                     Text(
-                        text = " (Finished)",
+                        text = stringResource(id = R.string.finished_parentheses),
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         fontStyle = Italic,
-                        color = LocalContentColor.current.copy(alpha = .5f)
+                        color = LocalContentColor.current.copy(alpha = .5f),
+                        modifier = Modifier.padding(start = 5.dp)
                     )
                 }
             }
