@@ -82,7 +82,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -227,11 +227,13 @@ private fun SettingsBody(
 
     LaunchedEffect(displaySettings, databaseSettings, listState) {
         snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.collectLatest {
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo.size > 2 }.first()
-            delay(50.milliseconds)
-            EventBus.emit(MainActivityReady)
-            delay(500.milliseconds)
-            TransitionCache.deleteScreenshot(context)
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }
+                .distinctUntilChanged().collectLatest {
+                    delay(25.milliseconds)
+                    EventBus.emit(MainActivityReady)
+                    delay(500.milliseconds)
+                    TransitionCache.deleteScreenshot(context)
+                }
         }
     }
 }
@@ -259,7 +261,10 @@ private fun SettingsRow(
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(8.dp))
-            .indication(interactionSource, if (settingText.isNotBlank()) LocalIndication.current else null),
+            .indication(
+                interactionSource,
+                if (settingText.isNotBlank()) LocalIndication.current else null
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -269,7 +274,9 @@ private fun SettingsRow(
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable(interactionSource, if (settingText.isBlank()) LocalIndication.current else null,
+                    .clickable(
+                        interactionSource,
+                        if (settingText.isBlank()) LocalIndication.current else null,
                         onClickLabel = stringResource(item.description),
                     ) { onClick(item.dialogType) }
                     .padding(8.dp, 5.dp)
@@ -285,7 +292,8 @@ private fun SettingsRow(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(.30f)
-                    .clickable(interactionSource, null,
+                    .clickable(
+                        interactionSource, null,
                         onClickLabel = stringResource(item.description),
                     ) { onClick(item.dialogType) }
                     .padding(horizontal = 8.dp),
