@@ -581,7 +581,7 @@ private fun Settings(
 
         // Conversion Rates
         Text(
-            text = stringResource(R.string.tin_conversion_rates),
+            text = stringResource(R.string.conversion_option),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
