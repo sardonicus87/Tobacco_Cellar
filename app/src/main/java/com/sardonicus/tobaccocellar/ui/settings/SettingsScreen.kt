@@ -230,7 +230,7 @@ private fun SettingsBody(
             snapshotFlow { listState.layoutInfo.visibleItemsInfo.size > 2 }.first()
             delay(50.milliseconds)
             EventBus.emit(MainActivityReady)
-            delay(200.milliseconds)
+            delay(500.milliseconds)
             TransitionCache.deleteScreenshot(context)
         }
     }
