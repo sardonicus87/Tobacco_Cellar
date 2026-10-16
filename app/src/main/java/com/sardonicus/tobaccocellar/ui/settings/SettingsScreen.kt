@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
@@ -81,6 +82,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -165,9 +167,11 @@ private fun SettingsBody(
 ) {
     val displaySettings by viewModel.displaySettings.collectAsState()
     val databaseSettings by viewModel.databaseSettings.collectAsState()
+    val listState = rememberLazyListState()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
+        state = listState,
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top,
     ) {
@@ -220,9 +224,11 @@ private fun SettingsBody(
     }
 
     val context = LocalContext.current
-    LaunchedEffect(displaySettings, databaseSettings) {
+
+    LaunchedEffect(displaySettings, databaseSettings, listState) {
         snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.collectLatest {
-            delay(100.milliseconds)
+            snapshotFlow { listState.layoutInfo.totalItemsCount == displaySettings.size + databaseSettings.size + 5 }.first()
+            delay(10.milliseconds)
             EventBus.emit(MainActivityReady)
             delay(200.milliseconds)
             TransitionCache.deleteScreenshot(context)
