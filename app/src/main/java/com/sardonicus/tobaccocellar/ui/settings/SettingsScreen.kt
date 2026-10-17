@@ -225,16 +225,18 @@ private fun SettingsBody(
 
     val context = LocalContext.current
 
-    LaunchedEffect(displaySettings, databaseSettings, listState) {
-        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.collectLatest {
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }
-                .distinctUntilChanged().collectLatest {
-                    delay(25.milliseconds)
-                    EventBus.emit(MainActivityReady)
-                    delay(500.milliseconds)
-                    TransitionCache.deleteScreenshot(context)
-                }
-        }
+    LaunchedEffect(Unit) {
+        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }
+            .collectLatest {
+                delay(25.milliseconds)
+                snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }
+                    .distinctUntilChanged().collectLatest {
+                        delay(50.milliseconds)
+                        EventBus.emit(MainActivityReady)
+                        delay(50.milliseconds)
+                        TransitionCache.deleteScreenshot(context)
+                    }
+            }
     }
 }
 
