@@ -33,7 +33,7 @@
             android:name=".TransitionActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout"
-            android:theme="@style/Theme.Start">
+            android:theme="@style/Theme.TransitionCover">
         </activity>
     </application>
 
