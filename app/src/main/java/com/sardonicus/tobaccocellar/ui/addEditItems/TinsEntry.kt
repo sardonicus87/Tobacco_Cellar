@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -232,17 +233,14 @@ private fun IndividualTin(
                 }
 
                 // Label //
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(Modifier.widthIn(max = textFieldMax), horizontalAlignment = Alignment.CenterHorizontally) {
                     var labelIsFocused by remember { mutableStateOf(false) }
 
                     CustomTextField(
                         value = tinDetails.tinLabel,
                         onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it)) },
                         modifier = Modifier
-                            .widthIn(max = textFieldMax)
+                        //    .widthIn(max = textFieldMax)
                             .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
@@ -295,9 +293,10 @@ private fun IndividualTin(
                     Text(
                         text = stringResource(R.string.tin_label_error),
                         color = if (showError) MaterialTheme.colorScheme.error else Color.Transparent,
-                        style = MaterialTheme.typography.bodySmall,
+                    //    style = MaterialTheme.typography.bodySmall,
+                        autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
                         softWrap = false,
-                        modifier = Modifier.padding(bottom = 4.dp, top = 1.dp)
+                        modifier = Modifier.padding(bottom = 4.dp, top = 1.dp).widthIn(max = textFieldMax)
                     )
                 }
 
@@ -333,7 +332,9 @@ private fun IndividualTin(
                 ) {
                     Text(
                         text = stringResource(R.string.container_label),
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(80.dp),
+                        autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                        maxLines = 1
                     )
 
                     AutoCompleteText(
@@ -375,7 +376,9 @@ private fun IndividualTin(
                 ) {
                     Text(
                         text = stringResource(R.string.amount_label),
-                        modifier = Modifier.width(80.dp)
+                        modifier = Modifier.width(80.dp),
+                        autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                        maxLines = 1
                     )
 
                     val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
@@ -1032,7 +1035,7 @@ private fun CustomDatePickerDialog(
                             contentPadding = PaddingValues(12.dp, 4.dp),
                             modifier = Modifier
                                 .heightIn(32.dp, 32.dp)
-                        ) { Text("Clear Date") }
+                        ) { Text(stringResource(R.string.clear_date)) }
                     }
                 }
 

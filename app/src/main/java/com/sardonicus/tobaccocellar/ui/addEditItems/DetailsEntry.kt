@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
@@ -70,6 +72,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
@@ -83,6 +86,7 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingPopup
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -103,10 +107,11 @@ fun DetailsEntry(
     tooltipVisible: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    Spacer(Modifier.height(20.dp))
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 20.dp, bottom = 0.dp, start = 20.dp, end = 20.dp),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Brand //
@@ -115,7 +120,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.brand_label), Modifier.width(80.dp))
+            Text(stringResource(R.string.brand_label), Modifier.width(85.dp), autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
                 value = itemDetails.brand,
@@ -148,9 +153,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(brand = "")
-                                    )
+                                    onValueChange(itemDetails.copy(brand = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -173,7 +176,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(stringResource(R.string.blend_label), Modifier.width(80.dp))
+            Text(stringResource(R.string.blend_label), Modifier.width(85.dp), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             TextField(
                 value = itemDetails.blend,
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
@@ -205,9 +208,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(blend = "")
-                                    )
+                                    onValueChange(itemDetails.copy(blend = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -240,12 +241,13 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val app = LocalCellarApplication.current
+            val context = getLocalizedContext(app)
             val typeMap = remember {
                 BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }
-                    .associate { app.getString(it.resId) to it.name }
+                    .associate { context.getString(it.resId) to it.name }
             }
 
-            Text(stringResource(R.string.type_label), Modifier.width(80.dp))
+            Text(stringResource(R.string.type_label), Modifier.width(85.dp), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             CustomDropDown(
                 selectedValue = getLocalizedType(itemDetails.type, app, false),
                 onValueChange = { onValueChange(itemDetails.copy(type = typeMap[it] ?: "")) },
@@ -260,7 +262,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(stringResource(R.string.subgenre_label), Modifier.width(80.dp))
+            Text(stringResource(R.string.subgenre_label), Modifier.width(85.dp), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
                 value = itemDetails.subGenre,
@@ -275,9 +277,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(subGenre = "")
-                                    )
+                                    onValueChange(itemDetails.copy(subGenre = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -300,7 +300,7 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(stringResource(R.string.cut_label), Modifier.width(80.dp))
+            Text(stringResource(R.string.cut_label), Modifier.width(85.dp), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
                 value = itemDetails.cut,
@@ -315,9 +315,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(cut = "")
-                                    )
+                                    onValueChange(itemDetails.copy(cut = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -344,14 +342,10 @@ fun DetailsEntry(
                 text = stringResource(R.string.component_label),
                 style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier
-                    .width(80.dp)
+                    .width(85.dp)
                     .align(Alignment.CenterVertically),
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 8.sp,
-                    maxFontSize = 16.sp,
-                    stepSize = .02.sp,
-                ),
-                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                maxLines = 1
             )
 
             AutoCompleteText(
@@ -368,9 +362,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(componentString = "")
-                                    )
+                                    onValueChange(itemDetails.copy(componentString = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -388,7 +380,7 @@ fun DetailsEntry(
                     Text(
                         text = stringResource(R.string.separate_comma),
                         modifier = Modifier.alpha(0.66f),
-                        fontSize = 13.sp,
+                        autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                         softWrap = false,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
@@ -408,14 +400,10 @@ fun DetailsEntry(
                 text = stringResource(R.string.flavoring_label),
                 style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier
-                    .width(80.dp)
+                    .width(85.dp)
                     .align(Alignment.CenterVertically),
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 8.sp,
-                    maxFontSize = 16.sp,
-                    stepSize = .02.sp,
-                ),
-                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                maxLines = 1
             )
 
             AutoCompleteText(
@@ -432,9 +420,7 @@ fun DetailsEntry(
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(
-                                        itemDetails.copy(flavoringString = "")
-                                    )
+                                    onValueChange(itemDetails.copy(flavoringString = ""))
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -452,7 +438,7 @@ fun DetailsEntry(
                     Text(
                         text = stringResource(R.string.separate_comma),
                         modifier = Modifier.alpha(0.66f),
-                        fontSize = 13.sp,
+                        autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                         softWrap = false,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
@@ -469,19 +455,15 @@ fun DetailsEntry(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = stringResource(R.string.no_of_tins2),
+                text = stringResource(R.string.no_of_tins_label),
                 style = TextStyle(color = LocalContentColor.current),
                 modifier = Modifier
-                    .width(80.dp)
+                    .width(85.dp)
                     .heightIn(max = 48.dp)
                     .wrapContentHeight()
                     .align(Alignment.CenterVertically),
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 8.sp,
-                    maxFontSize = 16.sp,
-                    stepSize = .02.sp,
-                ),
-                maxLines = 2,
+                autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                maxLines = 2
             )
             Row(
                 modifier = Modifier.height(IntrinsicSize.Min),
@@ -596,21 +578,11 @@ fun DetailsEntry(
                             tooltipVisible(tooltipState.isVisible)
 
                             if (tooltipState.isVisible) {
-                                // 30-second overall timeout, dismiss no matter what
-                                withTimeoutOrNull(30000.milliseconds) {
-                                    // 5 seconds minimum of visibility (if user hasn't dismissed manually)
-                                    delay(5000.milliseconds)
-
-                                    // check now if we're holding to add 1 second after release
-                                    val held = hovered || pressed
-
-                                    // wait until hold is released, instant if we let go
-                                    // before 5 seconds or opened by clicking tip button
-                                    snapshotFlow { hovered || pressed }.first { !it }
-
-                                    // dismiss 1/4 second after release, will be false if we weren't
-                                    // holding/hovering at 5 seconds
-                                    if (held) { delay(250.milliseconds) }
+                                withTimeoutOrNull(30000.milliseconds) { // 30-second overall timeout, dismiss no matter what
+                                    delay(5000.milliseconds) // 5 seconds minimum visibility
+                                    val held = hovered || pressed // check at 5 sec if we're holding
+                                    snapshotFlow { hovered || pressed }.first { !it } // wait for release
+                                    if (held) { delay(250.milliseconds) } // add 1/4 second after release if was held
                                 }
                                 tooltipState.dismiss()
                             }
@@ -640,15 +612,14 @@ fun DetailsEntry(
                                 horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
                                 modifier = Modifier
                                     .hoverable(interactionSource)
-                                    .clickable(
-                                        interactionSource,
-                                        null
-                                    ) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
+                                    .clickable(interactionSource, null) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
                             ) {
                                 Text(
                                     text = stringResource(R.string.sync_q),
-                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                                    fontSize = 14.sp,
+                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp).widthIn(max = 40.dp),
+                                    lineHeight = 1.em,
+                                    autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                                    maxLines = 1
                                 )
                                 CustomCheckbox(
                                     checked = itemDetails.syncTins,
@@ -690,10 +661,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = stringResource(R.string.rating_label),
-                modifier = Modifier.width(80.dp)
-            )
+            Text(stringResource(R.string.rating_label),  Modifier.width(85.dp), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Row(
                 modifier = Modifier
                     .clickable(null, null) { onShowRatingPop(true) },
