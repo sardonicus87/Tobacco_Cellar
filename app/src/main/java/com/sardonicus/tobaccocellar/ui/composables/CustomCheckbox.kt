@@ -1,6 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
@@ -20,12 +20,12 @@ fun CustomCheckbox(
     modifier: Modifier = Modifier,
     size: Dp = Dp.Unspecified,
     colors: IconToggleButtonColors = IconButtonDefaults.iconToggleButtonColors(),
-    enabled: Boolean = true,
+    enabled: Boolean = true
 ) {
     IconToggleButton(
         checked = checked,
         onCheckedChange = { onCheckedChange?.invoke(it) },
-        modifier = modifier.size(size),
+        modifier = modifier.requiredSize(size),
         colors = colors,
         enabled = enabled
     ) {
