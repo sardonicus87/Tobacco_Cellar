@@ -259,7 +259,7 @@ fun AboutScreen(
                             lineHeight = 1.em,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        ExternalLink("Website", "http://www.tobacco-cellar.com")
+                        ExternalLink(stringResource(R.string.website), "http://www.tobacco-cellar.com")
                         ExternalLink("Play Store", "https://play.google.com/store/apps/details?id=com.sardonicus.tobaccocellar")
                     }
                     Row(
@@ -268,8 +268,8 @@ fun AboutScreen(
                         horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ExternalLink("Privacy Policy", "http://www.tobacco-cellar.com/privacy-policy")
-                        ExternalLink("Managing Data", "http://www.tobacco-cellar.com/managing-data")
+                        ExternalLink(stringResource(R.string.privacy_policy), "http://www.tobacco-cellar.com/privacy-policy")
+                        ExternalLink(stringResource(R.string.manage_data), "http://www.tobacco-cellar.com/managing-data")
                     }
                 }
 
