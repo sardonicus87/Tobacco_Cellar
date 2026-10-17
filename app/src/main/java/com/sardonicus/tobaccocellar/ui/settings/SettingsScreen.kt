@@ -1,10 +1,12 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 import android.Manifest.permission.POST_NOTIFICATIONS
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
@@ -49,6 +51,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -75,6 +78,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDia
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.LanguageDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinNotificationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
+import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.changeLanguage
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -83,6 +87,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,7 +135,9 @@ fun SettingsScreen(
         }
     }
 
-    DialogManager(viewModel = viewModel)
+    val activity =  LocalActivity.current as Activity
+    val scope = rememberCoroutineScope()
+    DialogManager(viewModel) { scope.launch { changeLanguage(activity, it) } }
 
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -231,9 +238,9 @@ private fun SettingsBody(
                 delay(25.milliseconds)
                 snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }
                     .distinctUntilChanged().collectLatest {
-                        delay(50.milliseconds)
+                        delay(25.milliseconds)
                         EventBus.emit(MainActivityReady)
-                        delay(50.milliseconds)
+                        delay(250.milliseconds)
                         TransitionCache.deleteScreenshot(context)
                     }
             }
@@ -321,7 +328,7 @@ private fun SettingsRow(
 
 
 @Composable
-private fun DialogManager(viewModel: SettingsViewModel) {
+private fun DialogManager(viewModel: SettingsViewModel, onUpdate: (String) -> Unit) {
     val openDialog by viewModel.openDialog.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
@@ -423,7 +430,10 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         DialogType.Language -> {
             LanguageDialog(
                 onDismiss = viewModel::dismissDialog,
-                onLanguageChange = viewModel::updateLangSetting
+                onLanguageChange = {
+                    viewModel.updateLangSetting(it)
+                    onUpdate(it)
+                }
             )
         }
         DialogType.DeviceSync -> {

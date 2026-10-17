@@ -3,7 +3,6 @@ package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 import android.app.Activity
 import android.app.ActivityOptions
 import android.content.Intent
-import androidx.activity.compose.LocalActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -34,7 +33,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,8 +55,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -71,8 +67,6 @@ fun LanguageDialog(
     val installedOptions = AppCompatDelegate.getApplicationLocales()
     val currentCode = if (installedOptions.isEmpty) "system" else installedOptions[0]?.language ?: "system"
     val context = LocalCellarApplication.current
-    val activity = LocalActivity.current as Activity
-    val scope = rememberCoroutineScope()
 
     val localeCode = getSystemLanguage(context)
     val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
@@ -163,11 +157,10 @@ fun LanguageDialog(
                                             .fillMaxWidth()
                                             .height(40.dp)
                                             .clickable(null, LocalIndication.current) {
-                                                if (option.code != currentCode) {
-                                                    scope.launch { changeLanguage(activity, option.code) }
-                                                    onLanguageChange(option.code)
-                                                }
                                                 expanded = false
+                                                if (option.code != currentCode) {
+                                                    onLanguageChange(option.code); onDismiss()
+                                                }
                                             }
                                             .padding(horizontal = 16.dp),
                                         Alignment.CenterStart
@@ -230,11 +223,14 @@ suspend fun changeLanguage(activity: Activity, code: String) {
     val options = ActivityOptions.makeCustomAnimation(activity, 0, 0)
     activity.startActivity(intent, options.toBundle())
 
-    EventBus.events.first { it is TransitionCoverReady }
-    delay(25.milliseconds)
-    if (code == "system") {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-    } else {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+    EventBus.events.collect {
+        if (it is TransitionCoverReady) {
+            delay(25.milliseconds)
+            if (code == "system") {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+            } else {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+            }
+        }
     }
 }

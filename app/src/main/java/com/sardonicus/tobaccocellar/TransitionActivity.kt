@@ -11,7 +11,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
@@ -22,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.core.view.WindowCompat
@@ -31,7 +29,8 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -55,16 +54,21 @@ class TransitionActivity: ComponentActivity() {
             SideEffect(displayCutoutTop) { updateStatusBarsVisibility(displayCutoutTop, windowInsetsController) }
 
             LaunchedEffect(Unit) {
-                withTimeoutOrNull(1500.milliseconds) { EventBus.events.first { it is MainActivityReady } }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
-                    finish()
-                } else {
-                    finish()
-                    @Suppress("DEPRECATION")
-                    overridePendingTransition(0, android.R.anim.fade_out)
+                withTimeoutOrNull(1500.milliseconds) {
+                    EventBus.events.collectLatest {
+                        if (it is MainActivityReady) {
+                            delay(25.milliseconds)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
+                                finish()
+                            } else {
+                                finish()
+                                @Suppress("DEPRECATION")
+                                overridePendingTransition(0, android.R.anim.fade_out)
+                            }
+                        }
+                    }
                 }
-
             }
 
             val prefRepo = (application as CellarApplication).preferencesRepo
@@ -80,7 +84,7 @@ class TransitionActivity: ComponentActivity() {
                         enter = fadeIn(tween(100)),
                         exit = fadeOut(tween(250))
                     ) {
-                        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.37f)),
+                        Box(Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
                     }
