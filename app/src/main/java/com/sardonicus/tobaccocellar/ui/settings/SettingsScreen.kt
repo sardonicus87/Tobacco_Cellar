@@ -85,8 +85,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -233,17 +232,13 @@ private fun SettingsBody(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }
-            .collectLatest {
-                delay(25.milliseconds)
-                snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }
-                    .distinctUntilChanged().collectLatest {
-                        delay(25.milliseconds)
-                        EventBus.emit(MainActivityReady)
-                        delay(250.milliseconds)
-                        TransitionCache.deleteScreenshot(context)
-                    }
-            }
+        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.first { it }
+        delay(25.milliseconds)
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }.first { it }
+        delay(25.milliseconds)
+        EventBus.emit(MainActivityReady)
+        delay(250.milliseconds)
+        TransitionCache.deleteScreenshot(context)
     }
 }
 

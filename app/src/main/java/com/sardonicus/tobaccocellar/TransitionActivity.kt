@@ -7,9 +7,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -30,7 +30,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -43,8 +43,6 @@ class TransitionActivity: ComponentActivity() {
         super.onCreate(savedInstanceState)
         actionBar?.hide()
 
-        val bitmap = TransitionCache.loadScreenshot(this)
-
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
         windowInsetsController.isAppearanceLightNavigationBars = false
         windowInsetsController.isAppearanceLightStatusBars = false
@@ -53,26 +51,10 @@ class TransitionActivity: ComponentActivity() {
             val displayCutoutTop = WindowInsets.displayCutout.getTop(LocalDensity.current)
             SideEffect(displayCutoutTop) { updateStatusBarsVisibility(displayCutoutTop, windowInsetsController) }
 
-            LaunchedEffect(Unit) {
-                withTimeoutOrNull(1500.milliseconds) {
-                    EventBus.events.collectLatest {
-                        if (it is MainActivityReady) {
-                            delay(25.milliseconds)
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
-                                finish()
-                            } else {
-                                finish()
-                                @Suppress("DEPRECATION")
-                                overridePendingTransition(0, android.R.anim.fade_out)
-                            }
-                        }
-                    }
-                }
-            }
-
             val prefRepo = (application as CellarApplication).preferencesRepo
             TobaccoCellarTheme(prefRepo) {
+                val bitmap = TransitionCache.loadScreenshot(this)
+
                 Box(Modifier.fillMaxSize()) {
                     if (bitmap != null) {
                         Image(bitmap.asImageBitmap(), null, Modifier.fillMaxSize())
@@ -82,11 +64,26 @@ class TransitionActivity: ComponentActivity() {
                     AnimatedVisibility(
                         visible = true,
                         enter = fadeIn(tween(100)),
-                        exit = fadeOut(tween(250))
+                        exit = ExitTransition.None,
                     ) {
                         Box(Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                withTimeoutOrNull(1000.milliseconds) {
+                    EventBus.events.first { it is MainActivityReady }
+                    delay(25.milliseconds)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
+                        finish()
+                    } else {
+                        finish()
+                        @Suppress("DEPRECATION")
+                        overridePendingTransition(0, android.R.anim.fade_out)
                     }
                 }
             }

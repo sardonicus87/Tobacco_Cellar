@@ -3,6 +3,7 @@ package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 import android.app.Activity
 import android.app.ActivityOptions
 import android.content.Intent
+import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -55,6 +56,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -214,23 +216,22 @@ object SupportedLanguages {
 }
 
 suspend fun changeLanguage(activity: Activity, code: String) {
-    val decorView = activity.window.decorView
-    val bitmap = decorView.drawToBitmap()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        val decorView = activity.window.decorView
+        val bitmap = decorView.drawToBitmap()
 
-    TransitionCache.saveScreenshot(activity, bitmap)
+        TransitionCache.saveScreenshot(activity, bitmap)
 
-    val intent = Intent(activity, TransitionActivity::class.java)
-    val options = ActivityOptions.makeCustomAnimation(activity, 0, 0)
-    activity.startActivity(intent, options.toBundle())
+        val intent = Intent(activity, TransitionActivity::class.java)
+        val options = ActivityOptions.makeCustomAnimation(activity, 0, 0)
+        activity.startActivity(intent, options.toBundle())
 
-    EventBus.events.collect {
-        if (it is TransitionCoverReady) {
-            delay(25.milliseconds)
-            if (code == "system") {
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-            } else {
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
-            }
-        }
+        EventBus.events.first { it is TransitionCoverReady }
+    }
+    delay(25.milliseconds)
+    if (code == "system") {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+    } else {
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
     }
 }
