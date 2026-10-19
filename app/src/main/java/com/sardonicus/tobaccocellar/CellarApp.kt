@@ -633,9 +633,9 @@ private fun BottomBarButton(
         val interactionSource = remember { MutableInteractionSource() }
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(50))
                 .indication(interactionSource, LocalIndication.current)
-                .padding(4.dp, 2.dp),
+                .padding(2.dp, 2.dp),
             contentAlignment = Alignment.Center
         ) {
             if (showIndicator()) {
