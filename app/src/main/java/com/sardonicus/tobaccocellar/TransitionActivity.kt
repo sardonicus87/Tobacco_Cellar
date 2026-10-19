@@ -74,17 +74,15 @@ class TransitionActivity: ComponentActivity() {
             }
 
             LaunchedEffect(Unit) {
-                withTimeoutOrNull(1000.milliseconds) {
-                    EventBus.events.first { it is MainActivityReady }
-                    delay(25.milliseconds)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                        overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
-                        finish()
-                    } else {
-                        finish()
-                        @Suppress("DEPRECATION")
-                        overridePendingTransition(0, android.R.anim.fade_out)
-                    }
+                withTimeoutOrNull(1000.milliseconds) { EventBus.events.first { it is MainActivityReady } }
+                delay(25.milliseconds)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, android.R.anim.fade_out)
+                    finish()
+                } else {
+                    finish()
+                    @Suppress("DEPRECATION")
+                    overridePendingTransition(0, android.R.anim.fade_out)
                 }
             }
         }
