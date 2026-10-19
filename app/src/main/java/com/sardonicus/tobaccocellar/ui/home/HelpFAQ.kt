@@ -35,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -707,6 +708,7 @@ private fun MultiSync(
         var pressedUrl by remember { mutableStateOf<String?>(null) }
         var tooltipPosition by remember { mutableStateOf(IntOffset.Zero) }
         var layoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+        DisposableEffect(Unit) { onDispose { pressedUrl = null; pressedRange = null } }
 
         Box {
             Text(
