@@ -32,7 +32,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -134,6 +134,8 @@ fun ItemMenu(
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
+                        maxLines = 1,
+                        autoSize = StepBased(12.sp, 15.sp),
                         fontSize = 14.sp
                     )
                 }
@@ -149,6 +151,8 @@ fun ItemMenu(
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
+                        maxLines = 1,
+                        autoSize = StepBased(12.sp, 15.sp),
                         fontSize = 14.sp
                     )
                 }
@@ -198,10 +202,11 @@ fun ItemMenu(
                                     .padding(horizontal = 8.dp)
                             ) {
                                 Text(
-                                    text = rating.ifBlank { "-.-" },
-                                    autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
+                                    text = rating.ifBlank { "--" },
+                                    autoSize = StepBased(10.sp, 14.sp),
                                     fontWeight = FontWeight.SemiBold,
-                                    lineHeight = 1.em
+                                    lineHeight = 1.em,
+                                    maxLines = 1
                                 )
 
                                 Image(
@@ -278,9 +283,10 @@ fun ItemMenu(
                                 ) {
                                     Text(
                                         text = "Qty: ${quickEditState.quantity}",
-                                        autoSize = TextAutoSize.StepBased(10.sp, 15.sp, 0.1.sp),
+                                        autoSize = StepBased(10.sp, 14.sp),
                                         fontWeight = FontWeight.SemiBold,
-                                        lineHeight = 1.em
+                                        lineHeight = 1.em,
+                                        maxLines = 1
                                     )
                                 }
                             }
@@ -302,6 +308,8 @@ fun ItemMenu(
                             .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
+                        maxLines = 1,
+                        autoSize = StepBased(12.sp, 14.sp)
                     )
                 }
             }
