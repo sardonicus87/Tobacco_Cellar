@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -411,7 +412,9 @@ fun ExportCsvDialog(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.max_rating_label),
-                            modifier = Modifier.width(95.dp).padding(end = 8.dp),
+                            modifier = Modifier
+                                .width(95.dp)
+                                .padding(end = 8.dp),
                             fontWeight = FontWeight.Normal,
                             autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
                             maxLines = 2
@@ -448,7 +451,9 @@ fun ExportCsvDialog(
                     ) {
                         Text(
                             text = stringResource(R.string.decimal_places),
-                            modifier = Modifier.width(95.dp).padding(end = 8.dp),
+                            modifier = Modifier
+                                .width(95.dp)
+                                .padding(end = 8.dp),
                             fontWeight = FontWeight.Normal,
                             autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
                             maxLines = 2
@@ -508,12 +513,23 @@ fun CellarBottomAppBar(
     val indicatorCircle = LocalCustomColors.current.indicatorCircle
     val indicatorBorderCorrection = LocalCustomColors.current.indicatorBorderCorrection
 
+    val density = LocalDensity.current
+    val direction = LocalLayoutDirection.current
+    val default = WindowInsets.displayCutout
+//    val navigationBars = WindowInsets.navigationBars.getBottom(density)
+    val atEdge = (WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()) <= 0.dp
+    val extraLeft = with(density) { (DeviceCorners.bottomLeft * .85f).toPx() }.toInt()
+    val extraRight = with(density) { (DeviceCorners.bottomRight * .85f).toPx() }.toInt()
+    val left = if (atEdge) maxOf(default.getLeft(density, direction), extraLeft) else default.getLeft(density, direction)
+    val right = if (atEdge && !isTwoPane) maxOf(default.getRight(density, direction), extraRight) else default.getRight(density, direction)
+    val insets = WindowInsets(left, default.getTop(density), right, default.getBottom(density))
+
     BottomAppBar(
         modifier = modifier.fillMaxWidth().height(52.dp),
         contentPadding = PaddingValues(0.dp),
         containerColor = LocalCustomColors.current.appBarContainer,
         contentColor = LocalCustomColors.current.navIcon,
-        windowInsets = WindowInsets.displayCutout
+        windowInsets = insets // WindowInsets.displayCutout
     ) {
         GlowBox(GlowColor(Color.White.copy(alpha = 0.07f)), GlowSize(top = 2.dp)) {
             Row(
@@ -629,15 +645,14 @@ private fun BottomBarButton(
     indicatorColor: () -> Color = { Color.Transparent },
     borderColor: () -> Color = { Color.Transparent },
 ) {
-    Box(modifier.padding(vertical = 2.dp), Alignment.Center) {
-        val interactionSource = remember { MutableInteractionSource() }
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(50))
-                .indication(interactionSource, LocalIndication.current)
-                .padding(2.dp, 2.dp),
-            contentAlignment = Alignment.Center
-        ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Box(modifier
+        .padding(2.dp)
+        .clip(RoundedCornerShape(25))
+        .indication(interactionSource, LocalIndication.current),
+        Alignment.Center
+    ) {
+        Box(Modifier, Alignment.Center) {
             if (showIndicator()) {
                 Box(
                     modifier = Modifier
@@ -666,8 +681,8 @@ private fun BottomBarButton(
 
             Text(
                 text = title(),
-                modifier = Modifier.offset(y = 13.dp),
-                autoSize = TextAutoSize.StepBased(9.5.sp, 11.sp),
+                modifier = Modifier.offset(y = 13.dp).widthIn(max = 56.dp),
+                autoSize = TextAutoSize.StepBased(9.sp, 11.sp),
                 maxLines = 1,
                 lineHeight = 1.em,
                 fontWeight = if (color() == onPrimaryLight) FontWeight.SemiBold else FontWeight.Normal,
