@@ -48,7 +48,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.CopyKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.selection.DisableSelection
@@ -107,6 +107,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontStyle
@@ -114,6 +115,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -618,12 +620,16 @@ private fun PlaintextFormatting(
             )
         }
 
+        val window = LocalWindowInfo.current
+        val density = LocalDensity.current
+        val width = remember(window, density) { with(density) { window.containerSize.width.toDp() } - 132.dp }
+
         Grid(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 8.dp, end = 8.dp, bottom = 24.dp),
             config = {
-                columns(GridTrackSize.Auto, GridTrackSize.Flex(1.fr))
+                columns(GridTrackSize.MinMax(72.dp, .08.fr), GridTrackSize.MinMax(width, .92.fr))
                 rows(GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto)
                 gap(row = 8.dp, column = 20.dp)
             }
@@ -631,16 +637,19 @@ private fun PlaintextFormatting(
             Text(
                 text = stringResource(R.string.pt_string),
                 modifier = Modifier.gridItem(row = 1, column = 1, alignment = Alignment.CenterStart),
+                autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_delimiter),
                 modifier = Modifier.gridItem(row = 2, column = 1, alignment = Alignment.CenterStart),
+                autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_list_as),
                 modifier = Modifier.gridItem(row = 3, column = 1, alignment = Alignment.CenterStart),
+                autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
 
@@ -658,9 +667,7 @@ private fun PlaintextFormatting(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    viewModel.saveFormatting(format = "")
-                                }
+                                .clickable(null, LocalIndication.current) { viewModel.saveFormatting(format = "") }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -669,8 +676,10 @@ private fun PlaintextFormatting(
                 },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrectEnabled = false,
+                    hintLocales = LocaleList("en"),
+                    imeAction = ImeAction.Done
                 ),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
@@ -694,8 +703,10 @@ private fun PlaintextFormatting(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrectEnabled = false,
+                    hintLocales = LocaleList("en"),
+                    imeAction = ImeAction.Done
                 ),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
@@ -713,7 +724,7 @@ private fun PlaintextFormatting(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                modifier = Modifier.gridItem(row = 3, column = 2, alignment = Alignment.CenterStart)
+                modifier = Modifier.gridItem(row = 3, column = 2, alignment = Alignment.CenterStart).padding(vertical = 8.dp)
             ) {
                 Text(
                     text = stringResource(R.string.entries),
@@ -743,6 +754,7 @@ private fun PlaintextFormatting(
                 )
             }
 
+            // save/load preset
             Row(
                 modifier = Modifier
                     .gridItem(row = 4, column = 1, columnSpan = 2, alignment = Alignment.Center)
@@ -809,7 +821,7 @@ private fun PlaintextFormatting(
         ) {
             Column {
                 Text(
-                    text = "Formatting Help",
+                    text = stringResource(R.string.formatting_help),
                     modifier = Modifier.padding(bottom = 8.dp, top = 24.dp),
                     fontWeight = FontWeight.Bold
                 )
@@ -933,9 +945,7 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                         specs.add(GridTrackSize.Auto) // Key
                         specs.add(GridTrackSize.Fixed(8.dp)) // key-value fixed padding
                         specs.add(GridTrackSize.Auto) // Value
-                        if (i < columnCount - 1) { // between chunk flex spacer
-                            specs.add(GridTrackSize.MinMax(36.dp, .5.fr))
-                        }
+                        if (i < columnCount - 1) { specs.add(GridTrackSize.MinMax(36.dp, .5.fr)) } // between chunk flex spacer
                     }
                     specs.add(GridTrackSize.MinMax(0.dp, .25.fr)) // outer flex spacer
                     specs.toTypedArray()
@@ -947,10 +957,8 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                 gap(1.dp, 0.dp)
             }
         ) {
-            Spacer(Modifier
-                .gridItem(1, 1, rowCount, 1, Alignment.CenterStart)
-                .fillMaxSize()
-            )
+            Spacer(Modifier.gridItem(1, 1, rowCount, 1, Alignment.CenterStart).fillMaxSize())
+
             chunks.forEachIndexed { columnIndex, chunk ->
                 val (idealKey, idealValue) = chunkIdeals[columnIndex]
                 val maxKeyWidth = with(density) { (idealKey.toDp() * scale) }
@@ -972,7 +980,7 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                             text = "${entry.key}:",
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
-                            autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.25.sp)
+                            autoSize = StepBased(10.sp, 14.sp, 0.25.sp)
                         ) }
                     }
 
@@ -987,7 +995,7 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                         Text(
                             text = entry.value,
                             maxLines = 1,
-                            autoSize = TextAutoSize.StepBased(10.sp, 14.sp, 0.25.sp)
+                            autoSize = StepBased(10.sp, 14.sp, 0.25.sp)
                         )
                     }
 
@@ -1407,7 +1415,7 @@ private fun SaveDialog(
                                         thickness = 1.5.dp
                                     )
                                     Text(
-                                        text = preset.delimiter.ifBlank{ "n/a" },
+                                        text = preset.delimiter.ifBlank{ stringResource(R.string.n_a) },
                                         modifier = Modifier
                                             .width(44.dp)
                                             .padding(start = 2.dp),
@@ -1547,7 +1555,7 @@ private fun LoadDialog(
                                 thickness = 1.5.dp
                             )
                             Text(
-                                text = preset.delimiter.ifBlank{ "n/a" },
+                                text = preset.delimiter.ifBlank{ stringResource(R.string.n_a) },
                                 modifier = Modifier
                                     .width(44.dp)
                                     .padding(start = 2.dp),
