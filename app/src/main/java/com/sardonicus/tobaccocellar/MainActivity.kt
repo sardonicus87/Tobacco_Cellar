@@ -138,8 +138,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13)),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13))
+            SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13)),
+            SystemBarStyle.dark(android.graphics.Color.argb(0xFF, 0x13, 0x14, 0x13))
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
@@ -152,10 +152,7 @@ class MainActivity : AppCompatActivity() {
                     backPressedOnce = true
                     Toast.makeText(this@MainActivity, application.getString(R.string.exit), Toast.LENGTH_SHORT).show()
 
-                    lifecycleScope.launch {
-                        delay(2000.milliseconds)
-                        backPressedOnce = false
-                    }
+                    lifecycleScope.launch { delay(2000.milliseconds); backPressedOnce = false }
                 }
             }
         )
@@ -233,10 +230,10 @@ class MainActivity : AppCompatActivity() {
 
                             DeviceCorners.update(
                                 CornerRadii(
-                                    topLeft = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius?.toDp() } ?: 0.dp,
-                                    topRight = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)?.radius?.toDp() } ?: 0.dp,
-                                    bottomRight = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius?.toDp() } ?: 0.dp,
-                                    bottomLeft = with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)?.radius?.toDp() } ?: 0.dp
+                                    with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius?.toDp() } ?: 0.dp,
+                                    with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)?.radius?.toDp() } ?: 0.dp,
+                                    with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_RIGHT)?.radius?.toDp() } ?: 0.dp,
+                                    with(density) { platformInsets?.getRoundedCorner(RoundedCorner.POSITION_BOTTOM_LEFT)?.radius?.toDp() } ?: 0.dp
                                 )
                             )
                         }
@@ -386,10 +383,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent) }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (isFinishing) { (application as CellarApplication).filterViewModel.resetFilter() }
     }
+
 
     private fun handleNotificationIntent(intent: Intent, navigationState: NavigationState?) {
         val destination = intent.getStringExtra("START_DESTINATION")
@@ -440,8 +440,6 @@ class MainActivity : AppCompatActivity() {
             } catch (e: GetCredentialException) { handleSignInFailure(e) }
         }
     }
-
-
 
     private suspend fun handleSignInFailure(e: GetCredentialException) {
         if (e is NoCredentialException) { _noAccountsDialog.value = true }
@@ -513,8 +511,7 @@ private fun SystemBarsProtection() {
     val statusBarHeight = WindowInsets.statusBars.getTop(density).toFloat()
     val navigationHeight = WindowInsets.navigationBars.getBottom(density).toFloat()
 
-    Spacer(Modifier
-        .fillMaxSize()
+    Spacer(Modifier.fillMaxSize()
         .drawBehind {
             drawRect(Color(0xFF131413), size = Size(size.width, statusBarHeight))
             drawRect(
@@ -524,7 +521,6 @@ private fun SystemBarsProtection() {
         }
     )
 }
-
 
 @Composable
 fun gestureNavigation(): Boolean {
