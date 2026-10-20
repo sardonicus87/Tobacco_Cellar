@@ -1,14 +1,15 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
 import android.Manifest.permission.POST_NOTIFICATIONS
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
@@ -51,15 +52,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -78,16 +79,10 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.DeviceSyncDia
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.LanguageDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinNotificationsDialog
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialog
-import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.changeLanguage
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.MainActivityReady
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,34 +129,54 @@ fun SettingsScreen(
         }
     }
 
-    val activity =  LocalActivity.current as Activity
-    val scope = rememberCoroutineScope()
-    DialogManager(viewModel) { scope.launch { changeLanguage(activity, it) } }
+    DialogManager(viewModel)
 
-    Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            CellarTopAppBar(
-                title = stringResource(R.string.settings_title),
-                scrollBehavior = scrollBehavior,
-                navigateUp = onNavigateUp,
-                canNavigateBack = canNavigateBack,
-                showMenu = false,
-            )
+    val screenBitmap = TransitionCache.screenshot
+    var showCover by remember(screenBitmap) { mutableStateOf(screenBitmap != null) }
+    val coverAlpha by animateFloatAsState(
+        targetValue = if (screenBitmap != null) 0f else 1f,
+        animationSpec = tween(500),
+        finishedListener = {
+            TransitionCache.screenshot = null
+            showCover = false
         }
-    ) { innerPadding ->
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
+    )
+
+    Box (modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                CellarTopAppBar(
+                    title = stringResource(R.string.settings_title),
+                    scrollBehavior = scrollBehavior,
+                    navigateUp = onNavigateUp,
+                    canNavigateBack = canNavigateBack,
+                    showMenu = false,
+                )
+            }
+        ) { innerPadding ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                SettingsBody(
+                    viewModel = viewModel,
+                    modifier = modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+    if (showCover && screenBitmap != null) {
+        Image(
+            bitmap = screenBitmap.asImageBitmap(),
+            contentDescription = null,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            SettingsBody(
-                viewModel = viewModel,
-                modifier = modifier.fillMaxSize(),
-            )
-        }
+                .graphicsLayer { alpha = coverAlpha }
+        )
     }
 }
 
@@ -227,18 +242,6 @@ private fun SettingsBody(
         }
 
         item { Spacer(Modifier.height(16.dp)) }
-    }
-
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        snapshotFlow { displaySettings.isNotEmpty() && databaseSettings.isNotEmpty() }.first { it }
-        delay(25.milliseconds)
-        snapshotFlow { listState.layoutInfo.visibleItemsInfo.isNotEmpty() }.first { it }
-        delay(25.milliseconds)
-        EventBus.emit(MainActivityReady)
-        delay(100.milliseconds)
-        TransitionCache.deleteScreenshot(context)
     }
 }
 
@@ -323,7 +326,7 @@ private fun SettingsRow(
 
 
 @Composable
-private fun DialogManager(viewModel: SettingsViewModel, onUpdate: (String) -> Unit) {
+private fun DialogManager(viewModel: SettingsViewModel) {
     val openDialog by viewModel.openDialog.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
@@ -425,10 +428,7 @@ private fun DialogManager(viewModel: SettingsViewModel, onUpdate: (String) -> Un
         DialogType.Language -> {
             LanguageDialog(
                 onDismiss = viewModel::dismissDialog,
-                onLanguageChange = {
-                    viewModel.updateLangSetting(it)
-                    onUpdate(it)
-                }
+                onLanguageChange = viewModel::updateLangSetting
             )
         }
         DialogType.DeviceSync -> {

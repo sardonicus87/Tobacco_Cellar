@@ -196,20 +196,6 @@ class SettingsViewModel(
 
     val sharedPrefs: SharedPreferences = app.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
 
-    fun updateLangSetting(code: String) {
-        _langSetting.value = code
-        sharedPrefs.edit { putString("app_language", code) }
-        app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
-    }
-
-    private fun getLangSetting(code: String): String {
-        return if (code == "system") {
-            val localeCode = getSystemLanguage(app)
-            val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
-            app.getString(R.string.system_language, systemCode)
-        } else { SupportedLanguages.getDisplayString(code) ?: code }
-    }
-
     val displaySettings = combine(
         themeSetting,
         showRatings,
@@ -325,6 +311,23 @@ class SettingsViewModel(
 
 
     /** Database Settings **/
+    fun updateLangSetting(code: String) {
+        sharedPrefs.edit { putString("app_language", code) }
+        app.applicationScope.launch {
+            preferencesRepo.saveAppLanguage(code)
+            delay(25.milliseconds)
+            _langSetting.value = code
+        }
+    }
+
+    private fun getLangSetting(code: String): String {
+        return if (code == "system") {
+            val localeCode = getSystemLanguage(app)
+            val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
+            app.getString(R.string.system_language, systemCode)
+        } else { SupportedLanguages.getDisplayString(code) ?: code }
+    }
+
     fun saveCrossDeviceAcknowledged() {
         app.applicationScope.launch(Dispatchers.Default) { preferencesRepo.saveCDAcknowledge(true) }
     }

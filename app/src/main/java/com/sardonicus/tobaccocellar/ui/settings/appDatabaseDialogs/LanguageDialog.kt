@@ -1,9 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
 import android.app.Activity
-import android.app.ActivityOptions
-import android.content.Intent
-import android.os.Build
+import android.graphics.Bitmap
+import androidx.activity.compose.LocalActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -44,21 +43,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Popup
 import androidx.core.os.LocaleListCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.drawToBitmap
 import com.sardonicus.tobaccocellar.R
-import com.sardonicus.tobaccocellar.TransitionActivity
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
-import com.sardonicus.tobaccocellar.ui.utilities.TransitionCoverReady
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,6 +85,8 @@ fun LanguageDialog(
 
     val listState = rememberLazyListState(startIndex)
     LaunchedEffect(Unit) { if (!expanded) { listState.scrollToItem(startIndex) } }
+
+    val activity = LocalActivity.current as Activity
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -161,7 +158,9 @@ fun LanguageDialog(
                                             .clickable(null, LocalIndication.current) {
                                                 expanded = false
                                                 if (option.code != currentCode) {
-                                                    onLanguageChange(option.code); onDismiss()
+                                                    onLanguageChange(option.code)
+                                                    onDismiss()
+                                                    changeLanguage(activity, option.code)
                                                 }
                                             }
                                             .padding(horizontal = 16.dp),
@@ -180,7 +179,7 @@ fun LanguageDialog(
                 }
             }
         },
-        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.done)) } },
+        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
@@ -215,20 +214,20 @@ object SupportedLanguages {
     }
 }
 
-suspend fun changeLanguage(activity: Activity, code: String) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-        val decorView = activity.window.decorView
-        val bitmap = decorView.drawToBitmap()
+fun changeLanguage(activity: Activity, code: String) {
+    val decorView = activity.window.decorView
+    val fullBitmap = decorView.drawToBitmap()
+    val insets = ViewCompat.getRootWindowInsets(decorView)
+    val topHeight = insets?.getInsets(WindowInsetsCompat.Type.displayCutout())?.top ?: 0
+    val bottomHeight = insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
+    val height = topHeight + bottomHeight
 
-        TransitionCache.saveScreenshot(activity, bitmap)
+    val cropped = if (height > 0 && fullBitmap.height > height) {
+        Bitmap.createBitmap(fullBitmap, 0, topHeight, fullBitmap.width, fullBitmap.height - height)
+    } else { fullBitmap }
 
-        val intent = Intent(activity, TransitionActivity::class.java)
-        val options = ActivityOptions.makeCustomAnimation(activity, 0, 0)
-        activity.startActivity(intent, options.toBundle())
+    TransitionCache.screenshot = cropped
 
-        EventBus.events.first { it is TransitionCoverReady }
-    }
-    delay(25.milliseconds)
     if (code == "system") {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
     } else {

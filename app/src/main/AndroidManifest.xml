@@ -22,18 +22,12 @@
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustUnspecified"
-            android:configChanges="orientation|screenSize|screenLayout"
+            android:configChanges="locale|layoutDirection|grammaticalGender|orientation|screenSize|screenLayout"
             android:theme="@style/Theme.Start">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity
-            android:name=".TransitionActivity"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|screenLayout"
-            android:theme="@style/Theme.TransitionCover">
         </activity>
     </application>
 
