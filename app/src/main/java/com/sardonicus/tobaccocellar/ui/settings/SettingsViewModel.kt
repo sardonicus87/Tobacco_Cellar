@@ -40,6 +40,7 @@ import com.sardonicus.tobaccocellar.ui.plaintext.PlaintextPreset
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.SupportedLanguages
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import kotlinx.coroutines.CompletableDeferred
@@ -312,6 +313,7 @@ class SettingsViewModel(
 
     /** Database Settings **/
     fun updateLangSetting(code: String) {
+        LanguageState.code = code
         sharedPrefs.edit { putString("app_language", code) }
         app.applicationScope.launch {
             preferencesRepo.saveAppLanguage(code)
