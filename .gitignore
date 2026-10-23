@@ -29,3 +29,7 @@ deploymentTargetSelector
 /app/release
 /release/app-release.aab
 /app/src/main/res/values/web_client_id.xml
+/app.apks
+/bundletool-all-1.18.3.jar
+/app/src/main/res/values-de/strings.xml
+/app/src/main/res/values-es/strings.xml
