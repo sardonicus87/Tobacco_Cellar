@@ -9,9 +9,12 @@ import androidx.annotation.StringRes
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
 
-@SuppressLint("AppLanguages")
+@SuppressLint("AppBundleLocaleChanges")
 fun getLocalizedContext(context: Context): Context {
     val target =
         if (LanguageState.code == "system") { Locale.forLanguageTag(getSystemLanguage(context)) }
@@ -48,4 +51,16 @@ fun getLocalizedType(typeKey: String, app: CellarApplication, showUnassigned: Bo
     return context.safeString(blendType.resId)
 }
 
-object LanguageState { var code: String = "system" }
+object LanguageState {
+    private val _code = MutableStateFlow("system")
+    var codeFlow: StateFlow<String> = _code.asStateFlow()
+
+    var code: String
+        get() = _code.value
+        set(value) { _code.value = value }
+
+    fun init(context: Context) {
+        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+        _code.value = prefs.getString("app_language", "system") ?: "system"
+    }
+}
