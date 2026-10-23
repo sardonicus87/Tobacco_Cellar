@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -32,14 +33,18 @@ import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.settings.DatabaseRestoreEvent
+import com.sardonicus.tobaccocellar.ui.settings.DismissLoading
+import com.sardonicus.tobaccocellar.ui.settings.ShowLoading
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
+import com.sardonicus.tobaccocellar.ui.utilities.getInstalledLanguages
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -93,6 +98,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         registerActivityLifecycleCallbacks(this)
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore, applicationScope)
+        LanguageState.init(this)
         csvHelper = CsvHelper()
         createNotificationChannel()
 
@@ -100,8 +106,40 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
-            launch { LanguageState.code = preferencesRepo.appLanguage.first() }
             launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
+            launch {
+                preferencesRepo.appLanguage.collectLatest {
+                    val installed = getInstalledLanguages(this@CellarApplication)
+                    if (it == "system" || it == "en" || it in installed) { LanguageState.code = it }
+                    else {
+                        var attempts = 0
+                        while (attempts < 10) {
+                            val time = if (attempts < 6) 500.milliseconds else 1500.milliseconds
+                            delay(time)
+                            attempts++
+
+                            val installed = getInstalledLanguages(this@CellarApplication)
+                            if (it in installed) {
+                                EventBus.emit(DismissLoading); LanguageState.code = it
+                                break
+                            }
+                            if (attempts == 3) { EventBus.emit(ShowLoading) }
+                        }
+
+                        withContext(NonCancellable + Dispatchers.Main) {
+                            EventBus.emit(DismissLoading)
+                            getSharedPreferences("app_settings", MODE_PRIVATE).edit { putString("app_language", LanguageState.code) }
+                            preferencesRepo.saveAppLanguage(LanguageState.code)
+                            if (LanguageState.code == "system") {
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                            } else {
+                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(LanguageState.code))
+                            }
+                            EventBus.emit(ShowToast(getString(R.string.language_failed)))
+                        }
+                    }
+                }
+            }
         }
 
         // Check Network Flow and trigger upload if there are pending ops, schedule tin notification

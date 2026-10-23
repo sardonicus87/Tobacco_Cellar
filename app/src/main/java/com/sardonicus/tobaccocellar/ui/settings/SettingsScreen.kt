@@ -7,9 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
@@ -59,8 +56,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -82,7 +77,6 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.TinRatesDialo
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.requestNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,8 +105,7 @@ fun SettingsScreen(
     LifecycleResumeEffect(Unit) {
         if (waitingSignal) {
             requestEvent?.onComplete?.complete(Unit); requestEvent = null; waitingSignal = false
-        }
-        onPauseOrDispose { }
+        }; onPauseOrDispose { }
     }
     LaunchedEffect(Unit) {
         EventBus.events.collect {
@@ -131,52 +124,30 @@ fun SettingsScreen(
 
     DialogManager(viewModel)
 
-    val screenBitmap = TransitionCache.screenshot
-    var showCover by remember(screenBitmap) { mutableStateOf(screenBitmap != null) }
-    val coverAlpha by animateFloatAsState(
-        targetValue = if (screenBitmap != null) 0f else 1f,
-        animationSpec = tween(500),
-        finishedListener = {
-            TransitionCache.screenshot = null
-            showCover = false
+    Scaffold(
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            CellarTopAppBar(
+                title = stringResource(R.string.settings_title),
+                scrollBehavior = scrollBehavior,
+                navigateUp = onNavigateUp,
+                canNavigateBack = canNavigateBack,
+                showMenu = false,
+            )
         }
-    )
-
-    Box (modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                CellarTopAppBar(
-                    title = stringResource(R.string.settings_title),
-                    scrollBehavior = scrollBehavior,
-                    navigateUp = onNavigateUp,
-                    canNavigateBack = canNavigateBack,
-                    showMenu = false,
-                )
-            }
-        ) { innerPadding ->
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                SettingsBody(
-                    viewModel = viewModel,
-                    modifier = modifier.fillMaxSize()
-                )
-            }
-        }
-    }
-    if (showCover && screenBitmap != null) {
-        Image(
-            bitmap = screenBitmap.asImageBitmap(),
-            contentDescription = null,
+    ) { innerPadding ->
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(space = 8.dp, alignment = Alignment.Top),
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = coverAlpha }
-        )
+                .padding(innerPadding)
+        ) {
+            SettingsBody(
+                viewModel = viewModel,
+                modifier = modifier.fillMaxSize()
+            )
+        }
     }
 }
 

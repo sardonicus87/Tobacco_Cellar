@@ -16,6 +16,12 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +62,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -110,8 +118,10 @@ import com.sardonicus.tobaccocellar.ui.utilities.CornerRadii
 import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
+import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -213,6 +223,7 @@ class MainActivity : AppCompatActivity() {
                         is ShowLoading -> { loading = true }
                         is DismissLoading -> { loading = false }
                         is ShowToast -> { Toast.makeText(this@MainActivity, event.message, Toast.LENGTH_SHORT).show() }
+
                     }
                 }
             }
@@ -293,8 +304,6 @@ class MainActivity : AppCompatActivity() {
                             navigationState = navigationState,
                         )
 
-                        if (loading) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.5f)) }
-
                         if (snackbarHostState.currentSnackbarData != null) {
                             Dialog(
                                 onDismissRequest = { },
@@ -344,6 +353,39 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     SystemBarsProtection()
+
+                    val screenBitmap = TransitionCache.screenshot
+                    val appLang by preferencesRepo.appLanguage.collectAsState("system")
+                    val active by LanguageState.codeFlow.collectAsState()
+                    val downloading = appLang != active
+
+                    var showCover by remember(screenBitmap) { mutableStateOf(screenBitmap != null) }
+                    var startFade by remember { mutableStateOf(false) }
+                    val coverAlpha by animateFloatAsState(
+                        targetValue = if (startFade) 0f else 1f,
+                        animationSpec = tween(750),
+                        finishedListener = {
+                            TransitionCache.screenshot = null; showCover = false; startFade = false
+                        }
+                    )
+                    LaunchedEffect(screenBitmap, downloading) {
+                        if (screenBitmap != null && !downloading) startFade = true }
+
+                    if (showCover && screenBitmap != null) {
+                        Image(
+                            bitmap = screenBitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer { alpha = coverAlpha }
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = loading,
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.38f)) }
 
                     val showDialog by noAccountsDialog.collectAsState()
                     if (showDialog) {
@@ -511,7 +553,8 @@ private fun SystemBarsProtection() {
     val statusBarHeight = WindowInsets.statusBars.getTop(density).toFloat()
     val navigationHeight = WindowInsets.navigationBars.getBottom(density).toFloat()
 
-    Spacer(Modifier.fillMaxSize()
+    Spacer(Modifier
+        .fillMaxSize()
         .drawBehind {
             drawRect(Color(0xFF131413), size = Size(size.width, statusBarHeight))
             drawRect(

@@ -1,7 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs
 
 import android.app.Activity
-import android.graphics.Bitmap
 import androidx.activity.compose.LocalActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.LocalIndication
@@ -43,14 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Popup
 import androidx.core.os.LocaleListCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.drawToBitmap
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
+import com.sardonicus.tobaccocellar.ui.utilities.getInstalledLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
 import java.util.Locale
@@ -61,32 +59,37 @@ fun LanguageDialog(
     onDismiss: () -> Unit,
     onLanguageChange: (String) -> Unit
 ) {
-    val installedOptions = AppCompatDelegate.getApplicationLocales()
-    val currentCode = if (installedOptions.isEmpty) "system" else installedOptions[0]?.language ?: "system"
+    val activity = LocalActivity.current as Activity
     val context = LocalCellarApplication.current
 
-    val localeCode = getSystemLanguage(context)
-    val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
-
     val deviceLocales = getSystemLocales(context)
-    val supportedDeviceLocales = deviceLocales.map { it.language.lowercase() }
-        .filter { it in SupportedLanguages.codes }
-        .mapNotNull { code -> SupportedLanguages.list.find { it.code == code } }
+    val installedLocales = getInstalledLanguages(context)
+    val currentAppLocale = AppCompatDelegate.getApplicationLocales()
+    val currentCode = if (currentAppLocale.isEmpty) "system" else currentAppLocale[0]?.language?.lowercase() ?: "system"
 
-    val remaining = SupportedLanguages.list.filter { lang -> lang.code !in supportedDeviceLocales.map { it.code } }
+    val preferredCodes = buildSet {
+        add(currentCode)
+        for (locale in deviceLocales) { add(locale.language.lowercase()) }
+        addAll(installedLocales)
+    }.filter { it in SupportedLanguages.codes }.toSet()
+
+    val preferredOptions = preferredCodes.mapNotNull { code ->
+        SupportedLanguages.list.find { it.code == code } }.distinct()
+    val remaining = SupportedLanguages.list.filter { lang -> lang.code !in preferredCodes }
+
+    val systemCode = getSystemLanguage(context)
+    val systemOverride = if (systemCode in SupportedLanguages.codes) systemCode else "en"
 
     val options = listOf(
-        LanguageOption(stringResource(R.string.system_language, systemCode), "system")) +
-            (supportedDeviceLocales + remaining).map { LanguageOption(it.displayString, it.code) }
+        LanguageOption(stringResource(R.string.system_language, systemOverride), "system")) +
+            (preferredOptions + remaining).map { LanguageOption(it.displayString, it.code) }
 
     val selected = options.find { it.code == currentCode } ?: options[0]
+
     var expanded by remember { mutableStateOf(false) }
     val startIndex = options.indexOfFirst { it.code == currentCode }.minus(1).coerceAtLeast(0)
-
     val listState = rememberLazyListState(startIndex)
     LaunchedEffect(Unit) { if (!expanded) { listState.scrollToItem(startIndex) } }
-
-    val activity = LocalActivity.current as Activity
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -146,7 +149,7 @@ fun LanguageDialog(
                                 items(options.size) {
                                     val option = options[it]
 
-                                    val showDivider = supportedDeviceLocales.isNotEmpty() &&
+                                    val showDivider = preferredOptions.isNotEmpty() &&
                                             remaining.isNotEmpty() &&
                                             option.code == remaining.first().code
                                     if (showDivider) { HorizontalDivider(Modifier.padding(vertical = 2.dp)) }
@@ -200,7 +203,7 @@ object SupportedLanguages {
         "id", "it", "ja", "kn", "ko", "lv", "lt", "ml", "mr", "no",
         "fa", "pl", "pt", "pa", "ro", "ru", "sk", "sl", "es", "sw",
         "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "zu"
-    )
+    ).sorted().toSet()
 
     val list: List<AppLanguage> = codes.map { code ->
         val locale = Locale.forLanguageTag(code)
@@ -216,17 +219,9 @@ object SupportedLanguages {
 
 fun changeLanguage(activity: Activity, code: String) {
     val decorView = activity.window.decorView
-    val fullBitmap = decorView.drawToBitmap()
-    val insets = ViewCompat.getRootWindowInsets(decorView)
-    val topHeight = insets?.getInsets(WindowInsetsCompat.Type.displayCutout())?.top ?: 0
-    val bottomHeight = insets?.getInsets(WindowInsetsCompat.Type.systemBars())?.bottom ?: 0
-    val height = topHeight + bottomHeight
+    val screenshot = decorView.drawToBitmap()
 
-    val cropped = if (height > 0 && fullBitmap.height > height) {
-        Bitmap.createBitmap(fullBitmap, 0, topHeight, fullBitmap.width, fullBitmap.height - height)
-    } else { fullBitmap }
-
-    TransitionCache.screenshot = cropped
+    TransitionCache.screenshot = screenshot
 
     if (code == "system") {
         AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())

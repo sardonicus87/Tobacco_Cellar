@@ -42,7 +42,9 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotifica
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -132,7 +134,6 @@ class SettingsViewModel(
 
 
     /** App & Database settings */
-    private val _langSetting = MutableStateFlow("system")
     val deviceSyncAcknowledgement = preferencesRepo.crossDeviceAcknowledged.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val crossDeviceSync = preferencesRepo.crossDeviceSync
@@ -164,7 +165,6 @@ class SettingsViewModel(
             }
         }
         app.applicationScope.launch(Dispatchers.Default) {
-            launch { _langSetting.value = preferencesRepo.appLanguage.first() }
             launch {
                 val email = preferencesRepo.signedInUserEmail.first()
                 if (email != null && email.isBlank()) {
@@ -202,7 +202,7 @@ class SettingsViewModel(
         showRatings,
         typeGenreOption,
         quantityOption,
-        parseLinks,
+        parseLinks
     ) { it: Array<Any> ->
         val theme = it[0] as ThemeSetting
         val showRatings = it[1] as Boolean
@@ -235,8 +235,8 @@ class SettingsViewModel(
         tinOzConversionRate,
         tinGramsConversionRate,
         defaultSyncOption,
-        _langSetting,
-        preferencesRepo.appLanguage // needed to force re-run formatDecimal in new locale after language change
+        preferencesRepo.appLanguage,
+        LanguageState.codeFlow
     ) { values: Array<Any> ->
         val crossDeviceSync = values[0] as Boolean
         val mobileData = values[1] as Boolean
@@ -245,10 +245,23 @@ class SettingsViewModel(
         val ozRate = values[4] as Double
         val gramsRate = values[5] as Double
         val defaultSync = values[6] as Boolean
-        val code = values[7] as String
+        val savedCode = values[7] as String
+        val code = values[8] as String
+
+        val context = getLocalizedContext(app)
+        val downloading = savedCode != code && savedCode != "system"
+        val langDisplay =
+            if (downloading) { context.safeString(R.string.waiting_language, savedCode) }
+            else {
+            if (code == "system") {
+                val localeCode = getSystemLanguage(app)
+                val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
+                context.safeString(R.string.system_language, systemCode)
+            } else { SupportedLanguages.getDisplayString(code) ?: code }
+        }
 
         listOf(
-            SettingsDialog(R.string.language_option, R.string.language_description, null, DialogType.Language, currentSettingRaw = getLangSetting(code)),
+            SettingsDialog(R.string.language_option, R.string.language_description, null, DialogType.Language, currentSettingRaw = langDisplay),
             SettingsDialog(R.string.multi_device_sync, R.string.multi_device_sync_description, when {
                 !crossDeviceSync -> R.string.off; !connected -> R.string.disconnected; mobileData -> R.string.multi_device_on_mobile
                 else -> R.string.multi_device_on_wifi }, DialogType.DeviceSync),
@@ -313,21 +326,8 @@ class SettingsViewModel(
 
     /** Database Settings **/
     fun updateLangSetting(code: String) {
-        LanguageState.code = code
         sharedPrefs.edit { putString("app_language", code) }
-        app.applicationScope.launch {
-            preferencesRepo.saveAppLanguage(code)
-            delay(25.milliseconds)
-            _langSetting.value = code
-        }
-    }
-
-    private fun getLangSetting(code: String): String {
-        return if (code == "system") {
-            val localeCode = getSystemLanguage(app)
-            val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
-            app.getString(R.string.system_language, systemCode)
-        } else { SupportedLanguages.getDisplayString(code) ?: code }
+        app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
     }
 
     fun saveCrossDeviceAcknowledged() {

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.os.Build
 import androidx.core.os.ConfigurationCompat
+import com.sardonicus.tobaccocellar.BuildConfig
 import java.util.Locale
 
 fun getSystemLanguage(context: Context): String {
@@ -23,4 +24,13 @@ fun getSystemLocales(context: Context): List<Locale> {
             (0 until configLocales.size()).mapNotNull { configLocales.get(it) }
         } else { listOf(Locale.getDefault()) }
     }
+}
+
+fun getInstalledLanguages(context: Context): Set<String> {
+    if (BuildConfig.DEBUG) { return setOf("en", "de") }
+
+    val splitNames = context.applicationInfo.splitNames ?: return emptySet()
+    return splitNames.filter { it.startsWith("config.") }
+        .map { it.removePrefix("config.").lowercase() }
+        .toSet()
 }
