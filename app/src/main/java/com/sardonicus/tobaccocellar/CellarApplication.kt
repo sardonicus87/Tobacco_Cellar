@@ -74,6 +74,9 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     private var lastSyncVerification: Long = 0
 
     companion object {
+        lateinit var instance: CellarApplication
+            private set
+
         const val SYNC_NOTIFICATION = "sync_channel"
         const val TIN_NOTIFICATION = "tin_notification"
         const val ALL_NOTIFICATIONS = "all_notifications"
@@ -95,6 +98,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         registerActivityLifecycleCallbacks(this)
         container = AppDataContainer(this)
         preferencesRepo = PreferencesRepo(dataStore, applicationScope)
