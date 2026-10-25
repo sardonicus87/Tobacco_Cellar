@@ -53,12 +53,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -74,7 +70,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
@@ -83,6 +78,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowBox
 import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
 
 @Composable
 fun BrandFilterSection(
@@ -233,17 +229,6 @@ private fun SelectableBrandsRow(
     updateBrandSearchText: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val nestedScroll = remember {
-        object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset, available: Offset, source: NestedScrollSource
-            ): Offset { return (Offset(x = available.x, y = 0f)) }
-
-            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                return Velocity(x = available.x, y = 0f) }
-        }
-    }
-
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
     val filteredBrands by filterViewModel.filteredBrands.collectAsState()
     val unselectedBrands by filterViewModel.unselectedBrands.collectAsState()
@@ -270,7 +255,7 @@ private fun SelectableBrandsRow(
                 .fillMaxWidth()
                 .padding(end = 2.dp)
                 .height(36.dp)
-                .nestedScroll(nestedScroll),
+                .exclusiveScroll(),
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.Start),
             verticalAlignment = Alignment.CenterVertically,
             state = lazyListState
