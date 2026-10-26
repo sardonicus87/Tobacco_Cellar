@@ -9,7 +9,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +36,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
@@ -57,11 +60,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -77,8 +84,12 @@ import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
+import com.sardonicus.tobaccocellar.ui.composables.GlowBox
+import com.sardonicus.tobaccocellar.ui.composables.GlowColor
+import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
 import kotlinx.coroutines.delay
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
@@ -110,6 +121,9 @@ fun ItemMenu(
 
     BackHandler(quickEdit) { if (quickEdit) { quickEdit = false } }
 
+    val density = LocalDensity.current
+    var rowWidth by remember { mutableStateOf(0.dp) }
+
     AnimatedContent(
         targetState = quickEdit,
         transitionSpec = { fadeIn(tween(150)) togetherWith fadeOut(tween(150)) },
@@ -118,7 +132,11 @@ fun ItemMenu(
             .background(LocalCustomColors.current.listMenuScrim)
     ) { quickMenu ->
         Row(
-            modifier = Modifier.fillMaxHeight(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp)
+                .onGloballyPositioned { rowWidth = with(density) { it.size.width.toDp() } }
+                .pointerInput(Unit) { detectDragGestures(onDrag = { change, _ -> change.consume() }) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -160,9 +178,11 @@ fun ItemMenu(
                 // go back
                 Box (
                     modifier = Modifier
+                        .padding(3.dp)
                         .clip(RoundedCornerShape(50))
                         .clickable { quickEdit = !quickEdit }
-                        .padding(6.dp),
+                        .background(MaterialTheme.colorScheme.background, CircleShape)
+                        .padding(3.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -174,17 +194,37 @@ fun ItemMenu(
                     )
                 }
 
-                Row(
+                val scrollState = rememberScrollState()
+                val startShine = scrollState.canScrollBackward
+                val endShine = scrollState.canScrollForward
+                val primaryColor = MaterialTheme.colorScheme.secondaryContainer
+                val edgeFloat = (32.dp / rowWidth).coerceIn(0.01f, 0.49f)
+
+                val shineBrush = remember(startShine, endShine) {
+                    Brush.horizontalGradient(
+                        0.0f to (if (startShine) primaryColor else Color.Transparent),
+                        edgeFloat to Color.Transparent,
+                        (1f - edgeFloat) to Color.Transparent,
+                        1.0f to (if (endShine) primaryColor else Color.Transparent)
+                    )
+                }
+
+                GlowBox(
+                    GlowColor(MaterialTheme.colorScheme.background.copy(alpha = .75f)), GlowSize(horizontal = 16.dp),
+                    modifier = Modifier
+                        .heightIn(max = 40.dp)
+                        .clip(RoundedCornerShape(50))
+                        .border(1.dp, shineBrush, RoundedCornerShape(50))
+                ) { Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(0.dp),
                     modifier = Modifier
                         .fillMaxHeight()
-                        .horizontalScroll(rememberScrollState())
+                        .weight(1f)
+                        .exclusiveScroll()
+                        .horizontalScroll(scrollState, null)
+                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(50))
                         .padding(3.dp, 8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.background.copy(alpha = .8f),
-                            RoundedCornerShape(50)
-                        )
                 ) {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.primary.copy(alpha = 0.25f).compositeOver(MaterialTheme.colorScheme.onBackground)
@@ -286,30 +326,33 @@ fun ItemMenu(
                                         autoSize = StepBased(10.sp, 14.sp),
                                         fontWeight = FontWeight.SemiBold,
                                         lineHeight = 1.em,
-                                        maxLines = 1
+                                        maxLines = 1,
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }
                         }
                     }
-                }
+                } }
 
                 TextButton(
                     onClick = viewModel::saveQuickEdits,
-                    enabled = quickEditState.saveEnabled
+                    enabled = quickEditState.saveEnabled,
+                    modifier = Modifier.heightIn(min = 1.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.textButtonColors().copy(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        disabledContainerColor = MaterialTheme.colorScheme.background
+                    ),
+                    contentPadding = PaddingValues(4.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.save),
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(alpha = .8f),
-                                RoundedCornerShape(25)
-                            )
-                            .padding(4.dp, 2.dp),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
                         maxLines = 1,
-                        autoSize = StepBased(12.sp, 14.sp)
+                        autoSize = StepBased(12.sp, 14.sp),
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -456,7 +499,9 @@ private fun EditRatingPop(
                                 updateTextField(it); updateParsedDouble(parseDouble(it))
                             }
                         },
-                        modifier = Modifier.width(80.dp).padding(end = 8.dp),
+                        modifier = Modifier
+                            .width(80.dp)
+                            .padding(end = 8.dp),
                         enabled = true,
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -601,7 +646,9 @@ private fun EditQuantityPop(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.wrapContentHeight().width(280.dp),
+        modifier = Modifier
+            .wrapContentHeight()
+            .width(280.dp),
         properties = DialogProperties(
             dismissOnBackPress = true,
             dismissOnClickOutside = true,
@@ -621,7 +668,9 @@ private fun EditQuantityPop(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.height(IntrinsicSize.Min).fillMaxWidth()
+                modifier = Modifier
+                    .height(IntrinsicSize.Min)
+                    .fillMaxWidth()
             ) {
                 Spacer(Modifier.width(34.dp))
 
