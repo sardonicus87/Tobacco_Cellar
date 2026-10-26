@@ -152,9 +152,7 @@ fun BlendDetailsScreen(
                     enter = EnterTransition.None,
                     exit = fadeOut(tween(250)),
                     modifier = Modifier.fillMaxSize()
-                ) { Box(Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)) }
+                ) { Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) }
             }
         }
     }
@@ -206,8 +204,7 @@ private fun BlendDetailsBody(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Top,
-                            modifier = Modifier
-                                .fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
                                 text = blendDetails.blend,
@@ -217,7 +214,7 @@ private fun BlendDetailsBody(
                                 fontSize = 30.sp,
                                 lineHeight = 32.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Center
                             )
                             Text(
                                 text = buildAnnotatedString {
@@ -235,10 +232,9 @@ private fun BlendDetailsBody(
                                         )
                                     ) { append(blendDetails.brand) }
                                 },
-                                modifier = Modifier
-                                    .padding(bottom = 12.dp),
+                                modifier = Modifier.padding(bottom = 12.dp),
                                 lineHeight = 16.sp,
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Center
                             )
                         }
                     } }
@@ -253,12 +249,12 @@ private fun BlendDetailsBody(
                 ) {
                     if (blendDetails.favDisIcon != null) {
                         val tint =
-                            if (blendDetails.favDisIcon == R.drawable.heart_filled_24) LocalCustomColors.current.favHeart else LocalCustomColors.current.disHeart
+                            if (blendDetails.favDisIcon == R.drawable.heart_filled_24) LocalCustomColors.current.favHeart
+                            else LocalCustomColors.current.disHeart
                         Icon(
                             painter = painterResource(id = blendDetails.favDisIcon),
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(24.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = tint
                         )
                     }
@@ -283,15 +279,13 @@ private fun BlendDetailsBody(
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
                             text = stringResource(R.string.details),
-                            modifier = Modifier
-                                .padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = 4.dp),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.tertiary
@@ -309,29 +303,28 @@ private fun BlendDetailsBody(
                                         .fillMaxWidth()
                                         .padding(start = 12.dp)
                                 ) {
-                                    blendDetails.itemDetails.forEach { Text(it) }
+                                    blendDetails.itemDetails.forEach { Text(it, Modifier.padding(bottom = 7.dp)) }
                                     if (blendDetails.rating != null) {
                                         Row(
                                             horizontalArrangement = Arrangement.Start,
                                             verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier
+                                            modifier = Modifier.padding(bottom = 4.dp)
                                         ) {
                                             Text(
                                                 text = stringResource(R.string.rating_label),
-                                                modifier = Modifier,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
+                                                lineHeight = 1.1.em,
+                                                fontSize = 14.sp
                                             )
                                             RatingRow(
                                                 rating = blendDetails.rating,
-                                                modifier = Modifier,
-                                                starSize = 17.dp
+                                                starSize = 16.dp
                                             )
                                             Text(
                                                 text = "(${formatDecimal(blendDetails.rating)})",
-                                                modifier = Modifier
-                                                    .padding(start = 6.dp),
+                                                modifier = Modifier.padding(start = 6.dp),
                                                 fontSize = 12.sp,
+                                                lineHeight = 1.1.em
                                             )
                                         }
                                     }
@@ -372,10 +365,7 @@ private fun BlendDetailsBody(
                         .align(Alignment.TopEnd)
                         .padding(top = 2.dp, end = 4.dp)
                         .clip(CircleShape)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { navigateToEditEntry(blendDetails.id) }
+                        .clickable(null, LocalIndication.current) { navigateToEditEntry(blendDetails.id) }
                         .padding(8.dp)
                         .size(18.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.85f)
@@ -402,8 +392,7 @@ private fun BlendDetailsBody(
                 ) {
                     Text(
                         text = stringResource(R.string.notes),
-                        modifier = Modifier
-                            .padding(bottom = 6.dp),
+                        modifier = Modifier.padding(bottom = 6.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.tertiary
@@ -414,8 +403,7 @@ private fun BlendDetailsBody(
                         NotesText(
                             notes = blendDetails.notes,
                             viewModel = viewModel,
-                            modifier = Modifier
-                                .padding(start = 12.dp, bottom = 8.dp)
+                            modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
                         )
                     } }
                 }
@@ -442,15 +430,13 @@ private fun BlendDetailsBody(
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
                             text = stringResource(R.string.tins),
-                            modifier = Modifier
-                                .padding(bottom = 6.dp),
+                            modifier = Modifier.padding(bottom = 6.dp),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.tertiary
@@ -464,7 +450,6 @@ private fun BlendDetailsBody(
                             ) {
                                 Text(
                                     text = "(${blendDetails.tinsTotal})",
-                                    modifier = Modifier,
                                     fontWeight = FontWeight.Normal,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onBackground
@@ -491,19 +476,15 @@ private fun BlendDetailsBody(
                                             text = tin.tinLabel,
                                             modifier = Modifier,
                                             fontWeight = FontWeight.SemiBold,
-                                            fontSize = 15.sp,
+                                            fontSize = 15.sp
                                         )
                                         details?.forEach { detailLine ->
                                             Column(
                                                 horizontalAlignment = Alignment.Start,
                                                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                                                modifier = Modifier
-                                                    .padding(start = 12.dp)
+                                                modifier = Modifier.padding(start = 12.dp)
                                             ) {
-                                                Text(
-                                                    text = detailLine.primary,
-                                                    modifier = Modifier,
-                                                )
+                                                Text(detailLine.primary)
                                                 detailLine.secondary?.let {
                                                     val color = Color.Gray.copy(alpha = .5f).compositeOver(LocalContentColor.current)
                                                     Text(
@@ -512,7 +493,7 @@ private fun BlendDetailsBody(
                                                         color = color,
                                                         modifier = Modifier
                                                             .padding(start = 16.dp)
-                                                            .offset(y = (-2).dp),
+                                                            .offset(y = (-2).dp)
                                                     )
                                                 }
                                             }
@@ -522,12 +503,12 @@ private fun BlendDetailsBody(
                             }
                         }
                     } }
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(Modifier.height(6.dp))
                 }
             }
         }
 
-        item { Spacer(modifier = Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(16.dp)) }
     }
 }
 
@@ -548,22 +529,16 @@ private fun NotesText(
     val hapticFeedback = LocalHapticFeedback.current
     val linkListener = LinkInteractionListener { link ->
         hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-        (link as? LinkAnnotation.Url)?.let {
-            uriHandler.openUri(it.url)
-        }
+        (link as? LinkAnnotation.Url)?.let { uriHandler.openUri(it.url) }
     }
 
-    Column(
-        modifier = modifier
-    ) {
+    Column(modifier = modifier) {
         lines.forEach { line ->
-            if (line.isEmpty()) {
-                Spacer(Modifier.height(blankLineHeight))
-            } else {
+            if (line.isEmpty()) { Spacer(Modifier.height(blankLineHeight)) }
+            else {
                 Text(
                     text = viewModel.parseHyperlinks(line, MaterialTheme.colorScheme.primary, linkListener, parseLinks),
-                    fontSize = fontSize,
-                    modifier = Modifier
+                    fontSize = fontSize
                 )
             }
         }

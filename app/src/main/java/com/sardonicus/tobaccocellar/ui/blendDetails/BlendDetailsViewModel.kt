@@ -1,19 +1,21 @@
 package com.sardonicus.tobaccocellar.ui.blendDetails
 
-import android.content.res.Configuration
-import android.content.res.Resources
+import android.content.Context
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,7 +26,11 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.safeQuantityString
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +42,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
 import java.time.ZoneId
-import java.util.Locale
 
 class BlendDetailsViewModel(
     itemsId: Int,
@@ -52,7 +57,7 @@ class BlendDetailsViewModel(
         filterViewModel.everythingFlow,
         preferencesRepo.quantityOption,
         preferencesRepo.parseLinks
-    ) { allItems, quantityOption, parseLinks ->
+    ) { allItems, quantityOption, parseLinks->
         val isMetric = isMetricLocale()
         val quantityRemap = when (quantityOption) {
             QuantityOption.TINS -> if (isMetric) QuantityOption.GRAMS else QuantityOption.OUNCES
@@ -62,6 +67,7 @@ class BlendDetailsViewModel(
         _parseLinks.value = parseLinks
 
         val item = allItems.find { it.items.id == itemsId } ?: return@combine BlendDetails()
+        val context = getLocalizedContext(app)
 
         BlendDetails(
             id = item.items.id,
@@ -69,37 +75,46 @@ class BlendDetailsViewModel(
             blend = item.items.blend,
             favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
             itemDetails = setOfNotNull(
-                buildDetailsString(app.getString(R.string.type_label), getLocalizedType(item.items.type, app)),
-                buildDetailsString(app.getString(R.string.subgenre_label), item.items.subGenre),
-                buildDetailsString(app.getString(R.string.cut_label), item.items.cut),
-                buildDetailsString(app.getString(R.string.component_label), item.components.map { it.componentName }.sorted().joinToString(", ")),
-                buildDetailsString(app.getString(R.string.flavors_label), item.flavoring.map { it.flavoringName }.sorted().joinToString(", ")),
-                buildDetailsString(app.getString(R.string.production_status), if (item.items.inProduction) app.getString(R.string.in_production) else app.getString(R.string.discontinued)),
-                buildDetailsString(app.getString(R.string.no_of_tins_label), item.items.quantity.toString())
+                buildDetailsString(context.safeString(R.string.type_label), getLocalizedType(item.items.type), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.subgenre_label), item.items.subGenre, lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.cut_label), item.items.cut, lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.component_label), item.components.map { it.componentName }.sorted().joinToString(", "), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.flavors_label), item.flavoring.map { it.flavoringName }.sorted().joinToString(", "), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.production_status), if (item.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.no_of_tins_label), item.items.quantity.toString(), lineHeight = 1.2.em)
             ),
             rating = item.items.rating,
             notes = item.items.notes,
             tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
                 buildSet {
-                    buildDetailsString(app.getString(R.string.container_label), tin.container)?.let { add(DetailLine(it)) }
-                    buildDetailsString(app.getString(R.string.quantity_label), if (tin.unit.isNotBlank()) { app.getString(R.string.tin_quantity_format, formatDecimal(tin.tinQuantity), tin.unit) } else "")?.let { add(DetailLine(it)) }
-                    buildDetailsString(app.getString(R.string.manufacture_date_label), formatMediumDate(tin.manufactureDate))?.let {
-                        val secondary = buildDetailsString("", "(${calculateAge(tin.manufactureDate, app, DateField.MANUFACTURE)})", 12.sp)
+                    buildDetailsString(context.safeString(R.string.container_label), tin.container)?.let { add(DetailLine(it)) }
+                    buildDetailsString(context.safeString(R.string.quantity_label), if (tin.unit.isNotBlank()) { context.safeString(R.string.tin_quantity_format, formatDecimal(tin.tinQuantity), tin.unit) } else "")?.let { add(DetailLine(it)) }
+                    buildDetailsString(context.safeString(R.string.manufacture_date_label), formatMediumDate(tin.manufactureDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(
+                            tin.manufactureDate,
+                            DateField.MANUFACTURE
+                        )})", 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString(app.getString(R.string.cellar_date_label), formatMediumDate(tin.cellarDate))?.let {
-                        val secondary = buildDetailsString("", "(${calculateAge(tin.cellarDate, app, DateField.CELLAR)})", 12.sp)
+                    buildDetailsString(context.safeString(R.string.cellar_date_label), formatMediumDate(tin.cellarDate))?.let {
+                        val secondary = buildDetailsString("", "(${calculateAge(
+                            tin.cellarDate,
+                            DateField.CELLAR
+                        )})", 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString(app.getString(R.string.open_date_label), formatMediumDate(tin.openDate))?.let {
+                    buildDetailsString(context.safeString(R.string.open_date_label), formatMediumDate(tin.openDate))?.let {
                         val secondary =
-                            if (!tin.finished) { buildDetailsString("", "(${calculateAge(tin.openDate, app, DateField.OPEN)})", 12.sp) }
-                            else { buildDetailsString("", app.getString(R.string.finished_lower), 12.sp) }
+                            if (!tin.finished) { buildDetailsString("", "(${calculateAge(
+                                tin.openDate,
+                                DateField.OPEN
+                            )})", 12.sp) }
+                            else { buildDetailsString("", context.safeString(R.string.finished_lower), 12.sp) }
                         add(DetailLine(it, secondary))
                     }
                 }
             },
-            tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap),
+            tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap, context),
             lastModified = item.items.lastModified.let { if (it == 0L) "n/a" else formatMediumDate(it, true) },
         )
     }
@@ -110,16 +125,18 @@ class BlendDetailsViewModel(
         )
 
 
-    private fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp): AnnotatedString? {
+    private fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp, lineHeight: TextUnit = TextUnit.Unspecified): AnnotatedString? {
         if (value.isBlank()) return null
         val string = buildAnnotatedString {
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
-            withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
+            withStyle(style = ParagraphStyle(textIndent = TextIndent(firstLine = 0.sp, restLine = 15.sp), lineHeight = lineHeight)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
+            }
         }
         return string
     }
 
-    private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption): String {
+    private fun calculateTotal(tins: List<Tins>, quantityOption: QuantityOption, context: Context): String {
         if (tins.isEmpty()) return ""
         val sum =
             when (quantityOption) {
@@ -149,12 +166,15 @@ class BlendDetailsViewModel(
         return when (quantityOption) {
             QuantityOption.OUNCES -> {
                 if (sum != null) {
-                    if (sum >= 16.00) { app.getString(R.string.format_quantity, "", formatDecimal((sum / 16)), "lb") }
-                    else { app.getString(R.string.format_quantity, "", formatDecimal(sum), "oz") }
+                    if (sum >= 16.00) { context.safeString(R.string.format_quantity, "", formatDecimal((sum/16)), "lb") }
+                    else { context.safeString(R.string.format_quantity, "", formatDecimal(sum), "oz") }
                 } else { null }
             }
             QuantityOption.GRAMS -> {
-                if (sum != null) { app.getString(R.string.format_quantity, "", formatDecimal(sum), "g") } else { null }
+                if (sum != null) {
+                    if (sum >= 1000) {context.safeString(R.string.format_quantity, "", formatDecimal((sum/1000)), "kg")}
+                    else { context.safeString(R.string.format_quantity, "", formatDecimal(sum), "g") }
+                } else { null }
             }
             else -> { null }
         } ?: ""
@@ -245,35 +265,30 @@ data class DetailLine(
     val secondary: AnnotatedString? = null
 )
 
-fun calculateAge(date: Long?, app: CellarApplication, field: DateField? = null): String {
+fun calculateAge(date: Long?, field: DateField? = null): String {
     if (date == null) { return "" }
 
+    val context = getLocalizedContext(CellarApplication.instance)
     val now = LocalDate.now()
     val then = Instant.ofEpochMilli(date).atZone(ZoneId.systemDefault()).toLocalDate()
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
     val parts = listOfNotNull(
-        if (period.years > 0) { app.resources.getQuantityString(R.plurals.years, period.years, period.years) } else
-            null,
-        if (period.months > 0) { app.resources.getQuantityString(R.plurals.months, period.months, period.months) } else
-            null,
-        if (period.days > 0) { app.resources.getQuantityString(R.plurals.days, period.days, period.days) } else
-            null
+        if (period.years > 0) { context.safeQuantityString(R.plurals.years, period.years, period.years) } else null,
+        if (period.months > 0) { context.safeQuantityString(R.plurals.months, period.months, period.months) } else null,
+        if (period.days > 0) { context.safeQuantityString(R.plurals.days, period.days, period.days) } else null
     )
 
-    return if (parts.isEmpty()) { app.resources.getString(R.string.today_lower) } else { parts.joinToString(", ") + when (field) {
-        DateField.MANUFACTURE -> if (then < now) { app.resources.getString(R.string.old) } else { app.resources.getString(R.string.until_available) }
-        DateField.CELLAR -> if (then < now) { app.resources.getString(R.string.in_cellar) } else { app.resources.getString(R.string.until_available) }
-        DateField.OPEN -> if (then < now) { app.resources.getString(R.string.open_age) } else { app.resources.getString(R.string.until_opening) }
+    return if (parts.isEmpty()) { context.safeString(R.string.today_lower) } else { parts.joinToString(", ") + when (field) {
+        DateField.MANUFACTURE -> if (then < now) { context.safeString(R.string.old) } else { context.safeString(R.string.until_available) }
+        DateField.CELLAR -> if (then < now) { context.safeString(R.string.in_cellar) } else { context.safeString(R.string.until_available) }
+        DateField.OPEN -> if (then < now) { context.safeString(R.string.open_age) } else { context.safeString(R.string.until_opening) }
         else -> "" }
     }
 }
 
 fun isMetricLocale(): Boolean {
-    val config: Configuration = Resources.getSystem().configuration
-    val locale: Locale = config.locales.get(0) ?: Locale.getDefault()
-
-    return when (locale.country.uppercase()) {
+    return when (LanguageState.locale.country.uppercase()) {
         "US", "LR", "MM" -> false
         else -> true
     }
@@ -282,7 +297,7 @@ fun isMetricLocale(): Boolean {
 fun formatDecimal(number: Double?, places: Int = 2, drop: Boolean = true): String {
     if (number == null) return ""
 
-    val formatted = NumberFormat.getNumberInstance(Locale.getDefault())
+    val formatted = NumberFormat.getNumberInstance(LanguageState.locale)
     formatted.minimumFractionDigits = if (drop) 0 else (places)
     formatted.maximumFractionDigits = places
     formatted.roundingMode = java.math.RoundingMode.HALF_UP
