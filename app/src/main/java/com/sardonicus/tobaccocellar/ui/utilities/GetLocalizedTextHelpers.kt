@@ -57,12 +57,10 @@ fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
 object LanguageState {
     private val _code = MutableStateFlow("system")
 
-    private val _localeFlow: StateFlow<Locale> = _code.map {
-        val tag = if (it == "system") {
-            try { getSystemLanguage(CellarApplication.instance) }
-            catch(_ : Exception) { Locale.getDefault().language }
-        } else { it }
-        Locale.forLanguageTag(tag)
+    private val _localeFlow: StateFlow<Locale> = _code.map { code ->
+        val systemLocales = getSystemLocales(CellarApplication.instance)
+        if (code == "system") { systemLocales.firstOrNull() ?: Locale.getDefault() }
+        else { systemLocales.find { it.language.equals(code, true) } ?: Locale.forLanguageTag(code) }
     }.stateIn(CoroutineScope(Dispatchers.Default + SupervisorJob()), SharingStarted.Eagerly, Locale.ROOT)
 
     var codeFlow: StateFlow<String> = _code.asStateFlow()
