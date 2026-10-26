@@ -33,9 +33,11 @@ import com.sardonicus.tobaccocellar.ui.settings.TypeGenreOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -64,7 +66,7 @@ class HomeViewModel(
     private val itemsRepository: ItemsRepository,
     private val filterViewModel: FilterViewModel,
     private val csvHelper: CsvHelper,
-    private val app: CellarApplication
+    private val app: CellarApplication,
 ): ViewModel(), ExportCsvHandler {
 
     private val _releaseNotesState = MutableStateFlow(ReleaseNotesState())
@@ -183,7 +185,8 @@ class HomeViewModel(
         filterViewModel.emptyDatabase,
         filterViewModel.homeScreenFilteredItems,
         preferencesRepo.searchSetting,
-        filterViewModel.readyTins
+        filterViewModel.readyTins,
+        LanguageState.codeFlow
     ) { values ->
         val searchText = values[0] as String
         val searchPerformed = values[1] as Boolean
@@ -194,15 +197,16 @@ class HomeViewModel(
         val readyTins = values[6] as Boolean
 
         val emptyList = filteredItems.isEmpty()
-
         if (searchPerformed && searchText.isNotBlank()) { savedSearchText = searchText }
+
+        val context = getLocalizedContext(app)
 
         val emptyMessage =
             if (!emptyList) { "" }
-            else if (readyTins) { app.getString(R.string.empty_tins) }
-            else if (searchPerformed) { app.getString(R.string.empty_search, savedSearchText, app.getString(searchSetting.resId)) }
-            else if (filteringApplied) { app.getString(R.string.empty_filter) }
-            else if (emptyDatabase) { app.getString(R.string.empty_db) }
+            else if (readyTins) { context.safeString(R.string.empty_tins) }
+            else if (searchPerformed) { context.safeString(R.string.empty_search, savedSearchText, context.safeString(searchSetting.resId)) }
+            else if (filteringApplied) { context.safeString(R.string.empty_filter) }
+            else if (emptyDatabase) { context.safeString(R.string.empty_db) }
             else { "" }
 
         val displayedMessage =
@@ -283,17 +287,25 @@ class HomeViewModel(
         MenuState(shown, id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MenuState())
 
+    @Suppress("UNCHECKED_CAST")
     private val quantityState = combine(
         filterViewModel.homeScreenFilteredItems,
         filterViewModel.homeScreenFilteredTins,
         preferencesRepo.quantityOption,
         preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
-    ) { filteredItems, filteredTins, quantityOption, ozRate, gramsRate ->
+        preferencesRepo.tinGramsConversionRate,
+        LanguageState.codeFlow
+    ) { array ->
+        val filteredItems = array[0] as List<ItemsComponentsAndTins>
+        val filteredTins = array[1] as List<Tins>
+        val quantityOption = array[2] as QuantityOption
+        val ozRate = array[3] as Double
+        val gramsRate = array[4] as Double
+
         filteredItems.associate { items ->
             val itemTins = items.tins.filter { it in filteredTins }
             val raw = calculateTotalQuantity(items, itemTins, quantityOption, ozRate, gramsRate)
-            val display = formatQuantity(raw, quantityOption, itemTins, app, filterViewModel.unitsShort)
+            val display = formatQuantity(raw, quantityOption, itemTins)
 
             items.items.id to ItemQuantity(raw, display)
         }
@@ -308,7 +320,8 @@ class HomeViewModel(
         tableSorting,
         listSorting,
         preferencesRepo.typeGenreOption,
-        quantityState
+        quantityState,
+        LanguageState.codeFlow
     ) { array ->
         val filteredItems = array[0] as List<ItemsComponentsAndTins>
         val viewSelect = array[1] as ViewSelect
@@ -349,8 +362,6 @@ class HomeViewModel(
             val outOfStock = quantity?.raw == 0.0
             val filteredTins = if (showTins) item.tins.filter { it in tins.tins } else emptyList()
 
-            val showRating = showRating && item.items.rating != null
-
             ItemsListState(
                 item = item,
                 itemId = item.items.id,
@@ -358,7 +369,7 @@ class HomeViewModel(
                 outOfStock = outOfStock,
                 formattedTypeGenre = calculateTypeGenre(item.items, typeOption),
                 tins = TinsList(filteredTins),
-                rating = if (showRating) item.items.rating.toString() else "",
+                rating = if (showRating) formatDecimal(item.items.rating) else "",
             )
         }
 
@@ -581,8 +592,8 @@ class HomeViewModel(
                     if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.blend }
                     else filteredItems.sortedByDescending { it.items.blend }
                 2 ->
-                    if (tableSorting.sortAscending) filteredItems.sortedBy { getLocalizedType(it.items.type, app, false).ifBlank { "~" } }
-                    else filteredItems.sortedByDescending { getLocalizedType(it.items.type, app, false).ifBlank { "~" } }
+                    if (tableSorting.sortAscending) filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { "~" } }
+                    else filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { "~" } }
                 3 ->
                     if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
                     else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
@@ -613,23 +624,23 @@ class HomeViewModel(
                 ListSortOption.TYPE ->
                     if (listSorting.listAscending) {
                         if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                            filteredItems.sortedBy { getLocalizedType(it.items.type, app, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                        } else filteredItems.sortedBy { getLocalizedType(it.items.type, app, false).ifBlank { "~" } }
+                            filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                        } else filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { "~" } }
                     }
                     else {
                         if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                            filteredItems.sortedByDescending { getLocalizedType(it.items.type, app, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                        } else filteredItems.sortedByDescending { getLocalizedType(it.items.type, app, false).ifBlank { "~" } }
+                            filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
+                        } else filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { "~" } }
                     }
                 ListSortOption.SUBGENRE ->
                     if (listSorting.listAscending) {
                         if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                            filteredItems.sortedBy { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, app, false).ifBlank { "~" } } }
+                            filteredItems.sortedBy { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } }
                         } else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
                     }
                     else {
                         if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                            filteredItems.sortedByDescending { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, app, false).ifBlank { "~" } } }
+                            filteredItems.sortedByDescending { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } }
                         } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
                     }
                 ListSortOption.RATING ->
@@ -676,8 +687,8 @@ class HomeViewModel(
             when (column) {
                 TableColumn.BRAND -> { item: Items -> item.brand }
                 TableColumn.BLEND -> { item: Items -> item.blend }
-                TableColumn.TYPE -> { item: Items -> getLocalizedType(item.type, app, false).ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
-                TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) "(${getLocalizedType(item.type, app, false)})" else "" } }
+                TableColumn.TYPE -> { item: Items -> getLocalizedType(item.type, false).ifBlank { if (fallbackType) "(${item.subGenre})" else "" } }
+                TableColumn.SUBGENRE -> { item: Items -> item.subGenre.ifBlank { if (fallbackGenre) "(${getLocalizedType(item.type, false)})" else "" } }
                 TableColumn.RATING -> { item: Items -> item.rating }
                 TableColumn.FAV_DIS -> { item: Items ->
                     when {
@@ -706,18 +717,18 @@ class HomeViewModel(
             }
         }
 
-        val localized = getLocalizedContext(app)
+        val context = getLocalizedContext(app)
         val headerText = columnMinWidths.indices.map {
             val width = columnMinWidths[it]
             if (width == 0.dp) "" else {
                 when (it) {
-                    0 -> localized.getString(R.string.brand)
-                    1 -> localized.getString(R.string.blend)
-                    2 -> localized.getString(R.string.type)
-                    3 -> localized.getString(R.string.subgenre)
-                    6 -> localized.getString(R.string.note)
-                    7 -> localized.getString(R.string.qty)
-                    8 -> localized.getString(R.string.modified)
+                    0 -> context.safeString(R.string.brand)
+                    1 -> context.safeString(R.string.blend)
+                    2 -> context.safeString(R.string.type)
+                    3 -> context.safeString(R.string.subgenre)
+                    6 -> context.safeString(R.string.note)
+                    7 -> context.safeString(R.string.qty)
+                    8 -> context.safeString(R.string.modified)
                     else -> "" // 4 and 5 are rating and "Fav/Dis"
                 }
             }
@@ -733,7 +744,7 @@ class HomeViewModel(
     }
 
     private fun calculateTypeGenre(item: Items, option: TypeGenreOption): String {
-        val localized = getLocalizedType(item.type, app, false)
+        val localized = getLocalizedType(item.type, false)
         return when (option) {
             TypeGenreOption.TYPE -> localized
             TypeGenreOption.SUBGENRE -> item.subGenre
@@ -877,9 +888,10 @@ class HomeViewModel(
             val csvData = csvHelper.exportToCsv(data, maxRating, rounding)
 
             if (uri != null) {
+                val context = getLocalizedContext(app)
                 app.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(csvData.toByteArray())
-                    EventBus.emit(ShowSnackbar(app.getString(R.string.csv_export)))
+                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export)))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -903,9 +915,10 @@ class HomeViewModel(
             val tinCsvData = csvHelper.exportTinsToCsv(data)
 
             if (uri != null) {
+                val context = getLocalizedContext(app)
                 app.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
-                    EventBus.emit(ShowSnackbar(app.getString(R.string.csv_export)))
+                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export)))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -1179,23 +1192,28 @@ fun calculateGrams(tins: List<Tins>): Double {
     }
 }
 
-fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>, app: CellarApplication, units: Triple<String, String, String>): String {
+fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<Tins>): String {
+    val context = getLocalizedContext(CellarApplication.instance)
+
     return when (quantityOption) {
-        QuantityOption.TINS -> app.getString(R.string.format_quantity, "x", "${quantity.toInt()}", "")
+        QuantityOption.TINS -> context.safeString(R.string.format_quantity, "x", "${quantity.toInt()}", "")
         QuantityOption.OUNCES -> {
-            val pounds = quantity / 16
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 16) { app.getString(R.string.format_quantity, "", formatDecimal(pounds), units.second) }
-                else { app.getString(R.string.format_quantity, "", formatDecimal(quantity), units.first) }
+                if (quantity >= 16) { context.safeString(R.string.format_quantity, "", formatDecimal(quantity/16), "lbs") }
+                else { context.safeString(R.string.format_quantity, "", formatDecimal(quantity), "oz") }
             } else {
-                if (quantity >= 16) { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.second) }
-                else { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.first) }
+                if (quantity >= 16) { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "lbs") }
+                else { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "oz") }
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                app.getString(R.string.format_quantity, "", formatDecimal(quantity), units.third) }
-            else { app.getString(R.string.format_quantity, "*", formatDecimal(quantity), units.third) }
+                if (quantity >= 1000) { context.safeString(R.string.format_quantity, "", formatDecimal(quantity/1000), "kg")}
+                else { context.safeString(R.string.format_quantity, "", formatDecimal(quantity), "g") }
+            } else {
+                if (quantity >= 1000) { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity/1000), "kg") }
+                else { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "g") }
+            }
         }
     }
 }
