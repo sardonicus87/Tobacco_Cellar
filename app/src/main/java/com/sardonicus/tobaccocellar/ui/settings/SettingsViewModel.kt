@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.settings
 
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -11,6 +12,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Stable
 import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
+import androidx.core.view.drawToBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.Room
@@ -42,6 +44,7 @@ import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotifica
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.safeString
@@ -325,9 +328,22 @@ class SettingsViewModel(
 
 
     /** Database Settings **/
-    fun updateLangSetting(code: String) {
-        sharedPrefs.edit { putString("app_language", code) }
-        app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
+    fun updateLangSetting(activity: Activity, code: String) {
+        val decorView = activity.window.decorView
+        val screenshot = decorView.drawToBitmap()
+        TransitionCache.screenshot = screenshot
+
+        sharedPrefs.edit(commit = true) { putString("app_language", code) }
+        app.applicationScope.launch {
+            preferencesRepo.saveAppLanguage(code)
+            withContext(Dispatchers.Main) {
+                if (code == "system") {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                } else {
+                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+                }
+            }
+        }
     }
 
     fun saveCrossDeviceAcknowledged() {
@@ -932,9 +948,7 @@ class SettingsViewModel(
                 .addMigrations(*allMigrations)
                 .build()
                 .apply { openHelper.writableDatabase }
-        } catch (e: Exception) {
-            throw e
-        }
+        } catch (e: Exception) { throw e }
     }
 
     private fun copyMigratedDb(migratedDb: RoomDatabase, dbFile: File, walFile: File, shmFile: File) {
@@ -946,9 +960,7 @@ class SettingsViewModel(
             copyFile(File(migratedPath!!), dbFile)
             if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
             if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
-        } catch (e: Exception) {
-            throw e
-        }
+        } catch (e: Exception) { throw e }
     }
 
     private suspend fun restoreItemSyncState(itemSyncStateBytes: ByteArray) {

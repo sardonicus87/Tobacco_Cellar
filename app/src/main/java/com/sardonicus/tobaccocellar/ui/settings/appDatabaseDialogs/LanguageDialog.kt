@@ -41,13 +41,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.window.Popup
-import androidx.core.os.LocaleListCompat
-import androidx.core.view.drawToBitmap
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
 import com.sardonicus.tobaccocellar.ui.utilities.getInstalledLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
@@ -57,7 +54,7 @@ import java.util.Locale
 @Composable
 fun LanguageDialog(
     onDismiss: () -> Unit,
-    onLanguageChange: (String) -> Unit
+    onLanguageChange: (Activity, String) -> Unit
 ) {
     val activity = LocalActivity.current as Activity
     val context = LocalCellarApplication.current
@@ -161,9 +158,8 @@ fun LanguageDialog(
                                             .clickable(null, LocalIndication.current) {
                                                 expanded = false
                                                 if (option.code != currentCode) {
-                                                    onLanguageChange(option.code)
+                                                    onLanguageChange(activity, option.code)
                                                     onDismiss()
-                                                    changeLanguage(activity, option.code)
                                                 }
                                             }
                                             .padding(horizontal = 16.dp),
@@ -214,18 +210,5 @@ object SupportedLanguages {
     fun getDisplayString(code: String): String? {
         val lang = list.find { it.code == code }
         return lang?.displayString
-    }
-}
-
-fun changeLanguage(activity: Activity, code: String) {
-    val decorView = activity.window.decorView
-    val screenshot = decorView.drawToBitmap()
-
-    TransitionCache.screenshot = screenshot
-
-    if (code == "system") {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-    } else {
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
     }
 }

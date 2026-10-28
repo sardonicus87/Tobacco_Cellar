@@ -122,6 +122,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
+import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -132,6 +133,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
@@ -139,6 +141,7 @@ class MainActivity : AppCompatActivity() {
     private val _noAccountsDialog = MutableStateFlow(false)
     val noAccountsDialog = _noAccountsDialog.asStateFlow()
     private var backPressedOnce = false
+    private var lastLocale: Locale? = null
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
     private lateinit var credentialManager: CredentialManager
     private lateinit var authorizationClient: AuthorizationClient
@@ -153,6 +156,7 @@ class MainActivity : AppCompatActivity() {
         )
         super.onCreate(savedInstanceState)
         actionBar?.hide()
+        lastLocale = resources.configuration.locales[0]
 
         onBackPressedDispatcher.addCallback(
             this, object : OnBackPressedCallback(true) {
@@ -426,6 +430,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent) }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            val currentCode = LanguageState.code
+            val target = if (currentCode == "system") {
+                Locale.forLanguageTag(getSystemLanguage(this))
+            } else { Locale.forLanguageTag(currentCode) }
+
+            val config = resources.configuration
+            config.setLocale(target)
+            @Suppress("DEPRECATION")
+            resources.updateConfiguration(config, resources.displayMetrics)
+
+            newConfig.setLocale(target)
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
