@@ -1,7 +1,9 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -75,6 +77,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -240,7 +243,6 @@ private fun IndividualTin(
                         value = tinDetails.tinLabel,
                         onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it)) },
                         modifier = Modifier
-                        //    .widthIn(max = textFieldMax)
                             .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
@@ -290,14 +292,33 @@ private fun IndividualTin(
                         minLines = 1,
                         interactionSource = fieldInteractionSource
                     )
-                    Text(
-                        text = stringResource(R.string.tin_label_error),
-                        color = if (showError) MaterialTheme.colorScheme.error else Color.Transparent,
-                    //    style = MaterialTheme.typography.bodySmall,
-                        autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
-                        softWrap = false,
-                        modifier = Modifier.padding(bottom = 4.dp, top = 1.dp).widthIn(max = textFieldMax)
-                    )
+                    if (showError) {
+                        Text(
+                            text = stringResource(R.string.tin_label_error),
+                            color = MaterialTheme.colorScheme.error,
+                            autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
+                            maxLines = 1,
+                            overflow = TextOverflow.Visible,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp, top = 1.dp)
+                                .widthIn(max = textFieldMax)
+                                .basicMarquee(
+                                    iterations = Int.MAX_VALUE,
+                                    repeatDelayMillis = 1500,
+                                    spacing = MarqueeSpacing.fractionOfContainer(.33f)
+                                )
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.tin_label_error),
+                            color = Color.Transparent,
+                            autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
+                            maxLines = 1,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp, top = 1.dp)
+                                .widthIn(max = textFieldMax)
+                        )
+                    }
                 }
 
                 // Remove Button //
