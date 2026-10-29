@@ -128,7 +128,7 @@ class BlendDetailsViewModel(
     private fun buildDetailsString(title: String, value: String, fontSize: TextUnit = 14.sp, lineHeight: TextUnit = TextUnit.Unspecified): AnnotatedString? {
         if (value.isBlank()) return null
         val string = buildAnnotatedString {
-            withStyle(style = ParagraphStyle(textIndent = TextIndent(firstLine = 0.sp, restLine = 15.sp), lineHeight = lineHeight)) {
+            withStyle(style = ParagraphStyle(textIndent = TextIndent(firstLine = 0.sp, restLine = 12.sp), lineHeight = lineHeight)) {
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
                 withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
             }
