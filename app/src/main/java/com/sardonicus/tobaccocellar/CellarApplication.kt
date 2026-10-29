@@ -106,6 +106,14 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         csvHelper = CsvHelper()
         createNotificationChannel()
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+            val savedLang = prefs.getString("app_language", "system") ?: "system"
+            if (savedLang != "system" && AppCompatDelegate.getApplicationLocales().isEmpty) {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
+            }
+        }
+
         applicationScope.launch(Dispatchers.Default) {
             filterViewModel
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
