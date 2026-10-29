@@ -329,20 +329,18 @@ class SettingsViewModel(
 
     /** Database Settings **/
     fun updateLangSetting(activity: Activity, code: String) {
+        sharedPrefs.edit { putString("app_language", code) }
+        app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
+
         val decorView = activity.window.decorView
         val screenshot = decorView.drawToBitmap()
         TransitionCache.screenshot = screenshot
 
-        sharedPrefs.edit(commit = true) { putString("app_language", code) }
-        app.applicationScope.launch {
-            preferencesRepo.saveAppLanguage(code)
-            withContext(Dispatchers.Main) {
-                if (code == "system") {
-                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-                } else {
-                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
-                }
-            }
+        app.applicationScope.launch(Dispatchers.Main) {
+            if (code == "system") {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList()) }
+            else {
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code)) }
         }
     }
 
@@ -714,6 +712,10 @@ class SettingsViewModel(
             SyncStateManager.schedulingPaused = true
 
             var message = ""
+            var dbRestored = false
+            var dbError = false
+            var settingsRestored = false
+            var settingsError = false
 
             try {
                 val bytes = readBytesFromFile(uri, context)
@@ -730,10 +732,6 @@ class SettingsViewModel(
                 } else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
                     message = app.getString(R.string.restore_failed_no_data)
                 } else {
-                    var dbRestored = false
-                    var dbError = false
-                    var settingsRestored = false
-                    var settingsError = false
 
                     if (restoreState.databaseChecked && fileContentState.databasePresent) {
                         try {
@@ -816,6 +814,7 @@ class SettingsViewModel(
             } finally {
                 delay(500.milliseconds)
                 loadingTimer.cancel()
+                if (dbRestored) EventBus.emit(DatabaseRestoreEvent)
                 SyncStateManager.loggingPaused = false
                 SyncStateManager.schedulingPaused = false
                 if (crossDeviceSync.value) { workManager.enqueue(OneTimeWorkRequestBuilder<DownloadSyncWorker>().build()) }
@@ -902,9 +901,9 @@ class SettingsViewModel(
                 tempZipFile.writeBytes(databaseBytes)
                 unzipFile(tempZipFile, tempDir)
 
-                copyFile(File(tempDir, "tobacco_database"), dbFile)
                 if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
                 if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
+                copyFile(File(tempDir, "tobacco_database"), dbFile)
             }
             else if (backupDbVersion < existingDbVersion) {
                 tempMigrationDir = File(context.cacheDir, "temp_migration_dir")
@@ -927,13 +926,12 @@ class SettingsViewModel(
             if (File("$dbPath-shm.bak").exists()) { copyFile(File("$dbPath-shm.bak"), shmFile) }
             throw e
         } finally {
+            delay(50.milliseconds)
             backupDbFile.delete()
             backupWalFile.delete()
             backupShmFile.delete()
             tempDir.deleteRecursively()
             tempMigrationDir?.deleteRecursively()
-
-            EventBus.emit(DatabaseRestoreEvent)
         }
     }
 
@@ -957,9 +955,9 @@ class SettingsViewModel(
         val migratedShmFile = File("$migratedPath-shm")
 
         try {
-            copyFile(File(migratedPath!!), dbFile)
             if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
             if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
+            copyFile(File(migratedPath!!), dbFile)
         } catch (e: Exception) { throw e }
     }
 
