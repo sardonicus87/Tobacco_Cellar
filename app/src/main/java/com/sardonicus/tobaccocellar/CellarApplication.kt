@@ -13,6 +13,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -59,13 +60,14 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
 
-class CellarApplication : Application(), Application.ActivityLifecycleCallbacks {
-    lateinit var container: AppContainer
-    lateinit var preferencesRepo: PreferencesRepo
+class CellarApplication : Application(), Application.ActivityLifecycleCallbacks, Configuration.Provider {
+    val container: AppContainer by lazy { AppDataContainer(this) }
+    val preferencesRepo: PreferencesRepo by lazy { PreferencesRepo(dataStore, applicationScope) }
     lateinit var csvHelper: CsvHelper
     val filterViewModel: FilterViewModel by lazy { FilterViewModel(container.itemsRepository, preferencesRepo, this) }
 
@@ -96,12 +98,15 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
     }
 
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setMinimumLoggingLevel(android.util.Log.INFO)
+            .build()
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         registerActivityLifecycleCallbacks(this)
-        container = AppDataContainer(this)
-        preferencesRepo = PreferencesRepo(dataStore, applicationScope)
         LanguageState.init(this)
         csvHelper = CsvHelper()
         createNotificationChannel()
@@ -115,7 +120,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         }
 
         applicationScope.launch(Dispatchers.Default) {
-            filterViewModel
+            launch { delay(1.5.seconds); filterViewModel }
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
             launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
@@ -371,7 +376,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         if (savedInstanceState != null) return
 
         applicationScope.launch(Dispatchers.Default) {
-            delay(500.milliseconds)
+            delay(3.seconds)
             val syncEnabled = preferencesRepo.crossDeviceSync.first()
             val syncInProgress = SyncStateManager.isSyncing.first()
             val tinsReady = activity.intent?.getBooleanExtra("FILTER_READY_TINS", false) == true
