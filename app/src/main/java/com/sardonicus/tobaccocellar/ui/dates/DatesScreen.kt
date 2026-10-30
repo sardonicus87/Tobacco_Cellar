@@ -10,10 +10,13 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
+import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +24,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
@@ -29,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,6 +56,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -108,14 +113,11 @@ fun DatesScreen(
                 title = stringResource(R.string.dates_title),
                 scrollBehavior = scrollBehavior,
                 showMenu = false,
-                canNavigateBack = false,
-                modifier = Modifier,
+                canNavigateBack = false
             )
         },
         bottomBar = {
             CellarBottomAppBar(
-                modifier = Modifier
-                    .padding(0.dp),
                 navigateToHome = { selectionKey++; selectionFocused = false; navigateToHome() },
                 navigateToStats = { selectionKey++; selectionFocused = false; navigateToStats() },
                 navigateToAddEntry = { selectionKey++; selectionFocused = false; navigateToAddEntry() },
@@ -126,20 +128,16 @@ fun DatesScreen(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
-            if (datesUiState.loading) {
-                LoadingIndicator()
-            } else {
+            if (datesUiState.loading) { LoadingIndicator() }
+            else {
                 DatesBody(
                     navigateToDetails = navigateToDetails,
                     datesUiState = datesUiState,
                     selectionKey = { selectionKey },
                     updateSelectionFocused = { selectionFocused = it },
-                    modifier = Modifier
-                        .fillMaxSize()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
@@ -157,13 +155,11 @@ fun DatesBody(
     val separatorColor = colorScheme.secondary
 
     Column(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         LazyColumn(
-            modifier = Modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -174,7 +170,7 @@ fun DatesBody(
                     modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(.9f),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
-                    color = LocalContentColor.current.copy(alpha = .75f),
+                    color = LocalContentColor.current.copy(alpha = .75f)
                 )
             }
 
@@ -200,7 +196,7 @@ fun DatesBody(
                                         text = section.exists,
                                         modifier = Modifier.padding(bottom = 1.dp),
                                         fontSize = 15.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.Medium
                                     )
                                     AgingSection(
                                         items = section.agingDue,
@@ -214,7 +210,7 @@ fun DatesBody(
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Start,
                                         fontSize = 15.sp,
-                                        fontWeight = FontWeight.Medium,
+                                        fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
@@ -318,7 +314,7 @@ private fun EmptyState() {
             text = stringResource(R.string.dates_no_info_found),
             modifier = Modifier.fillMaxWidth(.75f),
             textAlign = TextAlign.Center,
-            fontSize = 24.sp,
+            fontSize = 24.sp
         )
         Spacer(Modifier.weight(1.25f))
     }
@@ -341,8 +337,7 @@ private fun AgingSection(
                 Column(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Top,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
+                    modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier
@@ -393,6 +388,7 @@ private fun AgingSection(
 }
 
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 private fun QuickStatsSection(
     averagesExist: () -> Boolean,
@@ -401,79 +397,60 @@ private fun QuickStatsSection(
     updateSelectionFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
+    var width by remember { mutableStateOf(0.dp) }
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .onGloballyPositioned { width = with(density) { it.size.width.toDp() } },
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
-        ) {
-            Spacer(Modifier.height(10.dp))
-            if (averagesExist()) {
-                key(selectionKey()) {
-                    SelectionContainer(
-                        Modifier.onFocusChanged { updateSelectionFocused(it.isFocused) }
+        Spacer(Modifier.height(10.dp))
+        if (averagesExist()) {
+            key(selectionKey()) {
+                SelectionContainer(
+                    Modifier.onFocusChanged { updateSelectionFocused(it.isFocused) }
+                ) {
+                    val size = averageAgeSection.filter { it.averageAge.isNotBlank() }.size
+                    key(width) { Grid(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        config = {
+                            columns(GridTrackSize.Auto, GridTrackSize.Auto)
+                            repeat(size) { row(GridTrackSize.Auto) }
+                            gap(0.dp, 6.dp)
+                        }
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)
-                                .padding(horizontal = 8.dp),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.Start)
-                        ) {
-                            Column(
-                                modifier = Modifier.width(IntrinsicSize.Max).padding(start = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                averageAgeSection.forEach {
-                                    Text(
-                                        text = it.title,
-                                        modifier = Modifier,
-                                        fontSize = 15.sp,
-                                    )
-                                }
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-                                horizontalAlignment = Alignment.Start
-                            ) {
-                                averageAgeSection.forEach {
-                                    Row(
-                                        modifier = Modifier
-                                            .weight(1f),
-                                        horizontalArrangement = Arrangement.Start,
-                                        verticalAlignment = Alignment.CenterVertically
-
-                                    ) {
-                                        Text(
-                                            text = it.averageAge,
-                                            modifier = Modifier,
-                                            maxLines = 1,
-                                            style = LocalTextStyle.current.copy(color = LocalContentColor.current),
-                                            autoSize = TextAutoSize.StepBased(
-                                                minFontSize = 13.sp,
-                                                maxFontSize = 15.sp,
-                                                stepSize = .25.sp
-                                            )
-                                        )
-                                    }
-                                }
+                        averageAgeSection.forEachIndexed { index, it ->
+                            if (it.averageAge.isNotBlank()) {
+                                Text(
+                                    text = it.title,
+                                    modifier = Modifier.gridItem((index + 1), 1, 1, 1, Alignment.CenterStart).widthIn(max = width/2),
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(12.sp, 15.sp)
+                                )
+                                Text(
+                                    text = it.averageAge,
+                                    modifier = Modifier.gridItem((index + 1), 2, 1, 1, Alignment.CenterStart).fillMaxWidth(),
+                                    maxLines = 1,
+                                    autoSize = TextAutoSize.StepBased(12.sp, 15.sp)
+                                )
                             }
                         }
-                    }
+                    } }
                 }
-                Spacer(Modifier.height(20.dp))
-            } else {
-                Text(
-                    text = stringResource(R.string.dates_no_stats),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                    textAlign = TextAlign.Center,
-                    fontSize = 15.sp,
-                )
             }
+            Spacer(Modifier.height(20.dp))
+        } else {
+            Text(
+                text = stringResource(R.string.dates_no_stats),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 15.sp
+            )
         }
     }
 }
@@ -506,7 +483,7 @@ private fun OldestTinsSection(
             Text(
                 text = stringResource(R.string.dates_no_past),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -539,7 +516,7 @@ private fun FutureTinsSection(
             Text(
                 text = stringResource(R.string.dates_no_future),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -579,10 +556,7 @@ fun DatesSection(
                 modifier = Modifier.padding(bottom = 1.dp)
             )
             Spacer(Modifier.weight(1f))
-            Box(
-                modifier = Modifier,
-                contentAlignment = Alignment.CenterEnd
-            ) {
+            Box(contentAlignment = Alignment.CenterEnd) {
                 val icon = if (expanded) R.drawable.arrow_up else R.drawable.arrow_down
                 Icon(
                     painter = painterResource(id = icon),
@@ -621,8 +595,7 @@ fun DatesSection(
                                     fontWeight = FontWeight.Normal,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .weight(1f, false)
+                                    modifier = Modifier.weight(1f, false)
                                 )
                                 Text(
                                     text = " - ${item.tinLabel}",
@@ -649,12 +622,10 @@ fun DatesSection(
                         .padding(top = 6.dp, bottom = 10.dp),
                     textAlign = TextAlign.Center,
                     fontSize = 15.sp,
-                    color = colorScheme.primary.copy(alpha= .5f),
+                    color = colorScheme.primary.copy(alpha= .5f)
                 )
             }
-        } else {
-            Spacer(Modifier.height(10.dp))
-        }
+        } else { Spacer(Modifier.height(10.dp)) }
     }
 }
 

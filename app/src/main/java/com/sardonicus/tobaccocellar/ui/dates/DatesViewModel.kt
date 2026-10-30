@@ -12,6 +12,10 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.calculateAge
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.safeQuantityString
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,8 +40,9 @@ class DatesViewModel(
         combine(
             filterViewModel.unifiedFilteredItems,
             filterViewModel.unifiedFilteredTins,
-            filterViewModel.everythingFlow
-        ) { filteredItems, filteredTins, allItems ->
+            filterViewModel.everythingFlow,
+            LanguageState.codeFlow
+        ) { filteredItems, filteredTins, allItems, _ ->
             val now = LocalDate.now()
             val nowMillis = now.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
@@ -48,9 +53,11 @@ class DatesViewModel(
                 }
             }.filter { it.third != null }
 
+            val context = getLocalizedContext(app)
+
             val agingData = agingDue(allItems, now)
-            val weekSection = AgingSection(app.getString(R.string.week_section), app.getString(R.string.week_empty), agingData.first)
-            val monthSection = AgingSection(app.getString(R.string.month_section), app.getString(R.string.month_empty), agingData.second)
+            val weekSection = AgingSection(context.safeString(R.string.week_section), context.safeString(R.string.week_empty), agingData.first)
+            val monthSection = AgingSection(context.safeString(R.string.month_section), context.safeString(R.string.month_empty), agingData.second)
 
             val filteredItemTins2 = datedTins.map { it.second }
             val averageManuf = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { it.manufactureDate }
@@ -71,22 +78,22 @@ class DatesViewModel(
                 agingSection = listOf(weekSection, monthSection),
                 agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(),
                 averageAgeSection = listOf(
-                    AverageAgeSection(app.getString(R.string.average_manuf), averageManuf),
-                    AverageAgeSection(app.getString(R.string.average_cellar), averageCellar),
-                    AverageAgeSection(app.getString(R.string.average_open), averageOpen),
-                    AverageAgeSection(app.getString(R.string.average_wait), averageWait)
+                    AverageAgeSection(context.safeString(R.string.average_manuf), averageManuf),
+                    AverageAgeSection(context.safeString(R.string.average_cellar), averageCellar),
+                    AverageAgeSection(context.safeString(R.string.average_open), averageOpen),
+                    AverageAgeSection(context.safeString(R.string.average_wait), averageWait)
                 ),
                 averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
                 oldestTinsSection = listOf(
-                    OldestTinsSection(app.getString(R.string.manufacture_date), pastManu),
-                    OldestTinsSection(app.getString(R.string.cellared_date), pastCellar),
-                    OldestTinsSection(app.getString(R.string.opened_date), pastOpened)
+                    OldestTinsSection(context.safeString(R.string.manufacture_date), pastManu),
+                    OldestTinsSection(context.safeString(R.string.cellared_date), pastCellar),
+                    OldestTinsSection(context.safeString(R.string.opened_date), pastOpened)
                 ),
                 oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
                 futureTinsSection = listOf(
-                    FutureTinsSection(app.getString(R.string.manufacture_date), futureManu),
-                    FutureTinsSection(app.getString(R.string.cellared_date), futureCellar),
-                    FutureTinsSection(app.getString(R.string.opened_date), futureOpen)
+                    FutureTinsSection(context.safeString(R.string.manufacture_date), futureManu),
+                    FutureTinsSection(context.safeString(R.string.cellared_date), futureCellar),
+                    FutureTinsSection(context.safeString(R.string.opened_date), futureOpen)
                 ),
                 futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
                 loading = false,
@@ -141,7 +148,7 @@ class DatesViewModel(
                     blend = item.items.blend,
                     tinLabel = tin.tinLabel,
                     date = formatMediumDate(originalMillis),
-                    timeFrame = calculateAge(originalMillis, app),
+                    timeFrame = calculateAge(originalMillis),
                 ),
                 originalMillis
             )
@@ -162,6 +169,8 @@ class DatesViewModel(
         now: LocalDate,
         field: (Tins) -> Long?
     ): String {
+        val context = getLocalizedContext(app)
+
         val relevantDates = tins.mapNotNull { field(it) }.filter {
             val then = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
             if (periodSelection == DatePeriod.PAST) then <= now else then > now
@@ -194,11 +203,11 @@ class DatesViewModel(
 
         val parts = mutableListOf<String>()
 
-        if (years > 0) { parts.add(app.resources.getQuantityString(R.plurals.years, years, years)) }
-        if (months > 0) { parts.add(app.resources.getQuantityString(R.plurals.months, months, months)) }
+        if (years > 0) { parts.add(context.safeQuantityString(R.plurals.years, years, years)) }
+        if (months > 0) { parts.add(context.safeQuantityString(R.plurals.months, months, months)) }
         if (days > 0.09) {
             val quantity = if (days == 1.0) 1 else 2
-            parts.add(app.resources.getQuantityString(R.plurals.days, quantity, dayString))
+            parts.add(context.safeQuantityString(R.plurals.days, quantity, dayString))
         }
 
         return parts.joinToString(", ")
@@ -227,7 +236,7 @@ class DatesViewModel(
                             blend = item.blend,
                             tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
-                            timeFrame = calculateAge(openMillis, app),
+                            timeFrame = calculateAge(openMillis),
                         )
                     )
                 } else if (openDate in (oneWeek + 1)..endOfMonth) {
@@ -238,7 +247,7 @@ class DatesViewModel(
                             blend = item.blend,
                             tinLabel = tinLabel,
                             date = formatMediumDate(openMillis),
-                            timeFrame = calculateAge(openMillis, app),
+                            timeFrame = calculateAge(openMillis),
                         )
                     )
                 }
