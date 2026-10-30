@@ -13,8 +13,10 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,7 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -72,6 +74,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.state.ToggleableState
@@ -79,11 +82,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -108,11 +113,14 @@ fun CsvImportScreen(
     viewModel: CsvImportViewModel = viewModel(key = navKey.id)
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val focusManager = LocalFocusManager.current
     val csvImportState = viewModel.csvImportState.value
     val csvUiState = viewModel.csvUiState
 
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(null, null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.csv_import_title),
@@ -360,8 +368,15 @@ fun CsvLoadedBody(
             Column(
                 modifier = Modifier
                     .padding(bottom = 16.dp)
-                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(8.dp))
+                    .background(
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        RoundedCornerShape(8.dp)
+                    )
                     .padding(vertical = 8.dp, horizontal = 12.dp),
             ) {
                 Text(
@@ -473,12 +488,8 @@ fun CsvLoadedBody(
                                 textAlign = TextAlign.End
                             ),
                             modifier = Modifier.heightIn(max = 48.dp),
-                            autoSize = TextAutoSize.StepBased(
-                                minFontSize = 8.sp,
-                                maxFontSize = 15.sp,
-                                stepSize = .25.sp,
-                            ),
-                            maxLines = 2,
+                            autoSize = StepBased(8.sp, 15.sp),
+                            maxLines = 3,
                         )
                     }
                 }
@@ -486,29 +497,53 @@ fun CsvLoadedBody(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
+                        .padding(top = 8.dp)
+                        .height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(stringResource(R.string.existing_entries))
+                    Text(
+                        text = stringResource(R.string.existing_entries),
+                        maxLines = 1,
+                        modifier = Modifier.weight(.33f),
+                        autoSize = StepBased(13.sp, 16.sp)
+                    )
                     Row(
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(.67f),
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val textMeasurer = rememberTextMeasurer()
+                        val baseStyle = LocalTextStyle.current.copy(fontSize = 16.sp, fontWeight = FontWeight.Normal)
+
+                        val skipText = stringResource(R.string.skip)
+                        val updateText = stringResource(R.string.update)
+                        val overwriteText = stringResource(R.string.overwrite)
+
+                        val skipWidth = remember(skipText) { textMeasurer.measure(skipText, baseStyle).size.width.toFloat() }
+                        val updateWidth = remember(updateText) { textMeasurer.measure(updateText, baseStyle).size.width.toFloat() }
+                        val overwriteWidth = remember(overwriteText) { textMeasurer.measure(overwriteText, baseStyle).size.width.toFloat() }
+                        val total = (skipWidth + updateWidth + overwriteWidth).coerceAtLeast(1f)
+
+                        val skipWeight = skipWidth/total
+                        val updateWeight = updateWidth/total
+                        val overwriteWeight = overwriteWidth/total
+
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(25))
-                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.SKIP) }
-                                .padding(horizontal = 8.dp)
-                                .width(36.dp),
+                                .weight(skipWeight)
+                                .fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.skip),
-                                modifier = Modifier,
+                                text = skipText,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(25))
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.SKIP) }
+                                    .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.SKIP) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -516,23 +551,25 @@ fun CsvLoadedBody(
                                     if (importOption == ImportOption.SKIP) FontWeight.SemiBold
                                     else FontWeight.Normal,
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 13.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .25.sp,
-                                )
+                                lineHeight = 1.em,
+                                autoSize = StepBased(11.sp, 16.sp)
                             )
                         }
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(25))
-                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.UPDATE) }
-                                .padding(horizontal = 8.dp)
-                                .width(56.dp),
+                                .weight(updateWeight)
+                                .fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.update),
+                                text = updateText,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(25))
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.UPDATE) }
+                                    .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -540,23 +577,25 @@ fun CsvLoadedBody(
                                     if (importOption == ImportOption.UPDATE) FontWeight.SemiBold
                                     else FontWeight.Normal,
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 13.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .25.sp,
-                                )
+                                lineHeight = 1.em,
+                                autoSize = StepBased(11.sp, 16.sp)
                             )
                         }
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(25))
-                                .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
-                                .padding(horizontal = 8.dp)
-                                .width(76.dp),
+                                .weight(overwriteWeight)
+                                .fillMaxHeight(),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = stringResource(R.string.overwrite),
+                                text = overwriteText,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(25))
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
+                                    .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
@@ -564,11 +603,8 @@ fun CsvLoadedBody(
                                     if (importOption == ImportOption.OVERWRITE) FontWeight.SemiBold
                                     else FontWeight.Normal,
                                 maxLines = 1,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 13.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .25.sp,
-                                )
+                                lineHeight = 1.em,
+                                autoSize = StepBased(11.sp, 16.sp)
                             )
                         }
                     }
@@ -603,13 +639,9 @@ fun CsvLoadedBody(
                         ),
                         maxLines = 2,
                         modifier = Modifier.weight(1f),
-                        autoSize = TextAutoSize.StepBased(
-                            minFontSize = 13.sp,
-                            maxFontSize = 14.sp,
-                            stepSize = .25.sp,
-                        )
+                        autoSize = StepBased(13.sp, 14.sp)
                     )
-                    Spacer(Modifier.weight(1.1f))
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text = stringResource(R.string.csv_column),
                         color = MaterialTheme.colorScheme.onBackground,
@@ -618,13 +650,9 @@ fun CsvLoadedBody(
                         style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph),
                         maxLines = 2,
                         modifier = Modifier.weight(1f),
-                        autoSize = TextAutoSize.StepBased(
-                            minFontSize = 13.sp,
-                            maxFontSize = 14.sp,
-                            stepSize = .25.sp,
-                        )
+                        autoSize = StepBased(13.sp, 14.sp)
                     )
-                    Spacer(Modifier.weight(.9f))
+                    Spacer(Modifier.weight(1f))
                     Text(
                         text = stringResource(R.string.overwrite_allowed),
                         color = MaterialTheme.colorScheme.onBackground,
@@ -635,11 +663,7 @@ fun CsvLoadedBody(
                         modifier = Modifier
                             .alpha(if (importOption == ImportOption.OVERWRITE) 1f else 0.5f)
                             .weight(1f),
-                        autoSize = TextAutoSize.StepBased(
-                            minFontSize = 13.sp,
-                            maxFontSize = 14.sp,
-                            stepSize = .25.sp,
-                        )
+                        autoSize = StepBased(13.sp, 14.sp)
                     )
                 }
 
@@ -655,7 +679,7 @@ fun CsvLoadedBody(
                 val rating = stringResource(R.string.rating_label)
                 val favorite = stringResource(R.string.favorite_label)
                 val disliked = stringResource(R.string.disliked_label)
-                val production = stringResource(R.string.production_status_label2)
+                val production = stringResource(R.string.production_status_label)
                 val notes = stringResource(R.string.notes_label)
 
                 val mainFields = remember(mappingOptions.syncTins) {
@@ -715,7 +739,6 @@ fun CsvLoadedBody(
                 val dateFormatSelected = remember(mappingOptions.dateFormat) { mappingOptions.dateFormat.isNotBlank() }
                 Text(
                     text = stringResource(R.string.tins_mapping),
-                    modifier = Modifier,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.SemiBold,
                     color = if (mappingOptions.collateTins) LocalContentColor.current
@@ -771,7 +794,7 @@ fun CsvLoadedBody(
                     if (mappingOptions.collateTins && !dateFormatSelected) {
                         Box(
                             modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(4.dp))
+                                .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(8.dp))
                                 .matchParentSize(),
                             contentAlignment = Alignment.Center
                         ) {
@@ -823,7 +846,7 @@ private fun LoadErrorDialog(
     val errorMessage by viewModel.csvErrorMessage.collectAsState()
 
     AlertDialog(
-        onDismissRequest = { /* Do nothing */ },
+        onDismissRequest = { },
         title = { Text(stringResource(R.string.attention)) },
         text = {
             Column(verticalArrangement = Arrangement.Top) {
@@ -917,11 +940,7 @@ private fun LabeledCheckbox(
         modifier = modifier
             .padding(start = 1.dp)
             .height(24.dp)
-            .clickable(
-                indication = null,
-                interactionSource = null,
-                enabled = enabled
-            ) { onCheckedChange?.invoke(!checked) },
+            .clickable(null, null, enabled) { onCheckedChange?.invoke(!checked) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -929,7 +948,7 @@ private fun LabeledCheckbox(
             text = text,
             modifier = Modifier.width(width),
             color = if(!enabled) fontColor.copy(alpha = .5f) else fontColor,
-            maxLines = maxLines,
+            maxLines = maxLines
         )
         TriStateCheckbox(
             state = ToggleableState(checked),
@@ -938,10 +957,14 @@ private fun LabeledCheckbox(
             modifier = Modifier
                 .triStateToggleable(
                     state = ToggleableState(checked),
-                    onClick = { if (onCheckedChange != null) { run { onCheckedChange(!checked) } } },
-                    enabled = enabled,
                     interactionSource = interactionSource,
-                    indication = null
+                    indication = null,
+                    enabled = enabled,
+                    onClick = {
+                        if (onCheckedChange != null) {
+                            run { onCheckedChange(!checked) }
+                        }
+                    }
                 )
                 .padding(start = 6.dp, end = 6.dp),
             enabled = enabled,
@@ -962,34 +985,27 @@ private fun DateFormatField(
     showCheckbox: Boolean = false,
     overwriteSelected: Boolean = false,
     onOverwrite: (Boolean) -> Unit = {},
-    importOption: ImportOption = ImportOption.SKIP,
-    placeholder: String = "",
+    importOption: ImportOption = ImportOption.SKIP
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val or = stringResource(R.string.or)
 
     val formats = listOf(
-        "01/24 or 01/2024 (MM/YY)",
-        "24/01 or 2024/01 (YY/MM)",
-        "01/27/24 or 01/27/2024 (MM/DD/YY)",
-        "27/01/24 or 27/01/2024 (DD/MM/YY)",
-        "24/01/01 or 2024/01/01 (YY/MM/DD)",
-        "January 27, 2024 or Jan 27, 2024",
-        "27 January, 2024 or 27 Jan, 2024"
+        "01/24 $or 01/2024 (MM/YY)",
+        "24/01 $or 2024/01 (YY/MM)",
+        "01/27/24 $or 01/27/2024 (MM/DD/YY)",
+        "27/01/24 $or 27/01/2024 (DD/MM/YY)",
+        "24/01/01 $or 2024/01/01 (YY/MM/DD)",
+        "January 27, 2024 $or Jan 27, 2024",
+        "27 January, 2024 $or 27 Jan, 2024"
     )
 
     Column(modifier.padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .padding(end = 10.dp)
-                    .height(42.dp)
-                    .width(90.dp),
+                    .size(90.dp, 42.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
@@ -1000,20 +1016,13 @@ private fun DateFormatField(
                         textAlign = TextAlign.Start,
                         lineBreak = LineBreak.Paragraph
                     ),
-                    softWrap = false,
                     maxLines = 2,
                     overflow = TextOverflow.Visible,
-                    autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 16.sp, stepSize = .02.sp),
+                    autoSize = StepBased(8.sp, 16.sp, .05.sp),
                 )
             }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
+            Box(Modifier.weight(1f)) {
+                ExposedDropdownMenuBox(expanded, { expanded = !expanded }) {
                     OutlinedTextField(
                         value = selectedFormat.ifBlank { "" },
                         onValueChange = { },
@@ -1022,7 +1031,6 @@ private fun DateFormatField(
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        placeholder = { Text(placeholder) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
@@ -1040,7 +1048,12 @@ private fun DateFormatField(
                         containerColor = LocalCustomColors.current.textField,
                     ) {
                         DropdownMenuItem(
-                            text = { Text("") },
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.blank),
+                                    color = LocalContentColor.current.copy(alpha = 0.5f)
+                                )
+                            },
                             onClick = {
                                 onFormatSelected("")
                                 expanded = false
@@ -1048,22 +1061,15 @@ private fun DateFormatField(
                         )
                         formats.forEach { format ->
                             DropdownMenuItem(
-                                text = { Text(format) },
-                                onClick = {
-                                    onFormatSelected(format)
-                                    expanded = false
-                                }
+                                text = { Text(text = format, maxLines = 1) },
+                                onClick = { onFormatSelected(format); expanded = false }
                             )
                         }
                     }
                 }
             }
 
-            Column(
-                modifier = Modifier.width(54.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            Column(Modifier.width(54.dp), Arrangement.Center, Alignment.End) {
                 if (showCheckbox) {
                     Checkbox(
                         checked = overwriteSelected,
@@ -1091,24 +1097,16 @@ private fun MaxValueField(
     importOption: ImportOption = ImportOption.SKIP,
 ) {
     Column(modifier.padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .padding(end = 10.dp)
-                    .height(42.dp)
-                    .width(90.dp),
+                    .size(90.dp, 42.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
                     text = stringResource(R.string.csv_max_rating),
                     modifier = Modifier,
-                    softWrap = true,
                     maxLines = 2,
                     style = TextStyle(
                         color = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
@@ -1116,11 +1114,7 @@ private fun MaxValueField(
                         lineBreak = LineBreak.Paragraph
                     ),
                     overflow = TextOverflow.Visible,
-                    autoSize = TextAutoSize.StepBased(
-                        minFontSize = 8.sp,
-                        maxFontSize = 16.sp,
-                        stepSize = .02.sp
-                    )
+                    autoSize = StepBased(8.sp, 16.sp, .05.sp)
                 )
             }
             Box(Modifier.weight(1f)) {
@@ -1147,17 +1141,14 @@ private fun MaxValueField(
                     placeholder = {
                         Text(
                             text = stringResource(R.string.required_scaling),
-                            color = if (enabled) LocalContentColor.current.copy(alpha = 0.5f) else Color.Transparent,
-                            fontSize = 14.sp
+                            color = if (enabled) LocalContentColor.current else Color.Transparent,
+                            maxLines = 1,
+                            autoSize = StepBased(11.sp, 16.sp)
                         )
                     }
                 )
             }
-            Column(
-                modifier = Modifier.width(54.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            Column(Modifier.width(54.dp), Arrangement.Center, Alignment.End) {
                 if (showCheckbox) {
                     Checkbox(
                         checked = overwriteSelected,
@@ -1193,18 +1184,11 @@ private fun MappingField(
     val maxHeight by remember { mutableStateOf(screenHeight * .67f) }
 
     Column(modifier.padding(vertical = 4.dp)) {
-        Row(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .padding(end = 10.dp)
-                    .height(42.dp)
-                    .width(90.dp),
+                    .size(90.dp, 42.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
@@ -1215,7 +1199,7 @@ private fun MappingField(
                         lineBreak = LineBreak.Paragraph
                     ),
                     modifier = Modifier.wrapContentHeight(),
-                    autoSize = TextAutoSize.StepBased(minFontSize = 8.sp, maxFontSize = 16.sp, stepSize = .02.sp),
+                    autoSize = StepBased(8.sp, 16.sp, .05.sp),
                     maxLines = maxLines,
                 )
             }
@@ -1233,7 +1217,13 @@ private fun MappingField(
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        placeholder = { Text(placeholder) },
+                        placeholder = {
+                            Text(
+                                text = placeholder,
+                                maxLines = 1,
+                                autoSize = StepBased(11.sp, 16.sp)
+                            )
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
@@ -1276,11 +1266,7 @@ private fun MappingField(
                 }
             }
 
-            Column(
-                modifier = Modifier.width(54.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center,
-            ) {
+            Column(Modifier.width(54.dp), Arrangement.Center, Alignment.End) {
                 if (showCheckbox) {
                     Checkbox(
                         checked = overwriteSelected,

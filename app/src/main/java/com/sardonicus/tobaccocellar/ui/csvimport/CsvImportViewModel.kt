@@ -20,6 +20,8 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.BlendTypes
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -204,7 +206,8 @@ class CsvImportViewModel(
 
     // tin collation handling //
     private fun generateTinLabels(numTins: Int, startingLabelNumber: Int = 1): List<String> {
-        return (startingLabelNumber until startingLabelNumber + numTins).map { app.getString(R.string.lot_label, "$it") }
+        val context = getLocalizedContext(app)
+        return (startingLabelNumber until startingLabelNumber + numTins).map { context.safeString(R.string.lot_label, "$it") }
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {
@@ -688,10 +691,11 @@ class CsvImportViewModel(
     private fun String.toBlendKey(): String {
         if (this.isBlank()) return ""
         val trimmed = this.trim()
+        val context = getLocalizedContext(app)
 
         for (type in BlendTypes.entries) {
             if (type == BlendTypes.UNASSIGNED) continue
-            val localized = app.getString(type.resId)
+            val localized = context.safeString(type.resId)
 
             if (trimmed.equals(localized, ignoreCase = true) || trimmed.equals(type.name, ignoreCase = true)) {
                 return type.name
