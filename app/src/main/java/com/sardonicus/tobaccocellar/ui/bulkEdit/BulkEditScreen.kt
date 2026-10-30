@@ -3,7 +3,9 @@ package com.sardonicus.tobaccocellar.ui.bulkEdit
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -14,9 +16,13 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
+import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,7 +30,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -47,6 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -84,16 +90,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -114,7 +121,9 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,7 +240,7 @@ fun BulkEditBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        val titles = listOf(stringResource(R.string.select_items), stringResource(R.string.batch_edit_title))
+        val titles = listOf(stringResource(R.string.select_entries), stringResource(R.string.batch_edit_title))
 
         Box {
             Column(
@@ -429,7 +438,7 @@ fun BulkSelections(
                 onClick = { clearSelections() },
                 modifier = Modifier,
                 enabled = selectedItems.isNotEmpty(),
-            ) { Text(stringResource(R.string.clear_selections)) }
+            ) { Text(stringResource(R.string.clear_all)) }
             Box (contentAlignment = Alignment.Center) {
                 val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
                 val borderColor = if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -475,6 +484,7 @@ fun BulkSelections(
     }
 }
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 fun BulkEditing(
     isLargeScreen: Boolean,
@@ -507,7 +517,9 @@ fun BulkEditing(
         GlowBox(
             color = GlowColor(MaterialTheme.colorScheme.background),
             size = GlowSize(vertical = 8.dp),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = 24.dp)
         ) {
             Column(
                 modifier = modifier
@@ -535,668 +547,427 @@ fun BulkEditing(
                     }
                 } else { Spacer(Modifier.height(12.dp)) }
 
-                // Field selections //
-                Column(
-                    modifier = Modifier,
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
+                Grid(
+                    config = {
+                        columns(GridTrackSize.MinMax(100.dp, .05.fr), GridTrackSize.MinMax(0.dp, .95.fr))
+                        repeat(9) { row(GridTrackSize.Auto) }
+                        gap(8.dp)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
                 ) {
-                    // Type //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.width(42.dp)) {
-                                Checkbox(
-                                    checked = editingState.typeSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(typeSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.type_label),
-                                modifier = Modifier,
-                                color = if (!editingState.typeSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                ) else LocalContentColor.current
-                            )
-                        }
-                        val app = LocalCellarApplication.current
-                        val typeMap = remember {
-                            BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }
-                                .associate { app.getString(it.resId) to it.name }
-                        }
-                        CustomDropDown(
-                            selectedValue = getLocalizedType(editingState.type, app, false),
-                            onValueChange = { onValueChange(editingState.copy(type = it)) },
-                            options = listOf("") + typeMap.keys.toList(),
-                            modifier = Modifier.weight(.7f),
-                            enabled = editingState.typeSelected
-                        )
+                    RowLabel(
+                        text = stringResource(R.string.type_label),
+                        checked = editingState.typeSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(typeSelected = it)) },
+                        modifier = Modifier.gridItem(1, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.subgenre_label),
+                        checked = editingState.genreSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(genreSelected = it)) },
+                        modifier = Modifier.gridItem(2, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.cut_label),
+                        checked = editingState.cutSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(cutSelected = it)) },
+                        modifier = Modifier.gridItem(3, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.component_label),
+                        checked = editingState.compsSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(compsSelected = it)) },
+                        modifier = Modifier.gridItem(4, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.flavoring_label),
+                        checked = editingState.flavorSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(flavorSelected = it)) },
+                        modifier = Modifier.gridItem(5, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.rating_label),
+                        checked = editingState.ratingSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) },
+                        modifier = Modifier.gridItem(6, 1, 1, 1, Alignment.CenterStart)
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.fav_dis_label),
+                        checked = editingState.favoriteDisSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(favoriteDisSelected = it)) },
+                        modifier = Modifier.gridItem(7, 1, 1, 1, Alignment.CenterStart),
+                        maxLines = 2
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.production_status_label),
+                        checked = editingState.productionSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(productionSelected = it)) },
+                        modifier = Modifier.gridItem(8, 1, 1, 1, Alignment.CenterStart),
+                        maxLines = 2
+                    )
+                    RowLabel(
+                        text = stringResource(R.string.sync_entry_tin_q),
+                        checked = editingState.syncTinsSelected,
+                        onCheckedChange = { onValueChange(editingState.copy(syncTinsSelected = it)) },
+                        modifier = Modifier.gridItem(9, 1, 1, 1, Alignment.CenterStart),
+                        maxLines = 2
+                    )
+
+                    val context = getLocalizedContext(LocalCellarApplication.current)
+                    val typeMap = remember {
+                        BlendTypes.entries.filterNot { it == BlendTypes.UNASSIGNED }
+                            .associate { context.safeString(it.resId) to it.name }
                     }
 
-                    // Subgenre //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.width(42.dp)) {
-                                Checkbox(
-                                    checked = editingState.genreSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(genreSelected = it))
-                                    }
+                    CustomDropDown(
+                        selectedValue = getLocalizedType(editingState.type, false),
+                        onValueChange = { onValueChange(editingState.copy(type = it)) },
+                        options = listOf("") + typeMap.keys.toList(),
+                        modifier = Modifier
+                            .gridItem(1, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        enabled = editingState.typeSelected
+                    )
+                    AutoCompleteText(
+                        value = editingState.subGenre,
+                        onValueChange = { onValueChange(editingState.copy(subGenre = it)) },
+                        onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
+                        allItems = autoGenres,
+                        modifier = Modifier
+                            .gridItem(2, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            if (editingState.subGenre.length > 4) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .clickable(null, LocalIndication.current) {
+                                            onValueChange(editingState.copy(subGenre = ""))
+                                        }
+                                        .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
                                 )
                             }
-                            Text(
-                                text = stringResource(R.string.subgenre_label),
-                                style = TextStyle(
-                                    color = if (!editingState.genreSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current,
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 38.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 1,
-                            )
-                        }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = nextOrDone(enabledFields, 0)
+                        ),
+                        enabled = editingState.genreSelected,
+                        interactionSource = fieldInteractionSource
+                    )
 
-                        AutoCompleteText(
-                            value = editingState.subGenre,
-                            onValueChange = { onValueChange(editingState.copy(subGenre = it)) },
-                            onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
-                            allItems = autoGenres,
-                            modifier = Modifier.weight(.7f),
-                            trailingIcon = {
-                                if (editingState.subGenre.length > 4) {
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                        contentDescription = "Clear",
-                                        modifier = Modifier
-                                            .clickable(
-                                                indication = LocalIndication.current,
-                                                interactionSource = null
-                                            ) { onValueChange(editingState.copy(subGenre = "")) }
-                                            .alpha(0.66f)
-                                            .size(20.dp)
-                                            .focusable(false)
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.Sentences,
-                                keyboardType = KeyboardType.Text,
-                                imeAction = nextOrDone(enabledFields, 0)
-                            ),
-                            enabled = editingState.genreSelected,
-                            interactionSource = fieldInteractionSource
-                        )
-                    }
-
-                    // Cut //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
-                                Checkbox(
-                                    checked = editingState.cutSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(cutSelected = it))
-                                    }
+                    AutoCompleteText(
+                        value = editingState.cut,
+                        onValueChange = { onValueChange(editingState.copy(cut = it)) },
+                        onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
+                        allItems = autoCuts,
+                        modifier = Modifier
+                            .gridItem(3, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            if (editingState.cut.length > 4) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .clickable(null, LocalIndication.current) {
+                                            onValueChange(editingState.copy(cut = ""))
+                                        }
+                                        .alpha(0.66f)
+                                        .size(20.dp)
+                                        .focusable(false)
                                 )
                             }
-                            Text(
-                                text = stringResource(R.string.cut_label),
-                                modifier = Modifier,
-                                color = if (!editingState.cutSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                ) else LocalContentColor.current
-                            )
-                        }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = nextOrDone(enabledFields, 1)
+                        ),
+                        enabled = editingState.cutSelected,
+                        interactionSource = fieldInteractionSource
+                    )
 
-                        AutoCompleteText(
-                            value = editingState.cut,
-                            onValueChange = { onValueChange(editingState.copy(cut = it)) },
-                            onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
-                            allItems = autoCuts,
-                            modifier = Modifier.weight(.7f),
-                            trailingIcon = {
-                                if (editingState.cut.length > 4) {
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                                        contentDescription = "Clear",
-                                        modifier = Modifier
-                                            .clickable(
-                                                indication = LocalIndication.current,
-                                                interactionSource = null
-                                            ) { onValueChange(editingState.copy(cut = "")) }
-                                            .alpha(0.66f)
-                                            .size(20.dp)
-                                            .focusable(false)
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.None,
-                                keyboardType = KeyboardType.Text,
-                                imeAction = nextOrDone(enabledFields, 1),
-                            ),
-                            enabled = editingState.cutSelected,
-                            interactionSource = fieldInteractionSource
-                        )
-                    }
-
-                    // Components //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
-                                Checkbox(
-                                    checked = editingState.compsSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(compsSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.component_label),
-                                style = TextStyle(
-                                    color = if (!editingState.compsSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 38.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 1,
-                            )
-                        }
-
-                        val color =
-                            if (editingState.compsAdd) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error
-                        val alpha = if (editingState.compsSelected) 0.66f else .33f
-
-                        AutoCompleteText(
-                            value = editingState.compsString,
-                            onValueChange = { onValueChange(editingState.copy(compsString = it)) },
-                            componentField = true,
-                            onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
-                            allItems = autoComps,
-                            modifier = Modifier.weight(.7f),
-                            trailingIcon = {
-                                if (editingState.compsSelected) {
-                                    val addIcon =
-                                        if (editingState.compsAdd) R.drawable.add_circle else R.drawable.remove_circle
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = addIcon),
-                                        contentDescription = "Add or remove",
-                                        tint = color,
-                                        modifier = Modifier
-                                            .clickable(
-                                                indication = LocalIndication.current,
-                                                interactionSource = null
-                                            ) { onValueChange(editingState.copy(compsAdd = !editingState.compsAdd)) }
-                                            .size(20.dp)
-                                            .focusable(false)
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.None,
-                                keyboardType = KeyboardType.Text,
-                                imeAction = nextOrDone(enabledFields, 2),
-                            ),
-                            textStyle = LocalTextStyle.current.copy(
-                                color = color.copy(
-                                    alpha = alpha
-                                )
-                            ),
-                            enabled = editingState.compsSelected,
-                            maxLines = 1,
-                            placeholder = {
-                                if (editingState.compsSelected) {
-                                    Text(
-                                        text = stringResource(R.string.separate_comma),
-                                        modifier = Modifier
-                                            .alpha(alpha),
-                                        fontSize = 13.sp,
-                                        softWrap = false,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Clip,
-                                    )
-                                }
-                            },
-                            interactionSource = fieldInteractionSource
-                        )
-                    }
-
-                    // Flavor //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.width(42.dp)) {
-                                Checkbox(
-                                    checked = editingState.flavorSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(flavorSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.flavoring_label),
-                                style = TextStyle(
-                                    color = if (!editingState.flavorSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 38.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 1,
-                            )
-                        }
-
-                        val color = if (editingState.flavorAdd) MaterialTheme.colorScheme.primary
+                    val compColor =
+                        if (editingState.compsAdd) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.error
-                        val alpha = if (editingState.flavorSelected) 0.66f else .33f
+                    val compAlpha = if (editingState.compsSelected) 0.66f else .33f
 
-                        AutoCompleteText(
-                            value = editingState.flavorString,
-                            onValueChange = { onValueChange(editingState.copy(flavorString = it)) },
-                            componentField = true,
-                            onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
-                            allItems = autoFlavor,
-                            modifier = Modifier.weight(.7f),
-                            trailingIcon = {
-                                if (editingState.flavorSelected) {
-                                    val addIcon =
-                                        if (editingState.flavorAdd) R.drawable.add_circle else R.drawable.remove_circle
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(id = addIcon),
-                                        contentDescription = "Add or remove",
-                                        tint = color,
-                                        modifier = Modifier
-                                            .clickable(
-                                                indication = LocalIndication.current,
-                                                interactionSource = null
-                                            ) { onValueChange(editingState.copy(flavorAdd = !editingState.flavorAdd)) }
-                                            .size(20.dp)
-                                            .focusable(false)
-                                    )
-                                }
+                    AutoCompleteText(
+                        value = editingState.compsString,
+                        onValueChange = { onValueChange(editingState.copy(compsString = it)) },
+                        componentField = true,
+                        onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
+                        allItems = autoComps,
+                        modifier = Modifier
+                            .gridItem(4, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            if (editingState.compsSelected) {
+                                val addIcon =
+                                    if (editingState.compsAdd) R.drawable.add_circle else R.drawable.remove_circle
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = addIcon),
+                                    contentDescription = "Add or remove",
+                                    tint = compColor,
+                                    modifier = Modifier
+                                        .clickable(null, LocalIndication.current) {
+                                            onValueChange(editingState.copy(compsAdd = !editingState.compsAdd))
+                                        }
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = nextOrDone(enabledFields, 2)
+                        ),
+                        textStyle = LocalTextStyle.current.copy(color = compColor.copy(alpha = compAlpha)),
+                        enabled = editingState.compsSelected,
+                        maxLines = 1,
+                        placeholder = {
+                            if (editingState.compsSelected) {
+                                Text(
+                                    text = stringResource(R.string.separate_comma),
+                                    autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
+                                    lineHeight = 1.em,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                    modifier = Modifier
+                                        .alpha(.66f)
+                                        .basicMarquee(
+                                            repeatDelayMillis = 1500,
+                                            spacing = MarqueeSpacing.fractionOfContainer(.5f)
+                                        )
+                                )
+                            }
+                        },
+                        interactionSource = fieldInteractionSource
+                    )
+
+                    val flavorColor =
+                        if (editingState.flavorAdd) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    val flavorAlpha = if (editingState.flavorSelected) 0.66f else .33f
+
+                    AutoCompleteText(
+                        value = editingState.flavorString,
+                        onValueChange = { onValueChange(editingState.copy(flavorString = it)) },
+                        componentField = true,
+                        onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
+                        allItems = autoFlavor,
+                        modifier = Modifier
+                            .gridItem(5, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        trailingIcon = {
+                            if (editingState.flavorSelected) {
+                                val addIcon =
+                                    if (editingState.flavorAdd) R.drawable.add_circle else R.drawable.remove_circle
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(id = addIcon),
+                                    contentDescription = "Add or remove",
+                                    tint = flavorColor,
+                                    modifier = Modifier
+                                        .clickable(null, LocalIndication.current) {
+                                            onValueChange(editingState.copy(flavorAdd = !editingState.flavorAdd))
+                                        }
+                                        .size(20.dp)
+                                        .focusable(false)
+                                )
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.None,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Done
+                        ),
+                        textStyle = LocalTextStyle.current.copy(color = flavorColor.copy(alpha = flavorAlpha)),
+                        enabled = editingState.flavorSelected,
+                        maxLines = 1,
+                        placeholder = {
+                            if (editingState.flavorSelected) {
+                                Text(
+                                    text = stringResource(R.string.separate_comma),
+                                    autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
+                                    lineHeight = 1.em,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Visible,
+                                    modifier = Modifier
+                                        .alpha(.66f)
+                                        .basicMarquee(
+                                            repeatDelayMillis = 1500,
+                                            spacing = MarqueeSpacing.fractionOfContainer(.5f)
+                                        )
+                                )
+                            }
+                        },
+                        interactionSource = fieldInteractionSource
+                    )
+                    RatingRow(
+                        rating = editingState.rating,
+                        showEmpty = true,
+                        starSize = 24.dp,
+                        emptyColor =
+                            if (!editingState.ratingSelected) LocalContentColor.current.copy(alpha = .5f)
+                            else {
+                                if (editingState.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating
                             },
-                            keyboardOptions = KeyboardOptions(
-                                capitalization = KeyboardCapitalization.None,
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Done,
-                            ),
-                            textStyle = LocalTextStyle.current.copy(color = color.copy(alpha = alpha)),
-                            enabled = editingState.flavorSelected,
-                            maxLines = 1,
-                            placeholder = {
-                                if (editingState.flavorSelected) {
-                                    Text(
-                                        text = stringResource(R.string.separate_comma),
-                                        modifier = Modifier.alpha(alpha),
-                                        fontSize = 13.sp,
-                                        softWrap = false,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Clip,
+                        modifier = Modifier
+                            .gridItem(6, 2, 1, 1, Alignment.CenterStart)
+                            .clickable(null, null, editingState.ratingSelected) {
+                                showRatingPop = true
+                            }
+                    )
+                    Row(
+                        modifier = modifier
+                            .gridItem(7, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Favorite
+                        Row(
+                            modifier = Modifier.padding(0.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.favorite),
+                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
+                                color =
+                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
+                                        alpha = 0.50f
                                     )
-                                }
-                            },
-                            interactionSource = fieldInteractionSource
+                                    else LocalContentColor.current
+                            )
+                            CustomCheckbox(
+                                checked = editingState.favorite,
+                                onCheckedChange = {
+                                    if (editingState.favorite) {
+                                        onValueChange(editingState.copy(favorite = it))
+                                    } else {
+                                        onValueChange(
+                                            editingState.copy(
+                                                favorite = it,
+                                                disliked = false
+                                            )
+                                        )
+                                    }
+                                },
+                                checkedIcon = R.drawable.heart_filled_24,
+                                uncheckedIcon = R.drawable.heart_outline_24,
+                                modifier = Modifier.padding(0.dp),
+                                size = 34.dp,
+                                colors = IconButtonDefaults.iconToggleButtonColors(
+                                    checkedContentColor = LocalCustomColors.current.favHeart
+                                ),
+                                enabled = editingState.favoriteDisSelected
+                            )
+                        }
+                        // Disliked
+                        Row(
+                            modifier = Modifier.padding(0.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.disliked),
+                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
+                                color =
+                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
+                                        alpha = 0.50f
+                                    )
+                                    else LocalContentColor.current
+                            )
+                            CustomCheckbox(
+                                checked = editingState.disliked,
+                                onCheckedChange = {
+                                    if (editingState.disliked) {
+                                        onValueChange(editingState.copy(disliked = it))
+                                    } else {
+                                        onValueChange(
+                                            editingState.copy(
+                                                disliked = it,
+                                                favorite = false
+                                            )
+                                        )
+                                    }
+                                },
+                                checkedIcon = R.drawable.heartbroken_filled_24,
+                                uncheckedIcon = R.drawable.heartbroken_outlined_24,
+                                size = 34.dp,
+                                colors = IconButtonDefaults.iconToggleButtonColors(
+                                    checkedContentColor = LocalCustomColors.current.disHeart,
+                                ),
+                                enabled = editingState.favoriteDisSelected
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier
+                            .gridItem(8, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            4.dp,
+                            Alignment.CenterHorizontally
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.in_production),
+                            modifier = Modifier.offset(x = 0.dp, y = 1.dp),
+                            color =
+                                if (!editingState.productionSelected) LocalContentColor.current.copy(
+                                    alpha = 0.50f
+                                )
+                                else LocalContentColor.current
+                        )
+                        CustomCheckbox(
+                            checked = editingState.inProduction,
+                            onCheckedChange = { onValueChange(editingState.copy(inProduction = it)) },
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            size = 34.dp,
+                            enabled = editingState.productionSelected
                         )
                     }
-
-                    // Rating //
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
+                        modifier = Modifier
+                            .gridItem(9, 2, 1, 1, Alignment.CenterStart)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            4.dp,
+                            Alignment.CenterHorizontally
+                        ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.width(42.dp)) {
-                                Checkbox(
-                                    checked = editingState.ratingSelected,
-                                    onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.rating_label),
-                                modifier = Modifier,
-                                color = if (!editingState.ratingSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                ) else LocalContentColor.current
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.weight(.7f),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            val emptyColor =
-                                if (!editingState.ratingSelected) LocalContentColor.current.copy(alpha = .5f)
-                                else { if (editingState.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating }
-                            RatingRow(
-                                rating = editingState.rating,
-                                showEmpty = true,
-                                starSize = 24.dp,
-                                emptyColor = emptyColor,
-                                modifier = Modifier
-                                    .clickable(null, null, editingState.ratingSelected) { showRatingPop = true }
-                            )
-                        }
-                    }
-
-                    // Favorite/Dislike //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(Modifier.width(42.dp)) {
-                                Checkbox(
-                                    checked = editingState.favoriteDisSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(favoriteDisSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.fav_dis_label),
-                                style = TextStyle(
-                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current,
-                                    lineBreak = LineBreak.Paragraph
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 36.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 1,
-                            )
-                        }
-                        Row(
-                            modifier = modifier.weight(.7f),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Favorite
-                            Row(
-                                modifier = Modifier.padding(0.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.favorite),
-                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current
-                                )
-                                CustomCheckbox(
-                                    checked = editingState.favorite,
-                                    onCheckedChange = {
-                                        if (editingState.favorite) {
-                                            onValueChange(editingState.copy(favorite = it))
-                                        } else {
-                                            onValueChange(
-                                                editingState.copy(favorite = it, disliked = false)
-                                            )
-                                        }
-                                    },
-                                    checkedIcon = R.drawable.heart_filled_24,
-                                    uncheckedIcon = R.drawable.heart_outline_24,
-                                    modifier = Modifier.padding(0.dp),
-                                    size = 34.dp,
-                                    colors = IconButtonDefaults.iconToggleButtonColors(
-                                        checkedContentColor = LocalCustomColors.current.favHeart,
-                                    ),
-                                    enabled = editingState.favoriteDisSelected
-                                )
-                            }
-                            // Disliked
-                            Row(
-                                modifier = Modifier.padding(0.dp),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.disliked),
-                                    modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                                    color = if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current
-                                )
-                                CustomCheckbox(
-                                    checked = editingState.disliked,
-                                    onCheckedChange = {
-                                        if (editingState.disliked) {
-                                            onValueChange(editingState.copy(disliked = it))
-                                        } else {
-                                            onValueChange(
-                                                editingState.copy(disliked = it, favorite = false)
-                                            )
-                                        }
-                                    },
-                                    checkedIcon = R.drawable.heartbroken_filled_24,
-                                    uncheckedIcon = R.drawable.heartbroken_outlined_24,
-                                    modifier = Modifier.padding(0.dp),
-                                    size = 34.dp,
-                                    colors = IconButtonDefaults.iconToggleButtonColors(
-                                        checkedContentColor = LocalCustomColors.current.disHeart,
-                                    ),
-                                    enabled = editingState.favoriteDisSelected
-                                )
-                            }
-                        }
-                    }
-
-                    // Production Status //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
-                                Checkbox(
-                                    checked = editingState.productionSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(productionSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.production_status_label),
-                                style = TextStyle(
-                                    color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current,
-                                    lineBreak = LineBreak.Paragraph
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 36.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 2,
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.weight(.7f),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.in_production),
-                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                                color = if (!editingState.productionSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                ) else LocalContentColor.current,
-                            )
-                            CustomCheckbox(
-                                checked = editingState.inProduction,
-                                onCheckedChange = {
-                                    onValueChange(editingState.copy(inProduction = it))
-                                },
-                                checkedIcon = R.drawable.check_box_24,
-                                uncheckedIcon = R.drawable.check_box_outline_24,
-                                modifier = Modifier.padding(0.dp),
-                                size = 34.dp,
-                                enabled = editingState.productionSelected
-                            )
-                        }
-                    }
-
-                    // Sync Tins //
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.Start),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(.3f),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier.width(42.dp)
-                            ) {
-                                Checkbox(
-                                    checked = editingState.syncTinsSelected,
-                                    onCheckedChange = {
-                                        onValueChange(editingState.copy(syncTinsSelected = it))
-                                    }
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.sync_entry_tin_q),
-                                style = TextStyle(
-                                    color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    ) else LocalContentColor.current,
-                                ),
-                                modifier = Modifier
-                                    .heightIn(max = 36.dp)
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterVertically),
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 8.sp,
-                                    maxFontSize = 16.sp,
-                                    stepSize = .02.sp,
-                                ),
-                                maxLines = 2,
-                            )
-                        }
-                        Row(
-                            modifier = Modifier.weight(.7f),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                4.dp,
-                                Alignment.CenterHorizontally
-                            ),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.sync_q),
-                                modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                                color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                ) else LocalContentColor.current
-                            )
-                            CustomCheckbox(
-                                checked = editingState.syncTins,
-                                onCheckedChange = { onValueChange(editingState.copy(syncTins = it)) },
-                                checkedIcon = R.drawable.check_box_24,
-                                uncheckedIcon = R.drawable.check_box_outline_24,
-                                modifier = Modifier.padding(0.dp),
-                                size = 34.dp,
-                                enabled = editingState.syncTinsSelected
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.sync_q),
+                            modifier = Modifier.offset(x = 0.dp, y = 1.dp),
+                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
+                                alpha = 0.50f
+                            ) else LocalContentColor.current
+                        )
+                        CustomCheckbox(
+                            checked = editingState.syncTins,
+                            onCheckedChange = { onValueChange(editingState.copy(syncTins = it)) },
+                            checkedIcon = R.drawable.check_box_24,
+                            uncheckedIcon = R.drawable.check_box_outline_24,
+                            modifier = Modifier.padding(0.dp),
+                            size = 34.dp,
+                            enabled = editingState.syncTinsSelected
+                        )
                     }
                 }
-
-                Spacer(Modifier.height(8.dp))
             }
         }
-
-        Spacer(Modifier.height(24.dp))
 
         // Batch edit confirm //
         Button(
@@ -1229,6 +1000,43 @@ fun BulkEditing(
         }
     }
 }
+
+@Composable
+private fun RowLabel(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1
+) {
+    Row(
+        modifier = modifier.heightIn(min = 42.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 1.dp) {
+            Checkbox(checked, onCheckedChange, Modifier.padding(start = 2.dp))
+        }
+
+        val style = LocalTextStyle.current
+        Text(
+            text = text,
+            modifier = Modifier
+                .heightIn(max = 36.dp)
+                .wrapContentHeight()
+                .align(Alignment.CenterVertically),
+            color =
+                if (!checked) LocalContentColor.current.copy(alpha = 0.50f)
+                else LocalContentColor.current,
+            maxLines = maxLines,
+            autoSize = TextAutoSize.StepBased(9.sp, 16.sp, 0.1.sp),
+            lineHeight = 1.1.em,
+            textAlign = TextAlign.Start,
+            style = style.copy(lineBreak = LineBreak.Paragraph)
+        )
+    }
+}
+
 
 @Composable
 private fun ConfirmEditDialog(
@@ -1266,7 +1074,7 @@ fun BulkSelectionsItem(
             .fillMaxWidth()
             .border(1.dp, borderColor, shape = RoundedCornerShape(4.dp))
             .background(color = background, shape = RoundedCornerShape(4.dp))
-            .clickable(indication = null, interactionSource = null) { onItemClick() }
+            .clickable(null, null) { onItemClick() }
             .padding(6.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center

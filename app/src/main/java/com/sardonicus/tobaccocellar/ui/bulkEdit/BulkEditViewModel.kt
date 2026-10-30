@@ -20,6 +20,8 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.settings.calculateSyncTins
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -237,7 +239,8 @@ class BulkEditViewModel (
             setLoadingState(false)
             itemsRepository.triggerUploadWorker()
             resetEditingState()
-            EventBus.emit(ShowSnackbar(app.getString(R.string.batch_edit_saved)))
+            val context = getLocalizedContext(app)
+            EventBus.emit(ShowSnackbar(context.safeString(R.string.batch_edit_saved)))
         }
     }
 }
