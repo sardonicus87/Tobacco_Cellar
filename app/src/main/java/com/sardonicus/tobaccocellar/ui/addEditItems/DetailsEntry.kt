@@ -72,6 +72,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -134,7 +135,8 @@ fun DetailsEntry(
             Text(stringResource(R.string.cut_label), Modifier.gridItem(5, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.component_label), Modifier.gridItem(6, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.flavoring_label), Modifier.gridItem(7, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, 1, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, 1, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+                style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))
             Text(stringResource(R.string.rating_label), Modifier.gridItem(9, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
