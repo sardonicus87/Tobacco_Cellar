@@ -1,6 +1,11 @@
 package com.sardonicus.tobaccocellar.data
 
+import com.sardonicus.tobaccocellar.CellarApplication
+import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter
@@ -42,13 +47,19 @@ class CsvHelper {
     }
 
     fun exportToCsv(data: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Int): String {
+        val context = getLocalizedContext(CellarApplication.instance)
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring", "No. of Tins",
-                "Rating", "Favorite", "Disliked", "Production Status", "Notes"
+                context.safeString(R.string.brand), context.safeString(R.string.blend),
+                context.safeString(R.string.type), context.safeString(R.string.subgenre),
+                context.safeString(R.string.cut), context.safeString(R.string.components),
+                context.safeString(R.string.flavoring), context.safeString(R.string.no_of_tins),
+                context.safeString(R.string.rating), context.safeString(R.string.favorite),
+                context.safeString(R.string.disliked), context.safeString(R.string.production_status),
+                context.safeString(R.string.notes)
             )
             .get()
 
@@ -62,7 +73,7 @@ class CsvHelper {
             csvPrinter.printRecord(
                 items.brand,
                 items.blend,
-                items.type,
+                getLocalizedType(items.type, false),
                 items.subGenre,
                 items.cut,
                 componentsString,
@@ -81,14 +92,22 @@ class CsvHelper {
     }
 
     fun exportTinsToCsv(data: List<TinExportData>): String {
+        val context = getLocalizedContext(CellarApplication.instance)
         val csvWriter = StringWriter()
         val csvFormat = CSVFormat.Builder.create(CSVFormat.RFC4180)
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                "Brand", "Blend", "Type", "Subgenre", "Cut", "Components", "Flavoring",
-                "No. of Tins", "Rating", "Favorite", "Disliked", "Production Status", "Notes", "Container",
-                "Quantity", "Manufacture Date", "Cellar Date", "Open Date", "Finished"
+                context.safeString(R.string.brand), context.safeString(R.string.blend),
+                context.safeString(R.string.type), context.safeString(R.string.subgenre),
+                context.safeString(R.string.cut), context.safeString(R.string.components),
+                context.safeString(R.string.flavoring), context.safeString(R.string.no_of_tins),
+                context.safeString(R.string.rating), context.safeString(R.string.favorite),
+                context.safeString(R.string.disliked), context.safeString(R.string.production_status),
+                context.safeString(R.string.notes), context.safeString(R.string.container),
+                context.safeString(R.string.quantity), context.safeString(R.string.manufacture_date),
+                context.safeString(R.string.cellar_date), context.safeString(R.string.open_date),
+                context.safeString(R.string.finished)
             )
             .get()
 
@@ -98,7 +117,7 @@ class CsvHelper {
             csvPrinter.printRecord(
                 tin.brand,
                 tin.blend,
-                tin.type,
+                getLocalizedType(tin.type),
                 tin.subGenre,
                 tin.cut,
                 tin.components,
