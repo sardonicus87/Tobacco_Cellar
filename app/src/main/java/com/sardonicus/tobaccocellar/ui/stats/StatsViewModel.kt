@@ -12,7 +12,10 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.blendDetails.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
+import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,13 +42,20 @@ class StatsViewModel(
     private val noneAssignedLabel = app.getString(R.string.none_assigned)
 
     /** Raw stats */
+    @Suppress("UNCHECKED_CAST")
     val rawStats: StateFlow<RawStats> = combine (
         filterViewModel.everythingFlow,
         filterViewModel.ratingsExist,
         preferencesRepo.quantityOption,
         preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
-    ) { allItems, ratingsExist, quantityOption, ozRate, gramsRate ->
+        preferencesRepo.tinGramsConversionRate,
+        LanguageState.codeFlow
+    ) { array ->
+        val allItems = array[0] as List<ItemsComponentsAndTins>
+        val ratingsExist = array[1] as Boolean
+        val quantityOption = array[2] as QuantityOption
+        val ozRate = array[3] as Double
+        val gramsRate = array[4] as Double
 
         val brandSet = mutableSetOf<String>()
         val typeMap = mutableMapOf<String, Int>()
@@ -82,7 +92,7 @@ class StatsViewModel(
                 ratingSum += item.rating
             }
 
-            typeMap.increment(getLocalizedType(item.type, app))
+            typeMap.increment(getLocalizedType(item.type))
             subgenreMap.increment(item.subGenre.ifBlank { unassignedLabel })
             cutMap.increment(item.cut.ifBlank { unassignedLabel })
 
@@ -109,14 +119,14 @@ class StatsViewModel(
                 }
             }
 
-            weightAccumulator += if (unfinishedCount > 0 && allValid) {
-                itemTinsWeight
-            } else {
-                when (quantityRemap) {
-                    QuantityOption.OUNCES -> item.quantity * ozRate
-                    QuantityOption.GRAMS -> item.quantity * gramsRate
-                    else -> 0.0
-                }
+            weightAccumulator +=
+                if (unfinishedCount > 0 && allValid) { itemTinsWeight }
+                else {
+                    when (quantityRemap) {
+                        QuantityOption.OUNCES -> item.quantity * ozRate
+                        QuantityOption.GRAMS -> item.quantity * gramsRate
+                        else -> 0.0
+                    }
             }
         }
 
@@ -127,7 +137,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app, filterViewModel.unitsShort),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = if (!hasTins) null else totalOpened,
 
@@ -142,11 +152,7 @@ class StatsViewModel(
         )
     }
         .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = RawStats(rawLoading = true)
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RawStats(rawLoading = true))
 
 
     /** Filtered stats */
@@ -158,7 +164,8 @@ class StatsViewModel(
         filterViewModel.ratingsExist,
         preferencesRepo.quantityOption,
         preferencesRepo.tinOzConversionRate,
-        preferencesRepo.tinGramsConversionRate
+        preferencesRepo.tinGramsConversionRate,
+        LanguageState.codeFlow
     ) { array ->
         val allItems = array[0] as List<ItemsComponentsAndTins>
         val filteredItems = array[1] as List<ItemsComponentsAndTins>
@@ -217,7 +224,7 @@ class StatsViewModel(
         for ((item, components, flavoring, tins) in allItems) {
             val relevant = item.id in filteredIds
 
-            val type = getLocalizedType(item.type, app)
+            val type = getLocalizedType(item.type)
             val subgenre = item.subGenre.ifBlank { unassignedLabel }
             val cut = item.cut.ifBlank { unassignedLabel }
 
@@ -296,8 +303,9 @@ class StatsViewModel(
             }
         }
 
+        val context = getLocalizedContext(app)
         val globalAvg = if (ratedCount > 0) ratingSum / ratedCount else 0.0
-        val other = app.getString(R.string.chart_other)
+        val other = context.safeString(R.string.chart_other)
 
         FilteredStats(
             blendsCount = filteredItems.size,
@@ -306,7 +314,7 @@ class StatsViewModel(
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
-            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app, filterViewModel.unitsShort),
+            estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app),
             totalZeroQuantity = totalZeroQuantity,
             totalOpened = totalOpened,
 
@@ -333,9 +341,9 @@ class StatsViewModel(
                 unratedCount = unratedCount
             ),
             favDisByEntries = mapOf(
-                app.getString(R.string.favorite) to favoriteCount,
-                app.getString(R.string.disliked) to dislikedCount,
-                app.getString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
+                context.safeString(R.string.favorite) to favoriteCount,
+                context.safeString(R.string.disliked) to dislikedCount,
+                context.safeString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
             ).filterValues { it > 0 }.sortByValue(),
             subgenresByEntries = subgenresByEntries.reduceToTen(other),
             subgenresByQuantity = subgenresByQuantity.reduceToTen(other),
@@ -346,11 +354,7 @@ class StatsViewModel(
         )
     }
         .flowOn(Dispatchers.Default)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = FilteredStats(filteredLoading = true)
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FilteredStats(filteredLoading = true))
 
 
     val availableSections: StateFlow<AvailableSections> =
@@ -362,6 +366,8 @@ class StatsViewModel(
             val flavoring = raw.totalByFlavoring.any { it.key != noneAssignedLabel }
             val container = raw.totalByContainer.any { it.key != unassignedLabel }
 
+            val context = getLocalizedContext(app)
+
             AvailableSections(
                 anyAvailable = subgenre || cut || component || flavoring || container,
                 type = type,
@@ -371,19 +377,15 @@ class StatsViewModel(
                 flavoring = flavoring,
                 container = container,
                 available = listOfNotNull(
-                    if (subgenre) { Triple(app.getString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
-                    if (cut) { Triple(app.getString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
-                    if (component) { Triple(app.getString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
-                    if (flavoring) { Triple(app.getString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
-                    if (container) { Triple(app.getString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
+                    if (subgenre) { Triple(context.safeString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
+                    if (cut) { Triple(context.safeString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
+                    if (component) { Triple(context.safeString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
+                    if (flavoring) { Triple(context.safeString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
+                    if (container) { Triple(context.safeString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
                 )
             )
         }
-            .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = AvailableSections()
-        )
+            .stateIn(viewModelScope,  SharingStarted.WhileSubscribed(5000), AvailableSections())
 
     init {
         viewModelScope.launch {
@@ -538,13 +540,17 @@ private fun convertWeight(tinQuantity: Double, unit: String, quantityOption: Qua
     }
 }
 
-private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double, app: CellarApplication, units: Triple<String, String, String>): String {
+private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double, app: CellarApplication): String {
+    val context = getLocalizedContext(app)
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
-            if (totalWeight >= 16.00) { app.getString(R.string.format_quantity, "", formatDecimal((totalWeight / 16)), units.second) }
-            else { app.getString(R.string.format_quantity, "", formatDecimal(totalWeight), units.first) }
+            if (totalWeight >= 16.00) { context.safeString(R.string.format_quantity, "", formatDecimal((totalWeight/16)), "lbs") }
+            else { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight), "oz") }
         }
-        QuantityOption.GRAMS -> { app.getString(R.string.format_quantity, "", formatDecimal(totalWeight), units.third) }
+        QuantityOption.GRAMS -> {
+            if (totalWeight >= 1000.00) { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight/1000), "kg") }
+            else { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight), "g") }
+        }
         else -> null
     } ?: ""
 }

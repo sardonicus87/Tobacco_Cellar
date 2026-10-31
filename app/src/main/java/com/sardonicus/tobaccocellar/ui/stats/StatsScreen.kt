@@ -9,18 +9,21 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.ExperimentalGridApi
+import androidx.compose.foundation.layout.Grid
+import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.columns
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -109,8 +112,7 @@ fun StatsScreen(
         },
         bottomBar = {
             CellarBottomAppBar(
-                modifier = Modifier
-                    .padding(0.dp),
+                modifier = Modifier.padding(0.dp),
                 navigateToHome = { selectionKey++; selectionFocused = false; navigateToHome() },
                 navigateToDates = { selectionKey++; selectionFocused = false; navigateToDates() },
                 navigateToAddEntry = { selectionKey++; selectionFocused = false; navigateToAddEntry() },
@@ -152,7 +154,6 @@ private fun StatsBody(
     val lazyListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf(false) }
-
 
     LazyColumn(
         state = lazyListState,
@@ -411,6 +412,7 @@ private fun Header(
 }
 
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 private fun BrandsByRatingSection(
     brandsByRating: () -> Map<String, BrandRatingStats>,
@@ -425,7 +427,8 @@ private fun BrandsByRatingSection(
         Text(
             text = stringResource(R.string.brands_rating),
             fontWeight = FontWeight.Medium,
-            fontSize = 15.sp,
+            autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
+            maxLines = 1,
             textAlign = TextAlign.Center
         )
         Text(
@@ -435,73 +438,63 @@ private fun BrandsByRatingSection(
         )
         Column (
             modifier = Modifier
-                .padding(top = 20.dp, bottom = 44.dp)
-                .fillMaxWidth(0.7f),
+                .padding(top = 20.dp, bottom = 44.dp, start = 16.dp, end = 16.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
-                    modifier = Modifier.padding(bottom = 4.dp)
-                ) {
-                    Column(Modifier.width(IntrinsicSize.Max)) {
-                        brandsByRating().forEach {
-                            val index = brandsByRating().keys.indexOf(it.key)
-                            Text(
-                                text = "${index + 1}.",
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.End,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    Column(Modifier.weight(1f, false)) {
-                        brandsByRating().forEach {
-                            Text(
-                                text = it.key,
-                                fontSize = 14.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Column(Modifier.width(IntrinsicSize.Max)) {
-                        brandsByRating().forEach {
-                            Text(
-                                text = formatDecimal(it.value.averageRating, drop = false),
-                                fontSize = 14.sp,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    Column(Modifier.width(IntrinsicSize.Max)) {
-                        brandsByRating().forEach {
-                            Text(
-                                text = "(${it.value.ratingsCount})",
-                                fontSize = 14.sp,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    Column(Modifier.width(IntrinsicSize.Max)) {
-                        brandsByRating().forEach {
-                            Text(
-                                text = formatDecimal(it.value.weightedRating, drop = false),
-                                fontSize = 14.sp,
-                                maxLines = 1
-                            )
-                        }
-                    }
+            Grid(
+                modifier = Modifier.padding(bottom = 4.dp),
+                config = {
+                    columns(GridTrackSize.MaxContent, GridTrackSize.Auto, GridTrackSize.MaxContent, GridTrackSize.MaxContent, GridTrackSize.MaxContent)
+                    repeat(brandsByRating().size) { row(GridTrackSize.Auto) }
+                    gap(0.dp, 20.dp)
                 }
-                Text(
-                    text = stringResource(R.string.actual_count_weighted),
-                    fontSize = 12.sp,
-                    color = LocalContentColor.current.copy(alpha = 0.75f),
-                    modifier = Modifier.align(Alignment.End)
-                )
+            ) {
+                brandsByRating().forEach {
+                    val index = brandsByRating().keys.indexOf(it.key) + 1
+
+                    Text(
+                        text = "${index}.",
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.End,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        modifier = Modifier.gridItem(index, 1, 1, 1, Alignment.CenterEnd)
+                    )
+                    Text(
+                        text = it.key,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.gridItem(index, 2, 1, 1, Alignment.CenterStart)
+                    )
+                    Text(
+                        text = formatDecimal(it.value.averageRating, drop = false),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        modifier = Modifier.gridItem(index, 3, 1, 1, Alignment.CenterStart)
+                    )
+                    Text(
+                        text = "(${it.value.ratingsCount})",
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        modifier = Modifier.gridItem(index, 4, 1, 1, Alignment.Center)
+                    )
+                    Text(
+                        text = formatDecimal(it.value.weightedRating, drop = false),
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        modifier = Modifier.gridItem(index, 5, 1, 1, Alignment.CenterStart)
+                    )
+                }
             }
+            Text(
+                text = stringResource(R.string.actual_count_weighted),
+                fontSize = 12.sp,
+                color = LocalContentColor.current.copy(alpha = 0.75f),
+                modifier = Modifier.align(Alignment.End)
+            )
         }
     }
 }
@@ -532,7 +525,8 @@ private fun ChartsFormat(
         Text(
             text = label,
             fontWeight = FontWeight.Medium,
-            fontSize = 15.sp,
+            autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
+            maxLines = 1,
             textAlign = TextAlign.Center
         )
         Row(

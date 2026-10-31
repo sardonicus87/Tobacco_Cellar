@@ -91,7 +91,8 @@ fun QuickStatsSection(
             Text(
                 text = stringResource(R.string.raw_stats),
                 modifier = Modifier.weight(1f),
-                fontSize = 16.sp,
+                autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
+                maxLines = 1,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
                 color = colorScheme.onBackground
@@ -100,7 +101,8 @@ fun QuickStatsSection(
             Text(
                 text = stringResource(R.string.filtered_stats),
                 modifier = Modifier.weight(1f),
-                fontSize = 16.sp,
+                autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
+                maxLines = 1,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Start,
                 color = colorScheme.onBackground
@@ -143,8 +145,7 @@ fun QuickStatsSection(
             ) {
                 Text(
                     text = filteredText,
-                    modifier = Modifier
-                        .weight(1f),
+                    modifier = Modifier.weight(1f),
                     fontSize = 15.sp,
                     textAlign = TextAlign.Start,
                     softWrap = true,
