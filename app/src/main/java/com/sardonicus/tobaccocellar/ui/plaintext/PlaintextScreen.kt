@@ -107,7 +107,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontStyle
@@ -202,8 +201,7 @@ fun PlaintextScreen(
                     if (selectionFocused) { selectionKey++ } else { focusManager.clearFocus() }
                     onNavigateUp()
                 },
-                showMenu = false,
-                modifier = Modifier,
+                showMenu = false
             )
         }
     ) { innerPadding ->
@@ -620,35 +618,29 @@ private fun PlaintextFormatting(
             )
         }
 
-        val window = LocalWindowInfo.current
-        val density = LocalDensity.current
-        val width = remember(window, density) { with(density) { window.containerSize.width.toDp() } - 132.dp }
-
         Grid(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 8.dp, end = 8.dp, bottom = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
             config = {
-                columns(GridTrackSize.MinMax(72.dp, .08.fr), GridTrackSize.MinMax(width, .92.fr))
-                rows(GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto)
-                gap(row = 8.dp, column = 20.dp)
+                columns(GridTrackSize.MinMax(78.dp, .02.fr), GridTrackSize.MinMax(0.dp, .98.fr))
+                rows(GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto)
+                gap(8.dp)
             }
         ) {
             Text(
                 text = stringResource(R.string.pt_string),
-                modifier = Modifier.gridItem(row = 1, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(1, 1, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_delimiter),
-                modifier = Modifier.gridItem(row = 2, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(2, 1, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_list_as),
-                modifier = Modifier.gridItem(row = 3, column = 1, alignment = Alignment.CenterStart),
+                modifier = Modifier.gridItem(3, 1, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
@@ -658,7 +650,7 @@ private fun PlaintextFormatting(
                 value = formatString,
                 onValueChange = { viewModel.saveFormatting(format = it) },
                 modifier = Modifier
-                    .gridItem(row = 1, column = 2, alignment = Alignment.CenterStart)
+                    .gridItem(1, 2, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
@@ -698,7 +690,7 @@ private fun PlaintextFormatting(
                 value = delimiter,
                 onValueChange = { viewModel.saveFormatting(delimiter = it) },
                 modifier = Modifier
-                    .gridItem(row = 2, column = 2, alignment = Alignment.CenterStart)
+                    .gridItem(2, 2, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
@@ -724,7 +716,10 @@ private fun PlaintextFormatting(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
-                modifier = Modifier.gridItem(row = 3, column = 2, alignment = Alignment.CenterStart).padding(vertical = 8.dp)
+                modifier = Modifier
+                    .gridItem(3, 2, 1, 1, Alignment.CenterStart)
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
             ) {
                 Text(
                     text = stringResource(R.string.entries),
@@ -753,28 +748,28 @@ private fun PlaintextFormatting(
                         .padding(8.dp, 4.dp)
                 )
             }
-
-            // save/load preset
-            Row(
-                modifier = Modifier
-                    .gridItem(row = 4, column = 1, columnSpan = 2, alignment = Alignment.Center)
-                    .onGloballyPositioned { saveLoadBounds(it) },
-                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = { saveDialog = true },
-                    enabled = formatString.isNotBlank(),
-                    modifier = Modifier.heightIn(40.dp, 40.dp),
-                    contentPadding = PaddingValues(12.dp, 2.dp),
-                ) { Text(stringResource(R.string.save_preset)) }
-                TextButton(
-                    onClick = { loadDialog = true },
-                    enabled = presets.any { it.formatString.isNotBlank() },
-                    modifier = Modifier.heightIn(40.dp, 40.dp),
-                    contentPadding = PaddingValues(12.dp, 2.dp),
-                ) { Text(stringResource(R.string.load_preset)) }
-            }
+        }
+        // save/load preset
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(top = 8.dp, bottom = 24.dp)
+                .onGloballyPositioned { saveLoadBounds(it) },
+            horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(
+                onClick = { saveDialog = true },
+                enabled = formatString.isNotBlank(),
+                modifier = Modifier.heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(12.dp, 2.dp),
+            ) { Text(stringResource(R.string.save_preset)) }
+            TextButton(
+                onClick = { loadDialog = true },
+                enabled = presets.any { it.formatString.isNotBlank() },
+                modifier = Modifier.heightIn(40.dp, 40.dp),
+                contentPadding = PaddingValues(12.dp, 2.dp),
+            ) { Text(stringResource(R.string.load_preset)) }
         }
 
         // Preview

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -361,8 +362,9 @@ private fun SortingButton(
             ) {
                 Text(
                     text = stringResource(R.string.sub_sorting),
-                    fontSize = 14.sp,
+                    autoSize = TextAutoSize.StepBased(12.sp, 14.sp),
                     lineHeight = 1.em,
+                    maxLines = 1,
                     letterSpacing = 0.1.sp,
                     fontWeight = FontWeight.Medium,
                     color = LocalContentColor.current.copy(alpha = 0.75f),
