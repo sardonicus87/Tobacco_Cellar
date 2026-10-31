@@ -52,10 +52,11 @@ class TinNotificationWorker(
     private fun showNotification(list: List<String>, readyIds: IntArray, app: CellarApplication) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val title = app.getString(R.string.tin_notification_title)
+        val context = getLocalizedContext(app)
+        val title = context.safeString(R.string.tin_notification_title)
 
-        val content = list.take(3).joinToString("\n").plus(if (list.size > 3) app.getString(R.string.tin_notification_extended, "${list.size - 3}") else "")
-        val summaryContent = if (list.size == 1) app.getString(R.string.tin_notification_summary_single, list[0]) else app.getString(R.string.tin_notification_summary_plural, "${list.size}")
+        val content = list.take(3).joinToString("\n").plus(if (list.size > 3) context.safeString(R.string.tin_notification_extended, "${list.size - 3}") else "")
+        val summaryContent = if (list.size == 1) context.safeString(R.string.tin_notification_summary_single, list[0]) else context.safeString(R.string.tin_notification_summary_plural, "${list.size}")
 
         val intent = Intent(applicationContext, MainActivity::class.java).apply {
             putExtra("START_DESTINATION", "home")

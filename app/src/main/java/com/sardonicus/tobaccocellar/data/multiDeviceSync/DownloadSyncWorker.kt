@@ -24,6 +24,8 @@ import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -60,6 +62,7 @@ class DownloadSyncWorker(
         val syncType = inputData.getString(SYNC_TYPE_KEY)
 
         val app = applicationContext as CellarApplication
+        val context = getLocalizedContext(app)
         val itemsRepo = app.container.itemsRepository
         val prefsRepo = app.preferencesRepo
 
@@ -83,8 +86,8 @@ class DownloadSyncWorker(
             if (checkNotificationPermission(notificationManager, app, CellarApplication.SYNC_NOTIFICATION)) {
                 started = SystemClock.elapsedRealtime()
                 val title =
-                    if (syncType == SYNC_TYPE_PERIODIC) app.getString(R.string.sync_notification_title_periodic, "Tobacco Cellar")
-                    else app.getString(R.string.sync_notification_title_regular, "Tobacco Cellar")
+                    if (syncType == SYNC_TYPE_PERIODIC) context.safeString(R.string.sync_notification_title_periodic, "Tobacco Cellar")
+                    else context.safeString(R.string.sync_notification_title_regular, "Tobacco Cellar")
                 val notification = NotificationCompat.Builder(applicationContext, CellarApplication.SYNC_NOTIFICATION)
                     .setContentTitle(title)
                     .setSmallIcon(android.R.drawable.stat_notify_sync)
