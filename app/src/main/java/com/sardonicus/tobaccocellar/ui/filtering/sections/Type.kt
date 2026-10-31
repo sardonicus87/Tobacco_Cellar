@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.LocalContentColor
@@ -60,7 +61,8 @@ fun TypeFilterSection(
             ) {
                 Text(
                     text = stringResource(id = R.string.no_types),
-                    fontSize = 14.sp,
+                    autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                    maxLines = 1,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     color = LocalContentColor.current.copy(alpha = 0.6f)

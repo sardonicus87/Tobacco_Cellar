@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -22,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
@@ -87,7 +90,6 @@ fun OtherFiltersSection(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box {
-            // Ratings //
             Column(
                 modifier = Modifier
                     .border(
@@ -123,7 +125,8 @@ fun OtherFiltersSection(
                 ) {
                     Text(
                         text = stringResource(R.string.no_ratings),
-                        fontSize = 14.sp,
+                        autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                        maxLines = 1,
                         fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
@@ -199,7 +202,8 @@ private fun FavoriteDislikeFilters(
             ) {
                 Text(
                     text = stringResource(R.string.no_fav_dis),
-                    fontSize = 14.sp,
+                    autoSize = TextAutoSize.StepBased(12.sp, 14.sp),
+                    maxLines = 1,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
@@ -244,9 +248,9 @@ private fun StarRatingFilters(
         ) {
             Text(
                 text = stringResource(R.string.rating) + ":",
-                modifier = Modifier
-                    .padding(end = 8.dp),
-                fontSize = 15.sp
+                modifier = Modifier.padding(end = 8.dp),
+                autoSize = TextAutoSize.StepBased(12.sp, 15.sp),
+                maxLines = 1
             )
             Row(
                 modifier = Modifier
@@ -257,8 +261,7 @@ private fun StarRatingFilters(
             ) {
                 Box (
                     contentAlignment = Alignment.CenterEnd,
-                    modifier = Modifier
-                        .width(20.dp)
+                    modifier = Modifier.width(20.dp)
                 ) {
                     Text(
                         text = lowText,
@@ -271,8 +274,7 @@ private fun StarRatingFilters(
                 }
                 RatingRow(
                     range = Pair(ratingLow, ratingHigh),
-                    modifier = Modifier
-                        .padding(horizontal = 5.dp),
+                    modifier = Modifier.padding(horizontal = 5.dp),
                     starSize = 18.dp,
                     showDivider = true,
                     minColor = LocalContentColor.current,
@@ -282,8 +284,7 @@ private fun StarRatingFilters(
                 )
                 Box (
                     contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier
-                        .width(20.dp)
+                    modifier = Modifier.width(20.dp)
                 ) {
                     Text(
                         text = highText,
@@ -310,7 +311,8 @@ private fun StarRatingFilters(
             ) {
                 Text(
                     text = stringResource(R.string.no_ratings),
-                    fontSize = 14.sp,
+                    autoSize = TextAutoSize.StepBased(12.sp, 14.sp),
+                    maxLines = 1,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
@@ -381,7 +383,8 @@ private fun RatingRangePop(
             Text(
                 text = stringResource(R.string.rating),
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
+                fontSize = 18.sp,
+                lineHeight = 1.em
             )
         },
         text = {
@@ -567,14 +570,14 @@ private fun RatingRangePop(
                                 updateSelectedRatingRange(null, selectedHigh)
                             }
                             .padding(4.dp)
-                            .size(20.dp)
+                            .requiredSize(20.dp)
                             .alpha(lowAlpha)
                     )
                     Text(
                         text = stringResource(R.string.rating_limits, formatDecimal(minRating).ifBlank { "0.0" }, formatDecimal(maxRating).ifBlank { "5.0" }),
-                        fontSize = 12.sp,
+                        autoSize = TextAutoSize.StepBased(10.sp, 12.sp),
+                        maxLines = 1,
                         fontWeight = FontWeight.Normal,
-                        modifier = Modifier,
                         color = LocalContentColor.current.copy(alpha = 0.5f)
                     )
                     Icon(
@@ -582,17 +585,13 @@ private fun RatingRangePop(
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null,
-                                enabled = ratingHighString.isNotBlank()
-                            ) {
+                            .clickable(null, LocalIndication.current, ratingHighString.isNotBlank()) {
                                 ratingHighString = ""
                                 selectedHigh = null
                                 updateSelectedRatingRange(selectedLow, null)
                             }
                             .padding(4.dp)
-                            .size(20.dp)
+                            .requiredSize(20.dp)
                             .alpha(highAlpha)
                     )
                 }
@@ -678,7 +677,7 @@ private fun InStockSection(
             onCheckedChange = filterViewModel::updateSelectedOutOfStock,
             modifier = Modifier,
             enabled = outOfStockEnabled || outOfStock,
-            allowResize = false
+            allowResize = true
         )
     }
 }
@@ -700,11 +699,7 @@ private fun TriStateCheckWithLabel(
             .padding(0.dp)
             .height(36.dp)
             .offset(x = (-2).dp)
-            .clickable(
-                indication = null,
-                interactionSource = null,
-                enabled = enabled()
-            ) { onClick?.invoke() },
+            .clickable(null, null, enabled()) { onClick?.invoke() },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -721,7 +716,7 @@ private fun TriStateCheckWithLabel(
             text = text(),
             modifier = Modifier.offset(x = (-4).dp).padding(end = 6.dp),
             color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
-            fontSize = 15.sp,
+            autoSize = TextAutoSize.StepBased(12.sp, 15.sp),
             maxLines = maxLines(),
         )
     }

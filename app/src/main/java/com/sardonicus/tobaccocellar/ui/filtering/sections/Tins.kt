@@ -5,10 +5,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
+@OptIn(ExperimentalGridApi::class)
 @Composable
 fun TinsFilterSection(
     filterViewModel: FilterViewModel,
@@ -92,6 +95,7 @@ fun TinsFilterSection(
                                 uncheckedColor = Color.Transparent,
                                 disabledUncheckedColor = Color.Transparent
                             ),
+                            allowResize = true
                         )
                         CheckboxWithLabel(
                             text = stringResource(R.string.has_tins),
@@ -100,6 +104,7 @@ fun TinsFilterSection(
                             modifier = Modifier,
                             enabled = tinsExist && (hasEnabled || hasTins),
                             fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                            allowResize = true
                         )
                     }
                     CheckboxWithLabel(
@@ -108,13 +113,13 @@ fun TinsFilterSection(
                         onCheckedChange = filterViewModel::updateSelectedNoTins,
                         modifier = Modifier,
                         enabled = tinsExist && (noEnabled || noTins),
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                        allowResize = true
                     )
                 }
 
                 // Opened
                 Column(
-                    modifier = Modifier,
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {
@@ -124,7 +129,8 @@ fun TinsFilterSection(
                         onCheckedChange = filterViewModel::updateSelectedOpened,
                         modifier = Modifier,
                         enabled = tinsExist && (openedEnabled || opened),
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                        allowResize = true
                     )
                     CheckboxWithLabel(
                         text = stringResource(R.string.unopened),
@@ -132,7 +138,8 @@ fun TinsFilterSection(
                         onCheckedChange = filterViewModel::updateSelectedUnopened,
                         modifier = Modifier,
                         enabled = tinsExist && (unopenedEnabled || unopened),
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                        allowResize = true
                     )
                 }
 
@@ -148,7 +155,8 @@ fun TinsFilterSection(
                         onCheckedChange = filterViewModel::updateSelectedFinished,
                         modifier = Modifier,
                         enabled = tinsExist && (finishedEnabled || finished),
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                        allowResize = true
                     )
                     CheckboxWithLabel(
                         text = stringResource(R.string.Unfinished),
@@ -156,7 +164,8 @@ fun TinsFilterSection(
                         onCheckedChange = filterViewModel::updateSelectedUnfinished,
                         modifier = Modifier,
                         enabled = tinsExist && (unfinishedEnabled || unfinished),
-                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
+                        fontColor = if (!tinsExist) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current,
+                        allowResize = true
                     )
                 }
             }
@@ -184,7 +193,8 @@ fun TinsFilterSection(
                     ) {
                         Text(
                             text = stringResource(R.string.no_tins_containers),
-                            fontSize = 14.sp,
+                            autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                            maxLines = 1,
                             fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChipDefaults
@@ -112,7 +113,8 @@ fun OverflowFilterSection(
                 Text(
                     text = nothingLabel,
                     modifier = Modifier.padding(bottom = height/2),
-                    fontSize = 14.sp,
+                    autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                    maxLines = 1,
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)

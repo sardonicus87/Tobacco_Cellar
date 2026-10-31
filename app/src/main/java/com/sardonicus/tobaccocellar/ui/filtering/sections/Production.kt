@@ -44,14 +44,16 @@ fun ProductionFilterSection(
             checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
             modifier = Modifier,
-            enabled = productionEnabled || production
+            enabled = productionEnabled || production,
+            allowResize = true
         )
         CheckboxWithLabel(
             text = stringResource(R.string.discontinued),
             checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
             modifier = Modifier,
-            enabled = outOfProductionEnabled || outOfProduction
+            enabled = outOfProductionEnabled || outOfProduction,
+            allowResize = true
         )
     }
 }

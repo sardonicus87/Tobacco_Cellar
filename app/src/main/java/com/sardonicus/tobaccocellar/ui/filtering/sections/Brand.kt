@@ -87,15 +87,12 @@ fun BrandFilterSection(
 ) {
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        // Search bar and brand include/exclude button //
+    Column(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BrandFilterSearch(filterViewModel, Modifier.weight(1f, false))
+            BrandFilterSearch(filterViewModel, Modifier.weight(1f))
 
             IncludeExcludeSwitch(
                 excluded = { excludeSwitch },
@@ -103,7 +100,6 @@ fun BrandFilterSection(
             )
         }
 
-        // Selectable brands row //
         SelectableBrandsRow(
             filterViewModel = filterViewModel,
             updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
@@ -112,8 +108,6 @@ fun BrandFilterSection(
             modifier = Modifier.fillMaxWidth()
         )
 
-
-        // Selected brands chip box //
         SelectedBrandChipBox(
             filterViewModel = filterViewModel,
             updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
@@ -172,7 +166,9 @@ private fun BrandFilterSearch(
                             text = stringResource(R.string.search_brands),
                             style = LocalTextStyle.current.copy(
                                 color = LocalContentColor.current.copy(alpha = 0.5f)
-                            )
+                            ),
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(12.sp, 16.sp)
                         )
                     }
                     innerTextField()
