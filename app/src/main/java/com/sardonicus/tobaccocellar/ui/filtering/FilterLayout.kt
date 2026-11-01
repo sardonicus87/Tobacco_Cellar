@@ -70,6 +70,7 @@ fun FilterLayout(
     modifier: Modifier = Modifier,
     closeSheet: () -> Unit = {},
     paginateLayout: Boolean = true,
+    searchPerformed: Boolean = false,
     pagerState: PagerState = rememberPagerState { 3 }
 ) {
     val focusManager = LocalFocusManager.current
@@ -91,7 +92,8 @@ fun FilterLayout(
                 }
             },
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        userScrollEnabled = !searchPerformed
     ) {
         item { FilterHeader(!twoPane, closeSheet) }
 
@@ -111,12 +113,13 @@ fun FilterLayout(
 @Composable
 private fun FilterHeader(
     sheetLayout: Boolean,
-    closeSheet: () -> Unit,
-    modifier: Modifier = Modifier
+    closeSheet: () -> Unit
 ) {
     if (sheetLayout) {
         Row(
-            modifier = modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -127,11 +130,15 @@ private fun FilterHeader(
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
                 maxLines = 1,
-                modifier = Modifier.weight(1f).padding(top = 8.dp, bottom = 6.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 8.dp, bottom = 6.dp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Column(
-                modifier = Modifier.weight(1f).padding(end = 6.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 6.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Top
             ) {
@@ -140,10 +147,7 @@ private fun FilterHeader(
                     contentDescription = "Close",
                     modifier = Modifier
                         .clip(CircleShape)
-                        .clickable(
-                            indication = LocalIndication.current,
-                            interactionSource = null
-                        ) { closeSheet() }
+                        .clickable(null, LocalIndication.current) { closeSheet() }
                         .padding(6.dp)
                         .size(20.dp),
                     tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
@@ -152,7 +156,9 @@ private fun FilterHeader(
         }
     } else {
         Row(
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -175,13 +181,17 @@ private fun FilterFooter(
 
     TextButton(
         onClick = filterViewModel::resetFilter,
-        modifier = Modifier.offset(x = (-4).dp).padding(top = 6.dp),
+        modifier = Modifier
+            .offset(x = (-4).dp)
+            .padding(top = 6.dp),
         enabled = filtersApplied,
     ) {
         Icon(
             painter = painterResource(R.drawable.close),
             contentDescription = null,
-            modifier = Modifier.padding(end = 3.dp).size(20.dp)
+            modifier = Modifier
+                .padding(end = 3.dp)
+                .size(20.dp)
         )
         Text(
             text = stringResource(R.string.clear_all),
@@ -231,14 +241,18 @@ private fun PagerLayout(
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier.fillMaxWidth().height(383.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(383.dp),
         userScrollEnabled = true,
         verticalAlignment = Alignment.Top,
     ) { page ->
         when (page) {
             0 -> { PageOne(filterViewModel) }
             1 -> { PageTwo(filterViewModel) }
-            2 -> { PageThree(filterViewModel, Modifier.height(383.dp).padding(bottom = 24.dp)) }
+            2 -> { PageThree(filterViewModel, Modifier
+                .height(383.dp)
+                .padding(bottom = 24.dp)) }
         }
     }
 }
@@ -311,7 +325,9 @@ private fun PageTwo(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxWidth().padding(top = 6.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
