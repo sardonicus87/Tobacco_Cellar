@@ -38,8 +38,8 @@ class StatsViewModel(
     private val _showLoading = MutableStateFlow(true)
     val showLoading = _showLoading.asStateFlow()
     private fun updateLoading(state: Boolean) { _showLoading.value = state }
-    private val unassignedLabel = app.getString(R.string.unassigned)
-    private val noneAssignedLabel = app.getString(R.string.none_assigned)
+    private val unassignedLabel = getLocalizedContext(app).safeString(R.string.unassigned)
+    private val noneAssignedLabel = getLocalizedContext(app).safeString(R.string.none_assigned)
 
     /** Raw stats */
     @Suppress("UNCHECKED_CAST")

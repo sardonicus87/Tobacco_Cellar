@@ -76,11 +76,11 @@ class PlaintextViewModel (
     private val previewItems = listOf(
         Items(
             id = 1,
-            brand = app.getString(R.string.brand_a),
-            blend = app.getString(R.string.blend_1),
+            brand = getLocalizedContext(app).safeString(R.string.brand_a),
+            blend = getLocalizedContext(app).safeString(R.string.blend_1),
             type = BlendTypes.VIRGINIA.name,
             subGenre = "VA/per",
-            cut = app.getString(R.string.flake_cut),
+            cut = getLocalizedContext(app).safeString(R.string.flake_cut),
             inProduction = true,
             quantity = 2,
             favorite = false,
@@ -92,11 +92,11 @@ class PlaintextViewModel (
         ),
         Items(
             id = 2,
-            brand = app.getString(R.string.brand_a),
-            blend = app.getString(R.string.blend_2),
+            brand = getLocalizedContext(app).safeString(R.string.brand_a),
+            blend = getLocalizedContext(app).safeString(R.string.blend_2),
             type = BlendTypes.BURLEY.name,
             subGenre = "",
-            cut = app.getString(R.string.ribbon),
+            cut = getLocalizedContext(app).safeString(R.string.ribbon),
             inProduction = true,
             quantity = 1,
             favorite = true,
@@ -108,17 +108,17 @@ class PlaintextViewModel (
         ),
         Items(
             id = 3,
-            brand = app.getString(R.string.brand_b),
-            blend = app.getString(R.string.blend_1),
+            brand = getLocalizedContext(app).safeString(R.string.brand_b),
+            blend = getLocalizedContext(app).safeString(R.string.blend_1),
             type = BlendTypes.ENGLISH.name,
-            subGenre = app.getString(R.string.balkan),
-            cut = app.getString(R.string.ribbon),
+            subGenre = getLocalizedContext(app).safeString(R.string.balkan),
+            cut = getLocalizedContext(app).safeString(R.string.ribbon),
             inProduction = false,
             quantity = 1,
             favorite = false,
             disliked = false,
             rating = 1.0,
-            notes = app.getString(R.string.fake_note),
+            notes = getLocalizedContext(app).safeString(R.string.fake_note),
             syncTins = false,
             lastModified = -1L
         )
@@ -127,8 +127,8 @@ class PlaintextViewModel (
         Tins(
             tinId = 1,
             itemsId = 1,
-            tinLabel = app.getString(R.string.lot_1),
-            container = app.getString(R.string.jar),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1),
+            container = getLocalizedContext(app).safeString(R.string.jar),
             tinQuantity = 1.75,
             unit = "oz",
             manufactureDate = 1704175200000,
@@ -140,8 +140,8 @@ class PlaintextViewModel (
         Tins(
             tinId = 2,
             itemsId = 1,
-            tinLabel = app.getString(R.string.lot_2),
-            container = app.getString(R.string.original_tin),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_2),
+            container = getLocalizedContext(app).safeString(R.string.original_tin),
             tinQuantity = 50.00,
             unit = "grams",
             manufactureDate = 1704175200000,
@@ -153,7 +153,7 @@ class PlaintextViewModel (
         Tins(
             tinId = 3,
             itemsId = 2,
-            tinLabel = app.getString(R.string.lot_1),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1),
             container = "",
             tinQuantity = 0.00,
             unit = "",
@@ -167,25 +167,25 @@ class PlaintextViewModel (
     private val previewComponents = listOf(
         Components(
             componentId = 1,
-            componentName = app.getString(R.string.virginia_lower)
+            componentName = getLocalizedContext(app).safeString(R.string.virginia_lower)
         ),
         Components(
             componentId = 2,
-            componentName = app.getString(R.string.perique)
+            componentName = getLocalizedContext(app).safeString(R.string.perique)
         ),
         Components(
             componentId = 3,
-            componentName = app.getString(R.string.burley_lower)
+            componentName = getLocalizedContext(app).safeString(R.string.burley_lower)
         )
     )
     private val previewFlavoring = listOf(
         Flavoring(
             flavoringId = 1,
-            flavoringName = app.getString(R.string.vanilla)
+            flavoringName = getLocalizedContext(app).safeString(R.string.vanilla)
         ),
         Flavoring(
             flavoringId = 2,
-            flavoringName = app.getString(R.string.anise)
+            flavoringName = getLocalizedContext(app).safeString(R.string.anise)
         ),
     )
     private val previewComponentCrossRef = listOf(
