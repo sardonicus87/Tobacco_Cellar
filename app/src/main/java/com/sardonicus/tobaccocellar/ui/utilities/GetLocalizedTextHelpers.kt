@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.text.NumberFormat
+import java.text.ParseException
 import java.util.Locale
 
 @SuppressLint("AppBundleLocaleChanges")
@@ -52,6 +54,14 @@ fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
     if (typeKey.isBlank()) { return if (showUnassigned) context.safeString(R.string.unassigned) else "" }
     val blendType = runCatching { BlendTypes.valueOf(typeKey) }.getOrDefault(BlendTypes.UNASSIGNED)
     return context.safeString(blendType.resId)
+}
+
+fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
+    if (text.isBlank()) return null
+    return try {
+        NumberFormat.getNumberInstance(locale).parse(text)?.toDouble()
+    } catch (_: ParseException) { text.replace(',', '.').toDoubleOrNull()
+    } catch (_: Exception) { null }
 }
 
 object LanguageState {
