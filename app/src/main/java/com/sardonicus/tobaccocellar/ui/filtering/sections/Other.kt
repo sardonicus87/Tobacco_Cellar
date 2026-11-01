@@ -69,6 +69,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.parseLocalizedDouble
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
@@ -98,7 +99,6 @@ fun OtherFiltersSection(
                         RoundedCornerShape(8.dp)
                     )
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                    .width(229.dp)
                     .padding(vertical = 3.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
@@ -135,7 +135,6 @@ fun OtherFiltersSection(
             }
         }
 
-        // In Stock
         Box { InStockSection(filterViewModel) }
     }
 }
@@ -196,8 +195,7 @@ private fun FavoriteDislikeFilters(
                     .background(
                         LocalCustomColors.current.sheetBox.copy(alpha = .85f),
                         RoundedCornerShape(8.dp, 8.dp, 0.dp, 0.dp)
-                    )
-                    .fillMaxWidth(),
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -241,7 +239,6 @@ private fun StarRatingFilters(
         Row(
             modifier = Modifier
                 .height(36.dp)
-                .fillMaxWidth()
                 .padding(horizontal = 12.dp)
                 .alpha(if (rangeEnabled) 1f else .38f),
             verticalAlignment = Alignment.CenterVertically,
@@ -253,9 +250,7 @@ private fun StarRatingFilters(
                 maxLines = 1
             )
             Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(null, null, rangeEnabled, onClick = filterViewModel::onShowRatingPop),
+                modifier = Modifier.clickable(null, null, rangeEnabled, onClick = filterViewModel::onShowRatingPop),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
             ) {
@@ -305,8 +300,7 @@ private fun StarRatingFilters(
                     .background(
                         LocalCustomColors.current.sheetBox.copy(alpha = .85f),
                         RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)
-                    )
-                    .fillMaxWidth(),
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -468,16 +462,15 @@ private fun RatingRangePop(
                     )
 
                     // Selected Range Display //
-                    val lowField = ratingLowString.toDoubleOrNull()?.coerceIn(0.0, compMax)
-                    val highField = ratingHighString.toDoubleOrNull()?.coerceIn(compMin, 5.0)
+                    val lowField = parseLocalizedDouble(ratingLowString)?.coerceIn(0.0, compMax)
+                    val highField = parseLocalizedDouble(ratingHighString)?.coerceIn(compMin, 5.0)
 
                     val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
                     val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f
 
                     RatingRow(
                         range = Pair(lowField, highField),
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp),
+                        modifier = Modifier.padding(horizontal = 4.dp),
                         starSize = 20.dp,
                         showDivider = true,
                         minColor = LocalContentColor.current,
@@ -560,13 +553,8 @@ private fun RatingRangePop(
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(
-                                indication = LocalIndication.current,
-                                interactionSource = null,
-                                enabled = ratingLowString.isNotBlank()
-                            ) {
-                                ratingLowString = ""
-                                selectedLow = null
+                            .clickable(null, LocalIndication.current, ratingLowString.isNotBlank()) {
+                                ratingLowString = ""; selectedLow = null
                                 updateSelectedRatingRange(null, selectedHigh)
                             }
                             .padding(4.dp)
@@ -586,8 +574,7 @@ private fun RatingRangePop(
                         modifier = Modifier
                             .clip(CircleShape)
                             .clickable(null, LocalIndication.current, ratingHighString.isNotBlank()) {
-                                ratingHighString = ""
-                                selectedHigh = null
+                                ratingHighString = ""; selectedHigh = null
                                 updateSelectedRatingRange(selectedLow, null)
                             }
                             .padding(4.dp)
@@ -603,12 +590,9 @@ private fun RatingRangePop(
                 ) {
                     TextButton(
                         onClick = {
-                            ratingLowString = ""
-                            selectedLow = null
-                            ratingHighString = ""
-                            selectedHigh = null
-                            updateSelectedUnrated(false)
-                            updateSelectedRatingRange(null, null)
+                            ratingLowString = ""; selectedLow = null
+                            ratingHighString = ""; selectedHigh = null
+                            updateSelectedUnrated(false); updateSelectedRatingRange(null, null)
                         },
                         enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated(),
                         modifier = Modifier.offset(x = (-4).dp),
