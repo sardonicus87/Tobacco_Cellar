@@ -80,7 +80,7 @@ class BlendDetailsViewModel(
                 buildDetailsString(context.safeString(R.string.cut_label), item.items.cut, lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.component_label), item.components.map { it.componentName }.sorted().joinToString(", "), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.flavors_label), item.flavoring.map { it.flavoringName }.sorted().joinToString(", "), lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.production_status), if (item.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.production_status_label), if (item.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.no_of_tins_label), item.items.quantity.toString(), lineHeight = 1.2.em)
             ),
             rating = item.items.rating,
