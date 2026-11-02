@@ -25,6 +25,8 @@ import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -100,9 +102,8 @@ class FilterViewModel (
     val savedExpanded = MutableStateFlow(true)
     fun saveExpandedState(state: Boolean) { savedExpanded.value = state }
 
-    val unitsShort = Triple(application.getString(R.string.oz), application.getString(R.string.lb), application.getString(R.string.grams_short))
-    val unassignedLabel = application.getString(R.string.unassigned)
-    val noneAssignedLabel = application.getString(R.string.none_assigned)
+    val unassignedLabel = getLocalizedContext(application).safeString(R.string.unassigned)
+    val noneAssignedLabel = getLocalizedContext(application).safeString(R.string.none_assigned)
 
     /** Filter states **/
     val brandSearchText = MutableStateFlow("")
@@ -372,8 +373,8 @@ class FilterViewModel (
 
             brands.add(item.brand)
             types.add(item.type.ifBlank { BlendTypes.UNASSIGNED.name })
-            subgenres.add(item.subGenre.ifBlank { BlendTypes.UNASSIGNED.name })
-            cuts.add(item.cut.ifBlank { BlendTypes.UNASSIGNED.name })
+            subgenres.add(item.subGenre.ifBlank { unassignedLabel })
+            cuts.add(item.cut.ifBlank { unassignedLabel })
 
             if (item.type.isNotBlank()) typesAny = true
             if (item.subGenre.isNotBlank()) subgenresAny = true
@@ -707,15 +708,17 @@ class FilterViewModel (
     @Suppress("UNCHECKED_CAST")
     private val enablementState: StateFlow<EnablementState> = combine (
         everythingFlow, filterSelectionsFlow, preferencesRepo.quantityOption,
-        preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate
+        preferencesRepo.tinOzConversionRate, preferencesRepo.tinGramsConversionRate,
+        searchPerformed
     ) { array ->
         val allItems = array[0] as List<ItemsComponentsAndTins>
         val selections = array[1] as SheetSelections
         val quantityOption = array[2] as QuantityOption
         val ozRate = array[3] as Double
         val gramsRate = array[4] as Double
+        val searched = array[5] as Boolean
 
-        calculateEnablement(allItems, selections, quantityOption, ozRate, gramsRate)
+        calculateEnablement(allItems, selections, quantityOption, ozRate, gramsRate, searched)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), EnablementState())
@@ -726,6 +729,7 @@ class FilterViewModel (
         quantityOption: QuantityOption,
         ozRate: Double,
         gramsRate: Double,
+        searched: Boolean
     ) : EnablementState {
         if (allItems.isEmpty()) return EnablementState()
         val now = System.currentTimeMillis()
@@ -736,7 +740,8 @@ class FilterViewModel (
             val failCount = results.count { !it }
             if (failCount > 1) continue
 
-            updateEnablementMaps(items, results, failCount, collector, selections, quantityOption, ozRate, gramsRate, now)
+            updateEnablementMaps(items, results, failCount, collector, selections, quantityOption,
+                ozRate, gramsRate, now, searched)
         }
 
         return EnablementState(
@@ -843,11 +848,12 @@ class FilterViewModel (
         quantityOption: QuantityOption,
         ozRate: Double,
         gramsRate: Double,
-        now: Long
+        now: Long,
+        searched: Boolean
     ) {
         val item = items.items
         // index is checkItemResults Array Boolean, true if pass all or failed only in current index
-        fun canEnable(index: Int) = failCount == 0 || (failCount == 1 && !results[index])
+        fun canEnable(index: Int) = (failCount == 0 || (failCount == 1 && !results[index])) && !searched
 
         if (canEnable(0)) collector.brandsMap[item.brand] = true
         if (canEnable(1)) collector.excludeBrandsMap[item.brand] = true
@@ -1227,11 +1233,13 @@ class FilterViewModel (
 
         if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend) }
 
+        val context = getLocalizedContext(application)
+
         if (isReadyTins) {
             SearchState(
                 searchPerformed = true,
                 isTinSearch = true,
-                searchText = application.getString(R.string.ready_tins),
+                searchText = context.safeString(R.string.ready_tins),
                 currentSetting = searchSetting,
                 settingsList = SearchSettingList(settingsList),
                 settingsEnabled = false,
@@ -1974,8 +1982,6 @@ class FilterViewModel (
 }
 
 enum class BottomSheetState { OPENED, CLOSED }
-
-//enum class ActiveScreen { HOME, STATS, DATES, Other }
 
 enum class FilterCategory {
     BRAND, EXCLUDE_BRAND, TYPE, FAVORITE, EXCLUDE_FAVORITE, DISLIKED, EXCLUDE_DISLIKED, UNRATED,
