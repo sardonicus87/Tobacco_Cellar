@@ -394,7 +394,7 @@ private fun CustomBlendSearch(
             lineHeight = 16.sp
         ),
         keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.Sentences,
+            capitalization = KeyboardCapitalization.None,
             keyboardType = KeyboardType.Text,
             imeAction = ImeAction.Search,
         ),
