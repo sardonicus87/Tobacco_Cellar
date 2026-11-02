@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -29,6 +32,7 @@ import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,6 +40,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -84,13 +89,11 @@ fun OtherFiltersSection(
     val ratingsExist by filterViewModel.ratingsExist.collectAsState()
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 2.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box {
+        Box(Modifier.weight(.6f, false)) {
             Column(
                 modifier = Modifier
                     .border(
@@ -99,7 +102,8 @@ fun OtherFiltersSection(
                         RoundedCornerShape(8.dp)
                     )
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-                    .padding(vertical = 3.dp),
+                    .padding(vertical = 3.dp)
+                    .requiredWidthIn(min = 180.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -134,8 +138,9 @@ fun OtherFiltersSection(
                 }
             }
         }
+        Spacer(Modifier.requiredWidth(12.dp))
 
-        Box { InStockSection(filterViewModel) }
+        Box { InStockSection(filterViewModel, Modifier.requiredWidthIn(min = 110.dp)) }
     }
 }
 
@@ -151,7 +156,10 @@ private fun FavoriteDislikeFilters(
     val dislikedsEnabled by filterViewModel.dislikedsEnabled.collectAsState()
 
     Box {
-        Row {
+        Row(
+            Modifier.padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             TriStateCheckWithLabel(
                 text = { stringResource(R.string.favorites) },
                 state = { favoritesSelection },
@@ -239,24 +247,24 @@ private fun StarRatingFilters(
         Row(
             modifier = Modifier
                 .height(36.dp)
-                .padding(horizontal = 12.dp)
+                .padding(start = 12.dp, end = 10.dp)
                 .alpha(if (rangeEnabled) 1f else .38f),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(R.string.rating) + ":",
-                modifier = Modifier.padding(end = 8.dp),
+                text = stringResource(R.string.rating_label),
+                modifier = Modifier,
                 autoSize = TextAutoSize.StepBased(12.sp, 15.sp),
                 maxLines = 1
             )
             Row(
-                modifier = Modifier.clickable(null, null, rangeEnabled, onClick = filterViewModel::onShowRatingPop),
+                modifier = Modifier.clickable(null, LocalIndication.current, rangeEnabled, onClick = filterViewModel::onShowRatingPop),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
             ) {
                 Box (
                     contentAlignment = Alignment.CenterEnd,
-                    modifier = Modifier.width(20.dp)
+                    modifier = Modifier.requiredWidth(20.dp)
                 ) {
                     Text(
                         text = lowText,
@@ -279,7 +287,7 @@ private fun StarRatingFilters(
                 )
                 Box (
                     contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier.width(20.dp)
+                    modifier = Modifier.requiredWidth(20.dp)
                 ) {
                     Text(
                         text = highText,
@@ -383,7 +391,9 @@ private fun RatingRangePop(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
             ) {
@@ -541,7 +551,9 @@ private fun RatingRangePop(
 
                 // Clear buttons and available range //
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 29.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 29.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -600,7 +612,9 @@ private fun RatingRangePop(
                         Icon(
                             painter = painterResource(R.drawable.close),
                             contentDescription = "",
-                            modifier = Modifier.padding(end = 3.dp).size(20.dp)
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
                         )
                         Text(
                             text = stringResource(R.string.clear_all),
@@ -682,23 +696,25 @@ private fun TriStateCheckWithLabel(
         modifier = modifier
             .padding(0.dp)
             .height(36.dp)
-            .offset(x = (-2).dp)
             .clickable(null, null, enabled()) { onClick?.invoke() },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start)
     ) {
         Box {
-            TriStateCheckbox(
-                state = state(),
-                onClick = onClick,
-                enabled = enabled(),
-                colors = colors(),
-                interactionSource = interactionSource
-            )
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 30.dp) {
+                TriStateCheckbox(
+                    state = state(),
+                    onClick = onClick,
+                    enabled = enabled(),
+                    colors = colors(),
+                    interactionSource = interactionSource,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
         }
         Text(
             text = text(),
-            modifier = Modifier.offset(x = (-4).dp).padding(end = 6.dp),
+            modifier = Modifier.padding(end = 4.dp),
             color = if (enabled()) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.5f),
             autoSize = TextAutoSize.StepBased(12.sp, 15.sp),
             maxLines = maxLines(),
