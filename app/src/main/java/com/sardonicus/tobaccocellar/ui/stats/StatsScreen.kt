@@ -438,13 +438,12 @@ private fun BrandsByRatingSection(
         )
         Column (
             modifier = Modifier
-                .padding(top = 20.dp, bottom = 44.dp, start = 16.dp, end = 16.dp)
-                .fillMaxWidth(),
+                .padding(top = 20.dp, bottom = 44.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Grid(
-                modifier = Modifier.padding(bottom = 4.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
                 config = {
                     columns(GridTrackSize.MaxContent, GridTrackSize.Auto, GridTrackSize.MaxContent, GridTrackSize.MaxContent, GridTrackSize.MaxContent)
                     repeat(brandsByRating().size) { row(GridTrackSize.Auto) }
