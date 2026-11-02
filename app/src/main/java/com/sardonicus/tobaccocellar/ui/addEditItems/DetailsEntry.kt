@@ -289,7 +289,7 @@ fun DetailsEntry(
                     }
                 },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
+                    capitalization = KeyboardCapitalization.None,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
