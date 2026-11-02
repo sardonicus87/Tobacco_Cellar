@@ -44,6 +44,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.parseLocalizedDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
@@ -118,13 +119,12 @@ fun TinRatesDialog(
                             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.Start
                         ) {
-                            val symbols =
-                                remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
-                            val allowedPattern =
-                                remember(symbols.decimalSeparator, symbols.groupingSeparator) {
-                                    val ds = Regex.escape(symbols.decimalSeparator.toString())
-                                    Regex("^(\\s*|\\d{0,5}($ds\\d{0,2})?)$")
-                                }
+                            val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                            val decimalSeparator = symbols.decimalSeparator.toString()
+                            val allowedPattern = remember(decimalSeparator) {
+                                val ds = Regex.escape(decimalSeparator)
+                                Regex("^(\\s*|\\d{0,5}?($ds\\d{0,2})?)$")
+                            }
 
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -234,7 +234,7 @@ fun TinRatesDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(tinOzRate.toDoubleOrNull() ?: ozRate, tinGramsRate.toDoubleOrNull() ?: gramsRate)
+                    onSave(parseLocalizedDouble(tinOzRate) ?: ozRate, parseLocalizedDouble(tinGramsRate) ?: gramsRate)
                     saving = true
                 },
                 enabled = !debouncedLoading
