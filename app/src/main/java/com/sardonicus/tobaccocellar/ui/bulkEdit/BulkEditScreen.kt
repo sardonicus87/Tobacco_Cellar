@@ -549,7 +549,7 @@ fun BulkEditing(
 
                 Grid(
                     config = {
-                        columns(GridTrackSize.MinMax(100.dp, .05.fr), GridTrackSize.MinMax(0.dp, .95.fr))
+                        columns(GridTrackSize.MinMax(100.dp, .08.fr), GridTrackSize.MinMax(0.dp, .92.fr))
                         repeat(9) { row(GridTrackSize.Auto) }
                         gap(8.dp)
                     },
@@ -654,7 +654,7 @@ fun BulkEditing(
                             }
                         },
                         keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.Sentences,
+                            capitalization = KeyboardCapitalization.None,
                             keyboardType = KeyboardType.Text,
                             imeAction = nextOrDone(enabledFields, 0)
                         ),
@@ -840,6 +840,8 @@ fun BulkEditing(
                         ) {
                             Text(
                                 text = stringResource(R.string.favorite),
+                                autoSize = TextAutoSize.StepBased(13.sp, 16.sp),
+                                maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color =
                                     if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
@@ -879,6 +881,8 @@ fun BulkEditing(
                         ) {
                             Text(
                                 text = stringResource(R.string.disliked),
+                                autoSize = TextAutoSize.StepBased(13.sp, 16.sp),
+                                maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color =
                                     if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
