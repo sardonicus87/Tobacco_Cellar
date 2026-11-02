@@ -21,6 +21,7 @@ import com.sardonicus.tobaccocellar.data.ItemsFlavoringCrossRef
 import com.sardonicus.tobaccocellar.data.ItemsRepository
 import com.sardonicus.tobaccocellar.data.TinSyncPayload
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
+import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
@@ -193,15 +194,23 @@ class DownloadSyncWorker(
             "Items" -> {
                 val remoteItem = Json.decodeFromString<Items>(op.payload)
                 val localItem = repo.getItemByIndex(remoteItem.brand, remoteItem.blend)
+                val remapType = when (remoteItem.type.trim()) {
+                    "Aromatic" -> BlendTypes.AROMATIC.name
+                    "English" -> BlendTypes.ENGLISH.name
+                    "Burley" -> BlendTypes.BURLEY.name
+                    "Virginia" -> BlendTypes.VIRGINIA.name
+                    "Other" -> BlendTypes.OTHER.name
+                    else -> ""
+                }
 
                 when (op.operationType) {
                     "INSERT" -> {
                         if (localItem == null) { repo.insertItem(remoteItem) }
                         else if (remoteItem.lastModified > localItem.lastModified) {
-                            repo.updateItem(remoteItem.copy(id = localItem.id)) } }
+                            repo.updateItem(remoteItem.copy(id = localItem.id, type = remapType)) } }
                     "UPDATE" -> {
                         if (localItem != null && remoteItem.lastModified > localItem.lastModified) {
-                            repo.updateItem(remoteItem.copy(id = localItem.id)) } }
+                            repo.updateItem(remoteItem.copy(id = localItem.id, type = remapType)) } }
                     "DELETE" -> { localItem?.let { repo.deleteItem(it) } }
                 }
             }
