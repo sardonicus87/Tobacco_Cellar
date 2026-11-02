@@ -875,6 +875,7 @@ class SettingsViewModel(
 
     suspend fun restoreDatabase(context: Context, databaseBytes: ByteArray) {
         val dbPath = getDatabaseFilePath(context)
+        val tcDb = TobaccoDatabase.getDatabase(context)
         val dbFile = File(dbPath)
         val walFile = File("$dbPath-wal")
         val shmFile = File("$dbPath-shm")
@@ -898,14 +899,16 @@ class SettingsViewModel(
             if (shmFile.exists()) { copyFile(shmFile, backupShmFile) }
 
             if (backupDbVersion == existingDbVersion) {
+                tcDb.clearAllTables()
                 tempZipFile.writeBytes(databaseBytes)
                 unzipFile(tempZipFile, tempDir)
 
-                if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
-                if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
                 copyFile(File(tempDir, "tobacco_database"), dbFile)
+                if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
+                if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
             }
             else if (backupDbVersion < existingDbVersion) {
+                tcDb.clearAllTables()
                 tempMigrationDir = File(context.cacheDir, "temp_migration_dir")
                 tempMigrationDir.mkdirs()
 
@@ -955,9 +958,9 @@ class SettingsViewModel(
         val migratedShmFile = File("$migratedPath-shm")
 
         try {
-            if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
-            if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
             copyFile(File(migratedPath!!), dbFile)
+            if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
+            if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
         } catch (e: Exception) { throw e }
     }
 
