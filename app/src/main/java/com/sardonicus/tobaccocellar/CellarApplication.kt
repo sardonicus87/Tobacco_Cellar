@@ -13,7 +13,6 @@ import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.work.Configuration
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -38,10 +37,13 @@ import com.sardonicus.tobaccocellar.ui.settings.DismissLoading
 import com.sardonicus.tobaccocellar.ui.settings.ShowLoading
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
-import com.sardonicus.tobaccocellar.ui.utilities.getInstalledLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.updateLegacyLangCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -65,7 +67,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val VIEW_PREFERENCE_NAME = "view_preferences"
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(VIEW_PREFERENCE_NAME)
 
-class CellarApplication : Application(), Application.ActivityLifecycleCallbacks, Configuration.Provider {
+class CellarApplication : Application(), Application.ActivityLifecycleCallbacks {
     val container: AppContainer by lazy { AppDataContainer(this) }
     val preferencesRepo: PreferencesRepo by lazy { PreferencesRepo(dataStore, applicationScope) }
     lateinit var csvHelper: CsvHelper
@@ -98,11 +100,6 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
         }
     }
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setMinimumLoggingLevel(android.util.Log.INFO)
-            .build()
-
     override fun onCreate() {
         super.onCreate()
         instance = this
@@ -125,9 +122,10 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
             launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
             launch {
-                preferencesRepo.appLanguage.collectLatest {
+                preferencesRepo.appLanguage.collectLatest { rawCode ->
+                    val code = updateLegacyLangCode(rawCode)
                     val installed = getInstalledLanguages(this@CellarApplication)
-                    if (it == "system" || it == "en" || it in installed) { LanguageState.code = it }
+                    if (code == "system" || code == "en" || code in installed) { LanguageState.code = code }
                     else {
                         var attempts = 0
                         while (attempts < 10) {
@@ -136,8 +134,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
                             attempts++
 
                             val installed = getInstalledLanguages(this@CellarApplication)
-                            if (it in installed) {
-                                EventBus.emit(DismissLoading); LanguageState.code = it
+                            if (code in installed) {
+                                EventBus.emit(DismissLoading); LanguageState.code = code
                                 break
                             }
                             if (attempts == 3) { EventBus.emit(ShowLoading) }
@@ -152,7 +150,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
                             } else {
                                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(LanguageState.code))
                             }
-                            EventBus.emit(ShowToast(getString(R.string.language_failed)))
+                            EventBus.emit(ShowToast(getLocalizedContext(this@CellarApplication).safeString(R.string.language_failed)))
                         }
                     }
                 }
@@ -272,9 +270,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
                 else -> continue
             }
 
-            if (item.type != mappedType) {
-                itemsRepo.updateItem(item.copy(type = mappedType))
-            }
+            if (item.type != mappedType) { itemsRepo.updateItem(item.copy(type = mappedType)) }
         }
 
         SyncStateManager.loggingPaused = false
@@ -317,7 +313,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
 
         val workManager = WorkManager.getInstance(this@CellarApplication)
         workManager.cancelUniqueWork("download_sync_work")
-        EventBus.emit(ShowToast(this.getString(R.string.sync_disabled)))
+        EventBus.emit(ShowToast(getLocalizedContext(this).safeString(R.string.sync_disabled)))
     }
 
     private fun createNotificationChannel() {
@@ -327,16 +323,16 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks,
         if (existingSyncChannel != null && existingSyncChannel.importance == NotificationManager.IMPORTANCE_DEFAULT) {
             notificationManager.deleteNotificationChannel(SYNC_NOTIFICATION) }
 
-        val syncDescription = this.getString(R.string.sync_channel_description)
-        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, this.getString(R.string.sync_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+        val syncDescription = getLocalizedContext(this).safeString(R.string.sync_channel_description)
+        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, getLocalizedContext(this).safeString(R.string.sync_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
             description = syncDescription
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)
             enableLights(false)
         }
-        val tinDescription = this.getString(R.string.tin_channel_description)
-        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, this.getString(R.string.tin_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+        val tinDescription = getLocalizedContext(this).safeString(R.string.tin_channel_description)
+        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, getLocalizedContext(this).safeString(R.string.tin_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
             description = tinDescription
             setShowBadge(true)
             enableVibration(true)

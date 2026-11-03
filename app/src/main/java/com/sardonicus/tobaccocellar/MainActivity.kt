@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.RoundedCorner
+import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -70,12 +71,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.text.layoutDirection
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -119,11 +122,11 @@ import com.sardonicus.tobaccocellar.ui.utilities.CornerRadii
 import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TransitionCache
-import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getSystemLanguage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -293,7 +296,15 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(intent) { handleNotificationIntent(intent, navigationState) }
 
-            CompositionLocalProvider(LocalCellarApplication provides this@MainActivity.application as CellarApplication) {
+            val activeLocale by LanguageState.codeFlow.collectAsState()
+            val dynamicDirection = remember(activeLocale) {
+                if (LanguageState.locale.layoutDirection == View.LAYOUT_DIRECTION_RTL) LayoutDirection.Rtl else LayoutDirection.Ltr
+            }
+
+            CompositionLocalProvider(
+                LocalLayoutDirection provides dynamicDirection,
+                LocalCellarApplication provides this@MainActivity.application as CellarApplication
+            ) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
                     Box(
                         modifier = Modifier
@@ -361,8 +372,7 @@ class MainActivity : AppCompatActivity() {
 
                     val screenBitmap = TransitionCache.screenshot
                     val appLang by preferencesRepo.appLanguage.collectAsState("system")
-                    val active by LanguageState.codeFlow.collectAsState()
-                    val downloading = appLang != active
+                    val downloading = appLang != activeLocale
 
                     var showCover by remember(screenBitmap) { mutableStateOf(screenBitmap != null) }
                     var startFade by remember { mutableStateOf(false) }
@@ -444,10 +454,13 @@ class MainActivity : AppCompatActivity() {
 
             val config = resources.configuration
             config.setLocale(target)
+            config.setLayoutDirection(target)
+
             @Suppress("DEPRECATION")
             resources.updateConfiguration(config, resources.displayMetrics)
 
             newConfig.setLocale(target)
+            newConfig.setLayoutDirection(target)
         }
     }
 
