@@ -25,8 +25,8 @@ import com.sardonicus.tobaccocellar.ui.BlendTypes
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.checkNotificationPermission
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first

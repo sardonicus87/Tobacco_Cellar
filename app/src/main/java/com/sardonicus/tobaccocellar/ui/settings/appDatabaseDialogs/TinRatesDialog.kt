@@ -44,7 +44,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.parseLocalizedDouble
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.parseLocalizedDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols

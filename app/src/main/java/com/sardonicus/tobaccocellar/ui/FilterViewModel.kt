@@ -25,8 +25,8 @@ import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay

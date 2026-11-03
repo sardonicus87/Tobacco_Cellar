@@ -12,10 +12,10 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.blendDetails.isMetricLocale
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
-import com.sardonicus.tobaccocellar.ui.utilities.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

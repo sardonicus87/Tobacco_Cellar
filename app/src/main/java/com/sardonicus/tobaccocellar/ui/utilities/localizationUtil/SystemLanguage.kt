@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.utilities
+package com.sardonicus.tobaccocellar.ui.utilities.localizationUtil
 
 import android.app.LocaleManager
 import android.content.Context
@@ -27,7 +27,7 @@ fun getSystemLocales(context: Context): List<Locale> {
 }
 
 fun getInstalledLanguages(context: Context): Set<String> {
-    if (BuildConfig.DEBUG) { return setOf("en", "de") }
+    if (BuildConfig.DEBUG) { return setOf("en", "de", "he") }
 
     val splitNames = context.applicationInfo.splitNames ?: return emptySet()
     return splitNames.filter { it.startsWith("config.") }

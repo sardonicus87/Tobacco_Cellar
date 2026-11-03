@@ -3,9 +3,9 @@ package com.sardonicus.tobaccocellar.data
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVPrinter

@@ -121,9 +121,9 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

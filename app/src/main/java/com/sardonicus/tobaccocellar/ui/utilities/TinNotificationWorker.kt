@@ -10,6 +10,8 @@ import androidx.work.WorkerParameters
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.MainActivity
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.ZoneId

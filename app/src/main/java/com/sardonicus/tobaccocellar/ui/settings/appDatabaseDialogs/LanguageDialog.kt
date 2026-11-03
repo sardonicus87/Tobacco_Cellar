@@ -45,10 +45,11 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.getInstalledLanguages
-import com.sardonicus.tobaccocellar.ui.utilities.getSystemLanguage
-import com.sardonicus.tobaccocellar.ui.utilities.getSystemLocales
-import java.util.Locale
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.SupportedLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getSystemLanguage
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getSystemLocales
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.updateLegacyLangCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,12 +63,13 @@ fun LanguageDialog(
     val deviceLocales = getSystemLocales(context)
     val installedLocales = getInstalledLanguages(context)
     val currentAppLocale = AppCompatDelegate.getApplicationLocales()
-    val currentCode = if (currentAppLocale.isEmpty) "system" else currentAppLocale[0]?.language?.lowercase() ?: "system"
+    val rawCode = if (currentAppLocale.isEmpty) "system" else currentAppLocale[0]?.language?.lowercase() ?: "system"
+    val currentCode = updateLegacyLangCode(rawCode)
 
     val preferredCodes = buildSet {
         add(currentCode)
-        for (locale in deviceLocales) { add(locale.language.lowercase()) }
-        addAll(installedLocales)
+        for (locale in deviceLocales) { add(updateLegacyLangCode(locale.language.lowercase())) }
+        for (code in installedLocales) { add(updateLegacyLangCode(code)) }
     }.filter { it in SupportedLanguages.codes }.toSet()
 
     val preferredOptions = preferredCodes.mapNotNull { code ->
@@ -190,25 +192,4 @@ data class LanguageOption(val label: String, val code: String)
 
 data class AppLanguage(val label: String, val code: String) {
     val displayString: String get() = "$label ($code)"
-}
-
-object SupportedLanguages {
-    val codes = listOf(
-        "ar", "bn", "bg", "ca", "zh-CN", "hr", "cs", "da", "nl", "en",
-        "et", "fi", "fr", "de", "el", "gu", "he", "hi", "hu", "is",
-        "id", "it", "ja", "kn", "ko", "lv", "lt", "ml", "mr", "no",
-        "fa", "pl", "pt", "pa", "ro", "ru", "sk", "sl", "es", "sw",
-        "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "zu"
-    ).sorted().toSet()
-
-    val list: List<AppLanguage> = codes.map { code ->
-        val locale = Locale.forLanguageTag(code)
-        val nativeName = locale.getDisplayName(locale).replaceFirstChar { it.uppercase() }
-        AppLanguage(nativeName, code)
-    }
-
-    fun getDisplayString(code: String): String? {
-        val lang = list.find { it.code == code }
-        return lang?.displayString
-    }
 }

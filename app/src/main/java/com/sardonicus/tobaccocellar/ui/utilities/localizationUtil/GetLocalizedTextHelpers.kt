@@ -1,4 +1,4 @@
-package com.sardonicus.tobaccocellar.ui.utilities
+package com.sardonicus.tobaccocellar.ui.utilities.localizationUtil
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -9,15 +9,6 @@ import androidx.annotation.StringRes
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
@@ -56,34 +47,14 @@ fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
     return context.safeString(blendType.resId)
 }
 
+fun String.toLtr(): String {
+    return if (this.isNotBlank()) "\u202A$this\u202C" else this
+}
+
 fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
     if (text.isBlank()) return null
     return try {
         NumberFormat.getNumberInstance(locale).parse(text)?.toDouble()
     } catch (_: ParseException) { text.replace(',', '.').toDoubleOrNull()
     } catch (_: Exception) { null }
-}
-
-object LanguageState {
-    private val _code = MutableStateFlow("system")
-
-    private val _localeFlow: StateFlow<Locale> = _code.map { code ->
-        val systemLocales = getSystemLocales(CellarApplication.instance)
-        if (code == "system") { systemLocales.firstOrNull() ?: Locale.getDefault() }
-        else { systemLocales.find { it.language.equals(code, true) } ?: Locale.forLanguageTag(code) }
-    }.stateIn(CoroutineScope(Dispatchers.Default + SupervisorJob()), SharingStarted.Eagerly, Locale.ROOT)
-
-    var codeFlow: StateFlow<String> = _code.asStateFlow()
-
-    var code: String
-        get() = _code.value
-        set(value) { _code.value = value }
-
-    val locale: Locale
-        get() = _localeFlow.value
-
-    fun init(context: Context) {
-        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        _code.value = prefs.getString("app_language", "system") ?: "system"
-    }
 }
