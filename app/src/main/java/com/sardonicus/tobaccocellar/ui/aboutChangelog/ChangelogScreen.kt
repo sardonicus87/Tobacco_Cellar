@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,9 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.CellarTopAppBar
@@ -92,44 +95,44 @@ fun ChangelogScreen (
             )
         },
     ) { innerPadding ->
-        Box {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Top
-            ) {
-                GlowBox(
-                    color = GlowColor(Color.Black.copy(alpha = 0.68f)),
-                    size = GlowSize(top = 4.dp)
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box {
+                Column(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    // log entries
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth().padding(0.dp),
-                        state = listState,
-                        userScrollEnabled = true,
+                    GlowBox(
+                        color = GlowColor(Color.Black.copy(alpha = 0.68f)),
+                        size = GlowSize(top = 4.dp)
                     ) {
-                        item { Spacer(Modifier.height(12.dp)) }
-
-                        items(
-                            items = changelogEntries, key = { it.versionCode }
+                        // log entries
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().padding(0.dp),
+                            state = listState,
+                            userScrollEnabled = true,
                         ) {
-                            if (it.versionNumber.isNotBlank()) {
-                                ChangeLogEntryLayout(
-                                    versionNumber = it.versionNumber,
-                                    buildDate = it.buildDate,
-                                    changes = it.changes,
-                                    improvements = it.improvements,
-                                    bugFixes = it.bugFixes,
-                                    modifier = Modifier
-                                )
+                            item { Spacer(Modifier.height(12.dp)) }
+
+                            items(items = changelogEntries, key = { it.versionCode }) {
+                                if (it.versionNumber.isNotBlank()) {
+                                    ChangeLogEntryLayout(
+                                        versionNumber = it.versionNumber,
+                                        buildDate = it.buildDate,
+                                        changes = it.changes,
+                                        improvements = it.improvements,
+                                        bugFixes = it.bugFixes,
+                                        modifier = Modifier
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                if (scrolling) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.38f)) }
             }
-            if (scrolling) { LoadingIndicator(scrimColor = Color.Black.copy(alpha = 0.38f)) }
         }
     }
 }

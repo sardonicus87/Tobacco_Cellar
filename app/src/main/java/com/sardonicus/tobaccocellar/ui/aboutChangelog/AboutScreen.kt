@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -51,16 +52,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -71,6 +69,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.primaryContainerLight
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,34 +86,6 @@ fun AboutScreen(
     DisposableEffect(Unit) { onDispose { selectionKey++; selectionFocused = false } }
 
     val context = LocalContext.current
-    val versionInfo = buildAnnotatedString {
-        withStyle(
-            style = SpanStyle(
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Medium
-            )
-        ) { append(stringResource(R.string.app_version)) }
-        withStyle(
-            style = SpanStyle(
-                color = MaterialTheme.colorScheme.tertiary,
-                fontWeight = FontWeight.Medium
-            )
-        ) { append(BuildConfig.VERSION_NAME) }
-        append("\n")
-        withStyle(
-            style = SpanStyle(
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Medium
-            )
-        ) { append(stringResource(R.string.db_version)) }
-        withStyle(
-            style = SpanStyle(
-                color = MaterialTheme.colorScheme.tertiary,
-                fontWeight = FontWeight.Medium
-            )
-        ) { append(TobaccoDatabase.DATABASE_VERSION.toString()) }
-    }
-
 
     Scaffold(
         modifier = modifier
@@ -155,8 +126,7 @@ fun AboutScreen(
                 Spacer(Modifier.height(24.dp))
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
                 ) {
@@ -181,8 +151,7 @@ fun AboutScreen(
 
                 // About
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
                 ) {
@@ -222,11 +191,36 @@ fun AboutScreen(
 
                 key(selectionKey) { SelectionContainer(
                     Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
-                    Text(versionInfo,
-                        textAlign = TextAlign.Center,
-                        fontSize = 15.sp,
-                        lineHeight = 1.5.em
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row {
+                            Text(
+                                text = stringResource(R.string.app_version),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = BuildConfig.VERSION_NAME.toLtr(),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                        Row {
+                            Text(
+                                text = stringResource(R.string.db_version),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = TobaccoDatabase.DATABASE_VERSION.toString(),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.tertiary
+                            )
+                        }
+                    }
                 } }
 
                 // Changelog and links
@@ -287,26 +281,37 @@ private fun ExternalLink(
 ) {
     val uriHandler = LocalUriHandler.current
     val hapticFeedback = LocalHapticFeedback.current
-    val externalLink: (String) -> AnnotatedString = {
-        buildAnnotatedString {
-            append("$it↗")
-            addStyle(SpanStyle(textDecoration = TextDecoration.Underline), 0, length - 1)
-        }
-    }
-    Text(
-        text = externalLink(text),
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .clickable(indication = LocalIndication.current, interactionSource = null) {
+            .clickable(null, LocalIndication.current) {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 uriHandler.openUri(url)
             }
             .padding(vertical = 6.dp)
             .padding(start = 10.dp, end = 6.dp),
-        fontWeight = FontWeight.Medium,
-        fontSize = 15.sp,
-        lineHeight = 1.em,
-        color = MaterialTheme.colorScheme.primary
-    )
+        horizontalArrangement = Arrangement.spacedBy((-0.5).dp, Alignment.Start),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.offset(y = 0.6.dp),
+            textDecoration = TextDecoration.Underline,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            lineHeight = 1.em,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = if (isRtl) "↖" else "↗",
+            modifier = Modifier,
+            fontWeight = FontWeight.Medium,
+            fontSize = 15.sp,
+            lineHeight = 1.em,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
 }
 
