@@ -1,6 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.utilities.localizationUtil
 
 import android.content.Context
+import androidx.core.text.layoutDirection
 import com.sardonicus.tobaccocellar.CellarApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,7 @@ object LanguageState {
         else { systemLocales.find { updateLegacyLangCode(it.language).equals(code, true) } ?: Locale.forLanguageTag(code) }
     }.stateIn(CoroutineScope(Dispatchers.Default + SupervisorJob()), SharingStarted.Eagerly, Locale.ROOT)
 
-    var codeFlow: StateFlow<String> = _code.asStateFlow()
+    val codeFlow: StateFlow<String> = _code.asStateFlow()
 
     var code: String
         get() = _code.value
@@ -32,6 +33,9 @@ object LanguageState {
 
     val locale: Locale
         get() = _localeFlow.value
+
+    val isRtl: Boolean
+        get() = locale.layoutDirection == 1
 
     fun init(context: Context) {
         val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
