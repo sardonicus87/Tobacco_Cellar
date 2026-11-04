@@ -52,13 +52,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -69,6 +67,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.TobaccoDatabase
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.primaryContainerLight
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -281,7 +280,6 @@ private fun ExternalLink(
 ) {
     val uriHandler = LocalUriHandler.current
     val hapticFeedback = LocalHapticFeedback.current
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
     Row(
         modifier = modifier
@@ -305,7 +303,7 @@ private fun ExternalLink(
             color = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = if (isRtl) "↖" else "↗",
+            text = if (LanguageState.isRtl) "↖" else "↗",
             modifier = Modifier,
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
