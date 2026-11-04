@@ -6,6 +6,8 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import com.ibm.icu.text.ListFormatter
+import com.ibm.icu.util.ULocale
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
@@ -47,8 +49,20 @@ fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
     return context.safeString(blendType.resId)
 }
 
+fun formatLocalizedList(items: List<String>, locale: Locale = LanguageState.locale): String {
+    if (items.isEmpty()) return ""
+    return try {
+        val uLocale = ULocale.forLocale(locale)
+        ListFormatter.getInstance(uLocale, ListFormatter.Type.UNITS, ListFormatter.Width.WIDE).format(items.map { it.rtlIsolate() })
+    } catch (_: Exception) { items.joinToString(", ") }
+}
+
 fun String.toLtr(): String {
     return if (this.isNotBlank()) "\u202A$this\u202C" else this
+}
+
+fun String.rtlIsolate(): String {
+    return if (this.isNotBlank() && LanguageState.isRtl) "\u2067$this\u2068" else this
 }
 
 fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
