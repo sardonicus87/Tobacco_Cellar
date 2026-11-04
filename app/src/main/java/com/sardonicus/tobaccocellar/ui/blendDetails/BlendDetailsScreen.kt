@@ -64,12 +64,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -80,6 +77,7 @@ import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,26 +214,21 @@ private fun BlendDetailsBody(
                                 fontWeight = FontWeight.ExtraBold,
                                 textAlign = TextAlign.Center
                             )
-                            Text(
-                                text = buildAnnotatedString {
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Normal,
-                                            fontSize = 16.sp,
-                                        )
-                                    ) { append(stringResource(R.string.by)) }
-                                    withStyle(
-                                        style = SpanStyle(
-                                            fontWeight = FontWeight.Normal,
-                                            fontStyle = FontStyle.Italic,
-                                            fontSize = 16.sp,
-                                        )
-                                    ) { append(blendDetails.brand) }
-                                },
-                                modifier = Modifier.padding(bottom = 12.dp),
-                                lineHeight = 16.sp,
-                                textAlign = TextAlign.Center
-                            )
+                            Row(Modifier.padding(bottom = 12.dp)) {
+                                Text(
+                                    text = stringResource(R.string.by),
+                                    lineHeight = 16.sp,
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    text = blendDetails.brand.toLtr(),
+                                    lineHeight = 16.sp,
+                                    fontSize = 16.sp,
+                                    fontStyle = FontStyle.Italic,
+                                    textAlign = TextAlign.Start
+                                )
+                            }
                         }
                     } }
                 }
@@ -304,6 +297,7 @@ private fun BlendDetailsBody(
                                         .padding(start = 12.dp)
                                 ) {
                                     blendDetails.itemDetails.forEach { Text(it, Modifier.padding(bottom = 7.dp)) }
+
                                     if (blendDetails.rating != null) {
                                         Row(
                                             horizontalArrangement = Arrangement.Start,
@@ -449,7 +443,7 @@ private fun BlendDetailsBody(
                                 Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                             ) {
                                 Text(
-                                    text = "(${blendDetails.tinsTotal})",
+                                    text = stringResource(R.string.parenthetical, blendDetails.tinsTotal),
                                     fontWeight = FontWeight.Normal,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onBackground
