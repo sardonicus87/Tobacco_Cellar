@@ -120,7 +120,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             launch { delay(1.5.seconds); filterViewModel }
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
-            launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes() } } }
+            launch { if (!preferencesRepo.tinGramsMigrated.first()) { migrateTinGrams() } }
+            launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes(); migrateTinGrams() } } }
             launch {
                 preferencesRepo.appLanguage.collectLatest { rawCode ->
                     val code = updateLegacyLangCode(rawCode)
@@ -276,6 +277,21 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         SyncStateManager.loggingPaused = false
         SyncStateManager.schedulingPaused = false
         preferencesRepo.setBlendTypesMigrated()
+    }
+
+    private suspend fun migrateTinGrams() {
+        SyncStateManager.loggingPaused = true
+        SyncStateManager.schedulingPaused = true
+
+        val itemsRepo = container.itemsRepository
+        val allItems = itemsRepo.getEverythingStream().first()
+        val tins = allItems.flatMap { it.tins }.filter { it.unit == "grams" }
+
+        tins.forEach { itemsRepo.updateTin(it.copy(unit = "g")) }
+
+        SyncStateManager.loggingPaused = false
+        SyncStateManager.schedulingPaused = false
+        preferencesRepo.setTinGramsMigrated()
     }
 
     private suspend fun verifySyncStatus(context: Context) {

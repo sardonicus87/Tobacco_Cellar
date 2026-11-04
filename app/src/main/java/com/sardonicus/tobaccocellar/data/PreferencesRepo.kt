@@ -94,6 +94,7 @@ class PreferencesRepo(
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
         val SYNC_SETTINGS_MIGRATED = booleanPreferencesKey("sync_settings_migrated")
         val BLEND_TYPES_MIGRATED = booleanPreferencesKey("blend_types_migrated")
+        val TIN_GRAMS_MIGRATED = booleanPreferencesKey("tin_grams_migrated")
 
         const val TAG = "PreferencesRepo"
     }
@@ -707,4 +708,13 @@ class PreferencesRepo(
 
     suspend fun setBlendTypesMigrated() { dataStore.edit { it[BLEND_TYPES_MIGRATED] = true } }
 
+    val tinGramsMigrated: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading sync state.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[TIN_GRAMS_MIGRATED] ?: false }.distinctUntilChanged()
+
+    suspend fun setTinGramsMigrated() { dataStore.edit { it[TIN_GRAMS_MIGRATED] = true } }
 }
