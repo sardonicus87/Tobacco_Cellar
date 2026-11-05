@@ -55,12 +55,7 @@ class BulkEditViewModel (
                 autoComps = autoComplete.components,
                 autoFlavor = autoComplete.flavorings,
             )
-        }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = BulkEditUiState()
-            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000),BulkEditUiState())
 
 
     init {
@@ -104,7 +99,7 @@ class BulkEditViewModel (
             flavoring = editing.flavoring,
             flavorAdd = editing.flavorAdd,
             inProduction = editing.inProduction,
-            syncTins = editing.syncTins,
+            syncTins = editing.syncTins
         )
     }
 
@@ -157,7 +152,7 @@ class BulkEditViewModel (
                 val resolvedCompIds = mutableMapOf<String, Int>()
                 if (editingState.compsSelected) {
                     val existingComps = bulkEditUiState.value.autoComps
-                    val compNames = editingState.compsString.split(",")
+                    val compNames = editingState.compsString.split(Regex("[,،、]"))
                         .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
                             existingComps.find { it.equals(input, ignoreCase = true) } ?: input
                         }
@@ -174,7 +169,7 @@ class BulkEditViewModel (
                 val resolvedFlavorIds = mutableMapOf<String, Int>()
                 if (editingState.flavorSelected) {
                     val existingFlavors = bulkEditUiState.value.autoFlavor
-                    val flavorNames = editingState.flavorString.split(",")
+                    val flavorNames = editingState.flavorString.split(Regex("[,،、]"))
                         .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
                             existingFlavors.find { it.equals(input, ignoreCase = true) } ?: input
                         }

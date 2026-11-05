@@ -121,9 +121,11 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -547,9 +549,13 @@ fun BulkEditing(
                     }
                 } else { Spacer(Modifier.height(12.dp)) }
 
+                val isRtl = LanguageState.isRtl
+                val labelCol = if (isRtl) 2 else 1
+                val fieldCol = if (isRtl) 1 else 2
                 Grid(
                     config = {
-                        columns(GridTrackSize.MinMax(100.dp, .08.fr), GridTrackSize.MinMax(0.dp, .92.fr))
+                        if (isRtl) { columns(GridTrackSize.MinMax(0.dp, .92.fr), GridTrackSize.MinMax(100.dp, .08.fr)) }
+                        else { columns(GridTrackSize.MinMax(100.dp, .08.fr), GridTrackSize.MinMax(0.dp, .92.fr)) }
                         repeat(9) { row(GridTrackSize.Auto) }
                         gap(8.dp)
                     },
@@ -561,57 +567,57 @@ fun BulkEditing(
                         text = stringResource(R.string.type_label),
                         checked = editingState.typeSelected,
                         onCheckedChange = { onValueChange(editingState.copy(typeSelected = it)) },
-                        modifier = Modifier.gridItem(1, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(1, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.subgenre_label),
                         checked = editingState.genreSelected,
                         onCheckedChange = { onValueChange(editingState.copy(genreSelected = it)) },
-                        modifier = Modifier.gridItem(2, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(2, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.cut_label),
                         checked = editingState.cutSelected,
                         onCheckedChange = { onValueChange(editingState.copy(cutSelected = it)) },
-                        modifier = Modifier.gridItem(3, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(3, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.component_label),
                         checked = editingState.compsSelected,
                         onCheckedChange = { onValueChange(editingState.copy(compsSelected = it)) },
-                        modifier = Modifier.gridItem(4, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(4, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.flavoring_label),
                         checked = editingState.flavorSelected,
                         onCheckedChange = { onValueChange(editingState.copy(flavorSelected = it)) },
-                        modifier = Modifier.gridItem(5, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(5, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.rating_label),
                         checked = editingState.ratingSelected,
                         onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) },
-                        modifier = Modifier.gridItem(6, 1, 1, 1, Alignment.CenterStart)
+                        modifier = Modifier.gridItem(6, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
                         text = stringResource(R.string.fav_dis_label),
                         checked = editingState.favoriteDisSelected,
                         onCheckedChange = { onValueChange(editingState.copy(favoriteDisSelected = it)) },
-                        modifier = Modifier.gridItem(7, 1, 1, 1, Alignment.CenterStart),
+                        modifier = Modifier.gridItem(7, labelCol, 1, 1, Alignment.CenterStart),
                         maxLines = 2
                     )
                     RowLabel(
                         text = stringResource(R.string.production_status_label),
                         checked = editingState.productionSelected,
                         onCheckedChange = { onValueChange(editingState.copy(productionSelected = it)) },
-                        modifier = Modifier.gridItem(8, 1, 1, 1, Alignment.CenterStart),
+                        modifier = Modifier.gridItem(8, labelCol, 1, 1, Alignment.CenterStart),
                         maxLines = 2
                     )
                     RowLabel(
                         text = stringResource(R.string.sync_entry_tin_q),
                         checked = editingState.syncTinsSelected,
                         onCheckedChange = { onValueChange(editingState.copy(syncTinsSelected = it)) },
-                        modifier = Modifier.gridItem(9, 1, 1, 1, Alignment.CenterStart),
+                        modifier = Modifier.gridItem(9, labelCol, 1, 1, Alignment.CenterStart),
                         maxLines = 2
                     )
 
@@ -626,7 +632,7 @@ fun BulkEditing(
                         onValueChange = { onValueChange(editingState.copy(type = it)) },
                         options = listOf("") + typeMap.keys.toList(),
                         modifier = Modifier
-                            .gridItem(1, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(1, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         enabled = editingState.typeSelected
                     )
@@ -636,7 +642,7 @@ fun BulkEditing(
                         onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
                         allItems = autoGenres,
                         modifier = Modifier
-                            .gridItem(2, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(2, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
                             if (editingState.subGenre.length > 4) {
@@ -668,7 +674,7 @@ fun BulkEditing(
                         onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
                         allItems = autoCuts,
                         modifier = Modifier
-                            .gridItem(3, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(3, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
                             if (editingState.cut.length > 4) {
@@ -706,7 +712,7 @@ fun BulkEditing(
                         onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
                         allItems = autoComps,
                         modifier = Modifier
-                            .gridItem(4, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(4, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
                             if (editingState.compsSelected) {
@@ -764,7 +770,7 @@ fun BulkEditing(
                         onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
                         allItems = autoFlavor,
                         modifier = Modifier
-                            .gridItem(5, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(5, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
                             if (editingState.flavorSelected) {
@@ -820,14 +826,12 @@ fun BulkEditing(
                                 if (editingState.rating == null) LocalContentColor.current else LocalCustomColors.current.starRating
                             },
                         modifier = Modifier
-                            .gridItem(6, 2, 1, 1, Alignment.CenterStart)
-                            .clickable(null, null, editingState.ratingSelected) {
-                                showRatingPop = true
-                            }
+                            .gridItem(6, fieldCol, 1, 1, Alignment.CenterStart)
+                            .clickable(null, null, editingState.ratingSelected) { showRatingPop = true }
                     )
                     Row(
                         modifier = modifier
-                            .gridItem(7, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(7, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
@@ -844,9 +848,7 @@ fun BulkEditing(
                                 maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color =
-                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    )
+                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(alpha = 0.50f)
                                     else LocalContentColor.current
                             )
                             CustomCheckbox(
@@ -856,10 +858,7 @@ fun BulkEditing(
                                         onValueChange(editingState.copy(favorite = it))
                                     } else {
                                         onValueChange(
-                                            editingState.copy(
-                                                favorite = it,
-                                                disliked = false
-                                            )
+                                            editingState.copy(favorite = it, disliked = false)
                                         )
                                     }
                                 },
@@ -885,9 +884,7 @@ fun BulkEditing(
                                 maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                                 color =
-                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(
-                                        alpha = 0.50f
-                                    )
+                                    if (!editingState.favoriteDisSelected) LocalContentColor.current.copy(alpha = 0.50f)
                                     else LocalContentColor.current
                             )
                             CustomCheckbox(
@@ -897,10 +894,7 @@ fun BulkEditing(
                                         onValueChange(editingState.copy(disliked = it))
                                     } else {
                                         onValueChange(
-                                            editingState.copy(
-                                                disliked = it,
-                                                favorite = false
-                                            )
+                                            editingState.copy(disliked = it, favorite = false)
                                         )
                                     }
                                 },
@@ -916,21 +910,16 @@ fun BulkEditing(
                     }
                     Row(
                         modifier = Modifier
-                            .gridItem(8, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(8, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            4.dp,
-                            Alignment.CenterHorizontally
-                        ),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = stringResource(R.string.in_production),
                             modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                             color =
-                                if (!editingState.productionSelected) LocalContentColor.current.copy(
-                                    alpha = 0.50f
-                                )
+                                if (!editingState.productionSelected) LocalContentColor.current.copy(alpha = 0.50f)
                                 else LocalContentColor.current
                         )
                         CustomCheckbox(
@@ -944,20 +933,15 @@ fun BulkEditing(
                     }
                     Row(
                         modifier = Modifier
-                            .gridItem(9, 2, 1, 1, Alignment.CenterStart)
+                            .gridItem(9, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(
-                            4.dp,
-                            Alignment.CenterHorizontally
-                        ),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.sync_q),
+                            text = stringResource(R.string.sync_q).toLtr(),
                             modifier = Modifier.offset(x = 0.dp, y = 1.dp),
-                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(
-                                alpha = 0.50f
-                            ) else LocalContentColor.current
+                            color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
                         )
                         CustomCheckbox(
                             checked = editingState.syncTins,
@@ -1084,7 +1068,7 @@ fun BulkSelectionsItem(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = item.blend,
+            text = item.blend.toLtr(),
             modifier = Modifier,
             maxLines = 1,
             fontSize = 15.sp,
@@ -1093,7 +1077,7 @@ fun BulkSelectionsItem(
             fontWeight = weight,
         )
         Text(
-            text = item.brand,
+            text = item.brand.toLtr(),
             modifier = Modifier.padding(start = 8.dp),
             maxLines = 1,
             fontSize = 13.sp,
