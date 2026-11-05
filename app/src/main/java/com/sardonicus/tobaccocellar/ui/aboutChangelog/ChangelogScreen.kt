@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.aboutChangelog
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -20,8 +22,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,6 +64,7 @@ fun ChangelogScreen (
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val density = LocalDensity.current
+    var selectionKey by remember { mutableIntStateOf(0) }
 
     var scrolling by remember { mutableStateOf(false) }
     var scrollingFinished by remember(targetVersion) { mutableStateOf(false) }
@@ -83,8 +89,12 @@ fun ChangelogScreen (
         scrolling = false
     }
 
+    DisposableEffect(Unit) { onDispose { selectionKey++ } }
+
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier
+            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .clickable(null, null) { selectionKey++ },
         topBar = {
             CellarTopAppBar(
                 title = stringResource(R.string.changelog_title),
@@ -124,6 +134,7 @@ fun ChangelogScreen (
                                         changes = it.changes,
                                         improvements = it.improvements,
                                         bugFixes = it.bugFixes,
+                                        selectionKey = selectionKey,
                                         modifier = Modifier
                                     )
                                 }
@@ -141,10 +152,11 @@ fun ChangelogScreen (
 fun ChangeLogEntryLayout(
     versionNumber: String,
     buildDate: String,
+    selectionKey: Int,
     modifier: Modifier = Modifier,
     changes: List<String> = emptyList(),
     improvements: List<String> = emptyList(),
-    bugFixes: List<String> = emptyList(),
+    bugFixes: List<String> = emptyList()
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
@@ -157,7 +169,8 @@ fun ChangeLogEntryLayout(
 
         HorizontalDivider(Modifier.padding(bottom = 8.dp), 1.dp)
 
-        Column(
+
+        key(selectionKey) { SelectionContainer { Column(
             modifier = Modifier.padding(horizontal = 8.dp),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top
@@ -195,7 +208,7 @@ fun ChangeLogEntryLayout(
                     }
                 }
             }
-        }
+        } } }
         Spacer(Modifier.height(16.dp))
     }
 }
