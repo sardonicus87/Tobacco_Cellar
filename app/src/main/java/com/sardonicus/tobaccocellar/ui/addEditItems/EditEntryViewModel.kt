@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -52,22 +53,18 @@ class EditEntryViewModel(
             loading.value = true
 
             val initialDetails = filterViewModel.everythingFlow
-                .mapNotNull { list -> list.find { it.items.id == itemsId } }
-                .first()
+                .mapNotNull { list -> list.find { it.items.id == itemsId } }.first()
 
-            val components = initialDetails.components.map { it.componentName }.sorted().joinToString(", ")
-            val flavoring = initialDetails.flavoring.map { it.flavoringName }.sorted().joinToString(", ")
+            val components = formatLocalizedList(initialDetails.components.map { it.componentName }.sorted())
+            val flavoring = formatLocalizedList(initialDetails.flavoring.map { it.flavoringName }.sorted())
 
             val itemDetails = initialDetails.items.toItemDetails(components, flavoring)
                 .let { copyOriginalDetails(it) }
 
             val tins = initialDetails.tins
                 .sortedBy { it.tinId }
-                .mapIndexed { index, it ->
-                    it.toTinDetails().copy(tempTinId = index + 1)
-                }.also {
-                    copyOriginalTins(it)
-                }
+                .mapIndexed { index, it -> it.toTinDetails().copy(tempTinId = index + 1) }
+                .also { copyOriginalTins(it) }
 
             originalComponentList.value = initialDetails.components
             originalFlavoringList.value = initialDetails.flavoring
@@ -88,10 +85,7 @@ class EditEntryViewModel(
             ) { ozRate, gramsRate ->
                 ozRate to gramsRate
             }.first().let { (ozRate, gramsRate) ->
-                tinConversion.value = TinConversion(
-                    ozRate = ozRate,
-                    gramsRate = gramsRate,
-                )
+                tinConversion.value = TinConversion(ozRate = ozRate, gramsRate = gramsRate)
             }
         }
     }
@@ -152,9 +146,8 @@ class EditEntryViewModel(
         val tinDetailsList = itemUiState.itemDetails.tinDetailsList
         val existingIds = tinDetailsList.map { it.tinId }
         var newTempId = if (tinDetailsList.isEmpty()) 1 else tinDetailsList.maxOf { it.tempTinId } + 1
-        while (existingIds.contains(newTempId)) {
-            newTempId++
-        }
+        while (existingIds.contains(newTempId)) { newTempId++ }
+
         val newTin = TinDetails(tempTinId = newTempId, tinLabel = "")
 
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = tinDetailsList + newTin))
@@ -172,27 +165,11 @@ class EditEntryViewModel(
     suspend fun checkItemExistsOnUpdate() {
         val currentItem = itemUiState.itemDetails
         if (itemUiState.itemDetails.brand == originalItem.value.brand && itemUiState.itemDetails.blend == originalItem.value.blend) {
-            existState.value =
-                ExistState(
-                    exists = false,
-                    transferId = 0
-                )
-        } else {
-            existState.value =
-                ExistState(
-                    exists = itemsRepository.exists(currentItem.brand, currentItem.blend),
-                    transferId = 0
-                )
-        }
+            existState.value = ExistState(false, 0) }
+        else { existState.value = ExistState(itemsRepository.exists(currentItem.brand, currentItem.blend), 0) }
     }
 
-    fun resetExistState() {
-        existState.value =
-            ExistState(
-                exists = false,
-                transferId = 0
-            )
-    }
+    fun resetExistState() { existState.value = ExistState(false, 0) }
 
     suspend fun updateItem() {
         val details = itemUiState.itemDetails
@@ -286,9 +263,7 @@ class EditEntryViewModel(
 }
 
 
-data class ItemUpdatedEvent(
-    val updatedEvent: Boolean = true,
-)
+data class ItemUpdatedEvent(val updatedEvent: Boolean = true)
 
 
 fun ItemDetails.toOriginalItem(): OriginalItem {

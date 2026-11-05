@@ -91,9 +91,11 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingPopup
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedContext
-import com.sardonicus.tobaccocellar.ui.utilities.getLocalizedType
-import com.sardonicus.tobaccocellar.ui.utilities.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -120,37 +122,42 @@ fun DetailsEntry(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val label = if (LanguageState.isRtl) 2 else 1
+        val field = if (LanguageState.isRtl) 1 else 2
+
         Grid(
             modifier = Modifier.fillMaxWidth(),
             config = {
-                columns(GridTrackSize.MinMax(85.dp, .02.fr), GridTrackSize.MinMax(0.dp, .98.fr))
+                if (LanguageState.isRtl) { columns(GridTrackSize.MinMax(0.dp, .98.fr), GridTrackSize.MinMax(85.dp, .02.fr)) }
+                else { columns(GridTrackSize.MinMax(85.dp, .02.fr), GridTrackSize.MinMax(0.dp, .98.fr)) }
                 repeat(9) { row(GridTrackSize.Auto) }
                 gap(8.dp)
             },
         ) {
-            Text(stringResource(R.string.brand_label), Modifier.gridItem(1, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.blend_label), Modifier.gridItem(2, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.type_label), Modifier.gridItem(3, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.subgenre_label), Modifier.gridItem(4, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.cut_label), Modifier.gridItem(5, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.component_label), Modifier.gridItem(6, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.flavoring_label), Modifier.gridItem(7, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, 1, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+
+            Text(stringResource(R.string.brand_label), Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.blend_label), Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.type_label), Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.subgenre_label), Modifier.gridItem(4, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.cut_label), Modifier.gridItem(5, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.component_label), Modifier.gridItem(6, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.flavoring_label), Modifier.gridItem(7, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, label, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
                 style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))
-            Text(stringResource(R.string.rating_label), Modifier.gridItem(9, 1, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.rating_label), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
-                value = itemDetails.brand,
+                value = itemDetails.brand.toLtr(),
                 allItems = autoComplete.brands,
                 onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
                 modifier = Modifier
-                    .gridItem(1, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(1, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
-                            "(${itemDetails.originalItem.brand})" } else ""
+                            stringResource(R.string.parenthetical, itemDetails.originalItem.brand.toLtr()) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -193,17 +200,17 @@ fun DetailsEntry(
             )
 
             TextField(
-                value = itemDetails.blend,
+                value = itemDetails.blend.toLtr(),
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
                 modifier = Modifier
-                    .gridItem(2, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(2, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 enabled = true,
                 singleLine = true,
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
-                            "(${itemDetails.originalItem.blend})" } else ""
+                            stringResource(R.string.parenthetical, itemDetails.originalItem.blend.toLtr()) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -261,7 +268,7 @@ fun DetailsEntry(
                 onValueChange = { onValueChange(itemDetails.copy(type = typeMap[it] ?: "")) },
                 options = listOf("") + typeMap.keys.toList(),
                 modifier = Modifier
-                    .gridItem(3, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(3, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth()
             )
 
@@ -271,7 +278,7 @@ fun DetailsEntry(
                 allItems = autoComplete.subgenres,
                 onOptionSelected = { onValueChange(itemDetails.copy(subGenre = it)) },
                 modifier = Modifier
-                    .gridItem(4, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(4, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.subGenre.length > 4) {
@@ -302,7 +309,7 @@ fun DetailsEntry(
                 onOptionSelected = { onValueChange(itemDetails.copy(cut = it)) },
                 allItems = autoComplete.cuts,
                 modifier = Modifier
-                    .gridItem(5, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(5, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.cut.length > 4) {
@@ -334,7 +341,7 @@ fun DetailsEntry(
                 componentField = true,
                 onOptionSelected = { onValueChange(itemDetails.copy(componentString = it)) },
                 modifier = Modifier
-                    .gridItem(6, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(6, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.componentString.length > 4) {
@@ -381,7 +388,7 @@ fun DetailsEntry(
                 onOptionSelected = { onValueChange(itemDetails.copy(flavoringString = it)) },
                 allItems = autoComplete.flavorings,
                 modifier = Modifier
-                    .gridItem(7, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(7, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
                     if (itemDetails.flavoringString.length > 4) {
@@ -423,7 +430,7 @@ fun DetailsEntry(
 
             Row(
                 modifier = Modifier
-                    .gridItem(8, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(8, field, 1, 1, Alignment.CenterStart)
                     .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
@@ -567,45 +574,75 @@ fun DetailsEntry(
                                 horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
                                 modifier = Modifier
                                     .hoverable(interactionSource)
-                                    .clickable(
-                                        interactionSource,
-                                        null
-                                    ) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
+                                    .clickable(interactionSource, null) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
                             ) {
-                                Text(
-                                    text = stringResource(R.string.sync_q),
-                                    modifier = Modifier
-                                        .offset(x = 0.dp, y = 1.dp)
-                                        .widthIn(max = 40.dp),
-                                    lineHeight = 1.em,
-                                    autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
-                                    maxLines = 1
-                                )
-                                CustomCheckbox(
-                                    checked = itemDetails.syncTins,
-                                    onCheckedChange = { onValueChange(itemDetails.copy(syncTins = it)) },
-                                    size = 34.dp,
-                                    checkedIcon = R.drawable.check_box_24,
-                                    uncheckedIcon = R.drawable.check_box_outline_24
-                                )
                                 val coroutineScope = rememberCoroutineScope()
-                                Box(
-                                    contentAlignment = Alignment.CenterStart,
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .width(40.dp)
-                                        .clickable(interactionSource, null) {
-                                            coroutineScope.launch { tooltipState.show() }
-                                        }
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.help_outline),
-                                        contentDescription = "Help",
-                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
+                                if (LanguageState.isRtl) {
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart,
                                         modifier = Modifier
-                                            .size(15.dp)
-                                            .offset((-3).dp, (-9).dp)
+                                            .fillMaxHeight()
+                                            .width(40.dp)
+                                            .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.help_outline),
+                                            contentDescription = "Help",
+                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
+                                            modifier = Modifier
+                                                .size(15.dp)
+                                                .offset(3.dp, (-9).dp)
+                                        )
+                                    }
+                                    CustomCheckbox(
+                                        checked = itemDetails.syncTins,
+                                        onCheckedChange = { onValueChange(itemDetails.copy(syncTins = it)) },
+                                        size = 34.dp,
+                                        checkedIcon = R.drawable.check_box_24,
+                                        uncheckedIcon = R.drawable.check_box_outline_24
                                     )
+                                    Text(
+                                        text = stringResource(R.string.sync_q).toLtr(),
+                                        modifier = Modifier
+                                            .offset(x = 0.dp, y = 1.dp)
+                                            .widthIn(max = 40.dp),
+                                        lineHeight = 1.em,
+                                        autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                                        maxLines = 1
+                                    )
+                                } else {
+                                    Text(
+                                        text = stringResource(R.string.sync_q),
+                                        modifier = Modifier
+                                            .offset(x = 0.dp, y = 1.dp)
+                                            .widthIn(max = 40.dp),
+                                        lineHeight = 1.em,
+                                        autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
+                                        maxLines = 1
+                                    )
+                                    CustomCheckbox(
+                                        checked = itemDetails.syncTins,
+                                        onCheckedChange = { onValueChange(itemDetails.copy(syncTins = it)) },
+                                        size = 34.dp,
+                                        checkedIcon = R.drawable.check_box_24,
+                                        uncheckedIcon = R.drawable.check_box_outline_24
+                                    )
+                                    Box(
+                                        contentAlignment = Alignment.CenterStart,
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .width(40.dp)
+                                            .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.help_outline),
+                                            contentDescription = "Help",
+                                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary.copy(alpha = .75f).compositeOver(MaterialTheme.colorScheme.onBackground)),
+                                            modifier = Modifier
+                                                .size(15.dp)
+                                                .offset((-3).dp, (-9).dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -615,7 +652,7 @@ fun DetailsEntry(
 
             Row(
                 modifier = Modifier
-                    .gridItem(9, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(9, field, 1, 1, Alignment.CenterStart)
                     .heightIn(min = 42.dp)
                     .clickable(null, null) { onShowRatingPop(true) },
                 horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.Start),
@@ -629,7 +666,7 @@ fun DetailsEntry(
                 )
                 if (itemDetails.rating != null) {
                     Text(
-                        text = "(${formatDecimal(itemDetails.rating)})",
+                        text = stringResource(R.string.parenthetical, formatDecimal(itemDetails.rating)),
                         fontSize = 13.sp,
                         modifier = Modifier.alpha(0.75f)
                     )
@@ -700,7 +737,10 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(null, null) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(
+                    null,
+                    null
+                ) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -5,6 +5,7 @@ import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.Tins
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDateTime
@@ -12,7 +13,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -226,7 +226,7 @@ fun String.toComponents(existingComps: List<String>): List<Components> {
     val lookup = existingComps.associateBy { it.lowercase() }
 
     return this
-        .splitToSequence(",")
+        .splitToSequence(Regex("[,،、]"))
         .map { it.trim().replace(Regex("\\s+"), " ") }
         .filter { it.isNotBlank() }
         .map { entered ->
@@ -241,7 +241,7 @@ fun String.toFlavoring(existingFlavors: List<String>): List<Flavoring> {
     val lookup = existingFlavors.associateBy { it.lowercase() }
 
     return this
-        .splitToSequence(",")
+        .splitToSequence(Regex("[,،、]"))
         .map { it.trim().replace(Regex("\\s+"), " ") }
         .filter { it.isNotBlank() }
         .map { entered ->
@@ -275,9 +275,9 @@ fun Items.toItemDetails(compString: String, flavorString: String): ItemDetails =
 fun Tins.toTinDetails(): TinDetails {
     val quantityString = if (unit.isNotBlank()) {
         if (tinQuantity == floor(tinQuantity)) {
-            NumberFormat.getIntegerInstance(Locale.getDefault()).format(tinQuantity.toLong())
+            NumberFormat.getIntegerInstance(LanguageState.locale).format(tinQuantity.toLong())
         } else {
-            NumberFormat.getInstance(Locale.getDefault()).format(tinQuantity)
+            NumberFormat.getInstance(LanguageState.locale).format(tinQuantity)
         }
     } else { "" }
 
@@ -306,7 +306,11 @@ fun Tins.toTinDetails(): TinDetails {
 /** Date functions **/
 fun formatShortDate(millis: Long?): String {
     return millis?.let {
-        DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(it))
+        // DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(it))
+        val localDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        val pattern = DateFormat.getBestDateTimePattern(LanguageState.locale, "MM/yy")
+        val formatter = DateTimeFormatter.ofPattern(pattern, LanguageState.locale)
+        formatter.format(localDate)
     } ?: ""
 }
 
@@ -315,13 +319,15 @@ fun formatMediumDate(millis: Long?, alternate: Boolean = false): String {
         val localDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
 
         val formatter = if (alternate) {
-            val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMddyy")
-            DateTimeFormatter.ofPattern(pattern)
+            val pattern = DateFormat.getBestDateTimePattern(LanguageState.locale, "MMddyy")
+            DateTimeFormatter.ofPattern(pattern, LanguageState.locale)
         } else { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
 
         formatter.format(localDate)
     } ?: ""
 }
+
+//enum class TinUnits(val unit: String) { OZ("oz"), LBS("lbs"), GRAMS("g"), KG("kg") }
 
 //fun formatLongDate(millis: Long?): String {
 //    return millis?.let {

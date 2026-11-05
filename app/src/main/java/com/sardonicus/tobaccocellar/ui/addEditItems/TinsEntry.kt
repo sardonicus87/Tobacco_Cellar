@@ -88,6 +88,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
@@ -100,7 +101,6 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -120,8 +120,7 @@ fun TinsEntry(
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(
                 color = if (tinDetailsList.isEmpty()) Color.Transparent else
-                    LocalCustomColors.current.textField, RoundedCornerShape(4.dp)
-            )
+                    LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
@@ -266,25 +265,22 @@ private fun IndividualTin(
                             imeAction = ImeAction.Next
                         ),
                         colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
-                                alpha = 0.5f
-                            ),
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
-                                alpha = 0.5f
-                            ),
-                            disabledIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(
-                                alpha = 0.5f
-                            ),
+                            focusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                            disabledIndicatorColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
                             disabledContainerColor = Color.Transparent,
                             cursorColor = Color.Transparent,
-                            focusedTextColor = if (showError) MaterialTheme.colorScheme.error else
-                                LocalContentColor.current,
-                            unfocusedTextColor = if (showError) MaterialTheme.colorScheme.error else
-                                LocalContentColor.current,
-                            disabledTextColor = if (showError) MaterialTheme.colorScheme.error else
-                                LocalContentColor.current,
+                            focusedTextColor =
+                                if (showError) MaterialTheme.colorScheme.error
+                                else LocalContentColor.current,
+                            unfocusedTextColor =
+                                if (showError) MaterialTheme.colorScheme.error
+                                else LocalContentColor.current,
+                            disabledTextColor =
+                                if (showError) MaterialTheme.colorScheme.error
+                                else LocalContentColor.current
                         ),
                         contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
                         singleLine = true,
@@ -402,8 +398,8 @@ private fun IndividualTin(
                         maxLines = 1
                     )
 
-                    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-                    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
+                    val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
                     val decimalSeparator = symbols.decimalSeparator.toString()
                     val allowedPattern = remember(decimalSeparator) {
                         val ds = Regex.escape(decimalSeparator)
@@ -440,7 +436,7 @@ private fun IndividualTin(
                         textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,),
+                            imeAction = ImeAction.Done),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -455,7 +451,7 @@ private fun IndividualTin(
                     CustomDropDown(
                         selectedValue = tinDetails.unit,
                         onValueChange = { onTinValueChange(tinDetails.copy(unit = it)) },
-                        options = listOf("", "oz", "lbs", "grams"),
+                        options = listOf("", "oz", "lbs", "g", "kg"),
                         placeholder = {
                             Text(
                                 text = stringResource(R.string.unit),
