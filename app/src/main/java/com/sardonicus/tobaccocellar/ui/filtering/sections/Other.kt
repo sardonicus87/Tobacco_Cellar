@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -74,11 +73,11 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.parseLocalizedDouble
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.Locale
 
 @Composable
 fun OtherFiltersSection(
@@ -93,7 +92,7 @@ fun OtherFiltersSection(
         horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.weight(.6f, false)) {
+        Box(Modifier.padding(end = 12.dp)) {
             Column(
                 modifier = Modifier
                     .border(
@@ -138,9 +137,7 @@ fun OtherFiltersSection(
                 }
             }
         }
-        Spacer(Modifier.requiredWidth(12.dp))
-
-        Box { InStockSection(filterViewModel, Modifier.requiredWidthIn(min = 110.dp)) }
+        InStockSection(filterViewModel, Modifier.requiredWidthIn(min = 110.dp))
     }
 }
 
@@ -363,8 +360,8 @@ private fun RatingRangePop(
     val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
     val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
     val allowedPattern = remember(decimalSeparator) {
         val ds = Regex.escape(decimalSeparator)
