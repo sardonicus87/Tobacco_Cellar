@@ -29,6 +29,7 @@ import com.sardonicus.tobaccocellar.ui.home.calculateGrams
 import com.sardonicus.tobaccocellar.ui.home.calculateOunces
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
@@ -73,8 +74,8 @@ class BlendDetailsViewModel(
         val item = allItems.find { it.items.id == itemsId } ?: return@combine BlendDetails()
         val context = getLocalizedContext(app)
 
-        val components = item.components.map { it.componentName }.sorted()
-        val flavors = item.flavoring.map { it.flavoringName }.sorted()
+        val components = item.components.map { it.componentName.rtlIsolate() }.sortedWith(collator)
+        val flavors = item.flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator)
 
         BlendDetails(
             id = item.items.id,
@@ -128,8 +129,8 @@ class BlendDetailsViewModel(
 
         return buildAnnotatedString {
             withStyle(style = ParagraphStyle(textIndent = TextIndent(firstLine = 0.sp, restLine = 12.sp), lineHeight = lineHeight)) {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title.rtlIsolate()) }
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value.rtlIsolate()) }
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) } // .rtlIsolate()
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) } // .rtlIsolate()
             }
         }
     }
@@ -275,7 +276,7 @@ fun calculateAge(date: Long?, field: DateField? = null): String {
         DateField.MANUFACTURE -> if (then < now) R.string.age_manuf_past else R.string.age_cellar_manuf_future
         DateField.CELLAR -> if (then < now) R.string.age_cellar_past else R.string.age_cellar_manuf_future
         DateField.OPEN -> if (then < now) R.string.age_open_past else R.string.age_open_future
-        null -> R.string.age_default
+        else -> R.string.age_default
     }
 
     return context.safeString(resource, ageString)

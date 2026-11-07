@@ -64,9 +64,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.LinkInteractionListener
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -75,9 +78,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sardonicus.tobaccocellar.CellarTopAppBar
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -216,17 +221,12 @@ private fun BlendDetailsBody(
                             )
                             Row(Modifier.padding(bottom = 12.dp)) {
                                 Text(
-                                    text = stringResource(R.string.by),
+                                    text = buildAnnotatedString {
+                                        append(stringResource(R.string.by))
+                                        withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) { append(blendDetails.brand) }
+                                    },
                                     lineHeight = 16.sp,
-                                    fontSize = 16.sp,
-                                    textAlign = TextAlign.End
-                                )
-                                Text(
-                                    text = blendDetails.brand.toLtr(),
-                                    lineHeight = 16.sp,
-                                    fontSize = 16.sp,
-                                    fontStyle = FontStyle.Italic,
-                                    textAlign = TextAlign.Start
+                                    fontSize = 16.sp
                                 )
                             }
                         }
@@ -315,7 +315,7 @@ private fun BlendDetailsBody(
                                                 starSize = 16.dp
                                             )
                                             Text(
-                                                text = "(${formatDecimal(blendDetails.rating)})",
+                                                text = stringResource(R.string.parenthetical, formatDecimal(blendDetails.rating)),
                                                 modifier = Modifier.padding(start = 6.dp),
                                                 fontSize = 12.sp,
                                                 lineHeight = 1.1.em
@@ -333,6 +333,8 @@ private fun BlendDetailsBody(
                             horizontalAlignment = Alignment.Start,
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
+                            val context = getLocalizedContext(LocalCellarApplication.current)
+                            val na = context.safeString(R.string.not_applicable)
                             Text(
                                 text = stringResource(R.string.modified),
                                 modifier = Modifier,
@@ -344,7 +346,7 @@ private fun BlendDetailsBody(
                             Text(
                                 text = blendDetails.lastModified,
                                 modifier = Modifier.fillMaxWidth(),
-                                textAlign = if (blendDetails.lastModified == "n/a") TextAlign.Center else TextAlign.Start,
+                                textAlign = if (blendDetails.lastModified == na) TextAlign.Center else TextAlign.Start,
                                 fontSize = 12.sp,
                                 lineHeight = 1.em,
                                 color = MaterialTheme.colorScheme.outline
