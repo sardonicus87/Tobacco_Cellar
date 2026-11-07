@@ -300,6 +300,7 @@ private fun ExternalLink(
             fontWeight = FontWeight.Medium,
             fontSize = 15.sp,
             lineHeight = 1.em,
+            maxLines = 1,
             color = MaterialTheme.colorScheme.primary
         )
         Text(
