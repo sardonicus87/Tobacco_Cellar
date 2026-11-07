@@ -11,6 +11,7 @@ import com.ibm.icu.util.ULocale
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
+import java.text.Collator
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
@@ -53,16 +54,16 @@ fun formatLocalizedList(items: List<String>, locale: Locale = LanguageState.loca
     if (items.isEmpty()) return ""
     return try {
         val uLocale = ULocale.forLocale(locale)
-        ListFormatter.getInstance(uLocale, ListFormatter.Type.UNITS, ListFormatter.Width.WIDE).format(items.map { it.rtlIsolate() })
+        ListFormatter.getInstance(uLocale, ListFormatter.Type.UNITS, ListFormatter.Width.WIDE).format(items)
     } catch (_: Exception) { items.joinToString(", ") }
 }
 
-fun String.toLtr(): String {
-    return if (this.isNotBlank()) "\u202A$this\u202C" else this
-}
+val collator: Collator = Collator.getInstance(LanguageState.locale).apply { strength = Collator.SECONDARY }
+
+fun String.toLtr(): String { return if (this.isNotBlank()) "\u202A$this\u202C" else this }
 
 fun String.rtlIsolate(): String {
-    return if (this.isNotBlank() && LanguageState.isRtl) "\u2067$this\u2068" else this
+    return if (this.isNotBlank() && LanguageState.isRtl) "\u2068$this\u2069" else this
 }
 
 fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
