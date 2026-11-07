@@ -78,7 +78,8 @@ fun calculateSyncTinsDetails(
             when (it.unit) {
                 "oz" -> it.tinQuantity / conversion.ozRate
                 "lbs" -> (it.tinQuantity * 16) / conversion.ozRate
-                "grams" -> it.tinQuantity / conversion.gramsRate
+                "g" -> it.tinQuantity / conversion.gramsRate
+                "kg" -> it.tinQuantity * 1000 / conversion.gramsRate
                 else -> 0.0
             }
         }

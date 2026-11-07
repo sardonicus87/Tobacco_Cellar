@@ -15,6 +15,7 @@ import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,8 +56,8 @@ class EditEntryViewModel(
             val initialDetails = filterViewModel.everythingFlow
                 .mapNotNull { list -> list.find { it.items.id == itemsId } }.first()
 
-            val components = formatLocalizedList(initialDetails.components.map { it.componentName }.sorted())
-            val flavoring = formatLocalizedList(initialDetails.flavoring.map { it.flavoringName }.sorted())
+            val components = formatLocalizedList(initialDetails.components.map { it.componentName }.sortedWith(collator))
+            val flavoring = formatLocalizedList(initialDetails.flavoring.map { it.flavoringName }.sortedWith(collator))
 
             val itemDetails = initialDetails.items.toItemDetails(components, flavoring)
                 .let { copyOriginalDetails(it) }

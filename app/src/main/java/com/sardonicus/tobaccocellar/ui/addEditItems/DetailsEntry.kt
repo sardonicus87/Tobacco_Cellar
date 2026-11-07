@@ -147,7 +147,7 @@ fun DetailsEntry(
             Text(stringResource(R.string.rating_label), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
-                value = itemDetails.brand.toLtr(),
+                value = itemDetails.brand,
                 allItems = autoComplete.brands,
                 onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
                 onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
@@ -157,7 +157,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
-                            stringResource(R.string.parenthetical, itemDetails.originalItem.brand.toLtr()) } else ""
+                            stringResource(R.string.parenthetical, itemDetails.originalItem.brand) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -200,7 +200,7 @@ fun DetailsEntry(
             )
 
             TextField(
-                value = itemDetails.blend.toLtr(),
+                value = itemDetails.blend,
                 onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
                 modifier = Modifier
                     .gridItem(2, field, 1, 1, Alignment.CenterStart)
@@ -210,7 +210,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
-                            stringResource(R.string.parenthetical, itemDetails.originalItem.blend.toLtr()) } else ""
+                            stringResource(R.string.parenthetical, itemDetails.originalItem.blend) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
