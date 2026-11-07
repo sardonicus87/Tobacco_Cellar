@@ -305,7 +305,7 @@ class MainActivity : AppCompatActivity() {
 
             CompositionLocalProvider(
                 LocalLayoutDirection provides dynamicDirection,
-                LocalTextStyle provides LocalTextStyle.current.copy(textDirection = TextDirection.ContentOrLtr),
+                LocalTextStyle provides LocalTextStyle.current.copy(textDirection = TextDirection.Content),
                 LocalCellarApplication provides this@MainActivity.application as CellarApplication
             ) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
