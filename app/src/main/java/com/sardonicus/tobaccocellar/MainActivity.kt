@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.AutofillKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -71,6 +72,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -303,6 +305,7 @@ class MainActivity : AppCompatActivity() {
 
             CompositionLocalProvider(
                 LocalLayoutDirection provides dynamicDirection,
+                LocalTextStyle provides LocalTextStyle.current.copy(textDirection = TextDirection.ContentOrLtr),
                 LocalCellarApplication provides this@MainActivity.application as CellarApplication
             ) {
                 TobaccoCellarTheme(preferencesRepo = preferencesRepo) {
