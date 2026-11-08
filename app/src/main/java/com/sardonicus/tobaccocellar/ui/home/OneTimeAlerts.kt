@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -26,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -115,107 +118,110 @@ fun ImportantAlertDialog(
     var canScroll by remember(alert.id) { mutableStateOf(false) }
     val updateScroll: (Boolean) -> Unit = { canScroll = it }
 
-    AlertDialog(
-        onDismissRequest = { },
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
-        ),
-        containerColor = LocalCustomColors.current.darkNeutral,
-        title = {
-            Text(
-                text = stringResource(R.string.important_alert),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.error,
-                maxLines = 1
-            )
-        },
-        text = {
-            Column {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        AlertDialog(
+            onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            containerColor = LocalCustomColors.current.darkNeutral,
+            title = {
                 Text(
-                    text = stringResource(R.string.one_time_alert),
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .fillMaxWidth(),
-                    fontWeight = FontWeight.SemiBold,
+                    text = stringResource(R.string.important_alert),
                     textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.error,
                     maxLines = 1
                 )
-                GlowBox(
-                    color = GlowColor(LocalCustomColors.current.darkNeutral),
-                    size = GlowSize(vertical = 6.dp),
-                    modifier = Modifier.height(175.dp)
-                ) {
-                    Column(Modifier.verticalScroll(scrollState)) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Column {
-                            if (!isCurrent) {
+            },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.one_time_alert),
+                        modifier = Modifier
+                            .padding(bottom = 12.dp)
+                            .fillMaxWidth(),
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center,
+                        fontSize = 16.sp,
+                        maxLines = 1
+                    )
+                    GlowBox(
+                        color = GlowColor(LocalCustomColors.current.darkNeutral),
+                        size = GlowSize(vertical = 6.dp),
+                        modifier = Modifier.height(175.dp)
+                    ) {
+                        Column(Modifier.verticalScroll(scrollState)) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Column {
+                                if (!isCurrent) {
+                                    Text(
+                                        text = stringResource(R.string.missed_alert),
+                                        modifier = Modifier,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 15.sp,
+                                        maxLines = 1
+                                    )
+                                }
                                 Text(
-                                    text = stringResource(R.string.missed_alert),
-                                    modifier = Modifier,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp,
-                                    maxLines = 1
+                                    text = stringResource(
+                                        R.string.alert_info,
+                                        alert.date,
+                                        alert.appVersion
+                                    ),
+                                    modifier = Modifier.padding(bottom = 16.dp),
+                                    fontSize = 14.sp
                                 )
+                                if (canScroll) {
+                                    Text(
+                                        text = stringResource(R.string.alert_scroll),
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    )
+                                }
+                                SelectionContainer { alert.message(this) }
                             }
-                            Text(
-                                text = stringResource(R.string.alert_info, alert.date, alert.appVersion),
-                                modifier = Modifier.padding(bottom = 16.dp),
-                                fontSize = 14.sp
-                            )
-                            if (canScroll) {
-                                Text(
-                                    text = stringResource(R.string.alert_scroll),
-                                    modifier = Modifier.padding(bottom = 16.dp)
-                                )
-                            }
-                            SelectionContainer { alert.message(this) }
+                            Spacer(modifier = Modifier.height(4.dp))
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                val isScrollable by remember(alert.id) { derivedStateOf { scrollState.maxValue > 0 } }
+                LaunchedEffect(isScrollable, alert.id) {
+                    if (!isScrollable) {
+                        while (countdown > 0) { delay(1000.milliseconds); countdown-- }
+                        enabled = true
+                    } else { updateScroll(true) }
+                }
+                LaunchedEffect(isScrollable, atBottom, alert.id) {
+                    if (isScrollable && atBottom) { enabled = true }
+                }
+                val nextString = stringResource(R.string.next)
+                val confirmString = stringResource(R.string.confirm)
+                val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
+                    if (!isCurrent) {
+                        if (isScrollable) { nextString }
+                        else { if (enabled) nextString else "( $countdown )" }
+                    } else {
+                        if (isScrollable) { confirmString }
+                        else { if (enabled) confirmString else "( $countdown )" }
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        if (!isCurrent) {
+                            enabled = false; updateScroll(false); countdown = 5
+                            viewModel.saveAlertSeen(alert.id)
+                        } else { viewModel.saveAlertSeen(alert.id) }
+                    },
+                    enabled = enabled
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.confirm), color = Color.Transparent)
+                        Text(buttonText)
                     }
                 }
             }
-        },
-        confirmButton = {
-            val isScrollable by remember(alert.id) { derivedStateOf { scrollState.maxValue > 0 } }
-            LaunchedEffect(isScrollable, alert.id) {
-                if (!isScrollable) {
-                    while (countdown > 0) { delay(1000.milliseconds); countdown-- }
-                    enabled = true
-                } else { updateScroll(true) }
-            }
-            LaunchedEffect(isScrollable, atBottom, alert.id) {
-                if (isScrollable && atBottom) { enabled = true }
-            }
-            val nextString = stringResource(R.string.next)
-            val confirmString = stringResource(R.string.confirm)
-            val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
-                if (!isCurrent) {
-                    if (isScrollable) { nextString }
-                    else { if (enabled) nextString else "( $countdown )" }
-                } else {
-                    if (isScrollable) { confirmString }
-                    else { if (enabled) confirmString else "( $countdown )" }
-                }
-            }
-
-            Button(
-                onClick = {
-                    if (!isCurrent) {
-                        enabled = false; updateScroll(false); countdown = 5
-                        viewModel.saveAlertSeen(alert.id)
-                    } else { viewModel.saveAlertSeen(alert.id) }
-                },
-                enabled = enabled
-            ) {
-                Box (contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.confirm), color = Color.Transparent)
-                    Text(buttonText)
-                }
-            }
-        }
-    )
+        )
+    }
 }

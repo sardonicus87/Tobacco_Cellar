@@ -21,13 +21,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -50,81 +53,86 @@ fun ReleaseNotesDialog(
     val maxWidth = if (landscape) LocalWindowInfo.current.containerDpSize.width * .5f else Dp.Unspecified
     val toLog = if (releaseNotesState.changelogData.size > 1) releaseNotesState.changelogData.last().versionCode else null
 
-    AlertDialog(
-        onDismissRequest = viewModel::saveReleaseNotesSeen,
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = !landscape
-        ),
-        modifier = Modifier.heightIn(max = maxHeight).widthIn(minWidth, maxWidth),
-        containerColor = LocalCustomColors.current.darkNeutral,
-        shape = RoundedCornerShape(8.dp),
-        tonalElevation = 4.dp,
-        titleContentColor = MaterialTheme.colorScheme.onBackground,
-        textContentColor = MaterialTheme.colorScheme.onBackground,
-        title = {
-            Column {
-                Text(
-                    text = stringResource(R.string.what_new),
-                    textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.Bold,
-                    autoSize = TextAutoSize.StepBased(16.sp, 18.sp),
-                    maxLines = 1,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.tertiary)
-            }
-        },
-        text = {
-            GlowBox(
-                color = GlowColor(LocalCustomColors.current.darkNeutral),
-                size = GlowSize(vertical = 6.dp),
-                modifier = Modifier
-            ) {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                ) {
-                    Spacer(Modifier.height(4.dp))
-                    releaseNotesState.changelogData.forEachIndexed { index, log ->
-                        val alpha = if (index == 0) 1f else 0.8f
-                        Text(
-                            text = stringResource(R.string.release_info, log.versionNumber, log.buildDate),
-                            modifier = Modifier.padding(bottom = 6.dp),
-                            fontSize = if (index == 0) 16.sp else 15.sp,
-                            fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Medium,
-                            color = LocalContentColor.current.copy(alpha = alpha),
-                        )
-                        log.releaseNotes.forEach {
-                            SelectionContainer { Text(
-                                text = "- $it",
-                                fontSize = if (index == 0) 15.sp else 14.sp,
-                                color = LocalContentColor.current.copy(alpha = alpha),
-                                modifier = Modifier.padding(start = 12.dp)
-                            ) }
-                        }
-                        if (index != releaseNotesState.changelogData.lastIndex) {
-                            HorizontalDivider(Modifier.padding(vertical = 20.dp))
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        AlertDialog(
+            onDismissRequest = viewModel::saveReleaseNotesSeen,
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = !landscape
+            ),
+            modifier = Modifier.heightIn(max = maxHeight).widthIn(minWidth, maxWidth),
+            containerColor = LocalCustomColors.current.darkNeutral,
+            shape = RoundedCornerShape(8.dp),
+            tonalElevation = 4.dp,
+            titleContentColor = MaterialTheme.colorScheme.onBackground,
+            textContentColor = MaterialTheme.colorScheme.onBackground,
+            title = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.what_new),
+                        textAlign = TextAlign.Start,
+                        fontWeight = FontWeight.Bold,
+                        autoSize = TextAutoSize.StepBased(16.sp, 18.sp),
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.tertiary)
                 }
+            },
+            text = {
+                GlowBox(
+                    color = GlowColor(LocalCustomColors.current.darkNeutral),
+                    size = GlowSize(vertical = 6.dp)
+                ) {
+                    Column(Modifier.verticalScroll(rememberScrollState()),) {
+                        Spacer(Modifier.height(4.dp))
+                        releaseNotesState.changelogData.forEachIndexed { index, log ->
+                            val alpha = if (index == 0) 1f else 0.8f
+                            Text(
+                                text = stringResource(
+                                    R.string.release_info,
+                                    log.versionNumber,
+                                    log.buildDate
+                                ),
+                                modifier = Modifier.padding(bottom = 6.dp),
+                                fontSize = if (index == 0) 16.sp else 15.sp,
+                                fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Medium,
+                                color = LocalContentColor.current.copy(alpha = alpha)
+                            )
+                            log.releaseNotes.forEach {
+                                SelectionContainer {
+                                    Text(
+                                        text = "- $it",
+                                        fontSize = if (index == 0) 15.sp else 14.sp,
+                                        color = LocalContentColor.current.copy(alpha = alpha),
+                                        modifier = Modifier.padding(start = 12.dp)
+                                    )
+                                }
+                            }
+                            if (index != releaseNotesState.changelogData.lastIndex) {
+                                HorizontalDivider(Modifier.padding(vertical = 20.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::saveReleaseNotesSeen,
+                    contentPadding = PaddingValues(12.dp, 4.dp),
+                    modifier = Modifier.heightIn(32.dp, 32.dp)
+                ) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(toLog) },
+                    contentPadding = PaddingValues(12.dp, 4.dp),
+                    modifier = Modifier.heightIn(32.dp, 32.dp)
+                ) { Text(stringResource(R.string.full_change)) }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = viewModel::saveReleaseNotesSeen,
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.ok)) }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(toLog) },
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.full_change)) }
-        }
-    )
+        )
+    }
 }
