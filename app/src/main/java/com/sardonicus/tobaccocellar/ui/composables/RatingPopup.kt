@@ -45,10 +45,10 @@ import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.Locale
 
 @Composable
 fun RatingPopup(
@@ -79,8 +79,8 @@ fun RatingPopup(
         },
         text = {
             Column {
-                val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-                val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
+                val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
                 val decimalSeparator = symbols.decimalSeparator.toString()
                 val allowedPattern = remember(decimalSeparator) {
                     val ds = Regex.escape(decimalSeparator)

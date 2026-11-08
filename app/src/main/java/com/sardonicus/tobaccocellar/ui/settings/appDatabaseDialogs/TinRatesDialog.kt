@@ -44,11 +44,11 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.parseLocalizedDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -119,7 +119,7 @@ fun TinRatesDialog(
                             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                             horizontalAlignment = Alignment.Start
                         ) {
-                            val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+                            val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
                             val decimalSeparator = symbols.decimalSeparator.toString()
                             val allowedPattern = remember(decimalSeparator) {
                                 val ds = Regex.escape(decimalSeparator)
