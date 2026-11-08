@@ -90,11 +90,11 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import kotlinx.coroutines.delay
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -441,8 +441,8 @@ private fun EditRatingPop(
     var parsedDouble by remember { mutableStateOf<Double?>(null) }
     val updateParsedDouble: (Double?) -> Unit = { parsedDouble = it }
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
     val allowedPattern = remember(decimalSeparator) {
         val ds = Regex.escape(decimalSeparator)
@@ -486,9 +486,7 @@ private fun EditRatingPop(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 Row(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally),
-                    horizontalArrangement = Arrangement.Start,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Spacer(Modifier.width(6.dp))
@@ -506,7 +504,7 @@ private fun EditRatingPop(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
+                            imeAction = ImeAction.Done
                         ),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
@@ -601,7 +599,7 @@ private fun EditNotePop(
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
+                    imeAction = ImeAction.Done
                 ),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
@@ -614,7 +612,7 @@ private fun EditNotePop(
                 shape = MaterialTheme.shapes.extraSmall,
                 singleLine = false,
                 maxLines = 8,
-                minLines = 8,
+                minLines = 8
             )
         },
         confirmButton = {

@@ -286,8 +286,7 @@ private fun ColumnVisibilityPopup(
                         modifier = Modifier
                             .padding(0.dp)
                             .width(IntrinsicSize.Max),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         CheckboxWithLabel(
                             text = stringResource(column.title),

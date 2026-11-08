@@ -302,19 +302,19 @@ private fun PageOne(
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.Top),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BrandFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier.padding(6.dp),
+            modifier = Modifier.padding(6.dp)
         )
         TypeFilterSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp),
+            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 0.dp, bottom = 6.dp)
         )
         OtherFiltersSection(
             filterViewModel = filterViewModel,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 0.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 0.dp)
         )
     }
 }
@@ -329,7 +329,7 @@ private fun PageTwo(
             .fillMaxWidth()
             .padding(top = 6.dp),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SubgenreSection(filterViewModel)
         CutSection(filterViewModel)
@@ -346,7 +346,7 @@ private fun PageThree(
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TinsFilterSection(filterViewModel)
         ContainerFilterSection(filterViewModel)

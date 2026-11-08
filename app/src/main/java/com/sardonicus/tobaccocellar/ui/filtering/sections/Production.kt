@@ -2,7 +2,6 @@ package com.sardonicus.tobaccocellar.ui.filtering.sections
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
@@ -10,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -35,15 +33,12 @@ fun ProductionFilterSection(
         modifier = modifier
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
-            .width(IntrinsicSize.Max),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Start
+            .width(IntrinsicSize.Max)
     ) {
         CheckboxWithLabel(
             text = stringResource(R.string.in_production),
             checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
-            modifier = Modifier,
             enabled = productionEnabled || production,
             allowResize = true
         )
@@ -51,7 +46,6 @@ fun ProductionFilterSection(
             text = stringResource(R.string.discontinued),
             checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
-            modifier = Modifier,
             enabled = outOfProductionEnabled || outOfProduction,
             allowResize = true
         )
