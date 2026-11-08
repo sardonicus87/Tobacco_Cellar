@@ -3,6 +3,8 @@ package com.sardonicus.tobaccocellar.ui.dates
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ibm.icu.text.PluralRules
+import com.ibm.icu.util.ULocale
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -13,6 +15,7 @@ import com.sardonicus.tobaccocellar.ui.addEditItems.formatMediumDate
 import com.sardonicus.tobaccocellar.ui.blendDetails.calculateAge
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeQuantityString
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
@@ -59,11 +62,11 @@ class DatesViewModel(
             val weekSection = AgingSection(context.safeString(R.string.week_section), context.safeString(R.string.week_empty), agingData.first)
             val monthSection = AgingSection(context.safeString(R.string.month_section), context.safeString(R.string.month_empty), agingData.second)
 
-            val filteredItemTins2 = datedTins.map { it.second }
-            val averageManuf = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { it.manufactureDate }
-            val averageCellar = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { if (!it.finished) it.cellarDate else null }
-            val averageOpen = calculateAverageDate(filteredItemTins2, DatePeriod.PAST, now) { if (!it.finished) it.openDate else null }
-            val averageWait = calculateAverageDate(filteredItemTins2, DatePeriod.FUTURE, now) { it.openDate }
+            val filteredItemTins = datedTins.map { it.second }
+            val averageManuf = calculateAverageDate(filteredItemTins, DatePeriod.PAST, now) { it.manufactureDate }
+            val averageCellar = calculateAverageDate(filteredItemTins, DatePeriod.PAST, now) { if (!it.finished) it.cellarDate else null }
+            val averageOpen = calculateAverageDate(filteredItemTins, DatePeriod.PAST, now) { if (!it.finished) it.openDate else null }
+            val averageWait = calculateAverageDate(filteredItemTins, DatePeriod.FUTURE, now) { it.openDate }
 
             val pastManu = findDatedTins(datedTins, DatePeriod.PAST, nowMillis) { it.manufactureDate }
             val pastCellar = findDatedTins(datedTins, DatePeriod.PAST, nowMillis) { if (!it.finished) it.cellarDate else null }
@@ -205,12 +208,21 @@ class DatesViewModel(
 
         if (years > 0) { parts.add(context.safeQuantityString(R.plurals.years, years, years)) }
         if (months > 0) { parts.add(context.safeQuantityString(R.plurals.months, months, months)) }
-        if (days > 0.09) {
-            val quantity = if (days == 1.0) 1 else 2
+        if (days > 0.06) {
+            val uLocale = ULocale.forLocale(LanguageState.locale)
+            val selectedRule = PluralRules.forLocale(uLocale).select(days)
+            val quantity = when (selectedRule) {
+                "zero" -> 0
+                "one" -> 1
+                "two" -> 2
+                "few" -> 3
+                "many" -> 11
+                else -> 5 // "other" bucket
+            }
             parts.add(context.safeQuantityString(R.plurals.days, quantity, dayString))
         }
 
-        return parts.joinToString(", ")
+        return formatLocalizedList(parts)
     }
 
     fun agingDue(items: List<ItemsComponentsAndTins>, now: LocalDate): Pair<List<DateInfoItem>, List<DateInfoItem>> {

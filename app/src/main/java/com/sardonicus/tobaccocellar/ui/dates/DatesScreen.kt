@@ -74,6 +74,8 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.DatesDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -324,8 +326,7 @@ private fun EmptyState() {
 private fun AgingSection(
     items: List<DateInfoItem>,
     navigateToDetails: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    showDate: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier,
@@ -347,14 +348,14 @@ private fun AgingSection(
                             .padding(horizontal = 4.dp)
                     ) {
                         Text(
-                            text = "• ${item.brand}",
+                            text = stringResource(R.string.aging_brand, item.brand.rtlIsolate()),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             modifier = Modifier.width(IntrinsicSize.Max)
                         )
                         Text(
-                            text = ", ${item.blend}",
+                            text = stringResource(R.string.aging_entry_part, item.blend.rtlIsolate()),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Normal,
                             maxLines = 1,
@@ -362,20 +363,15 @@ private fun AgingSection(
                             modifier = Modifier.weight(1f, false)
                         )
                         Text(
-                            text = " - ${item.tinLabel}",
+                            text = stringResource(R.string.aging_entry_part, item.tinLabel.rtlIsolate()),
                             fontSize = 14.sp,
                             fontStyle = FontStyle.Italic,
                             maxLines = 1,
                             modifier = Modifier.width(IntrinsicSize.Max)
                         )
-
-                        val end = buildString {
-                            append(" (${item.timeFrame})")
-                            if (showDate) append(" (${item.date})")
-                        }
-                        if (end.isNotEmpty()) {
+                        if (item.timeFrame.isNotBlank()) {
                             Text(
-                                text = end,
+                                text = stringResource(R.string.parenthetical, item.timeFrame),
                                 fontSize = 14.sp,
                                 modifier = Modifier.width(IntrinsicSize.Max)
                             )
@@ -415,26 +411,26 @@ private fun QuickStatsSection(
                 ) {
                     val size = averageAgeSection.filter { it.averageAge.isNotBlank() }.size
                     key(width) { Grid(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp),
                         config = {
                             columns(GridTrackSize.Auto, GridTrackSize.Auto)
                             repeat(size) { row(GridTrackSize.Auto) }
-                            gap(0.dp, 6.dp)
+                            gap(1.dp, 6.dp)
                         }
                     ) {
+                        val titleCol = if (LanguageState.isRtl) 2 else 1
+                        val statCol = if (LanguageState.isRtl) 1 else 2
                         averageAgeSection.forEachIndexed { index, it ->
                             if (it.averageAge.isNotBlank()) {
                                 Text(
                                     text = it.title,
-                                    modifier = Modifier.gridItem((index + 1), 1, 1, 1, Alignment.CenterStart).widthIn(max = width/2),
+                                    modifier = Modifier.gridItem((index + 1), titleCol, 1, 1, Alignment.CenterStart).widthIn(max = width/2),
                                     maxLines = 1,
                                     autoSize = TextAutoSize.StepBased(12.sp, 15.sp)
                                 )
                                 Text(
                                     text = it.averageAge,
-                                    modifier = Modifier.gridItem((index + 1), 2, 1, 1, Alignment.CenterStart).fillMaxWidth(),
+                                    modifier = Modifier.gridItem((index + 1), statCol, 1, 1, Alignment.CenterStart).fillMaxWidth(),
                                     maxLines = 1,
                                     autoSize = TextAutoSize.StepBased(12.sp, 15.sp)
                                 )
@@ -583,14 +579,14 @@ fun DatesSection(
                                 modifier = Modifier
                             ) {
                                 Text(
-                                    text = "• ${item.brand}",
+                                    text = stringResource(R.string.aging_brand, item.brand.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     modifier = Modifier.width(IntrinsicSize.Max)
                                 )
                                 Text(
-                                    text = ", ${item.blend}",
+                                    text = stringResource(R.string.aging_entry_part, item.blend.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Normal,
                                     maxLines = 1,
@@ -598,7 +594,7 @@ fun DatesSection(
                                     modifier = Modifier.weight(1f, false)
                                 )
                                 Text(
-                                    text = " - ${item.tinLabel}",
+                                    text = stringResource(R.string.aging_entry_part, item.tinLabel.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontStyle = FontStyle.Italic,
                                     maxLines = 1,
@@ -606,7 +602,7 @@ fun DatesSection(
                                 )
                             }
                             Text(
-                                text = "${item.date} (${item.timeFrame})",
+                                text = stringResource(R.string.date_age, item.date, item.timeFrame),
                                 fontSize = 14.sp,
                                 modifier = Modifier.padding(start = 16.dp)
                             )
@@ -616,7 +612,7 @@ fun DatesSection(
                 Spacer(Modifier.height(10.dp))
             } else {
                 Text(
-                    text = "No ${label.lowercase()} dates found.",
+                    text = stringResource(R.string.no_section_found, label.lowercase()),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 6.dp, bottom = 10.dp),
