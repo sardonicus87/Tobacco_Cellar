@@ -20,6 +20,7 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.BlendTypes
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Dispatchers
@@ -104,9 +105,7 @@ class CsvImportViewModel(
         val header = csvImportState.value.header
         return if (header.isNotEmpty() && header.size == columnCount) { header }
         else { (1..columnCount).map { "Column $it" } }
-            .also {
-                csvUiState = csvUiState.copy(columns = it)
-            }
+            .also { csvUiState = csvUiState.copy(columns = it) }
     }
 
 
@@ -131,26 +130,21 @@ class CsvImportViewModel(
     }
 
     fun updateMaxValue(maxValue: String) {
-        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
-        val symbols = DecimalFormatSymbols.getInstance(Locale.getDefault())
+        val numberFormat = NumberFormat.getNumberInstance(LanguageState.locale)
+        val symbols = DecimalFormatSymbols.getInstance(LanguageState.locale)
         val decimalSeparator = symbols.decimalSeparator.toString()
         val ds = Regex.escape(decimalSeparator)
         val pattern = Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
 
         val parsedDouble = if (maxValue.isNotBlank() && maxValue.matches(pattern)) {
             val preNumber =
-                if (maxValue.startsWith(decimalSeparator)) {
-                    "0$maxValue"
-                } else maxValue
+                if (maxValue.startsWith(decimalSeparator)) { "0$maxValue" } else maxValue
 
             val number = numberFormat.parse(preNumber)
             number?.toDouble()
         } else { null }?.takeIf { it > 0.0 }
 
-        mappingOptions = mappingOptions.copy(
-            maxValue = parsedDouble,
-            maxValueString = maxValue
-        )
+        mappingOptions = mappingOptions.copy(maxValue = parsedDouble, maxValueString = maxValue)
         csvUiState = csvUiState.copy(isFormValid = validateForm())
     }
 
@@ -165,9 +159,7 @@ class CsvImportViewModel(
     private val _importOption = MutableStateFlow(ImportOption.SKIP)
     val importOption = _importOption.asStateFlow()
 
-    fun updateImportOption(option: ImportOption) {
-        _importOption.value = option
-    }
+    fun updateImportOption(option: ImportOption) { _importOption.value = option }
 
     private val _overwriteSelections = MutableStateFlow<Map<CsvField, Boolean>>(emptyMap())
     val overwriteSelections = _overwriteSelections.asStateFlow()
@@ -182,7 +174,7 @@ class CsvImportViewModel(
     private fun parseRating(rating: String, maxValue: Double?): Double? {
         if (rating.isBlank()) return null
 
-        val symbols = DecimalFormatSymbols.getInstance(Locale.getDefault())
+        val symbols = DecimalFormatSymbols.getInstance(LanguageState.locale)
         val decimalSeparator = symbols.decimalSeparator.toString()
         val ds = Regex.escape(decimalSeparator)
         val ratingRegex = Regex("(\\d*$ds?\\d+)")
@@ -197,10 +189,7 @@ class CsvImportViewModel(
             val roundedNumber = (scaledNumber * 10).roundToInt() / 10.0
 
             roundedNumber.takeIf { it <= 5.0 } ?: 5.0
-
-        } else {
-            null
-        }
+        } else { null }
     }
 
 
@@ -356,7 +345,8 @@ class CsvImportViewModel(
                 when (it.unit) {
                     "lbs" -> (it.quantity * 16) / ozRate
                     "oz" -> it.quantity / ozRate
-                    "grams" -> it.quantity / gramsRate
+                    "g", "grams" -> it.quantity / gramsRate
+                    "kg" -> (it.quantity * 1000) / gramsRate
                     else -> 0.0
                 }
             }
@@ -559,7 +549,7 @@ class CsvImportViewModel(
         }
 
         if (meta.componentString.isNotBlank()) {
-            val components = meta.componentString.split(",").map { it.trim() }
+            val components = meta.componentString.split(Regex("[,،、]")).map { it.trim() }
             components.forEach { comp ->
                 val normalized = comp.lowercase()
                 val compId =
@@ -573,7 +563,7 @@ class CsvImportViewModel(
             }
         }
         if (meta.flavoringString.isNotBlank()) {
-            val flavorings = meta.flavoringString.split(",").map { it.trim() }
+            val flavorings = meta.flavoringString.split(Regex("[,،、]")).map { it.trim() }
             flavorings.forEach { flavor ->
                 val normalized = flavor.lowercase()
                 val flavorId =
