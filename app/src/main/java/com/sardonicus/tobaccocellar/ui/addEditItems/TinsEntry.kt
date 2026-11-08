@@ -542,7 +542,7 @@ private fun IndividualTin(
                             if (dateFieldWidth > lastWidth) { lastWidth = dateFieldWidth; if (label != long) label = long }
                             Text(
                                 text = label,
-                                style = MaterialTheme.typography.bodySmall,
+                                fontSize = 12.sp,
                                 modifier = Modifier.widthIn(max = max),
                                 softWrap = false,
                                 onTextLayout = {
@@ -589,7 +589,7 @@ private fun IndividualTin(
                         label = {
                             Text(
                                 text = stringResource(R.string.cellared),
-                                style = MaterialTheme.typography.bodySmall
+                                fontSize = 12.sp
                             )
                         },
                         modifier = Modifier
@@ -654,7 +654,7 @@ private fun IndividualTin(
                         label = {
                             Text(
                                 text = stringResource(R.string.opened),
-                                style = MaterialTheme.typography.bodySmall
+                                fontSize = 12.sp
                             )
                         },
                         modifier = Modifier
