@@ -79,6 +79,7 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowColor
 import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 
 @Composable
 fun BrandFilterSection(
@@ -88,10 +89,7 @@ fun BrandFilterSection(
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
 
     Column(modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             BrandFilterSearch(filterViewModel, Modifier.weight(1f))
 
             IncludeExcludeSwitch(
@@ -140,33 +138,34 @@ private fun BrandFilterSearch(
         textStyle = LocalTextStyle.current.copy(
             color = LocalContentColor.current,
             fontSize = TextUnit.Unspecified,
-            lineHeight = TextUnit.Unspecified,
+            lineHeight = TextUnit.Unspecified
         ),
         keyboardOptions = KeyboardOptions(
             capitalization = KeyboardCapitalization.Sentences,
             keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.None,
+            imeAction = ImeAction.Done
         ),
         singleLine = true,
         maxLines = 1,
         cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
             else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart
-                ) {
+            Row(Modifier.fillMaxSize(), Arrangement.Start, Alignment.CenterVertically,) {
+                val contentRtl = brandSearchText.isNotEmpty() &&
+                        (brandSearchText.first().code in 0x0590..0x05FF ||
+                                brandSearchText.first().code in 0x0600..0x06FF)
+
+                val boxAlignment = when { // dynamic side-switch when input doesn't match layout direction
+                    brandSearchText.isEmpty() -> Alignment.CenterStart
+                    LanguageState.isRtl == contentRtl -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                }
+
+                Box(Modifier.weight(1f), boxAlignment) {
                     if (brandSearchText.isEmpty() && !focused) {
                         Text(
                             text = stringResource(R.string.search_brands),
-                            style = LocalTextStyle.current.copy(
-                                color = LocalContentColor.current.copy(alpha = 0.5f)
-                            ),
+                            color = LocalContentColor.current.copy(alpha = 0.5f),
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(12.sp, 16.sp)
                         )
@@ -568,7 +567,9 @@ private fun SelectedBrandOverflow(
                     }
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     TextButton(
@@ -578,7 +579,9 @@ private fun SelectedBrandOverflow(
                         Icon(
                             painter = painterResource(R.drawable.close),
                             contentDescription = "",
-                            modifier = Modifier.padding(end = 3.dp).size(20.dp)
+                            modifier = Modifier
+                                .padding(end = 3.dp)
+                                .size(20.dp)
                         )
                         Text(
                             text = stringResource(R.string.clear_all),
@@ -626,9 +629,7 @@ fun Chip(
                         text = text,
                         maxLines = 1,
                         modifier = Modifier,
-                        style = LocalTextStyle.current.copy(
-                            color = LocalContentColor.current
-                        ),
+                        color = LocalContentColor.current,
                         minLines = 1,
                         autoSize = TextAutoSize.StepBased(9.sp, fontSize, 0.2.sp)
                     )
@@ -655,7 +656,9 @@ fun Chip(
                 )
             }
         },
-        modifier = modifier.widthIn(max = maxWidth).padding(0.dp),
+        modifier = modifier
+            .widthIn(max = maxWidth)
+            .padding(0.dp),
         enabled = enabled,
         colors = colors,
         border = border
