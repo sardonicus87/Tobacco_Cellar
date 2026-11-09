@@ -6,16 +6,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,23 +44,21 @@ fun CheckboxWithLabel(
     Row(
         modifier = modifier
             .height(height)
-            .offset(x = (-2).dp)
             .clickable(null, null, enabled) { onCheckedChange(!checked) },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Start
     ) {
-        Box(
-            modifier = Modifier,
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Checkbox(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                modifier = Modifier.padding(0.dp),
-                enabled = enabled,
-                colors = colors,
-                interactionSource = interactionSource
-            )
+        Box {
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 30.dp) {
+                Checkbox(
+                    checked = checked,
+                    onCheckedChange = onCheckedChange,
+                    modifier = Modifier.padding(4.dp),
+                    enabled = enabled,
+                    colors = colors,
+                    interactionSource = interactionSource
+                )
+            }
         }
         Text(
             text = text,
@@ -67,9 +66,7 @@ fun CheckboxWithLabel(
                 color = if (enabled) fontColor else fontColor.copy(alpha = 0.5f),
                 lineHeight = lineHeight
             ),
-            modifier = Modifier
-                .offset(x = (-4).dp)
-                .padding(end = 6.dp),
+            modifier = Modifier.padding(end = 4.dp),
             maxLines = 1,
             fontSize = if (!allowResize) fontSize else TextUnit.Unspecified,
             autoSize = if (!allowResize) { null } else {

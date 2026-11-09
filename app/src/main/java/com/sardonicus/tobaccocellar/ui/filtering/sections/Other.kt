@@ -654,7 +654,7 @@ private fun InStockSection(
         modifier = modifier
             .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
             .border(Dp.Hairline, LocalCustomColors.current.sheetBoxBorder, RoundedCornerShape(8.dp))
-            .padding(vertical = 3.dp),
+            .padding(4.dp, 3.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.Start
     ) {
@@ -691,7 +691,6 @@ private fun TriStateCheckWithLabel(
 ) {
     Row(
         modifier = modifier
-            .padding(0.dp)
             .height(36.dp)
             .clickable(null, null, enabled()) { onClick?.invoke() },
         verticalAlignment = Alignment.CenterVertically,

@@ -12,16 +12,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -60,7 +64,6 @@ fun TinsFilterSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(11.dp, Alignment.Top)
     ) {
-        // Has tins/Opened/Finished
         Box{
             Row(
                 modifier = Modifier
@@ -71,16 +74,47 @@ fun TinsFilterSection(
                     )
                     .background(LocalCustomColors.current.sheetBox, RoundedCornerShape(8.dp))
                     .fillMaxWidth()
-                    .padding(vertical = 3.dp),
+                    .padding(4.dp, 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
             ) {
+                val textMeasurer = rememberTextMeasurer()
+                val baseStyle = LocalTextStyle.current.copy(fontSize = 15.sp, fontWeight = FontWeight.Normal)
+                val pad = with(LocalDensity.current) { 42.dp.toPx() }
+
+                val hasText = stringResource(R.string.has_tins)
+                val noText = stringResource(R.string.no_tins)
+                val openText = stringResource(R.string.opened)
+                val unopenText = stringResource(R.string.unopened)
+                val finishedText = stringResource(R.string.finished)
+                val unfinishedText = stringResource(R.string.Unfinished)
+
+                val hasColumn = remember(hasText, noText) {
+                    maxOf(
+                        textMeasurer.measure(hasText, baseStyle).size.width.toFloat(),
+                        textMeasurer.measure(noText, baseStyle).size.width.toFloat()
+                    ) + pad
+                }
+                val openColumn = remember(openText, unopenText) {
+                    maxOf(
+                        textMeasurer.measure(openText, baseStyle).size.width.toFloat(),
+                        textMeasurer.measure(unopenText, baseStyle).size.width.toFloat()
+                    ) + pad
+                }
+                val finishedColumn = remember(finishedText, unfinishedText) {
+                    maxOf(
+                        textMeasurer.measure(finishedText, baseStyle).size.width.toFloat(),
+                        textMeasurer.measure(unfinishedText, baseStyle).size.width.toFloat()
+                    ) + pad
+                }
+                val total = (hasColumn + openColumn + finishedColumn).coerceAtLeast(1f)
+
+                val hasWeight = hasColumn/total
+                val openWeight = openColumn/total
+                val finishedWeight = finishedColumn/total
+
                 // Has Tins
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Column(Modifier.weight(hasWeight)) {
                     Box {
                         CheckboxWithLabel(
                             text = "",
@@ -117,10 +151,7 @@ fun TinsFilterSection(
                 }
 
                 // Opened
-                Column(
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Column(Modifier.weight(openWeight)) {
                     CheckboxWithLabel(
                         text = stringResource(R.string.opened),
                         checked = opened,
@@ -142,11 +173,7 @@ fun TinsFilterSection(
                 }
 
                 // Finished
-                Column(
-                    modifier = Modifier,
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.Start
-                ) {
+                Column(Modifier.weight(finishedWeight)) {
                     CheckboxWithLabel(
                         text = stringResource(R.string.finished),
                         checked = finished,
