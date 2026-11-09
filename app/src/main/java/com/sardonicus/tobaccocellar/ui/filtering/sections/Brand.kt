@@ -150,7 +150,7 @@ private fun BrandFilterSearch(
         cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
             else { SolidColor(Color.Transparent) },
         decorationBox = { innerTextField ->
-            Row(Modifier.fillMaxSize(), Arrangement.Start, Alignment.CenterVertically,) {
+            Row(Modifier.fillMaxSize(), Arrangement.Start, Alignment.CenterVertically) {
                 val contentRtl = brandSearchText.isNotEmpty() &&
                         (brandSearchText.first().code in 0x0590..0x05FF ||
                                 brandSearchText.first().code in 0x0600..0x06FF)

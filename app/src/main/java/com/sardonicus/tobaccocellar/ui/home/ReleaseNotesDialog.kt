@@ -86,7 +86,7 @@ fun ReleaseNotesDialog(
                     color = GlowColor(LocalCustomColors.current.darkNeutral),
                     size = GlowSize(vertical = 6.dp)
                 ) {
-                    Column(Modifier.verticalScroll(rememberScrollState()),) {
+                    Column(Modifier.verticalScroll(rememberScrollState())) {
                         Spacer(Modifier.height(4.dp))
                         releaseNotesState.changelogData.forEachIndexed { index, log ->
                             val alpha = if (index == 0) 1f else 0.8f
