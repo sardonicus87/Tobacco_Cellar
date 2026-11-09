@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle.Companion.Italic
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,16 +100,13 @@ fun ListViewMode(
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(Modifier.fillMaxSize()) {
         val background = if (LocalCustomColors.current.isLightTheme) MaterialTheme.colorScheme.background else LocalCustomColors.current.backgroundVariant
         LazyColumn(
             modifier = modifier
                 .fillMaxWidth()
-                .background(background)
-                .padding(0.dp),
-            state = columnState,
+                .background(background),
+            state = columnState
         ) {
             items(items = sortedItems.list, key = { it.itemId }) { item ->
                 val openMenu by remember(item.itemId) { derivedStateOf { activeMenuId == item.itemId } }
@@ -206,9 +204,7 @@ private fun ListItem(
 
         // Quantity
         Column(
-            modifier = Modifier
-                .width(IntrinsicSize.Max)
-                .padding(0.dp),
+            modifier = Modifier.width(IntrinsicSize.Max),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.End
         ) { QuantityColumn(formattedQuantity, outOfStock) }
@@ -233,7 +229,8 @@ private fun MainDetails(
                 modifier = Modifier.weight(1f, false).padding(end = 4.dp),
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    textDecoration = TextDecoration.None
+                    textDecoration = TextDecoration.None,
+                    textDirection = TextDirection.Content
                 ),
                 fontWeight = FontWeight.Normal,
                 maxLines = 1,
@@ -255,7 +252,8 @@ private fun MainDetails(
                 fontSize = 11.sp,
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    textDecoration = TextDecoration.None
+                    textDecoration = TextDecoration.None,
+                    textDirection = TextDirection.Content
                 )
             )
             if (typeGenreText.isNotEmpty()){
@@ -263,7 +261,8 @@ private fun MainDetails(
                     text = typeGenreText,
                     style = MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        textDecoration = TextDecoration.None
+                        textDecoration = TextDecoration.None,
+                        textDirection = TextDirection.Content
                     ),
                     fontWeight = FontWeight.Normal,
                     fontSize = 11.sp,
@@ -286,7 +285,8 @@ private fun QuantityColumn(
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium.copy(
             color = if (outOfStock) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSecondaryContainer,
-            textDecoration = TextDecoration.None
+            textDecoration = TextDecoration.None,
+            textDirection = TextDirection.Content
         ),
         fontWeight = FontWeight.Normal,
         maxLines = 1,
@@ -302,7 +302,7 @@ private fun IconRow(
 ) {
     if (favorite) {
         Icon(
-            painter = painterResource(id = R.drawable.heart_filled_24),
+            painter = painterResource(R.drawable.heart_filled_24),
             contentDescription = null,
             modifier = Modifier.padding(start = 2.dp).size(17.dp),
             tint = LocalCustomColors.current.favHeart
@@ -310,7 +310,7 @@ private fun IconRow(
     }
     if (disliked) {
         Icon(
-            painter = painterResource(id = R.drawable.heartbroken_filled_24),
+            painter = painterResource(R.drawable.heartbroken_filled_24),
             contentDescription = null,
             modifier = Modifier.padding(start = 2.dp).size(17.dp),
             tint = LocalCustomColors.current.disHeart
@@ -318,7 +318,7 @@ private fun IconRow(
     }
     if (notes.isNotBlank()) {
         Icon(
-            painter = painterResource(id = R.drawable.notes_24),
+            painter = painterResource(R.drawable.notes_24),
             contentDescription = null,
             modifier = Modifier.padding(start = 2.dp).size(16.dp),
             tint = MaterialTheme.colorScheme.tertiary
@@ -338,7 +338,7 @@ private fun RatingLabel(
         modifier = Modifier.padding(start = 10.dp)
     )
     Image(
-        painter = painterResource(id = R.drawable.star_filled),
+        painter = painterResource(R.drawable.star_filled),
         contentDescription = null,
         colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
         alignment = Alignment.Center,
@@ -376,7 +376,6 @@ private fun TinList(
                 if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
                     val tinInfo = remember(it.container, it.tinQuantity, it.unit) {
                         buildString {
-                            append("(")
                             if (it.container.isNotEmpty()) { append(it.container) }
                             if (it.container.isNotEmpty() && it.unit.isNotEmpty()) { append(" - ") }
                             if (it.unit.isNotEmpty()) {
@@ -384,12 +383,11 @@ private fun TinList(
                                 val unit = if (it.unit == "grams") "g" else it.unit
                                 append("$quantity $unit")
                             }
-                            append(")")
                         }
                     }
 
                     Text(
-                        text = tinInfo,
+                        text = stringResource(R.string.parenthetical, tinInfo),
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(start = 5.dp)
@@ -397,7 +395,7 @@ private fun TinList(
                 }
                 if (it.finished) {
                     Text(
-                        text = stringResource(id = R.string.finished_parentheses),
+                        text = stringResource(R.string.finished_parentheses),
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         fontStyle = Italic,

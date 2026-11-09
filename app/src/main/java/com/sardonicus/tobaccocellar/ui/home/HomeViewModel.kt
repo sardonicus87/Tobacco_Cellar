@@ -57,7 +57,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import java.io.File
 import java.text.NumberFormat
-import java.util.Locale
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -931,8 +930,8 @@ class HomeViewModel(
 
     private fun createTinExportData(items: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Int): List<TinExportData> {
         val tinExportData = mutableListOf<TinExportData>()
-        val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
-        val integerFormat = NumberFormat.getIntegerInstance(Locale.getDefault())
+        val numberFormat = NumberFormat.getNumberInstance(LanguageState.locale)
+        val integerFormat = NumberFormat.getIntegerInstance(LanguageState.locale)
 
         for ((item, components, flavoring, tins) in items) {
             if (tins.isNotEmpty()) {
@@ -1172,7 +1171,8 @@ fun calculateOunces(tins: List<Tins>): Double {
             when (it.unit) {
                 "oz" -> it.tinQuantity
                 "lbs" -> it.tinQuantity * 16
-                "grams" -> it.tinQuantity / 28.3495
+                "g" -> it.tinQuantity / 28.3495
+                "kg" -> it.tinQuantity * 35.274
                 else -> 0.0
             }
         } else 0.0
@@ -1185,7 +1185,8 @@ fun calculateGrams(tins: List<Tins>): Double {
             when (it.unit) {
                 "oz" -> it.tinQuantity * 28.3495
                 "lbs" -> it.tinQuantity * 453.592
-                "grams" -> it.tinQuantity
+                "g" -> it.tinQuantity
+                "kg" -> it.tinQuantity * 1000
                 else -> 0.0
             }
         } else 0.0
@@ -1196,23 +1197,23 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
     val context = getLocalizedContext(CellarApplication.instance)
 
     return when (quantityOption) {
-        QuantityOption.TINS -> context.safeString(R.string.format_quantity, "x", "${quantity.toInt()}", "")
+        QuantityOption.TINS -> context.safeString(R.string.quantity_tin , quantity.toInt())
         QuantityOption.OUNCES -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 16) { context.safeString(R.string.format_quantity, "", formatDecimal(quantity/16), "lbs") }
-                else { context.safeString(R.string.format_quantity, "", formatDecimal(quantity), "oz") }
+                if (quantity >= 16) { context.safeString(R.string.quantity_lbs, formatDecimal(quantity/16)) }
+                else { context.safeString(R.string.quantity_oz, formatDecimal(quantity)) }
             } else {
-                if (quantity >= 16) { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "lbs") }
-                else { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "oz") }
+                if (quantity >= 16) { context.safeString(R.string.quantity_lbs_estimate, formatDecimal(quantity/16)) }
+                else { context.safeString(R.string.quantity_oz_estimate, formatDecimal(quantity)) }
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 1000) { context.safeString(R.string.format_quantity, "", formatDecimal(quantity/1000), "kg")}
-                else { context.safeString(R.string.format_quantity, "", formatDecimal(quantity), "g") }
+                if (quantity >= 1000) { context.safeString(R.string.quantity_kg, formatDecimal(quantity/1000))}
+                else { context.safeString(R.string.quantity_g, formatDecimal(quantity)) }
             } else {
-                if (quantity >= 1000) { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity/1000), "kg") }
-                else { context.safeString(R.string.format_quantity, "*", formatDecimal(quantity), "g") }
+                if (quantity >= 1000) { context.safeString(R.string.quantity_kg_estimate, formatDecimal(quantity/1000)) }
+                else { context.safeString(R.string.quantity_g_estimate, formatDecimal(quantity)) }
             }
         }
     }

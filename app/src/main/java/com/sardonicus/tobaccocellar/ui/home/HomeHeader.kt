@@ -63,6 +63,7 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -83,7 +84,7 @@ fun HomeHeader(
         modifier = modifier
             .fillMaxWidth()
             .background(LocalCustomColors.current.homeHeaderBg)
-            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp, end = 8.dp)
+            .padding(8.dp, 4.dp)
             .height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -414,7 +415,18 @@ private fun CustomBlendSearch(
             ) {
                 leadingIcon()
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(Modifier.weight(1f), Alignment.CenterStart) {
+
+                val contentRtl = value.isNotEmpty() &&
+                        (value.first().code in 0x0590..0x05FF ||
+                                value.first().code in 0x0600..0x06FF)
+
+                val boxAlignment = when { // dynamic side-switch when input doesn't match layout direction
+                    value.isEmpty() -> Alignment.CenterStart
+                    LanguageState.isRtl == contentRtl -> Alignment.CenterStart
+                    else -> Alignment.CenterEnd
+                }
+
+                Box(Modifier.weight(1f), boxAlignment) {
                     if (value.isEmpty() && !hasFocus) {
                         Text(
                             text = placeholder,

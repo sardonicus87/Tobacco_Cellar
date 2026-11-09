@@ -259,7 +259,7 @@ private fun TableItem(
                         6 -> { // notes
                             if (layoutData.columnMapping.values[columnIndex](item.item.items)?.toString()?.isNotEmpty() == true) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.notes_24),
+                                    painter = painterResource(R.drawable.notes_24),
                                     contentDescription = null,
                                     modifier = Modifier.size(20.dp),
                                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.tertiary)
@@ -345,7 +345,7 @@ private fun TableHeaderRow(
                                 )
                                 if (sorting.columnIndex == columnIndex) {
                                     Image(
-                                        painter = painterResource(id = sorting.sortIcon),
+                                        painter = painterResource(sorting.sortIcon),
                                         contentDescription = null,
                                         modifier = Modifier
                                             .size(22.dp)
@@ -366,7 +366,7 @@ private fun TableHeaderRow(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Image(
-                                    painter = painterResource(id = R.drawable.star_filled),
+                                    painter = painterResource(R.drawable.star_filled),
                                     contentDescription = null,
                                     colorFilter = ColorFilter.tint(LocalCustomColors.current.starRating),
                                     modifier = Modifier
@@ -374,7 +374,7 @@ private fun TableHeaderRow(
                                 )
                                 if (sorting.columnIndex == columnIndex) {
                                     Image(
-                                        painter = painterResource(id = sorting.sortIcon),
+                                        painter = painterResource(sorting.sortIcon),
                                         contentDescription = null,
                                         modifier = Modifier
                                             .size(22.dp)
@@ -389,13 +389,13 @@ private fun TableHeaderRow(
                     5 -> { // fav/dislike
                         Box(contentAlignment = layoutData.alignment.values[columnIndex]) {
                             Image(
-                                painter = painterResource(id = R.drawable.heart_filled_24),
+                                painter = painterResource(R.drawable.heart_filled_24),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(LocalCustomColors.current.favHeart),
                                 modifier = Modifier.size(20.dp)
                             )
                             Image(
-                                painter = painterResource(id = R.drawable.question_mark_24),
+                                painter = painterResource(R.drawable.question_mark_24),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(Color.Black),
                                 modifier = Modifier.size(12.dp)
@@ -453,7 +453,6 @@ private fun TableTinsList(
                     if (it.container.isNotEmpty() || it.unit.isNotEmpty()) {
                         val tinInfo = remember(it.container, it.tinQuantity, it.unit) {
                             buildString {
-                                append("(")
                                 if (it.container.isNotEmpty()) { append(it.container) }
                                 if (it.container.isNotEmpty() && it.unit.isNotEmpty()) { append(" - ") }
                                 if (it.unit.isNotEmpty()) {
@@ -461,11 +460,10 @@ private fun TableTinsList(
                                     val unit = if (it.unit == "grams") "g" else it.unit
                                     append("$quantity $unit")
                                 }
-                                append(")")
                             }
                         }
                         Text(
-                            text = tinInfo,
+                            text = stringResource(R.string.parenthetical, tinInfo),
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp,
                             modifier = Modifier.padding(start = 5.dp)
@@ -473,7 +471,7 @@ private fun TableTinsList(
                     }
                     if (it.finished) {
                         Text(
-                            text = stringResource(id = R.string.finished_parentheses),
+                            text = stringResource(R.string.finished_parentheses),
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp,
                             fontStyle = Italic,
