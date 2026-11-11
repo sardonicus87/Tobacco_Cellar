@@ -25,8 +25,10 @@ import com.sardonicus.tobaccocellar.ui.settings.ExportRating
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.SyncDownloadEvent
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripAccent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -562,9 +564,9 @@ class FilterViewModel (
             else if (currentSearchValue.isNotBlank()) {
                 allItems.filter { items ->
                     when (currentSearchSetting) {
-                        SearchSetting.Blend -> items.items.blend.contains(currentSearchValue, true)
-                        SearchSetting.Notes -> items.items.notes.contains(currentSearchValue, true)
-                        SearchSetting.TinLabel -> items.tins.any { it.tinLabel.contains(currentSearchValue, true) }
+                        SearchSetting.Blend -> items.items.blend.stripAccent().contains(currentSearchValue.stripAccent(), true)
+                        SearchSetting.Notes -> items.items.notes.stripAccent().contains(currentSearchValue.stripAccent(), true)
+                        SearchSetting.TinLabel -> items.tins.any { it.tinLabel.stripAccent().contains(currentSearchValue.stripAccent(), true) }
                     }
                 }
             }
@@ -1263,7 +1265,8 @@ class FilterViewModel (
     val filteredBrands = combine(
         brandSearchText,
         availableBrands
-    ) { brandSearchText, allBrands ->
+    ) { brandSearchText, available ->
+        val allBrands = available.sortedWith(collator)
         updateFilterBrands(brandSearchText, allBrands)
     }.flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
@@ -1312,11 +1315,17 @@ class FilterViewModel (
     fun updateFilterBrands(text: String, allBrands: List<String>): List<String> {
         if (text.isBlank()) return allBrands
 
+        val cleanText = text.stripAccent()
+
         return allBrands.mapNotNull { brand ->
+            val cleanBrand = brand.stripAccent()
+            val exactSpecial = brand != cleanBrand
+
             val score = when {
-                brand.startsWith(text, ignoreCase = true) -> 0
-                brand.split(" ").any { it.startsWith(text, ignoreCase = true) } -> 1
-                brand.contains(text, ignoreCase = true) -> 2
+                brand.startsWith(text, ignoreCase = true) && exactSpecial -> 0
+                cleanBrand.startsWith(cleanText, ignoreCase = true) -> 1
+                cleanBrand.split(" ").any { it.startsWith(cleanText, ignoreCase = true) } -> 2
+                cleanBrand.contains(cleanText, ignoreCase = true) -> 3
                 else -> null
             }
 
