@@ -190,7 +190,7 @@
 
 
     <!-- Add/Edit Entry strings -->
-    <string name="separate_comma">(Separate with comma + space)</string>
+    <string name="separate_comma">(Separate with commas)</string>
     <string name="sync_tooltip">Synchronize the \"No. of Tins\" field with the total quantities of
         unfinished tins in the Tins tab.</string>
     <string name="sync_q" translatable="false">Sync?</string>
@@ -441,7 +441,7 @@
     <string name="empty_db">No entries found in cellar.\u000AClick \"+\" to add items,\u000Aor use
      options to import CSV.</string>
 
-    <string name="csv_export">CSV Exported</string
+    <string name="csv_export">CSV Exported</string>
     <string name="tin_label">Tin Label</string>
 
     <string name="important_alert">Important Alert!</string>
@@ -934,7 +934,7 @@
         a rating. The range is 0-5 and does allow fractional numbers (up to 2 decimal places). Clear
         the text field in order to leave an item unrated.</string>
     <string name="help_adding7">When adding components or flavorings, please separate each with a
-        comma and a space. For example: \"virginia, burley, perique\".</string>
+        comma. For example: \"virginia, burley, perique\".</string>
 
     <string name="help_editing1">Entries can be edited by long-pressing the entry in the cellar
         screen, using the batch edit option in the top bar menu, tapping edit on the details screen,
@@ -948,7 +948,7 @@
     <string name="help_editing4">WARNING: Selecting a field and leaving it blank will result in
         erasing that field for the selected entries (except for the components and flavoring fields)!</string>
     <string name="help_editing5">Batch editing components/flavoring works the same as the Add/Edit
-        screens in regard to entering values into the field (separate each with a comma and a space).
+        screens in regard to entering values into the field (separate each with a comma).
         However, here, leaving these blank does not erase anything from entries when you hit save.
         Any entered components/flavorings will be added (or removed) from the existing values of the
         selected entries if they aren’t already present (or are present in the case of remove).
