@@ -1,20 +1,24 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 
@@ -47,39 +51,53 @@ fun CustomTextField(
 ) {
     val interactionSourceImp = interactionSource ?: remember { MutableInteractionSource() }
 
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        enabled = enabled,
-        readOnly = readOnly,
-        textStyle = textStyle,
-        visualTransformation = visualTransformation,
-        interactionSource = interactionSourceImp,
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = keyboardOptions,
-        keyboardActions = keyboardActions,
-        singleLine = singleLine,
-        maxLines = maxLines,
-        minLines = minLines,
-    ) { innerTextField ->
-        TextFieldDefaults.DecorationBox(
+    val textColor =
+        textStyle.color.takeOrElse {
+            val focused = interactionSourceImp.collectIsFocusedAsState().value
+            when {
+                !enabled -> colors.disabledTextColor
+                isError -> colors.errorTextColor
+                focused -> colors.focusedTextColor
+                else -> colors.unfocusedTextColor
+            }
+        }
+    val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
+
+    CompositionLocalProvider(LocalTextSelectionColors provides colors.textSelectionColors) {
+        BasicTextField(
             value = value,
-            visualTransformation = visualTransformation,
-            innerTextField = innerTextField,
-            singleLine = singleLine,
+            onValueChange = onValueChange,
+            modifier = modifier,
             enabled = enabled,
-            isError = isError,
+            readOnly = readOnly,
+            textStyle = mergedTextStyle,
+            visualTransformation = visualTransformation,
             interactionSource = interactionSourceImp,
-            colors = colors.copy(cursorColor = MaterialTheme.colorScheme.primary),
-            shape = shape,
-            contentPadding = contentPadding,
-            placeholder = placeholder,
-            leadingIcon = leadingIcon,
-            trailingIcon = trailingIcon,
-            prefix = prefix,
-            suffix = suffix,
-            supportingText = supportingText,
-        )
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
+            singleLine = singleLine,
+            maxLines = maxLines,
+            minLines = minLines,
+        ) { innerTextField ->
+            TextFieldDefaults.DecorationBox(
+                value = value,
+                visualTransformation = visualTransformation,
+                innerTextField = innerTextField,
+                singleLine = singleLine,
+                enabled = enabled,
+                isError = isError,
+                interactionSource = interactionSourceImp,
+                colors = colors.copy(cursorColor = MaterialTheme.colorScheme.primary),
+                shape = shape,
+                contentPadding = contentPadding,
+                placeholder = placeholder,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                prefix = prefix,
+                suffix = suffix,
+                supportingText = supportingText,
+            )
+        }
     }
 }
