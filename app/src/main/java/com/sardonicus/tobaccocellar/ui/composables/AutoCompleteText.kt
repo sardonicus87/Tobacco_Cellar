@@ -48,6 +48,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedComma
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripAccent
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -130,7 +131,7 @@ fun AutoCompleteText(
             value = textFieldValueState.copy(text = value),
             onValueChange = { textFieldValue ->
                 textFieldValueState = textFieldValue
-                onValueChange?.invoke(textFieldValue.text)
+                onValueChange?.invoke(textFieldValue.text.stripControlChar())
                 if (focusInteractionCount > 0) focusInteractionCount++
             },
             modifier = Modifier
@@ -278,9 +279,9 @@ private fun CustomDropdownMenuItem(
 
 
 private fun getInput(text: String, cursorPosition: Int, componentField: Boolean): String {
-    if (!componentField) return text
+    if (!componentField) return text.stripControlChar()
 
-    val delimiterIndices = text.mapIndexedNotNull { index, char ->
+    val delimiterIndices = text.stripControlChar().mapIndexedNotNull { index, char ->
         when (char) {
             ',', '،', '、' -> index
             else -> null
