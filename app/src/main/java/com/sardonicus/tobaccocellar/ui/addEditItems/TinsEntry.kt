@@ -245,8 +245,7 @@ private fun IndividualTin(
                             .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
-                            color = if (showError) MaterialTheme.colorScheme.error else LocalContentColor.current,
-                            fontWeight = FontWeight.Medium,
+                            fontWeight = FontWeight.Medium
                         ),
                         placeholder = {
                             Text(
