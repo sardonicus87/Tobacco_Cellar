@@ -12,6 +12,7 @@ import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
 import java.text.Collator
+import java.text.Normalizer
 import java.text.NumberFormat
 import java.text.ParseException
 import java.util.Locale
@@ -58,12 +59,25 @@ fun formatLocalizedList(items: List<String>, locale: Locale = LanguageState.loca
     } catch (_: Exception) { items.joinToString(", ") }
 }
 
-val collator: Collator = Collator.getInstance(LanguageState.locale).apply { strength = Collator.SECONDARY }
+fun getLocalizedComma(locale: Locale = LanguageState.locale): String {
+    return when (locale.language.lowercase()) {
+        "ar", "fa", "ur" -> "، "
+        "zh", "ja" -> "、"
+        else -> ", "
+    }
+}
+
+val collator: Collator = Collator.getInstance(LanguageState.locale).apply { strength = Collator.PRIMARY }
 
 fun String.toLtr(): String { return if (this.isNotBlank()) "\u202A$this\u202C" else this }
 
 fun String.rtlIsolate(): String {
     return if (this.isNotBlank() && LanguageState.isRtl) "\u2068$this\u2069" else this
+}
+
+fun String.stripAccent(): String {
+    val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
+    return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normalized, "")
 }
 
 fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
