@@ -65,6 +65,7 @@ import com.sardonicus.tobaccocellar.ui.settings.SettingsScreen
 import com.sardonicus.tobaccocellar.ui.settings.SettingsViewModel
 import com.sardonicus.tobaccocellar.ui.stats.StatsScreen
 import com.sardonicus.tobaccocellar.ui.stats.StatsViewModel
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
@@ -104,10 +105,12 @@ fun CellarNavigation(
     var settingsReset by remember { mutableIntStateOf(0) }
     var settingsOpenDialog by remember { mutableStateOf<DialogType?>(null) }
 
+    val direction = if (LanguageState.isRtl) -1 else 1
+
     val slideTrans =
-        if (navigationState.cameFrom is BlendDetailsDestination) { slideInHorizontally(tween(500)) { it } togetherWith slideOutHorizontally(tween(500)) { -it } }
-        else slideInHorizontally(tween(500)) { it } togetherWith ExitTransition.None
-    val slidePop = EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+        if (navigationState.cameFrom is BlendDetailsDestination) { slideInHorizontally(tween(500)) { it * direction } togetherWith slideOutHorizontally(tween(500)) { -it * direction } }
+        else slideInHorizontally(tween(500)) { it * direction } togetherWith ExitTransition.None
+    val slidePop = EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it * direction }
     val slidePredictive = { edge: Int ->
         if (isGestureNav) {
             when (edge) {
@@ -117,7 +120,7 @@ fun CellarNavigation(
                 NavigationEvent.EDGE_LEFT -> {
                     EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it / 2 } + fadeOut()
                 }
-                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it }
+                else -> EnterTransition.None togetherWith slideOutHorizontally(tween(500)) { it * direction }
             }
         } else slidePop
     }
