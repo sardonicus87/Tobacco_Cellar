@@ -307,7 +307,6 @@ fun Tins.toTinDetails(): TinDetails {
 /** Date functions **/
 fun formatShortDate(millis: Long?): String {
     return millis?.let {
-        // DateTimeFormatter.ofPattern("MM/yy").withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(it))
         val localDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
         val pattern = DateFormat.getBestDateTimePattern(LanguageState.locale, "MM/yy")
         val formatter = DateTimeFormatter.ofPattern(pattern, LanguageState.locale)
@@ -328,12 +327,10 @@ fun formatMediumDate(millis: Long?, alternate: Boolean = false): String {
     } ?: ""
 }
 
-//enum class TinUnits(val unit: String) { OZ("oz"), LBS("lbs"), GRAMS("g"), KG("kg") }
-
 //fun formatLongDate(millis: Long?): String {
 //    return millis?.let {
-//        val instant = Instant.ofEpochMilli(it)
-//        val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-//       DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+//        val localDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+//        val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+//        formatter.format(localDate)
 //    } ?: ""
 //}
