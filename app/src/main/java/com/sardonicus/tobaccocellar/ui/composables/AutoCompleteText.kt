@@ -45,6 +45,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedComma
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripAccent
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -203,12 +206,18 @@ fun AutoCompleteText(
                         val currentText = textFieldValueState.text
                         val cursorPosition = textFieldValueState.selection.start
 
+                        val separator = when {
+                            currentText.contains('،') -> "، "
+                            currentText.contains('、') -> "、"
+                            currentText.contains(',') -> ", "
+                            else -> getLocalizedComma(LanguageState.locale)
+                        }
+
                         val newValue =
-                            if (componentField && currentText.contains(", ")) {
+                            if (componentField && currentText.contains(Regex("[,،、]\\s*"))) {
                                 val delimiterIndices = currentText.mapIndexedNotNull { index, char ->
                                     when (char) {
-                                        ',' -> index
-                                        ' ' -> index
+                                        ',', '،', '、', ' ' -> index
                                         else -> null
                                     }
                                 }.toMutableList().apply {
@@ -218,10 +227,10 @@ fun AutoCompleteText(
                                 val startIndex = delimiterIndices.last { it < cursorPosition }
                                 val endIndex = delimiterIndices.first { it >= cursorPosition }
 
-                                val updatedText = currentText.replaceRange(startIndex + 1, endIndex, " $label, ")
-                                    .trimStart().replace("  ", " ").replace(", ,", ",")
+                                val updatedText = currentText.replaceRange(startIndex + 1, endIndex, " $label$separator")
+                                    .trimStart().replace(Regex(" {2,}"), " ").replace(Regex("([,،、])\\s*\\1+"), "$1")
                                 val finalCursorPos =
-                                    if (startIndex == -1) { label.length + 2 }
+                                    if (startIndex == -1) { label.length + separator.length }
                                     else if (endIndex == currentText.length) { updatedText.length }
                                     else { (startIndex + 1) + label.length + 1 }
 
@@ -230,7 +239,7 @@ fun AutoCompleteText(
                                     selection = TextRange(finalCursorPos.coerceIn(0, updatedText.length))
                                 )
                             } else {
-                                val updatedText = if (componentField) { "$label, " } else { label }
+                                val updatedText = if (componentField) { "$label$separator" } else { label }
                                 TextFieldValue(
                                     text = updatedText,
                                     selection = TextRange(updatedText.length)
@@ -273,7 +282,7 @@ private fun getInput(text: String, cursorPosition: Int, componentField: Boolean)
 
     val delimiterIndices = text.mapIndexedNotNull { index, char ->
         when (char) {
-            ',' -> index
+            ',', '،', '、' -> index
             else -> null
         }
     }.toMutableList().apply {
@@ -295,7 +304,7 @@ private fun getSuggestions(
     if (input.length < 2) return emptyList()
 
     val selectedInput = if (componentField && fullText.isNotBlank()) {
-        fullText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        fullText.split(Regex("[,،、]")).map { it.trim() }.filter { it.isNotBlank() }
     } else { emptyList() }
 
     val selected = allItems.filter {
@@ -303,11 +312,16 @@ private fun getSuggestions(
         else it.equals(input, ignoreCase = false)
     }.toSet()
 
+    val cleanInput = input.stripAccent()
+
     val scoreResults = allItems.mapNotNull { brand ->
+        val cleanBrand = brand.stripAccent()
+        val exactSpecial = brand != cleanBrand
         val score = when {
-            brand.startsWith(input, ignoreCase = true) -> 0
-            brand.split(" ").any { it.startsWith(input, ignoreCase = true) } -> 1
-            brand.contains(input, ignoreCase = true) -> 2
+            brand.startsWith(input, ignoreCase = true) && exactSpecial -> 0
+            cleanBrand.startsWith(cleanInput, ignoreCase = true) -> 1
+            cleanBrand.split(" ").any { it.startsWith(cleanInput, ignoreCase = true) } -> 2
+            cleanBrand.contains(cleanInput, ignoreCase = true) -> 3
             else -> null
         }
         if (score != null) score to brand else null
