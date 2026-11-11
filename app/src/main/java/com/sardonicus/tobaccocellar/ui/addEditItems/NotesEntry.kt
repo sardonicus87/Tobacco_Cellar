@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -17,9 +18,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 
 @Composable
 fun NotesEntry(
@@ -67,6 +70,9 @@ fun NotesEntry(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.None,
+                ),
+                textStyle = LocalTextStyle.current.copy(
+                    textDirection = if (LanguageState.isRtl) TextDirection.Rtl else TextDirection.Ltr
                 ),
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
