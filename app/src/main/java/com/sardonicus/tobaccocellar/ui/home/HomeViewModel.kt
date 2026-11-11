@@ -35,6 +35,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
@@ -585,17 +586,17 @@ class HomeViewModel(
         return if (isTableView) {
             when (tableSorting.columnIndex) {
                 0 ->
-                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.brand }
-                    else filteredItems.sortedByDescending { it.items.brand }
+                    if (tableSorting.sortAscending) filteredItems.sortedWith(compareBy(collator) { it.items.brand })
+                    else filteredItems.sortedWith(compareBy(collator) { it.items.brand }).reversed()
                 1 ->
-                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.blend }
-                    else filteredItems.sortedByDescending { it.items.blend }
+                    if (tableSorting.sortAscending) filteredItems.sortedWith(compareBy(collator) { it.items.blend })
+                    else filteredItems.sortedWith(compareBy(collator) { it.items.blend }).reversed()
                 2 ->
-                    if (tableSorting.sortAscending) filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { "~" } }
-                    else filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { "~" } }
+                    if (tableSorting.sortAscending) filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { "~" } })
+                    else filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { "~" } }).reversed()
                 3 ->
-                    if (tableSorting.sortAscending) filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
-                    else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                    if (tableSorting.sortAscending) filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { "~" } })
+                    else filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { "~" } }).reversed()
                 4 ->
                     if (tableSorting.sortAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
                     else filteredItems.sortedBy { it.items.rating ?: 6.0 }
@@ -615,32 +616,32 @@ class HomeViewModel(
                     if (listSorting.listAscending) filteredItems.sortedBy { it.items.id }
                     else filteredItems.sortedByDescending { it.items.id }
                 ListSortOption.BLEND ->
-                    if (listSorting.listAscending) filteredItems.sortedBy { it.items.blend }
-                    else filteredItems.sortedByDescending { it.items.blend }
+                    if (listSorting.listAscending) filteredItems.sortedWith(compareBy(collator) { it.items.blend })
+                    else filteredItems.sortedWith(compareBy(collator) { it.items.blend }).reversed()
                 ListSortOption.BRAND ->
-                    if (listSorting.listAscending) filteredItems.sortedBy { it.items.brand }
-                    else filteredItems.sortedByDescending { it.items.brand }
+                    if (listSorting.listAscending) filteredItems.sortedWith(compareBy(collator) { it.items.brand })
+                    else filteredItems.sortedWith(compareBy(collator) { it.items.brand }).reversed()
                 ListSortOption.TYPE ->
                     if (listSorting.listAscending) {
                         if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                            filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                        } else filteredItems.sortedBy { getLocalizedType(it.items.type, false).ifBlank { "~" } }
+                            filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } })
+                        } else filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { "~" } })
                     }
                     else {
                         if (typeGenreOption == TypeGenreOption.TYPE_FALLBACK) {
-                            filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }
-                        } else filteredItems.sortedByDescending { getLocalizedType(it.items.type, false).ifBlank { "~" } }
+                            filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { it.items.subGenre.ifBlank { "~" } } }).reversed()
+                        } else filteredItems.sortedWith(compareBy(collator) { getLocalizedType(it.items.type, false).ifBlank { "~" } }).reversed()
                     }
                 ListSortOption.SUBGENRE ->
                     if (listSorting.listAscending) {
                         if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                            filteredItems.sortedBy { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } }
-                        } else filteredItems.sortedBy { it.items.subGenre.ifBlank { "~" } }
+                            filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } })
+                        } else filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { "~" } })
                     }
                     else {
                         if (typeGenreOption == TypeGenreOption.SUB_FALLBACK) {
-                            filteredItems.sortedByDescending { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } }
-                        } else filteredItems.sortedByDescending { it.items.subGenre.ifBlank { "~" } }
+                            filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { getLocalizedType(it.items.type, false).ifBlank { "~" } } }).reversed()
+                        } else filteredItems.sortedWith(compareBy(collator) { it.items.subGenre.ifBlank { "~" } }).reversed()
                     }
                 ListSortOption.RATING ->
                     if (listSorting.listAscending) filteredItems.sortedByDescending { it.items.rating ?: -1.0 }
