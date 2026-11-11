@@ -75,6 +75,10 @@ fun String.rtlIsolate(): String {
     return if (this.isNotBlank() && LanguageState.isRtl) "\u2068$this\u2069" else this
 }
 
+fun String.stripControlChar(): String {
+    return this.replace(Regex("[\u2067\u2068\u2069\u202A\u202C]"), "")
+}
+
 fun String.stripAccent(): String {
     val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
     return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normalized, "")
