@@ -86,7 +86,7 @@ class BlendDetailsViewModel(
                 buildDetailsString(context.safeString(R.string.type_label), getLocalizedType(item.items.type), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.subgenre_label), item.items.subGenre, lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.cut_label), item.items.cut, lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.component_label), formatLocalizedList(components), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.components_label), formatLocalizedList(components), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.flavors_label), formatLocalizedList(flavors), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.production_status_label), if (item.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued), lineHeight = 1.2.em),
                 buildDetailsString(context.safeString(R.string.no_of_tins_label), item.items.quantity.toString(), lineHeight = 1.2.em)
@@ -129,8 +129,8 @@ class BlendDetailsViewModel(
 
         return buildAnnotatedString {
             withStyle(style = ParagraphStyle(textIndent = TextIndent(firstLine = 0.sp, restLine = 12.sp), lineHeight = lineHeight)) {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) } // .rtlIsolate()
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) } // .rtlIsolate()
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = fontSize)) { append(title) }
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal, fontSize = fontSize)) { append(value) }
             }
         }
     }

@@ -140,7 +140,7 @@ fun DetailsEntry(
             Text(stringResource(R.string.type_label), Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.subgenre_label), Modifier.gridItem(4, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.cut_label), Modifier.gridItem(5, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.component_label), Modifier.gridItem(6, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.components_label), Modifier.gridItem(6, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.flavoring_label), Modifier.gridItem(7, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, label, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
                 style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))

@@ -582,7 +582,7 @@ fun BulkEditing(
                         modifier = Modifier.gridItem(3, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.component_label),
+                        text = stringResource(R.string.components_label),
                         checked = editingState.compsSelected,
                         onCheckedChange = { onValueChange(editingState.copy(compsSelected = it)) },
                         modifier = Modifier.gridItem(4, labelCol, 1, 1, Alignment.CenterStart)

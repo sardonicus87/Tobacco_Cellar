@@ -626,7 +626,7 @@ fun CsvLoadedBody(
                 val type = stringResource(R.string.type_label)
                 val subgenre = stringResource(R.string.subgenre_label)
                 val cut = stringResource(R.string.cut_label)
-                val components = stringResource(R.string.component_label)
+                val components = stringResource(R.string.components_label)
                 val flavoring = stringResource(R.string.flavoring_label)
                 val noOfTins = stringResource(R.string.no_of_tins_label)
                 val rating = stringResource(R.string.rating_label)
