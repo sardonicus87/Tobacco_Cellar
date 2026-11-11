@@ -77,6 +77,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,6 +90,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
@@ -240,7 +242,7 @@ private fun IndividualTin(
 
                     CustomTextField(
                         value = tinDetails.tinLabel,
-                        onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it)) },
+                        onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar())) },
                         modifier = Modifier
                             .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
@@ -432,7 +434,10 @@ private fun IndividualTin(
                         modifier = Modifier.weight(1f),
                         enabled = true,
                         singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = if(LanguageState.isRtl) TextAlign.Start else TextAlign.End,
+                            textDirection = TextDirection.Ltr
+                        ),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done),

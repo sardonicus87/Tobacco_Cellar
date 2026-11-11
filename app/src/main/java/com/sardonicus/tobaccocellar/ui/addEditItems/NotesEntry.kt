@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 
 @Composable
 fun NotesEntry(
@@ -47,7 +48,7 @@ fun NotesEntry(
             TextField(
                 value = itemDetails.notes,
                 onValueChange = {
-                    var updatedText = it
+                    var updatedText = it.stripControlChar()
                     if (it.contains("\n")) {
                         val lines = it.lines()
                         if (lines.size > 1) {

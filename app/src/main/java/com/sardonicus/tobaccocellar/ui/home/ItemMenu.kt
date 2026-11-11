@@ -77,6 +77,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -91,6 +92,7 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import kotlinx.coroutines.delay
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
@@ -514,6 +516,10 @@ private fun EditRatingPop(
                             unfocusedContainerColor = LocalCustomColors.current.textField,
                             disabledContainerColor = LocalCustomColors.current.textField,
                         ),
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = if (LanguageState.isRtl) TextAlign.End else TextAlign.Start,
+                            textDirection = TextDirection.Ltr
+                        ),
                         shape = MaterialTheme.shapes.extraSmall
                     )
                     val alpha = if (textFieldState.isNotBlank()) .75f else 0.38f
@@ -579,7 +585,7 @@ private fun EditNotePop(
             TextField(
                 value = textFieldState,
                 onValueChange = {
-                    var updatedText = it
+                    var updatedText = it.stripControlChar()
                     if (it.contains("\n")) {
                         val lines = it.lines()
                         if (lines.size > 1) {
@@ -679,7 +685,10 @@ private fun EditQuantityPop(
                         if (it.matches(pattern) && it.length <= 2) { updateTextField(it) }
                     },
                     singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = if(LanguageState.isRtl) TextAlign.Start else TextAlign.End,
+                        textDirection = TextDirection.Ltr
+                    ),
                     modifier = Modifier.width(54.dp),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,

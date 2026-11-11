@@ -74,6 +74,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -95,6 +96,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -201,7 +203,7 @@ fun DetailsEntry(
 
             TextField(
                 value = itemDetails.blend,
-                onValueChange = { onValueChange(itemDetails.copy(blend = it)) },
+                onValueChange = { onValueChange(itemDetails.copy(blend = it.stripControlChar())) },
                 modifier = Modifier
                     .gridItem(2, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
@@ -452,7 +454,10 @@ fun DetailsEntry(
                     visualTransformation = VisualTransformation.None,
                     enabled = !itemDetails.syncTins,
                     singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.End),
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End,
+                        textDirection = TextDirection.Ltr
+                    ),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
@@ -737,10 +742,8 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(
-                    null,
-                    null
-                ) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(null, null) {
+                    onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
