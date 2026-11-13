@@ -18,16 +18,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +68,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -73,7 +77,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.CustomDropdownItem
+import com.sardonicus.tobaccocellar.ui.composables.TightText
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import kotlinx.coroutines.launch
 
 @Composable
@@ -105,7 +113,10 @@ fun PlaintextActionRow(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(LocalCustomColors.current.homeHeaderBg.copy(alpha = backgroundAlpha), RoundedCornerShape(8.dp))
+            .background(
+                LocalCustomColors.current.homeHeaderBg.copy(alpha = backgroundAlpha),
+                RoundedCornerShape(8.dp)
+            )
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .padding(end = if (expanded) 8.dp else 0.dp)
     ) {
@@ -155,9 +166,7 @@ fun PlaintextActionRow(
                             contentColor = MaterialTheme.colorScheme.primary,
                             disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
                         ),
-                        modifier = Modifier
-                            .padding(0.dp)
-                            .size(40.dp)
+                        modifier = Modifier.size(40.dp)
                     ) { Icon(painterResource(id = R.drawable.filter_24), "Filter") }
                     Box(
                         modifier = Modifier
@@ -187,9 +196,7 @@ fun PlaintextActionRow(
                         contentColor = MaterialTheme.colorScheme.primary,
                         disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
                     ),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(40.dp),
+                    modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.copy_icon),
@@ -206,9 +213,7 @@ fun PlaintextActionRow(
                         contentColor = MaterialTheme.colorScheme.primary,
                         disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
                     ),
-                    modifier = Modifier
-                        .padding(0.dp)
-                        .size(40.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.print_icon),
@@ -244,7 +249,9 @@ private fun SortingButton(
     var mainY by remember { mutableStateOf(0.dp) }
     var mainWidth by remember { mutableStateOf(0.dp) }
     val yPositions = remember { mutableStateMapOf<PlaintextSortOption, Dp>() }
-    val sideSpace = (screenWidth - (mainX + mainWidth)) * .95f
+    // globallyPositioned measures to the top-left corner from top-left screen edge regardless of LTR/RTL layout
+    // side-space is to the physical right on LTR, physical left on RTL
+    val sideSpace = if (LanguageState.isRtl) (mainX) * .95f else (screenWidth - (mainX + mainWidth)) * .95f
 
     BackHandler(mainMenu) { if (mainMenu) { mainMenu = false; subMenu = false } }
 
@@ -267,9 +274,7 @@ private fun SortingButton(
                 contentColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = LocalContentColor.current.copy(alpha = 0.38f)
             ),
-            modifier = Modifier
-                .padding(0.dp)
-                .size(40.dp)
+            modifier = Modifier.size(40.dp)
         ) { Icon(painterResource(id = R.drawable.sort_bars), "Sorting") }
 
         // Main options
@@ -277,7 +282,7 @@ private fun SortingButton(
             expanded = mainMenu,
             onDismissRequest = { mainMenu = false; subMenu = false },
             modifier = Modifier
-                .heightIn(max = screenHeight * .65f)
+                .heightIn(max = screenHeight * .5f)
                 .onGloballyPositioned {
                     mainWidth = with(density) { it.size.width.toDp() }
                     mainX = with(density) { it.positionOnScreen().x.toDp() }
@@ -293,37 +298,35 @@ private fun SortingButton(
                     && option == PlaintextSortOption.DEFAULT) {
                     HorizontalDivider(Modifier.padding(start = 10.dp, end = 24.dp))
                 }
-                DropdownMenuItem(
+                CustomDropdownItem (
                     text = {
-                        Row(Modifier, Arrangement.Start, Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(option.resId),
-                                modifier = Modifier.padding(end = 2.dp),
-                                color = LocalContentColor.current.copy(alpha = if (subMenu) 0.85f else 1.0f)
-                            )
-                            // Sort indicator and/or submenu
+                         Row(Modifier.widthIn(max = 115.dp), Arrangement.Start, Alignment.CenterVertically) {
+                             TightText(
+                                 text = stringResource(option.resId),
+                                 modifier = Modifier
+                                     .sizeIn(maxWidth = 93.dp, maxHeight = 36.dp)
+                                     .padding(end = 2.dp),
+                                 color = LocalContentColor.current.copy(alpha = if (subMenu) 0.85f else 1.0f),
+                                 autoSize = StepBased(9.sp, 14.sp),
+                                 maxLines = 2,
+                                 overflow = TextOverflow.Clip
+                             )
                             if (sortState.mainSort == option) {
-                                Box {
-                                    Image(
-                                        painter = painterResource(id = sortState.icon),
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .padding(0.dp),
-                                        colorFilter = ColorFilter.tint(LocalContentColor.current)
-                                    )
-                                }
+                                Image(
+                                    painter = painterResource(id = sortState.icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.requiredSize(20.dp),
+                                    colorFilter = ColorFilter.tint(LocalContentColor.current)
+                                )
                             } else if (hasSubOptions) {
-                                Box {
-                                    Image(
-                                        painter = painterResource(R.drawable.arrow_right),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        colorFilter = ColorFilter
-                                            .tint(LocalContentColor.current.copy(alpha = 0.5f))
-                                    )
-                                }
-                            } else { Spacer(Modifier.width(20.dp)) }
+                                Image(
+                                    painter = painterResource(R.drawable.arrow_right),
+                                    contentDescription = null,
+                                    modifier = Modifier.requiredSize(20.dp),
+                                    colorFilter = ColorFilter
+                                        .tint(LocalContentColor.current.copy(alpha = 0.5f))
+                                )
+                            } else { Spacer(Modifier.requiredWidth(20.dp)) }
                         }
                     },
                     onClick = {
@@ -335,6 +338,7 @@ private fun SortingButton(
                         .onGloballyPositioned {
                             yPositions[option] = with(density) { it.positionInParent().y.toDp() }
                         }
+                        .height(48.dp)
                         .background(
                             color = if (sortMenuState.mainSelection == option && subMenu)
                                 LocalCustomColors.current.textField else Color.Transparent
@@ -344,8 +348,10 @@ private fun SortingButton(
         }
 
         // Sub sorting menu
-        var subWidth by remember { mutableStateOf(0.dp) }
-        val xOffset = if (subWidth > sideSpace) (mainX - anchorX) - subWidth else (mainX - anchorX) + mainWidth
+        var subWidth by remember { mutableStateOf(100.dp) }
+        val ltrXOffset = if (subWidth > sideSpace) (mainX - anchorX) - subWidth else (mainX - anchorX) + mainWidth
+        val rtlXOffset = if (subWidth > sideSpace) -(subWidth) else mainWidth
+        val xOffset = if (LanguageState.isRtl) rtlXOffset else ltrXOffset
         val yOffset = (mainY - anchorY) + (yPositions[sortMenuState.mainSelection] ?: 0.dp)
 
         if (subMenu) {
@@ -356,13 +362,13 @@ private fun SortingButton(
                 properties = PopupProperties(focusable = false, clippingEnabled = false),
                 offset = DpOffset(xOffset, yOffset),
                 modifier = Modifier
-                    .heightIn(max = screenHeight * .60f)
+                    .heightIn(max = screenHeight * .45f)
                     .onGloballyPositioned { subWidth = with(density) { it.size.width.toDp() } },
                 shadowElevation = 6.dp
             ) {
                 Text(
-                    text = stringResource(R.string.sub_sorting),
-                    autoSize = TextAutoSize.StepBased(12.sp, 14.sp),
+                    text = stringResource(R.string.sub_sorting).rtlIsolate(),
+                    autoSize = StepBased(12.sp, 14.sp),
                     lineHeight = 1.em,
                     maxLines = 1,
                     letterSpacing = 0.1.sp,
@@ -378,10 +384,18 @@ private fun SortingButton(
                         && subOption == PlaintextSortOption.DEFAULT) {
                         HorizontalDivider(Modifier.padding(start = 12.dp, end = 24.dp))
                     }
-                    DropdownMenuItem(
+                    CustomDropdownItem(
                         text = {
-                            Row(Modifier.padding(end = 10.dp), Arrangement.Start, Alignment.CenterVertically) {
-                                Text("  ${stringResource(subOption.resId)}", Modifier.padding(end = 8.dp))
+                            Row(Modifier.widthIn(max = 115.dp), Arrangement.Start, Alignment.CenterVertically) {
+                                TightText(
+                                    text = stringResource(subOption.resId),
+                                    modifier = Modifier
+                                        .sizeIn(maxWidth = 101.dp, maxHeight = 36.dp)
+                                        .padding(end = 8.dp),
+                                    autoSize = StepBased(9.sp, 14.sp),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Clip
+                                )
                                 Box(
                                     modifier = Modifier
                                         .size(6.dp)
@@ -393,7 +407,8 @@ private fun SortingButton(
                                 )
                             }
                         },
-                        onClick = { viewModel.updateSorting(subOption = subOption) }
+                        onClick = { viewModel.updateSorting(subOption = subOption) },
+                        modifier = Modifier.height(48.dp)
                     )
                 }
             }
