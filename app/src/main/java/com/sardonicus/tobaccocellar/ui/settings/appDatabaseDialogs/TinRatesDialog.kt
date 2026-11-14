@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,11 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
@@ -123,22 +127,18 @@ fun TinRatesDialog(
                             val decimalSeparator = symbols.decimalSeparator.toString()
                             val allowedPattern = remember(decimalSeparator) {
                                 val ds = Regex.escape(decimalSeparator)
-                                Regex("^(\\s*|\\d{0,5}?($ds\\d{0,2})?)$")
+                                Regex("^(\\s*|\\d{0,4}?($ds\\d{0,2})?)$")
                             }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
-                            ) {
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
                                     value = tinOzRate,
                                     onValueChange = {
                                         if (it.matches(allowedPattern)) { tinOzRate = it }
                                     },
-                                    modifier = Modifier.width(80.dp),
+                                    modifier = Modifier.width(100.dp),
                                     textStyle = LocalTextStyle.current.copy(
-                                        textAlign = TextAlign.End,
-                                        color = LocalContentColor.current,
+                                        textDirection = TextDirection.Ltr,
+                                        textAlign = TextAlign.End
                                     ),
                                     keyboardOptions = KeyboardOptions(
                                         keyboardType = KeyboardType.Number,
@@ -156,13 +156,10 @@ fun TinRatesDialog(
                                     ),
                                     enabled = !debouncedLoading,
                                     maxLines = 1,
-                                    contentPadding = PaddingValues(
-                                        vertical = 6.dp,
-                                        horizontal = 12.dp
-                                    ),
+                                    contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
-                                            text = "(${formatDecimal(ozRate)})",
+                                            text = stringResource(R.string.parenthetical, formatDecimal(ozRate)),
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
@@ -171,23 +168,27 @@ fun TinRatesDialog(
                                                 color = LocalContentColor.current.copy(alpha = .38f),
                                             )
                                         )
+                                    },
+                                    suffix = {
+                                        Text(
+                                            text = "oz",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.padding(start = 2.dp),
+                                            color = LocalContentColor.current.copy(alpha = .8f)
+                                        )
                                     }
                                 )
-                                Text("oz")
                             }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start)
-                            ) {
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
                                     value = tinGramsRate,
                                     onValueChange = {
                                         if (it.matches(allowedPattern)) { tinGramsRate = it }
                                     },
-                                    modifier = Modifier.width(80.dp),
+                                    modifier = Modifier.width(100.dp),
                                     textStyle = LocalTextStyle.current.copy(
-                                        textAlign = TextAlign.End,
-                                        color = LocalContentColor.current,
+                                        textDirection = TextDirection.Ltr,
+                                        textAlign = TextAlign.End
                                     ),
                                     keyboardOptions = KeyboardOptions(
                                         keyboardType = KeyboardType.Number,
@@ -205,13 +206,10 @@ fun TinRatesDialog(
                                     ),
                                     enabled = !debouncedLoading,
                                     maxLines = 1,
-                                    contentPadding = PaddingValues(
-                                        vertical = 6.dp,
-                                        horizontal = 12.dp
-                                    ),
+                                    contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
-                                            text = "(${formatDecimal(gramsRate)})",
+                                            text = stringResource(R.string.parenthetical, formatDecimal(gramsRate)),
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
@@ -220,9 +218,16 @@ fun TinRatesDialog(
                                                 color = LocalContentColor.current.copy(alpha = .38f),
                                             )
                                         )
+                                    },
+                                    suffix = {
+                                        Text(
+                                            text = "g",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.padding(start = 2.dp),
+                                            color = LocalContentColor.current.copy(alpha = .8f)
+                                        )
                                     }
                                 )
-                                Text("grams")
                             }
                         }
                     }

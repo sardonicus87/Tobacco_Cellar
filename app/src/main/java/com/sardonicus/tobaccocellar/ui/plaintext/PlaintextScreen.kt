@@ -1183,50 +1183,55 @@ private fun PrintDialog(
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CustomTextField(
-                                value = fontSizeString,
-                                onValueChange = {
-                                    if (it.matches(fontPattern)) {
-                                        fontSizeString = it
-                                        fontSize =
-                                            if (it.isNotBlank()) { it.toFloatOrNull() ?: fontSize }
-                                            else { 12f }
-                                    }
-                                },
-                                suffix = {
-                                    Text(
-                                        "pt",
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.padding(0.75.dp),
-                                        color = LocalContentColor.current.copy(alpha = .8f)
-                                    )
-                                },
-                                modifier = Modifier
-                                    .width(68.dp)
-                                    .padding(vertical = 4.dp),
-                                singleLine = true,
-                                textStyle = LocalTextStyle.current.copy(
-                                    textDirection = TextDirection.Ltr,
-                                    textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Next
-                                ),
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = LocalCustomColors.current.textField,
-                                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField
-                                ),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(
-                                    vertical = 6.dp,
-                                    horizontal = 12.dp
-                                ),
-                            )
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                CustomTextField(
+                                    value = fontSizeString,
+                                    onValueChange = {
+                                        if (it.matches(fontPattern)) {
+                                            fontSizeString = it
+                                            fontSize =
+                                                if (it.isNotBlank()) {
+                                                    it.toFloatOrNull() ?: fontSize
+                                                } else {
+                                                    12f
+                                                }
+                                        }
+                                    },
+                                    suffix = {
+                                        Text(
+                                            "pt",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.padding(0.75.dp),
+                                            color = LocalContentColor.current.copy(alpha = .8f)
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .width(68.dp)
+                                        .padding(vertical = 4.dp),
+                                    singleLine = true,
+                                    textStyle = LocalTextStyle.current.copy(
+                                        textDirection = TextDirection.Ltr,
+                                        textAlign = TextAlign.End
+                                    ),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                        focusedContainerColor = LocalCustomColors.current.textField,
+                                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                                        disabledContainerColor = LocalCustomColors.current.textField
+                                    ),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    contentPadding = PaddingValues(
+                                        vertical = 6.dp,
+                                        horizontal = 12.dp
+                                    ),
+                                )
+                            }
 
                             // increase/decrease font buttons
                             IncreaseDecrease(
@@ -1270,61 +1275,71 @@ private fun PrintDialog(
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CustomTextField(
-                                value = marginsString,
-                                onValueChange = {
-                                    if (it.matches(marginPattern)) {
-                                        marginsString = it
-                                        try {
-                                            var parsedDouble: Double?
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                CustomTextField(
+                                    value = marginsString,
+                                    onValueChange = {
+                                        if (it.matches(marginPattern)) {
+                                            marginsString = it
+                                            try {
+                                                var parsedDouble: Double?
 
-                                            if (it.isNotBlank()) {
-                                                val preNumber =
-                                                    if (it.startsWith(decimalSeparator)) { "0$it" }
-                                                    else it
-                                                val number = numberFormat.parse(preNumber)
+                                                if (it.isNotBlank()) {
+                                                    val preNumber =
+                                                        if (it.startsWith(decimalSeparator)) {
+                                                            "0$it"
+                                                        } else it
+                                                    val number = numberFormat.parse(preNumber)
 
-                                                parsedDouble = number?.toDouble() ?: 1.0 }
-                                            else { parsedDouble = 1.0 }
+                                                    parsedDouble = number?.toDouble() ?: 1.0
+                                                } else {
+                                                    parsedDouble = 1.0
+                                                }
 
-                                            margins = if (parsedDouble <= 3.0) parsedDouble else 3.0
-                                        } catch (_: ParseException) { }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(68.dp)
-                                    .padding(vertical = 4.dp)
-                                    .onFocusChanged {
-                                        if (!it.hasFocus) marginsString = formatDecimal(margins)
+                                                margins =
+                                                    if (parsedDouble <= 3.0) parsedDouble else 3.0
+                                            } catch (_: ParseException) {
+                                            }
+                                        }
                                     },
-                                singleLine = true,
-                                suffix = {
-                                    Text(
-                                        text = "x",
-                                        fontSize = 14.sp,
-                                        modifier = Modifier.padding(start = 0.75.dp),
-                                        color = LocalContentColor.current.copy(alpha = .8f)
+                                    modifier = Modifier
+                                        .width(68.dp)
+                                        .padding(vertical = 4.dp)
+                                        .onFocusChanged {
+                                            if (!it.hasFocus) marginsString = formatDecimal(margins)
+                                        },
+                                    singleLine = true,
+                                    suffix = {
+                                        Text(
+                                            text = "×",
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.padding(start = 0.75.dp),
+                                            color = LocalContentColor.current.copy(alpha = .8f)
+                                        )
+                                    },
+                                    textStyle = LocalTextStyle.current.copy(
+                                        textDirection = TextDirection.Ltr,
+                                        textAlign = TextAlign.End
+                                    ),
+                                    keyboardOptions = KeyboardOptions(
+                                        keyboardType = KeyboardType.Number,
+                                        imeAction = ImeAction.Next
+                                    ),
+                                    colors = TextFieldDefaults.colors(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        disabledIndicatorColor = Color.Transparent,
+                                        focusedContainerColor = LocalCustomColors.current.textField,
+                                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                                        disabledContainerColor = LocalCustomColors.current.textField
+                                    ),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    contentPadding = PaddingValues(
+                                        vertical = 6.dp,
+                                        horizontal = 12.dp
                                     )
-                                },
-                                textStyle = LocalTextStyle.current.copy(
-                                    textDirection = TextDirection.Ltr,
-                                    textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Next
-                                ),
-                                colors = TextFieldDefaults.colors(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                    focusedContainerColor = LocalCustomColors.current.textField,
-                                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField
-                                ),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp)
-                            )
+                                )
+                            }
 
                             // increase/decrease margin buttons
                             IncreaseDecrease(

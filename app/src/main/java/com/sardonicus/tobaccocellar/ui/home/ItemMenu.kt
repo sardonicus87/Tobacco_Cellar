@@ -686,8 +686,8 @@ private fun EditQuantityPop(
                     },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
-                        textAlign = if(LanguageState.isRtl) TextAlign.Start else TextAlign.End,
-                        textDirection = TextDirection.Ltr
+                        textDirection = TextDirection.Ltr,
+                        textAlign = TextAlign.End
                     ),
                     modifier = Modifier.width(54.dp),
                     keyboardOptions = KeyboardOptions(
