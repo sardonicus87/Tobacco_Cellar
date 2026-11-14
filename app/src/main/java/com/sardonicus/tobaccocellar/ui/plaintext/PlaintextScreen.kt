@@ -107,6 +107,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontStyle
@@ -114,11 +115,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -136,12 +138,12 @@ import com.sardonicus.tobaccocellar.ui.composables.GlowSize
 import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -186,9 +188,16 @@ fun PlaintextScreen(
 
                     when {
                         actionToggle -> if (anyFocused && !selectionFocused) {
-                            focusManager.clearFocus(); down.consume() }
-                        selectionFocused -> { selectionKey++; down.consume() }
-                        anyFocused -> { focusManager.clearFocus(); if (isOtherTap) down.consume() }
+                            focusManager.clearFocus(); down.consume()
+                        }
+
+                        selectionFocused -> {
+                            selectionKey++; down.consume()
+                        }
+
+                        anyFocused -> {
+                            focusManager.clearFocus(); if (isOtherTap) down.consume()
+                        }
                     }
                 }
             },
@@ -545,7 +554,10 @@ private fun PlaintextList(
                                 fontSize = 15.sp,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 6.dp, bottom = 32.dp)
+                                    .padding(top = 6.dp, bottom = 32.dp),
+                                style = LocalTextStyle.current.copy(
+                                    textDirection = if (LanguageState.isRtl) TextDirection.Rtl else TextDirection.Ltr
+                                )
                             )
                         }
                     }
@@ -596,6 +608,25 @@ private fun PlaintextFormatting(
     var saveDialog by remember { mutableStateOf(false) }
     var loadDialog by remember { mutableStateOf(false) }
 
+    val rtlDialogSeen by viewModel.rtlDialogSeen.collectAsState()
+    var showRtlDialog by remember { mutableStateOf(false) }
+    if (showRtlDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            confirmButton = {
+                TextButton(onClick = { viewModel.saveRtlDialogSeen(); showRtlDialog = false }) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            title = { },
+            text = { Text(stringResource(R.string.rtl_user_dialog)) },
+            shape = MaterialTheme.shapes.small,
+            containerColor = MaterialTheme.colorScheme.background,
+            textContentColor = MaterialTheme.colorScheme.onBackground
+        )
+    }
+
     Column(modifier
         .verticalScroll(scrollState)
         .padding(horizontal = 12.dp)
@@ -618,106 +649,124 @@ private fun PlaintextFormatting(
             )
         }
 
+        val isRtl = LanguageState.isRtl
+        val label = if (isRtl) 2 else 1
+        val field = if (isRtl) 1 else 2
+
         Grid(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
             config = {
-                columns(GridTrackSize.MinMax(78.dp, .02.fr), GridTrackSize.MinMax(0.dp, .98.fr))
+                if (isRtl) { columns(GridTrackSize.MinMax(0.dp, .98.fr), GridTrackSize.MinMax(78.dp, .02.fr)) }
+                else { columns(GridTrackSize.MinMax(78.dp, .02.fr), GridTrackSize.MinMax(0.dp, .98.fr)) }
                 rows(GridTrackSize.Auto, GridTrackSize.Auto, GridTrackSize.Auto)
                 gap(8.dp)
             }
         ) {
             Text(
                 text = stringResource(R.string.pt_string),
-                modifier = Modifier.gridItem(1, 1, 1, 1, Alignment.CenterStart),
+                modifier = Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_delimiter),
-                modifier = Modifier.gridItem(2, 1, 1, 1, Alignment.CenterStart),
+                modifier = Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
                 text = stringResource(R.string.pt_list_as),
-                modifier = Modifier.gridItem(3, 1, 1, 1, Alignment.CenterStart),
+                modifier = Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
 
             // format string
-            TextField(
-                value = formatString,
-                onValueChange = { viewModel.saveFormatting(format = it) },
-                modifier = Modifier
-                    .gridItem(1, 2, 1, 1, Alignment.CenterStart)
-                    .fillMaxWidth(),
-                singleLine = true,
-                trailingIcon = {
-                    if (formatString.length > 4) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                            contentDescription = "Clear",
-                            modifier = Modifier
-                                .clickable(null, LocalIndication.current) { viewModel.saveFormatting(format = "") }
-                                .alpha(0.66f)
-                                .size(20.dp)
-                                .focusable(false)
-                        )
-                    }
-                },
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Ascii,
-                    autoCorrectEnabled = false,
-                    hintLocales = LocaleList("en"),
-                    imeAction = ImeAction.Done
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedContainerColor = LocalCustomColors.current.textField,
-                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                    disabledContainerColor = LocalCustomColors.current.textField,
-                ),
-                shape = MaterialTheme.shapes.extraSmall,
-                interactionSource = fieldInteractionSource
-            )
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                TextField(
+                    value = formatString,
+                    onValueChange = { viewModel.saveFormatting(format = it) },
+                    modifier = Modifier
+                        .gridItem(1, field, 1, 1, Alignment.CenterStart)
+                        .onFocusChanged {
+                            if (isRtl && it.isFocused && !rtlDialogSeen) showRtlDialog = true
+                        }
+                        .fillMaxWidth(),
+                    singleLine = true,
+                    trailingIcon = {
+                        if (formatString.length > 4) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                                contentDescription = "Clear",
+                                modifier = Modifier
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.saveFormatting(format = "") }
+                                    .alpha(0.66f)
+                                    .size(20.dp)
+                                    .focusable(false)
+                            )
+                        }
+                    },
+                    textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedContainerColor = LocalCustomColors.current.textField,
+                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    interactionSource = fieldInteractionSource
+                )
+            }
 
             // Delimiter
-            TextField(
-                value = delimiter,
-                onValueChange = { viewModel.saveFormatting(delimiter = it) },
-                modifier = Modifier
-                    .gridItem(2, 2, 1, 1, Alignment.CenterStart)
-                    .fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    keyboardType = KeyboardType.Ascii,
-                    autoCorrectEnabled = false,
-                    hintLocales = LocaleList("en"),
-                    imeAction = ImeAction.Done
-                ),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedContainerColor = LocalCustomColors.current.textField,
-                    unfocusedContainerColor = LocalCustomColors.current.textField,
-                    disabledContainerColor = LocalCustomColors.current.textField,
-                ),
-                shape = MaterialTheme.shapes.extraSmall,
-                interactionSource = fieldInteractionSource
-            )
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                TextField(
+                    value = delimiter,
+                    onValueChange = { viewModel.saveFormatting(delimiter = it) },
+                    modifier = Modifier
+                        .gridItem(2, field, 1, 1, Alignment.CenterStart)
+                        .onFocusChanged {
+                            if (isRtl && it.isFocused && !rtlDialogSeen) showRtlDialog = true
+                        }
+                        .fillMaxWidth(),
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.None,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Done
+                    ),
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent,
+                        focusedContainerColor = LocalCustomColors.current.textField,
+                        unfocusedContainerColor = LocalCustomColors.current.textField,
+                        disabledContainerColor = LocalCustomColors.current.textField
+                    ),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    interactionSource = fieldInteractionSource
+                )
+            }
 
             // list as tins
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                 modifier = Modifier
-                    .gridItem(3, 2, 1, 1, Alignment.CenterStart)
+                    .gridItem(3, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
@@ -790,7 +839,17 @@ private fun PlaintextFormatting(
                     )
                     .background(LocalCustomColors.current.whiteBlack, RoundedCornerShape(8.dp))
                     .padding(vertical = 8.dp, horizontal = 12.dp)
-            ) { Text(formatPreview, minLines = 6, maxLines = 6, fontSize = 14.sp) }
+            ) {
+                Text(
+                    text = formatPreview,
+                    minLines = 6,
+                    maxLines = 6,
+                    fontSize = 14.sp,
+                    style = LocalTextStyle.current.copy(
+                        textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                    )
+                )
+            }
         }
 
         // Formatting Guide
@@ -871,23 +930,23 @@ private fun PlaintextFormatting(
 @Composable
 private fun PlaceholderGuide(modifier: Modifier = Modifier) {
     val formatGuide = mapOf(
-        stringResource(R.string.brand) to "@brand",
-        stringResource(R.string.blend) to "@blend",
-        stringResource(R.string.type) to "@type",
-        stringResource(R.string.subgenre) to "@subgenre",
-        stringResource(R.string.cut) to "@cut",
-        stringResource(R.string.components) to "@comps",
-        stringResource(R.string.flavoring) to "@flavors",
-        stringResource(R.string.quantity) to "@qty",
-        stringResource(R.string.rating) to "@rating_0_0",
-        stringResource(R.string.production) to "@prod",
-        stringResource(R.string.tin_label) to "@label",
-        stringResource(R.string.tin_container) to "@container",
-        stringResource(R.string.tin_quantity) to "@T_qty",
-        stringResource(R.string.manufacture) to "@manufacture",
-        stringResource(R.string.cellar_date) to "@cellar",
-        stringResource(R.string.open_date) to "@open",
-        stringResource(R.string.finished) to "@finished",
+        stringResource(R.string.brand_label) to "@brand",
+        stringResource(R.string.blend_label) to "@blend",
+        stringResource(R.string.type_label) to "@type",
+        stringResource(R.string.subgenre_label) to "@subgenre",
+        stringResource(R.string.cut_label) to "@cut",
+        stringResource(R.string.components_label) to "@comps",
+        stringResource(R.string.flavoring_label) to "@flavors",
+        stringResource(R.string.quantity_label) to "@qty",
+        stringResource(R.string.rating_label) to "@rating_0_0",
+        stringResource(R.string.production_label) to "@prod",
+        stringResource(R.string.tin_label_label) to "@label",
+        stringResource(R.string.tin_container_label) to "@container",
+        stringResource(R.string.tin_quantity_label) to "@T_qty",
+        stringResource(R.string.manufacture_label) to "@manufacture",
+        stringResource(R.string.cellar_date_label) to "@cellar",
+        stringResource(R.string.open_date_label) to "@open",
+        stringResource(R.string.finished_label) to "@finished",
         stringResource(R.string.new_line) to "_n_",
         stringResource(R.string.number) to "#",
         stringResource(R.string.escape_char) to "'",
@@ -902,7 +961,7 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
     val textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
     val idealWidths = remember(formatGuide) {
         formatGuide.map { (key, value) ->
-            key to (textMeasure.measure("$key:", textStyle).size.width to
+            key to (textMeasure.measure(key.trim(), textStyle).size.width to
                     textMeasure.measure(value, textStyle).size.width) }.toMap() }
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
@@ -930,6 +989,8 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
         val totalIdeal = with(density) { chunkIdeals.sumOf { (k, v) -> k + v }.toDp() }
         val scale = (availableWidth / totalIdeal).coerceAtMost(1f)
 
+        val isRtl = LanguageState.isRtl
+
         Grid (
             modifier = Modifier.fillMaxWidth(),
             config = {
@@ -952,9 +1013,12 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                 gap(1.dp, 0.dp)
             }
         ) {
-            Spacer(Modifier.gridItem(1, 1, rowCount, 1, Alignment.CenterStart).fillMaxSize())
+            Spacer(Modifier
+                .gridItem(1, 1, rowCount, 1, Alignment.CenterStart)
+                .fillMaxSize())
 
-            chunks.forEachIndexed { columnIndex, chunk ->
+            val reChunk = if (isRtl) chunks.reversed() else chunks
+            reChunk.forEachIndexed { columnIndex, chunk ->
                 val (idealKey, idealValue) = chunkIdeals[columnIndex]
                 val maxKeyWidth = with(density) { (idealKey.toDp() * scale) }
                 val maxValueWidth = with(density) { (idealValue.toDp() * scale) }
@@ -963,16 +1027,19 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                     val column = (columnIndex * 4) + 2 // +2 b/c indexing 0-based, grid is 1-based,
                     val row = rowIndex + 1             // and 1 column is outer flex spacer
 
+                    val keyColumn = if (isRtl) column + 2 else column
+                    val valueColumn = if (isRtl) column else column + 2
+
                     // KEYS (chunk column 1)
                     Box(
                         modifier = Modifier
-                            .gridItem(row, column, alignment = Alignment.CenterStart)
+                            .gridItem(row, keyColumn, alignment = Alignment.CenterStart)
                             .height(rowHeight)
                             .widthIn(max = maxKeyWidth),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         DisableSelection { Text(
-                            text = "${entry.key}:",
+                            text = entry.key.trim(),
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             autoSize = StepBased(10.sp, 14.sp, 0.25.sp)
@@ -982,7 +1049,7 @@ private fun PlaceholderGuide(modifier: Modifier = Modifier) {
                     // VALUES (chunk column 3; column 2 is 8.dp padding)
                     Box(
                         modifier = Modifier
-                            .gridItem(row, column + 2, alignment = Alignment.CenterStart)
+                            .gridItem(row, valueColumn, alignment = Alignment.CenterStart)
                             .height(rowHeight)
                             .widthIn(max = maxValueWidth),
                         contentAlignment = Alignment.CenterStart
@@ -1018,10 +1085,9 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
-        val stars = stringResource(R.string.stars)
         Text(stringResource(R.string.formatting_help1))
         Text(stringResource(R.string.formatting_help2, "_n_", "~", "{@label~, }", "{@label~_n_}"))
-        Text(stringResource(R.string.formatting_help3, "@rating_0_0", "_0", "0", "@rating_4_0", "@rating_10_0 $stars", "@rating_4_2/4"))
+        Text(stringResource(R.string.formatting_help3, "@rating_0_0", "_0", "0", "@rating_4_0", "@rating_10_0", "@rating_4_2/4"))
         Text(stringResource(R.string.formatting_help4, "#"))
         Text(stringResource(R.string.formatting_help5, "#", " '# ", " '[@type] ", " '01' ", " ''##' "))
         Text(stringResource(R.string.formatting_help6, "[ ]", " [_n_@type] ", " [ @type[ - @subgenre]] "))
@@ -1049,8 +1115,8 @@ private fun PrintDialog(
     var fontSize by remember { mutableFloatStateOf(savedFontSize) }
     var margins by remember { mutableDoubleStateOf(savedMargin) }
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(Locale.getDefault()) }
-    val symbols = remember { DecimalFormatSymbols.getInstance(Locale.getDefault()) }
+    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
+    val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
 
     val focusManager = LocalFocusManager.current
@@ -1140,8 +1206,8 @@ private fun PrintDialog(
                                     .padding(vertical = 4.dp),
                                 singleLine = true,
                                 textStyle = LocalTextStyle.current.copy(
-                                    textAlign = TextAlign.End,
-                                    color = LocalContentColor.current
+                                    textDirection = TextDirection.Ltr,
+                                    textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End
                                 ),
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Number,
@@ -1153,13 +1219,13 @@ private fun PrintDialog(
                                     disabledIndicatorColor = Color.Transparent,
                                     focusedContainerColor = LocalCustomColors.current.textField,
                                     unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField.copy(
-                                        alpha = 0.66f
-                                    ),
-                                    disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                                    disabledContainerColor = LocalCustomColors.current.textField
                                 ),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp),
+                                contentPadding = PaddingValues(
+                                    vertical = 6.dp,
+                                    horizontal = 12.dp
+                                ),
                             )
 
                             // increase/decrease font buttons
@@ -1228,7 +1294,9 @@ private fun PrintDialog(
                                 modifier = Modifier
                                     .width(68.dp)
                                     .padding(vertical = 4.dp)
-                                    .onFocusChanged { if (!it.hasFocus) marginsString = formatDecimal(margins) },
+                                    .onFocusChanged {
+                                        if (!it.hasFocus) marginsString = formatDecimal(margins)
+                                    },
                                 singleLine = true,
                                 suffix = {
                                     Text(
@@ -1239,8 +1307,8 @@ private fun PrintDialog(
                                     )
                                 },
                                 textStyle = LocalTextStyle.current.copy(
-                                    textAlign = TextAlign.End,
-                                    color = LocalContentColor.current
+                                    textDirection = TextDirection.Ltr,
+                                    textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End
                                 ),
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Number,
@@ -1252,10 +1320,7 @@ private fun PrintDialog(
                                     disabledIndicatorColor = Color.Transparent,
                                     focusedContainerColor = LocalCustomColors.current.textField,
                                     unfocusedContainerColor = LocalCustomColors.current.textField,
-                                    disabledContainerColor = LocalCustomColors.current.textField.copy(
-                                        alpha = 0.66f
-                                    ),
-                                    disabledTextColor = LocalContentColor.current.copy(alpha = 0.66f),
+                                    disabledContainerColor = LocalCustomColors.current.textField
                                 ),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 contentPadding = PaddingValues(vertical = 6.dp, horizontal = 12.dp)

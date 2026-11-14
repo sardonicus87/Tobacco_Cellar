@@ -90,6 +90,7 @@ class PreferencesRepo(
         val PLAINTEXT_PRESET_DELIMITER4 = stringPreferencesKey("plaintext_preset_delimiter4")
         val PLAINTEXT_PRESET_FORMAT5 = stringPreferencesKey("plaintext_preset_format5")
         val PLAINTEXT_PRESET_DELIMITER5 = stringPreferencesKey("plaintext_preset_delimiter5")
+        val PLAINTEXT_RTL_DIALOG = booleanPreferencesKey("seen_dialog")
 
         fun itemsSyncKey(itemId: Int) = booleanPreferencesKey("item_sync_$itemId")
         val SYNC_SETTINGS_MIGRATED = booleanPreferencesKey("sync_settings_migrated")
@@ -676,6 +677,16 @@ class PreferencesRepo(
             else -> throw IllegalArgumentException("Invalid slot: $slot")
         }
     }
+
+    val ptRtlDialogSeen: Flow<Boolean> = dataStore.data
+        .catch {
+            if (it is IOException) {
+                Log.e(TAG, "Error reading plaintext formatting preferences.", it)
+                emit(emptyPreferences())
+            } else { throw it }
+        }.map { it[PLAINTEXT_RTL_DIALOG] ?: false }.distinctUntilChanged()
+
+    suspend fun saveRtlDialogSeen() { dataStore.edit { it[PLAINTEXT_RTL_DIALOG] = true } }
 
 
     /** One-time and migrational stuff **/

@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.plaintext
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -23,8 +24,11 @@ import com.sardonicus.tobaccocellar.ui.home.calculateTotalQuantity
 import com.sardonicus.tobaccocellar.ui.home.formatQuantity
 import com.sardonicus.tobaccocellar.ui.settings.QuantityOption
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -34,6 +38,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -62,6 +67,13 @@ class PlaintextViewModel (
 
     private val _listAsTinsEnabled = MutableStateFlow(false)
     val listAsTinsEnabled: StateFlow<Boolean> = _listAsTinsEnabled
+
+    private val _rtlDialogSeen = MutableStateFlow(false)
+    val rtlDialogSeen = _rtlDialogSeen.asStateFlow()
+    fun saveRtlDialogSeen() {
+        _rtlDialogSeen.value = true
+        viewModelScope.launch { preferencesRepo.saveRtlDialogSeen() }
+    }
 
     private sealed class Template {
         data class Text(val content: String) : Template()
@@ -248,6 +260,8 @@ class PlaintextViewModel (
 
     init {
         viewModelScope.launch {
+            launch { _rtlDialogSeen.value = preferencesRepo.ptRtlDialogSeen.first() }
+
             // initialized
             launch {
                 combine(
@@ -360,6 +374,7 @@ class PlaintextViewModel (
                         val qty = tinQuantitySorting[tinData] ?: 0.0
                         if (qty == 0.0) Double.MAX_VALUE else -qty
                     }
+
                     PlaintextSortOption.TIN_MANUF -> tinData.manufactureDate ?: Long.MAX_VALUE
                     PlaintextSortOption.TIN_CELLAR -> tinData.cellarDate ?: Long.MAX_VALUE
                     PlaintextSortOption.TIN_OPEN -> tinData.openDate ?: Long.MAX_VALUE
@@ -400,11 +415,11 @@ class PlaintextViewModel (
         val entryComparator: Comparator<Pair<ItemsComponentsAndTins, Tins?>> =
             when (sortState.mainSort) {
                 PlaintextSortOption.DEFAULT -> if (asc) compareBy { it.first.items.id } else compareByDescending { it.first.items.id }
-                PlaintextSortOption.BRAND -> if (asc) compareBy { it.first.items.brand } else compareByDescending { it.first.items.brand }
-                PlaintextSortOption.BLEND -> if (asc) compareBy { it.first.items.blend } else compareByDescending { it.first.items.blend }
-                PlaintextSortOption.TYPE -> if (asc) compareBy { getLocalizedType(it.first.items.type, false) } else compareByDescending { getLocalizedType(it.first.items.type, false) }
-                PlaintextSortOption.SUBGENRE -> if (asc) compareBy { it.first.items.subGenre } else compareByDescending { it.first.items.subGenre }
-                PlaintextSortOption.CUT -> if (asc) compareBy { it.first.items.cut } else compareByDescending { it.first.items.cut }
+                PlaintextSortOption.BRAND -> if (asc) compareBy(collator) { it.first.items.brand } else compareByDescending(collator) { it.first.items.brand }
+                PlaintextSortOption.BLEND -> if (asc) compareBy(collator) { it.first.items.blend } else compareByDescending(collator) { it.first.items.blend }
+                PlaintextSortOption.TYPE -> if (asc) compareBy(collator) { getLocalizedType(it.first.items.type, false).ifBlank { "~" } } else compareByDescending(collator) { getLocalizedType(it.first.items.type, false).ifBlank { "~" } }
+                PlaintextSortOption.SUBGENRE -> if (asc) compareBy(collator) { it.first.items.subGenre.ifBlank { "~" } } else compareByDescending(collator) { it.first.items.subGenre.ifBlank { "~" } }
+                PlaintextSortOption.CUT -> if (asc) compareBy(collator) { it.first.items.cut.ifBlank { "~" } } else compareByDescending(collator) { it.first.items.cut.ifBlank { "~" } }
                 PlaintextSortOption.QUANTITY -> compareBy<Pair<ItemsComponentsAndTins, Tins?>> { quantitiesData[it.first.items.id]?.first == 0.0 }
                     .thenBy {
                         val qty = quantitiesData[it.first.items.id]?.first ?: 0.0
@@ -417,8 +432,8 @@ class PlaintextViewModel (
                     }
 
                 PlaintextSortOption.TIN_DEFAULT -> if (asc) compareBy { if (it.second?.tinId == -1) Int.MAX_VALUE else it.second?.tinId } else compareByDescending { it.second?.tinId }
-                PlaintextSortOption.TIN_LABEL -> if (asc) compareBy { it.second?.tinLabel?.ifBlank { "~" } } else compareByDescending { it.second?.tinLabel }
-                PlaintextSortOption.TIN_CONTAINER -> if (asc) compareBy { it.second?.container?.ifBlank { "~" } } else compareByDescending { it.second?.container?.ifBlank { "" } }
+                PlaintextSortOption.TIN_LABEL -> if (asc) compareBy(collator) { it.second?.tinLabel ?: "~" } else compareByDescending(collator) { it.second?.tinLabel ?: "1" }
+                PlaintextSortOption.TIN_CONTAINER -> if (asc) compareBy(collator) { it.second?.container ?: "~" } else compareByDescending(collator) { it.second?.container ?: "1" }
                 PlaintextSortOption.TIN_QUANTITY -> compareBy<Pair<ItemsComponentsAndTins, Tins?>> { (it.second?.let { t -> tinQuantitySorting[t] } ?: 0.0) == 0.0 }
                     .thenBy {
                         val qty = it.second?.let { tins -> tinQuantitySorting[tins] } ?: 0.0
@@ -572,7 +587,7 @@ class PlaintextViewModel (
 
         val previewFormattedQuantities = previewData.associate { items ->
             val relevantTins = items.tins.filter { it in previewTins }
-            items.items.id to formatQuantity(calculateTotalQuantity(items, relevantTins, quantityOption, ozRate, gramsRate), quantityOption, relevantTins)
+            items.items.id to formatQuantity(calculateTotalQuantity(items, relevantTins, quantityOption, ozRate, gramsRate), quantityOption, relevantTins).rtlIsolate()
         }
 
         val previewEntries = previewData.flatMap { items ->
@@ -630,7 +645,7 @@ class PlaintextViewModel (
 
         for (segment in templates) {
             when (segment) {
-                is Template.Text -> result.append(segment.content)
+                is Template.Text -> result.append(segment.content.rtlIsolate())
                 is Template.Placeholder -> {
                     val resolved = resolveSinglePlace(segment.key, itemData, tinData, quantities)
                     if (resolved.isNotBlank()) anyResolved = true
@@ -679,35 +694,48 @@ class PlaintextViewModel (
             if (matchResult != null) {
                 val max = matchResult.groupValues.getOrNull(1)?.toIntOrNull() ?: 5
                 val rounding = matchResult.groupValues.getOrNull(2)?.toIntOrNull().takeIf { it in 0..2 } ?: 2
-                return exportRatingString(itemData.items.rating, max, rounding)
+                return exportRatingString(itemData.items.rating, max, rounding).rtlIsolate()
             }
         }
 
         if (itemData != null) {
             when (placeholder) {
-                "@brand" -> return itemData.items.brand
-                "@blend" -> return itemData.items.blend
-                "@type" -> return getLocalizedType(itemData.items.type, false)
-                "@subgenre" -> return itemData.items.subGenre
-                "@cut" -> return itemData.items.cut
-                "@comps" -> return itemData.components.joinToString(", ") { it.componentName }
-                "@flavors" -> return itemData.flavoring.joinToString(", ") { it.flavoringName }
-                "@qty" -> return formattedQuantities[itemData.items.id] ?: ""
-                "@prod" -> return if (itemData.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued)
+                "@brand" -> return itemData.items.brand.rtlIsolate()
+                "@blend" -> return itemData.items.blend.rtlIsolate()
+                "@type" -> return getLocalizedType(itemData.items.type, false).rtlIsolate()
+                "@subgenre" -> return itemData.items.subGenre.rtlIsolate()
+                "@cut" -> return itemData.items.cut.rtlIsolate()
+                "@comps" -> return formatLocalizedList(itemData.components.map { it.componentName.rtlIsolate() }.sortedWith(collator))
+                "@flavors" -> return formatLocalizedList(itemData.flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator))
+                "@qty" -> return formattedQuantities[itemData.items.id]?.rtlIsolate() ?: ""
+                "@prod" -> return if (itemData.items.inProduction) context.safeString(R.string.in_production).rtlIsolate() else context.safeString(R.string.discontinued).rtlIsolate()
             }
         }
         if (tinData != null) {
             when (placeholder) {
-                "@label" -> return tinData.tinLabel
-                "@container" -> return tinData.container
-                "@T_qty" -> return if (tinData.unit.isNotBlank() && !tinData.finished) "${formatDecimal(tinData.tinQuantity)} ${tinData.unit}" else ""
+                "@label" -> return tinData.tinLabel.rtlIsolate()
+                "@container" -> return tinData.container.rtlIsolate()
+                "@T_qty" -> return tinQuantityString(tinData, context).rtlIsolate()
                 "@manufacture" -> return formatMediumDate(tinData.manufactureDate)
                 "@cellar" -> return formatMediumDate(tinData.cellarDate)
                 "@open" -> return formatMediumDate(tinData.openDate)
-                "@finished" -> return if (tinData.finished) context.safeString(R.string.finished_parentheses) else ""
+                "@finished" -> return if (tinData.finished) context.safeString(R.string.finished_parentheses).rtlIsolate() else ""
             }
         }
         return placeholder
+    }
+
+    private fun tinQuantityString (tin: Tins, context: Context): String {
+        return if (tin.unit.isBlank() || tin.finished) ""
+        else {
+            val resource = when (tin.unit) {
+                "oz" -> R.string.quantity_oz
+                "lbs" -> R.string.quantity_lbs
+                "g" -> R.string.quantity_g
+                else -> R.string.quantity_kg
+            }
+            context.safeString(resource, formatDecimal(tin.tinQuantity))
+        }
     }
 
     private fun parseTemplate(input: String): List<Template> {
@@ -786,7 +814,8 @@ class PlaintextViewModel (
         return when (tin.unit) {
             "oz" -> tin.tinQuantity * 28.3495
             "lbs" -> tin.tinQuantity * 453.592
-            "grams" -> tin.tinQuantity
+            "g" -> tin.tinQuantity
+            "kg" -> tin.tinQuantity * 1000
             else -> 0.0
         }
     }
