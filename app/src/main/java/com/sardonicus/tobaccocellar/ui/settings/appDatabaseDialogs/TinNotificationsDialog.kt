@@ -61,9 +61,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -249,8 +249,8 @@ private fun formatTime(time: Int?, context: Context): String {
     val is24Hour = android.text.format.DateFormat.is24HourFormat(context)
 
     val skeleton = if (is24Hour) "Hm" else "hm"
-    val pattern = android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), skeleton)
-    val formatter = DateTimeFormatter.ofPattern(pattern, Locale.getDefault())
+    val pattern = android.text.format.DateFormat.getBestDateTimePattern(LanguageState.locale, skeleton)
+    val formatter = DateTimeFormatter.ofPattern(pattern, LanguageState.locale)
 
     return raw.format(formatter)
 }
