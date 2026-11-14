@@ -74,7 +74,6 @@ import java.nio.charset.Charset
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -221,7 +220,7 @@ class SettingsViewModel(
                 when (it) {
                     QuantityOption.TINS -> R.string.tins
                     QuantityOption.OUNCES -> R.string.oz_lbs
-                    QuantityOption.GRAMS -> R.string.grams
+                    QuantityOption.GRAMS -> R.string.g_kg
                 }
             }, DialogType.QuantityDisplay),
             SettingsDialog(R.string.parse_links_option, R.string.parse_links_description, parseLinks.let { if (it) R.string.on else R.string.off }, DialogType.ParseLinks),
@@ -616,10 +615,10 @@ class SettingsViewModel(
     private fun updateSuggestedFilename() {
         val databaseChecked = _backupState.value.databaseChecked
         val settingsChecked = _backupState.value.settingsChecked
-        val shortDate = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault())
+        val shortDate = DateFormat.getDateInstance(DateFormat.SHORT, LanguageState.locale)
         val pattern: String = if (shortDate is SimpleDateFormat) { shortDate.toPattern() } else { "M/d/yy" }
         val modifiedDate = pattern.replace(Regex("[/.]"), "-")
-        val dateFormatted = SimpleDateFormat(modifiedDate, Locale.getDefault()).format(Date())
+        val dateFormatted = SimpleDateFormat(modifiedDate, LanguageState.locale).format(Date())
         val baseFilename = "TC_"
 
         val filename = when {
@@ -1124,7 +1123,8 @@ data class SettingsBackup (
     val tinNotifications: Boolean = false,
     val tinNotifyTime: Int = 600,
     val lastTinNotifyDate: Long? = null,
-    val appLanguage: String = "system"
+    val appLanguage: String = "system",
+    val rtlDialogSeen: Boolean = false
 )
 
 data class RestoreState(
@@ -1271,7 +1271,8 @@ suspend fun createSettingsText(preferencesRepo: PreferencesRepo): String {
         tinNotifications = preferencesRepo.tinNotifications.first(),
         tinNotifyTime = preferencesRepo.tinNotifyTime.first(),
         lastTinNotifyDate = preferencesRepo.lastTinNotifyDate.first(),
-        appLanguage = preferencesRepo.appLanguage.first()
+        appLanguage = preferencesRepo.appLanguage.first(),
+        rtlDialogSeen = preferencesRepo.ptRtlDialogSeen.first()
     )
 
     return jsonFormat.encodeToString(backup)
@@ -1342,6 +1343,7 @@ suspend fun parseSettingsText(settingsText: String, preferencesRepo: Preferences
                     AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(backup.appLanguage))
                 }
             }
+            if (backup.rtlDialogSeen) { saveRtlDialogSeen() }
         }
     } else { // support for older backup files
         val lines = settingsText.lines()
