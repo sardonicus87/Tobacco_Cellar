@@ -145,7 +145,6 @@
 
     <string name="oz_lbs">oz/lbs</string>
     <string name="g_kg">g/kg</string>
-    <string name="format_quantity">%1$s%2$s %3$s</string>
     <string name="quantity_tin">×%d</string>
     <string name="quantity_oz">%s oz</string>
     <string name="quantity_oz_estimate">*%s oz</string>
@@ -561,7 +560,7 @@
     <string name="rtl_user_dialog">Right-to-left users please note, these text fields are LTR
         (left-to-right) due to the placeholders. Placeholders entered from the left here will render
         in the list starting from the right. If you\'re entering non-placeholder native language text,
-        type in place as you normally would and it will render correctly in the field and in the list
+        type in place as you normally would, and it will render correctly in the field and in the list
         as RTL (just place blocks of native RTL in order from left-to-right as you\'d like them to
         appear between placeholders in RTL).</string>
 
