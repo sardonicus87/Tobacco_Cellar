@@ -136,7 +136,6 @@ fun DetailsEntry(
                 gap(8.dp)
             },
         ) {
-
             Text(stringResource(R.string.brand_label), Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.blend_label), Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
             Text(stringResource(R.string.type_label), Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
@@ -455,8 +454,8 @@ fun DetailsEntry(
                     enabled = !itemDetails.syncTins,
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
-                        textAlign = if (LanguageState.isRtl) TextAlign.Start else TextAlign.End,
-                        textDirection = TextDirection.Ltr
+                        textDirection = TextDirection.Ltr,
+                        textAlign = TextAlign.End
                     ),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
