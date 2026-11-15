@@ -3,8 +3,11 @@ package com.sardonicus.tobaccocellar.data
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.settings.exportRatingString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import org.apache.commons.csv.CSVFormat
 import org.apache.commons.csv.CSVParser
@@ -41,9 +44,7 @@ class CsvHelper {
                 }
                 CsvResult.Success(header, firstFullRecord, columnCount, recordCount)
             } else CsvResult.Empty
-        } catch (e: Exception) {
-            CsvResult.Error(e)
-        }
+        } catch (e: Exception) { CsvResult.Error(e) }
     }
 
     fun exportToCsv(data: List<ItemsComponentsAndTins>, maxRating: Int, rounding: Int): String {
@@ -66,8 +67,8 @@ class CsvHelper {
         val csvPrinter = CSVPrinter(csvWriter, csvFormat)
 
         for ((items, components, flavoring) in data) {
-            val componentsString = components.joinToString(", ") { it.componentName }
-            val flavoringString = flavoring.joinToString(", ") { it.flavoringName }
+            val componentsString = formatLocalizedList(components.map { it.componentName.rtlIsolate() }.sortedWith(collator))
+            val flavoringString = formatLocalizedList(flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator))
             val ratingString = exportRatingString(items.rating, maxRating, rounding)
 
             csvPrinter.printRecord(

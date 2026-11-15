@@ -36,8 +36,10 @@ import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -946,8 +948,8 @@ class HomeViewModel(
                         type = item.type,
                         subGenre = item.subGenre,
                         cut = item.cut,
-                        components = components.joinToString(", ") { it.componentName },
-                        flavoring = flavoring.joinToString(", ") { it.flavoringName },
+                        components = formatLocalizedList(components.map { it.componentName.rtlIsolate() }.sortedWith(collator)),
+                        flavoring = formatLocalizedList(flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator)),
                         quantity = item.quantity,
                         rating = exportRatingString(item.rating, maxRating, rounding),
                         favorite = item.favorite,
@@ -970,8 +972,8 @@ class HomeViewModel(
                     type = item.type,
                     subGenre = item.subGenre,
                     cut = item.cut,
-                    components = components.joinToString(", ") { it.componentName },
-                    flavoring = flavoring.joinToString(", ") { it.flavoringName },
+                    components = formatLocalizedList(components.map { it.componentName.rtlIsolate() }.sortedWith(collator)),
+                    flavoring = formatLocalizedList(flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator)),
                     quantity = item.quantity,
                     rating = exportRatingString(item.rating, maxRating, rounding),
                     favorite = item.favorite,
