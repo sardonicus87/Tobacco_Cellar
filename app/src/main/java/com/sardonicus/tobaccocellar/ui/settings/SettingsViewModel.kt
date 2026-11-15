@@ -1411,7 +1411,8 @@ fun calculateSyncTins(tins: List<Tins>, ozRate: Double, gramsRate: Double): Int 
             when (it.unit) {
                 "oz" -> it.tinQuantity / ozRate
                 "lbs" -> (it.tinQuantity * 16) / ozRate
-                "grams" -> it.tinQuantity / gramsRate
+                "g", "grams" -> it.tinQuantity / gramsRate
+                "kg" -> (it.tinQuantity * 1000) / gramsRate
                 else -> 0.0
             }
         }
