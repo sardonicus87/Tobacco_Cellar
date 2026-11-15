@@ -558,6 +558,12 @@
     <string name="conditional">Conditional:</string>
     <string name="tin_sublist">Tin Sublist:</string>
     <string name="sublist_delim">Sublist delim.:</string>
+    <string name="rtl_user_dialog">Right-to-left users please note, these text fields are LTR
+        (left-to-right) due to the placeholders. Placeholders entered from the left here will render
+        in the list starting from the right. If you\'re entering non-placeholder native language text,
+        type in place as you normally would and it will render correctly in the field and in the list
+        as RTL (just place blocks of native RTL in order from left-to-right as you\'d like them to
+        appear between placeholders in RTL).</string>
 
     <string name="print">Print</string>
     <string name="print_settings">Print Settings</string>
@@ -596,12 +602,11 @@
         record by a blank line, you would need to enter \"%1$s\". When tins are passed as a sublist,
         mark the start of the tins sublist delimiter with a tilde (%2$s) at the end of the tins-sublist
         formatting, inside the closing tins as sublist bracket (e.g. \"%3$s\" or \"%4$s\").</string>
-    <string name="stars">stars</string>
     <string name="formatting_help3">The \"%1$s\" tag is to be used in a specific way. The first
         zero should be replaced with the desired max rating (for scaling). The second \"%2$s\" is optional
         for the number of decimal places to be rounded to (max of two, enter \"%3$s\" to round to the nearest
         whole number). For example, to pass the rating on a scale of 1-4 with whole number rounding,
-        enter \"%4$s\" into the formatting. More advanced examples might be:\u000A\"%5$s\" (9 stars)
+        enter \"%4$s\" into the formatting. More advanced examples might be:\u000A\"%5$s stars\" (9 stars)
         or \"%6$s\" (3.25/4).</string>
     <string name="formatting_help4">\"Number\" is a special tag that counts each record in the given
         sort order (use multiple %1$s to include leading 0’s).</string>
@@ -640,7 +645,7 @@
     <string name="language_description">Set preferred app language. There may be a slight delay when
         changing the language if it needs to download.</string>
     <string name="system_language">System (%s)</string>
-    <string name="waiting_language" translatable="false">… (%s)</string>
+    <string name="waiting_language">… (%s)</string>
     <string name="language_failed">Language download failed, try again later.</string>
 
     <string name="ratings_option">Cellar Ratings Visibility</string>
@@ -772,6 +777,7 @@
     <string name="stats_estimated_weight">%s\u0020(estimated)</string>
     <string name="stats_out_of_stock">%s\u0020out\u0020of\u0020stock</string>
     <string name="stats_opened">%s\u0020opened</string>
+    <string name="nothing_found">nothing found</string>
 
     <string name="charts">Charts</string>
     <string name="charts_disclaimer">*Charts are filter-reactive. Some charts may be redundant/irrelevant
