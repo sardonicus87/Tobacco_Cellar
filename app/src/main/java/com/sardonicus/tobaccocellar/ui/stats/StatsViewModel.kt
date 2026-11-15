@@ -213,6 +213,7 @@ class StatsViewModel(
         var ratedCount = 0
         var ratingSum = 0.0
         var totalOpened = 0
+        var hasTins = false
 
         val relevantTinsWeight = mutableListOf<Tins>()
         val quantityRemap = when (quantityOption) {
@@ -238,6 +239,7 @@ class StatsViewModel(
             if (flavoring.isEmpty()) flavoringMap.increment(noneAssignedLabel)
             else flavoring.forEach { flavoringMap.increment(it.flavoringName) }
 
+            if (tins.isNotEmpty()) hasTins = true
             tins.forEach { if (!it.finished) containerMap.increment(it.container.ifBlank { unassignedLabel }) }
 
             if (relevant) {
@@ -310,13 +312,13 @@ class StatsViewModel(
         FilteredStats(
             blendsCount = filteredItems.size,
             brandsCount = brandsByEntries.size,
-            averageRating = if (ratingsExist && ratedCount > 0) formatDecimal(ratingSum / ratedCount) else "-.-",
+            averageRating = if (ratingsExist) { if (ratedCount > 0) formatDecimal(ratingSum/ratedCount) else "-.-" } else "",
             favoriteCount = favoriteCount,
             dislikedCount = dislikedCount,
             totalQuantity = totalQuantity,
             estimatedWeight = formatWeight(quantityRemap, weightAccumulator, app),
             totalZeroQuantity = totalZeroQuantity,
-            totalOpened = totalOpened,
+            totalOpened = if (!hasTins) null else totalOpened,
 
             totalByType = typeMap.buildComp(typeMapFiltered, unassignedLabel),
             totalBySubgenre = subgenreMap.buildComp(subgenreMapFiltered, unassignedLabel),
@@ -434,7 +436,7 @@ data class FilteredStats(
     val totalQuantity: Int = 0,
     val estimatedWeight: String = "",
     val totalZeroQuantity: Int = 0,
-    val totalOpened: Int = 0,
+    val totalOpened: Int? = null,
 
     val totalByType: Map<String, Int> = emptyMap(),
     val totalBySubgenre: Map<String, Int> = emptyMap(),
@@ -544,12 +546,12 @@ private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double, ap
     val context = getLocalizedContext(app)
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
-            if (totalWeight >= 16.00) { context.safeString(R.string.format_quantity, "", formatDecimal((totalWeight/16)), "lbs") }
-            else { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight), "oz") }
+            if (totalWeight >= 16.00) { context.safeString(R.string.quantity_lbs, formatDecimal(totalWeight/16)) }
+            else { context.safeString(R.string.quantity_oz, formatDecimal(totalWeight)) }
         }
         QuantityOption.GRAMS -> {
-            if (totalWeight >= 1000.00) { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight/1000), "kg") }
-            else { context.safeString(R.string.format_quantity, "", formatDecimal(totalWeight), "g") }
+            if (totalWeight >= 1000.00) { context.safeString(R.string.quantity_kg, formatDecimal(totalWeight/1000)) }
+            else { context.safeString(R.string.quantity_g_estimate, formatDecimal(totalWeight)) }
         }
         else -> null
     } ?: ""

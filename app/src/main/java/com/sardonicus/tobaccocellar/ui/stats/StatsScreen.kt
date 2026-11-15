@@ -32,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -51,11 +52,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -436,64 +439,69 @@ private fun BrandsByRatingSection(
             fontSize = 12.sp,
             textAlign = TextAlign.Start
         )
-        Column (
-            modifier = Modifier
-                .padding(top = 20.dp, bottom = 44.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Grid(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                config = {
-                    columns(GridTrackSize.MaxContent, GridTrackSize.Auto, GridTrackSize.MaxContent, GridTrackSize.MaxContent, GridTrackSize.MaxContent)
-                    repeat(brandsByRating().size) { row(GridTrackSize.Auto) }
-                    gap(0.dp, 20.dp)
-                }
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Column(
+                modifier = Modifier
+                    .padding(top = 20.dp, bottom = 44.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                brandsByRating().forEach {
-                    val index = brandsByRating().keys.indexOf(it.key) + 1
+                Grid(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    config = {
+                        columns(
+                            GridTrackSize.MaxContent, GridTrackSize.Auto, GridTrackSize.MaxContent,
+                            GridTrackSize.MaxContent, GridTrackSize.MaxContent
+                        )
+                        repeat(brandsByRating().size) { row(GridTrackSize.Auto) }
+                        gap(0.dp, 20.dp)
+                    }
+                ) {
+                    brandsByRating().forEach {
+                        val index = brandsByRating().keys.indexOf(it.key) + 1
 
-                    Text(
-                        text = "${index}.",
-                        fontSize = 14.sp,
-                        textAlign = TextAlign.End,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        modifier = Modifier.gridItem(index, 1, 1, 1, Alignment.CenterEnd)
-                    )
-                    Text(
-                        text = it.key,
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.gridItem(index, 2, 1, 1, Alignment.CenterStart)
-                    )
-                    Text(
-                        text = formatDecimal(it.value.averageRating, drop = false),
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier.gridItem(index, 3, 1, 1, Alignment.CenterStart)
-                    )
-                    Text(
-                        text = "(${it.value.ratingsCount})",
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier.gridItem(index, 4, 1, 1, Alignment.Center)
-                    )
-                    Text(
-                        text = formatDecimal(it.value.weightedRating, drop = false),
-                        fontSize = 14.sp,
-                        maxLines = 1,
-                        modifier = Modifier.gridItem(index, 5, 1, 1, Alignment.CenterStart)
-                    )
+                        Text(
+                            text = "${index}.",
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.End,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            modifier = Modifier.gridItem(index, 1, 1, 1, Alignment.CenterEnd)
+                        )
+                        Text(
+                            text = it.key,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.gridItem(index, 2, 1, 1, Alignment.CenterStart)
+                        )
+                        Text(
+                            text = formatDecimal(it.value.averageRating, drop = false),
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            modifier = Modifier.gridItem(index, 3, 1, 1, Alignment.CenterStart)
+                        )
+                        Text(
+                            text = "(${it.value.ratingsCount})",
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            modifier = Modifier.gridItem(index, 4, 1, 1, Alignment.Center)
+                        )
+                        Text(
+                            text = formatDecimal(it.value.weightedRating, drop = false),
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            modifier = Modifier.gridItem(index, 5, 1, 1, Alignment.CenterStart)
+                        )
+                    }
                 }
+                Text(
+                    text = stringResource(R.string.actual_count_weighted),
+                    fontSize = 12.sp,
+                    color = LocalContentColor.current.copy(alpha = 0.75f),
+                    modifier = Modifier.align(Alignment.End)
+                )
             }
-            Text(
-                text = stringResource(R.string.actual_count_weighted),
-                fontSize = 12.sp,
-                color = LocalContentColor.current.copy(alpha = 0.75f),
-                modifier = Modifier.align(Alignment.End)
-            )
         }
     }
 }
@@ -535,7 +543,6 @@ private fun ChartsFormat(
         ) {
             val showValues = stringResource(R.string.show_values)
             val hideValues = stringResource(R.string.hide_values)
-            val widerText = if (showValues.length >= hideValues.length) showValues else hideValues
 
             val formatted = stringResource(R.string.data_total_count2, "$countVal", "%s")
             val parts = formatted.split("%s")
@@ -548,16 +555,10 @@ private fun ChartsFormat(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = widerText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.Transparent
-                )
-                Text(
                     text = if (!showValue) showValues else hideValues,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     color = colorScheme.primary
                 )
             }
