@@ -1210,7 +1210,7 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 1000) { context.safeString(R.string.quantity_kg, formatDecimal(quantity/1000))}
+                if (quantity >= 1000) { context.safeString(R.string.quantity_kg, formatDecimal(quantity/1000)) }
                 else { context.safeString(R.string.quantity_g, formatDecimal(quantity)) }
             } else {
                 if (quantity >= 1000) { context.safeString(R.string.quantity_kg_estimate, formatDecimal(quantity/1000)) }
