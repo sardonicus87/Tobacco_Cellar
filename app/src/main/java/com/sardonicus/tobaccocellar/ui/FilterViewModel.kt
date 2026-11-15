@@ -425,12 +425,12 @@ class FilterViewModel (
             notesExist = notesAny,
             datesExist = datesAny,
             autoCompleteData = AutoCompleteData(
-                brands = brands.sorted(),
-                subgenres = subgenres.filter { it != unassignedLabel }.sorted(),
-                cuts = cuts.filter { it != unassignedLabel }.sorted(),
-                components = components.filter { it != noneAssignedLabel }.sorted(),
-                flavorings = flavorings.filter { it != noneAssignedLabel }.sorted(),
-                tinContainers = containers.filter { it != unassignedLabel }.sorted()
+                brands = brands.sortedWith(collator),
+                subgenres = subgenres.filter { it != unassignedLabel }.sortedWith(collator),
+                cuts = cuts.filter { it != unassignedLabel }.sortedWith(collator),
+                components = components.filter { it != noneAssignedLabel }.sortedWith(collator),
+                flavorings = flavorings.filter { it != noneAssignedLabel }.sortedWith(collator),
+                tinContainers = containers.filter { it != unassignedLabel }.sortedWith(collator)
             ),
             emptyDatabase = data.isEmpty()
         )
