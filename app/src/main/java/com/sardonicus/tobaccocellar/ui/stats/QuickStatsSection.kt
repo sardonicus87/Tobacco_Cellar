@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -84,7 +85,7 @@ fun QuickStatsSection(
         Row(
             modifier = Modifier
                 .padding(vertical = 2.dp)
-                .padding(start = 12.dp),
+                .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -97,7 +98,7 @@ fun QuickStatsSection(
                 textAlign = TextAlign.Start,
                 color = colorScheme.onBackground
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(32.dp))
             Text(
                 text = stringResource(R.string.filtered_stats),
                 modifier = Modifier.weight(1f),
@@ -112,43 +113,40 @@ fun QuickStatsSection(
         Row(
             modifier = Modifier
                 .padding(vertical = 2.dp)
-                .padding(start = 12.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top
+                .padding(horizontal = 12.dp)
+                .fillMaxWidth()
         ) {
+            val showFavDis = rawStats.favoriteCount > 0 || rawStats.dislikedCount > 0
+
             val rawText = buildBroadStats(
                 rawStats.blendsCount, rawStats.brandsCount, rawStats.averageRating,
                 rawStats.favoriteCount, rawStats.dislikedCount, rawStats.totalQuantity,
-                rawStats.estimatedWeight, rawStats.totalZeroQuantity, rawStats.totalOpened)
+                rawStats.estimatedWeight, rawStats.totalZeroQuantity, rawStats.totalOpened,
+                showFavDis)
             val filteredText = buildBroadStats(
                 filteredStats.blendsCount, filteredStats.brandsCount, filteredStats.averageRating,
                 filteredStats.favoriteCount, filteredStats.dislikedCount, filteredStats.totalQuantity,
-                filteredStats.estimatedWeight, filteredStats.totalZeroQuantity, filteredStats.totalOpened
-            )
+                filteredStats.estimatedWeight, filteredStats.totalZeroQuantity, filteredStats.totalOpened,
+                showFavDis)
             key(selectionKey()) { SelectionContainer(Modifier.weight(1f).onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
                     text = rawText,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(bottom = 12.dp),
-                    fontSize = 15.sp,
+                    modifier = Modifier.weight(1f).padding(bottom = 12.dp),
+                    autoSize = TextAutoSize.StepBased(11.sp, 15.sp),
                     textAlign = TextAlign.Start,
-                    softWrap = true
+                    softWrap = false
                 )
             } }
-            Spacer(Modifier.width(8.dp))
-            key(selectionKey()) { SelectionContainer(Modifier
-                .weight(1f)
-                .onFocusChanged { selectionFocused(it.isFocused) }
+            Spacer(Modifier.width(32.dp))
+            key(selectionKey()) { SelectionContainer(Modifier.weight(1f).onFocusChanged { selectionFocused(it.isFocused) }
             ) {
                 Text(
                     text = filteredText,
                     modifier = Modifier.weight(1f),
-                    fontSize = 15.sp,
+                    autoSize = TextAutoSize.StepBased(11.sp, 15.sp),
                     textAlign = TextAlign.Start,
-                    softWrap = true,
+                    softWrap = false,
                 )
             } }
         }
@@ -194,10 +192,7 @@ fun QuickStatsSection(
                     .height(24.dp)
                     .padding(start = 4.dp, end = 16.dp)
                     .clip(RoundedCornerShape(25))
-                    .clickable(
-                        indication = LocalIndication.current,
-                        interactionSource = null,
-                    ) { if (expanded) { contract() } else { expand() } }
+                    .clickable(null, LocalIndication.current) { if (expanded) { contract() } else { expand() } }
                     .padding(horizontal = 8.dp)
             ) {
                 HorizontalDivider(Modifier.weight(1f), 1.dp)
@@ -225,21 +220,23 @@ private fun buildBroadStats(
     totalQuantity: Int,
     estimatedWeight: String,
     totalZeroQuantity: Int,
-    totalOpened: Int?
+    totalOpened: Int?,
+    showFavDis: Boolean
 ): String {
     val blendsBrands = stringResource(R.string.stats_blends_brands, blendsCount, brandsCount)
     val avgRatingStr = if (averageRating.isNotBlank()) stringResource(R.string.stats_average_rating, averageRating) else null
-    val favDisStr = stringResource(R.string.stats_favorites_disliked, favoriteCount, dislikedCount)
+    val favDisStr = if (showFavDis) stringResource(R.string.stats_favorites_disliked, favoriteCount, dislikedCount) else null
     val totalTinsStr = stringResource(R.string.stats_total_tins, totalQuantity)
-    val estWeightStr = stringResource(R.string.stats_estimated_weight, estimatedWeight)
+    val estWeightStr = stringResource(R.string.stats_estimated_weight, estimatedWeight).rtlIsolate()
     val outOfStockStr = stringResource(R.string.stats_out_of_stock, totalZeroQuantity)
     val openedStr = totalOpened?.let { stringResource(R.string.stats_opened, it) }
 
     return remember(blendsCount, brandsCount, averageRating, favoriteCount, dislikedCount,
         totalQuantity, estimatedWeight, totalZeroQuantity, totalOpened) {
-        buildString { append(blendsBrands); if (!avgRatingStr.isNullOrBlank()) append("\n").append(avgRatingStr)
-            append("\n").append(favDisStr).append("\n").append(totalTinsStr).append("\n").append(estWeightStr)
-            append("\n").append(outOfStockStr); if (openedStr != null) append("\n").append(openedStr)
+        buildString { append(blendsBrands); if (!avgRatingStr.isNullOrBlank()) append("\n")
+            .append(avgRatingStr); if (favDisStr != null) append("\n").append(favDisStr)
+            append("\n").append(totalTinsStr).append("\n").append(estWeightStr).append("\n")
+                .append(outOfStockStr); if (openedStr != null) append("\n").append(openedStr)
         }
     }
 }
@@ -452,7 +449,7 @@ private fun StatSubSection(
                             ) {
                                 val bottom = with(LocalDensity.current) { 13.5.sp.toDp() }
                                 Text(
-                                    text = "nothing found",
+                                    text = stringResource(R.string.nothing_found),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .alpha(.6f)
