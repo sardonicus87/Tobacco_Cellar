@@ -1,6 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.utilities.localizationUtil
 
-import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.text.layoutDirection
 import com.sardonicus.tobaccocellar.CellarApplication
 import kotlinx.coroutines.CoroutineScope
@@ -37,8 +37,8 @@ object LanguageState {
     val isRtl: Boolean
         get() = locale.layoutDirection == 1
 
-    fun init(context: Context) {
-        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-        _code.value = prefs.getString("app_language", "system") ?: "system"
+    fun init() {
+        val appLocales = AppCompatDelegate.getApplicationLocales()
+        _code.value = if (appLocales.isEmpty) "system" else updateLegacyLangCode(appLocales[0]?.language?.lowercase() ?: "system")
     }
 }

@@ -3,14 +3,12 @@ package com.sardonicus.tobaccocellar.ui.settings
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
-import android.content.SharedPreferences
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Stable
-import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.drawToBitmap
 import androidx.lifecycle.ViewModel
@@ -197,8 +195,6 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
 
-    val sharedPrefs: SharedPreferences = app.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-
     val displaySettings = combine(
         themeSetting,
         showRatings,
@@ -328,7 +324,6 @@ class SettingsViewModel(
 
     /** Database Settings **/
     fun updateLangSetting(activity: Activity, code: String) {
-        sharedPrefs.edit { putString("app_language", code) }
         app.applicationScope.launch { preferencesRepo.saveAppLanguage(code) }
 
         val decorView = activity.window.decorView

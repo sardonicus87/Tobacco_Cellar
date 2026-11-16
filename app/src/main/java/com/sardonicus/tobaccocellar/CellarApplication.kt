@@ -2,13 +2,15 @@ package com.sardonicus.tobaccocellar
 
 import android.app.Activity
 import android.app.Application
+import android.app.LocaleConfig
+import android.app.LocaleManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.edit
 import androidx.core.os.LocaleListCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -40,6 +42,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.SupportedLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
@@ -87,33 +90,20 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
     }
     private val activityResumedTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val prefs = base.getSharedPreferences("app_settings", MODE_PRIVATE)
-            val savedLang = prefs.getString("app_language", "system") ?: "system"
-
-            if (savedLang != "system") {
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
-            }
-        }
-    }
-
     override fun onCreate() {
         super.onCreate()
         instance = this
         registerActivityLifecycleCallbacks(this)
-        LanguageState.init(this)
+        LanguageState.init()
         csvHelper = CsvHelper()
         createNotificationChannel()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
-            val savedLang = prefs.getString("app_language", "system") ?: "system"
-            if (savedLang != "system" && AppCompatDelegate.getApplicationLocales().isEmpty) {
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(savedLang))
-            }
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
+            try {
+                val localeManager = getSystemService(LocaleManager::class.java)
+                val codes = SupportedLanguages.codes.joinToString(",")
+                localeManager.overrideLocaleConfig = LocaleConfig(LocaleList.forLanguageTags(codes))
+            } catch (_: Exception) { }
         }
 
         applicationScope.launch(Dispatchers.Default) {
@@ -144,7 +134,6 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
                         withContext(NonCancellable + Dispatchers.Main) {
                             EventBus.emit(DismissLoading)
-                            getSharedPreferences("app_settings", MODE_PRIVATE).edit { putString("app_language", LanguageState.code) }
                             preferencesRepo.saveAppLanguage(LanguageState.code)
                             if (LanguageState.code == "system") {
                                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
