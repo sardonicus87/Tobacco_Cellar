@@ -14,6 +14,71 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
+        versionCode = 66,
+        versionNumber = "6.0.0",
+        buildDate = "16 Nov, 2026",
+        changes = listOf(
+            "Localization (Translation): the app is being migrated for automatic language " +
+                    "translation. If you are a native speaker and find errors in translation, " +
+                    "please do not hesitate to e-mail me with corrections (email link on \"About\" " +
+                    "screen). In particular, abbreviations (though rare) are going to be most " +
+                    "prone to being wrong. Likewise there may be text that ends up cut-off due to " +
+                    "varying word-lengths or otherwise has a weird layout. With this also bear in " +
+                    "mind, when entering items with the app in your native language, use your " +
+                    "natural comma separator when entering components, though it will recognize " +
+                    "the Latin comma (,) regardless.",
+            "New Language Settings: included with these translations is also now an option on the " +
+                    "settings screen (under \"App & Database\") to choose a display language for " +
+                    "the app (separate from your device settings). Choosing a different language " +
+                    "downloads the language pack from Google. Additional language packs will only " +
+                    "be a few kilobytes each. For convenience, any previously downloaded language " +
+                    "packs as well as languages in device settings are placed at the top of the " +
+                    "list, above a divider. \"System\" tries to follow the device's default " +
+                    "language (if translation available, fallback to English if not)."
+        ),
+        improvements = listOf(
+            "Sorting Improvements: anything sorted alphabetically now uses an improved sort that " +
+                    "only considers the primary base letter, treating accents as secondary " +
+                    "characteristics. This includes sorting in Cellar, Plaintext and even " +
+                    "Autocomplete suggestions.",
+            "Batch Edit: saving edits no longer automatically deselects previous selected entries.",
+            "All Entry screens (Batch, Add/Edit), text input fields improved keyboard actions, " +
+                    "detects if there's a \"next\" field to next into and if not, displays the " +
+                    "\"done\" action.",
+            "Cellar table view: widened the Brand, Blend, Type and Subgenre columns.",
+            "Cellar entry quick edit menu, depending on space availability, the options in the " +
+                    "middle were horizontally scrollable, dragging on the options now prevents " +
+                    "table view underneath from scrolling. There are also now visual indications " +
+                    "when this row is scrollable (faded border edges).",
+            "On App Exit: clear any selected filtering when exiting via double-tap.",
+            "Blend Details screen, added a slight hanging-indent styling to details section if " +
+                    "any part runs to two or more lines.",
+            "Metric weights, added support for kilograms to be displayed for large metric amounts " +
+                    "(Stats, Add/Edit entry, etc).",
+            "Various UI adaptive spacing and text size and other minor UI improvements.",
+            "Stats screen \"Quick Stats\" section, fixed the first section of broad stats to not " +
+                    "display certain stats if they're irrelevant (unused in database).",
+            "Other minor reliability improvements.",
+        ),
+        bugFixes = listOf(
+            "Add/Edit Entry Screen: fixed when flicking to change tabs, tab indicator wasn't moving " +
+                    "to active tab.",
+            "Backup/Restore: fixed a bug where some restore settings were failing.",
+            "Fixed a layout bug on the Plaintext screen for older devices where the text fields " +
+                    "were running to the edge of the screen.",
+            "Fixed potential localization bugs regarding decimal numbers.",
+            "Other minor bug fixes."
+        ),
+        releaseNotes = listOf(
+            "Localization (Translation) started. These translations are automatic, machine " +
+                    "translations (though they won't affect changelog or release notes). If you " +
+                    "are a native-speaker of a language other than English and you notice " +
+                    "translation or layout issues, please contact me with corrections:\n" +
+                    "sardonicus.notadev@gmail.com\nSee the full changelog for more details."
+        )
+    ),
+
+    ChangelogEntryData(
         versionCode = 64,
         versionNumber = "5.4.0",
         buildDate = "25 Sep, 2026",
@@ -25,15 +90,15 @@ val changelogEntries = listOf(
                     "want to open. The time you set in the notification is when the app will wake-" +
                     "up in the background and check if any tins are ready to open that day (or any " +
                     "day since the previous notification). Tap the notification to see list of all " +
-                    "tins that are ready. Works offline (it's a quick daily background check)." +
+                    "tins that are ready. Works offline (it's a quick daily background check). " +
                     "Notification might lag a minute or two behind the set time (especially if " +
-                    "the devices is in power-saving mode).",
+                    "the device is in power-saving mode).",
             "New Background Sync unintrusive status bar notification. Notification in status bar/" +
                     "shade to indicate when Multi-Device Sync is actively working, automatically " +
                     "dismisses when finished. Enable or disable in Device Settings > Apps > " +
                     "Tobacco Cellar > App info (additionally, long-press the app icon and tap \"" +
                     "App info\" on most devices/launchers to get to the same screen). Notification " +
-                    "will be off by default for existing users running Android 12+."
+                    "should be off by default for existing users running Android 12+."
         ),
         improvements = listOf(
             "Multi-device sync: more robust error handling.",
@@ -251,7 +316,7 @@ val changelogEntries = listOf(
                     "checkboxes now also activate the boxes).",
         ),
         bugFixes = listOf(
-            "Stats Screen: charts for Types, Subgenres, and Cuts were missing the labels for " +
+            "Stats Screen: charts for BlendTypes, Subgenres, and Cuts were missing the labels for " +
                     "\"Unassigned\" slices (though the slice and percentage were shown)."
         )
     ),
