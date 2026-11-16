@@ -20,18 +20,27 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 64
-            versionName = "5.4.0"
+            versionCode = 66
+            versionName = "6.0.0"
 
-            vectorDrawables {
-                useSupportLibrary = true
-            }
+            vectorDrawables { useSupportLibrary = true }
         }
 
         sourceSets.all {
             val variantName = name
             kotlin.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/kotlin").get().asFile.absolutePath)
             java.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/java").get().asFile.absolutePath)
+        }
+
+        androidResources {
+            generateLocaleConfig = true
+            localeFilters.add("en")
+        }
+
+        buildFeatures {
+            compose = true
+            buildConfig = true
+            resValues = true
         }
 
         buildTypes {
@@ -50,15 +59,13 @@ kotlin {
             }
         }
 
+        bundle {
+            language { enableSplit = true }
+        }
+
         compileOptions {
             sourceCompatibility = JavaVersion.VERSION_21
             targetCompatibility = JavaVersion.VERSION_21
-        }
-
-        buildFeatures {
-            compose = true
-            buildConfig = true
-            resValues = true
         }
 
         packaging {
@@ -88,6 +95,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.androidx.appcompat)
 
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.google.play.services.auth)
@@ -101,6 +109,7 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.adaptive.layout)
+    implementation(libs.icu4j)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.ui.text.google.fonts)
