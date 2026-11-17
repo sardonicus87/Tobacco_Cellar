@@ -34,3 +34,6 @@ deploymentTargetSelector
 /app/src/main/res/values-de/strings.xml
 /app/src/main/res/values-es/strings.xml
 /app/src/main/res/values-iw/strings.xml
+/app/src/debugTranslations/res/values-de/strings.xml
+/app/src/debugTranslations/res/values-es/strings.xml
+/app/src/debugTranslations/res/values-iw/strings.xml
