@@ -1200,7 +1200,7 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
     val context = getLocalizedContext(CellarApplication.instance)
 
     return when (quantityOption) {
-        QuantityOption.TINS -> context.safeString(R.string.quantity_tin , quantity.toInt())
+        QuantityOption.TINS -> context.safeString(R.string.quantity_tin , "${quantity.toInt()}")
         QuantityOption.OUNCES -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
                 if (quantity >= 16) { context.safeString(R.string.quantity_lbs, formatDecimal(quantity/16)) }

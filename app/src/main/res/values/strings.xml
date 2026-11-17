@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
 
     <string name="app_name" translatable="false">Tobacco Cellar</string>
 
@@ -145,7 +145,7 @@
 
     <string name="oz_lbs">oz/lbs</string>
     <string name="g_kg">g/kg</string>
-    <string name="quantity_tin">×%d</string>
+    <string name="quantity_tin">\u00D7%s</string>
     <string name="quantity_oz">%s oz</string>
     <string name="quantity_oz_estimate">*%s oz</string>
     <string name="quantity_lbs">%s lbs</string>
