@@ -6,8 +6,6 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
-import com.ibm.icu.text.ListFormatter
-import com.ibm.icu.util.ULocale
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
@@ -53,10 +51,19 @@ fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
 
 fun formatLocalizedList(items: List<String>, locale: Locale = LanguageState.locale): String {
     if (items.isEmpty()) return ""
-    return try {
-        val uLocale = ULocale.forLocale(locale)
-        ListFormatter.getInstance(uLocale, ListFormatter.Type.UNITS, ListFormatter.Width.WIDE).format(items)
-    } catch (_: Exception) { items.joinToString(", ") }
+    val separator = getLocalizedComma(locale)
+    val preFormItems = if (LanguageState.isRtl) items.map { it.rtlIsolate() } else items
+    return preFormItems.joinToString(separator)
+}
+
+fun getPluralsForDouble(value: Double, locale: Locale = LanguageState.locale): Int {
+    val lang = locale.language.lowercase()
+    return when (lang) {
+        "fr" -> { if (value in 0.0..<2.0) 1 else 5 }
+        "he", "iw" -> { when (value) { 1.0 -> 1; 2.0 -> 2; else -> 5 } }
+        "ar" -> { when (value) {0.0 -> 0; 1.0 -> 1; 2.0 -> 2; else -> 5 } }
+        else -> { if (value == 1.0) 1 else 5 }
+    }
 }
 
 fun getLocalizedComma(locale: Locale = LanguageState.locale): String {
