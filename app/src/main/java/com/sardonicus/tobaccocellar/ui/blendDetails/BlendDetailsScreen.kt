@@ -82,6 +82,7 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -223,7 +224,7 @@ private fun BlendDetailsBody(
                                 Text(
                                     text = buildAnnotatedString {
                                         append(stringResource(R.string.by_v2))
-                                        withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) { append(blendDetails.brand) }
+                                        withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) { append(blendDetails.brand.rtlIsolate()) }
                                     },
                                     lineHeight = 16.sp,
                                     fontSize = 16.sp
