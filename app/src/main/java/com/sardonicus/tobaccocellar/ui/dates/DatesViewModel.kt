@@ -3,8 +3,6 @@ package com.sardonicus.tobaccocellar.ui.dates
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ibm.icu.text.PluralRules
-import com.ibm.icu.util.ULocale
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.data.ItemsComponentsAndTins
@@ -17,6 +15,7 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getPluralsForDouble
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeQuantityString
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import kotlinx.coroutines.Job
@@ -209,16 +208,7 @@ class DatesViewModel(
         if (years > 0) { parts.add(context.safeQuantityString(R.plurals.years, years, years)) }
         if (months > 0) { parts.add(context.safeQuantityString(R.plurals.months, months, months)) }
         if (days > 0.06) {
-            val uLocale = ULocale.forLocale(LanguageState.locale)
-            val selectedRule = PluralRules.forLocale(uLocale).select(days)
-            val quantity = when (selectedRule) {
-                "zero" -> 0
-                "one" -> 1
-                "two" -> 2
-                "few" -> 3
-                "many" -> 11
-                else -> 5 // "other" bucket
-            }
+            val quantity = getPluralsForDouble(days)
             parts.add(context.safeQuantityString(R.plurals.days, quantity, dayString))
         }
 
