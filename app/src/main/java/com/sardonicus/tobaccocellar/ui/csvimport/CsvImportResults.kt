@@ -62,7 +62,7 @@ fun CsvImportResultsScreen (
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.import_results_title),
+                title = stringResource(R.string.import_results_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,
@@ -141,7 +141,7 @@ fun ImportResultsBody(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val resultsTitle = stringResource(R.string.import_results_title)
+            val resultsTitle = stringResource(R.string.import_results_title_v2)
             // Results header
             if (visibleItemIndex <= 0) {
                 Text(
@@ -174,9 +174,9 @@ fun ImportResultsBody(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val totalFound = stringResource(R.string.total_found)
-                    val conversions = stringResource(R.string.successful_conversions)
-                    val totalImported = stringResource(R.string.total_imported)
+                    val totalFound = stringResource(R.string.total_found_v2)
+                    val conversions = stringResource(R.string.successful_conversions_v2)
+                    val totalImported = stringResource(R.string.total_imported_v2)
 
                     if (visibleItemIndex <= 1) {
                         Text(totalFound, fontSize = 18.sp, color = Color.Transparent)
@@ -204,8 +204,8 @@ fun ImportResultsBody(
 
                     // Updates AND Tins
                     if (indexCondition == 7) {
-                        val totalUpdated = stringResource(R.string.total_updated)
-                        val totalTinsChange = stringResource(R.string.total_tins_change)
+                        val totalUpdated = stringResource(R.string.total_updated_v2)
+                        val totalTinsChange = stringResource(R.string.total_tins_change_v2)
 
                         // Successful Updates
                         if (visibleItemIndex <= 4) {
@@ -228,7 +228,7 @@ fun ImportResultsBody(
 
                     // Updates OR Tins
                     if (indexCondition == 6) {
-                        val label = if (updateFlag) stringResource(R.string.total_updated) else stringResource(R.string.total_tins_change)
+                        val label = if (updateFlag) stringResource(R.string.total_updated_v2) else stringResource(R.string.total_tins_change_v2)
                         if (visibleItemIndex <= 4) {
                             Text(label, Modifier.padding(bottom = 0.dp), fontSize = 18.sp, color = Color.Transparent)
                         }
@@ -318,7 +318,7 @@ fun ImportResultsBody(
                     else -> 4
                 }
 
-            val backToCellar = stringResource(R.string.back_to_cellar)
+            val backToCellar = stringResource(R.string.back_to_cellar_v2)
             if (visibleItemIndex <= finalIndex) {
                 TextButton(
                     onClick = {  },

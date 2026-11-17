@@ -107,7 +107,7 @@ fun StatsScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.stats_title),
+                title = stringResource(R.string.stats_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 showMenu = false
@@ -163,7 +163,7 @@ private fun StatsBody(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Top
     ) {
-        item { Header(stringResource(R.string.quick_stats), Modifier.padding(top = 1.dp)) }
+        item { Header(stringResource(R.string.quick_stats_v2), Modifier.padding(top = 1.dp)) }
 
         item { Spacer(Modifier.height(10.dp)) }
 
@@ -186,7 +186,7 @@ private fun StatsBody(
         item { Spacer(Modifier.height(10.dp)) }
 
         // Charts //
-        item { Header(stringResource(R.string.charts)) }
+        item { Header(stringResource(R.string.charts_v2)) }
 
         // Disclaimer //
         item {
@@ -200,7 +200,7 @@ private fun StatsBody(
             ) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = stringResource(R.string.charts_disclaimer),
+                    text = stringResource(R.string.charts_disclaimer_v2),
                     color = LocalContentColor.current.copy(alpha = 0.75f),
                     modifier = Modifier.fillMaxWidth(),
                     fontSize = 13.sp,
@@ -221,7 +221,7 @@ private fun StatsBody(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ChartsFormat(
-                    label = stringResource(R.string.brands_entries),
+                    label = stringResource(R.string.brands_entries_v2),
                     chartData = { filteredStats.brandsByEntries },
                 )
             }
@@ -234,7 +234,7 @@ private fun StatsBody(
                     thickness = 1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.brands_quantity),
+                    label = stringResource(R.string.brands_quantity_v2),
                     chartData = { filteredStats.brandsByQuantity },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -258,7 +258,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.types_entries),
+                    label = stringResource(R.string.types_entries_v2),
                     chartData = { filteredStats.typesByEntries },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -271,7 +271,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.types_quantity),
+                    label = stringResource(R.string.types_quantity_v2),
                     chartData = { filteredStats.typesByQuantity },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -285,7 +285,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.ratings_distribution),
+                    label = stringResource(R.string.ratings_distribution_v2),
                     histogramData = { filteredStats.ratingsDistribution },
                     showHistogram = true,
                     modifier = Modifier.padding(horizontal = 20.dp)
@@ -299,7 +299,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.fav_dis_entries),
+                    label = stringResource(R.string.fav_dis_entries_v2),
                     chartData = { filteredStats.favDisByEntries },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -312,7 +312,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.sub_entries),
+                    label = stringResource(R.string.sub_entries_v2),
                     chartData = { filteredStats.subgenresByEntries },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -325,7 +325,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.sub_quantity),
+                    label = stringResource(R.string.sub_quantity_v2),
                     chartData = { filteredStats.subgenresByQuantity },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -338,7 +338,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.cut_entries),
+                    label = stringResource(R.string.cut_entries_v2),
                     chartData = { filteredStats.cutsByEntries },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -352,7 +352,7 @@ private fun StatsBody(
                     1.dp
                 )
                 ChartsFormat(
-                    label = stringResource(R.string.cut_quantity),
+                    label = stringResource(R.string.cut_quantity_v2),
                     chartData = { filteredStats.cutsByQuantity },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
@@ -428,14 +428,14 @@ private fun BrandsByRatingSection(
     ) {
         val countVal = brandsByRating().values.sumOf { it.ratingsCount }
         Text(
-            text = stringResource(R.string.brands_rating),
+            text = stringResource(R.string.brands_rating_v2),
             fontWeight = FontWeight.Medium,
             autoSize = TextAutoSize.StepBased(13.sp, 15.sp),
             maxLines = 1,
             textAlign = TextAlign.Center
         )
         Text(
-            text = stringResource(R.string.data_total_count, "$countVal"),
+            text = stringResource(R.string.data_total_count_v2, "$countVal"),
             fontSize = 12.sp,
             textAlign = TextAlign.Start
         )
@@ -496,7 +496,7 @@ private fun BrandsByRatingSection(
                     }
                 }
                 Text(
-                    text = stringResource(R.string.actual_count_weighted),
+                    text = stringResource(R.string.actual_count_weighted_v2),
                     fontSize = 12.sp,
                     color = LocalContentColor.current.copy(alpha = 0.75f),
                     modifier = Modifier.align(Alignment.End)
@@ -541,10 +541,10 @@ private fun ChartsFormat(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            val showValues = stringResource(R.string.show_values)
-            val hideValues = stringResource(R.string.hide_values)
+            val showValues = stringResource(R.string.show_values_v2)
+            val hideValues = stringResource(R.string.hide_values_v2)
 
-            val formatted = stringResource(R.string.data_total_count2, "$countVal", "%s")
+            val formatted = stringResource(R.string.data_total_count2_v2, "$countVal", "%s")
             val parts = formatted.split("%s")
 
             if (parts.isNotEmpty()) { Text(text = parts[0], fontSize = 12.sp) }

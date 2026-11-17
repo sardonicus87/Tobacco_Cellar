@@ -90,7 +90,7 @@ fun QuickStatsSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.raw_stats),
+                text = stringResource(R.string.raw_stats_v2),
                 modifier = Modifier.weight(1f),
                 autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
                 maxLines = 1,
@@ -100,7 +100,7 @@ fun QuickStatsSection(
             )
             Spacer(Modifier.width(32.dp))
             Text(
-                text = stringResource(R.string.filtered_stats),
+                text = stringResource(R.string.filtered_stats_v2),
                 modifier = Modifier.weight(1f),
                 autoSize = TextAutoSize.StepBased(14.sp, 16.sp),
                 maxLines = 1,
@@ -154,7 +154,7 @@ fun QuickStatsSection(
         // Second Section counts per type
         if (availableSections.type) {
             StatSubSection(
-                label = stringResource(R.string.type),
+                label = stringResource(R.string.type_v2),
                 rawField = rawStats.totalByType,
                 filteredField = filteredStats.totalByType,
                 selectionKey = selectionKey,
@@ -223,13 +223,13 @@ private fun buildBroadStats(
     totalOpened: Int?,
     showFavDis: Boolean
 ): String {
-    val blendsBrands = stringResource(R.string.stats_blends_brands, blendsCount, brandsCount)
-    val avgRatingStr = if (averageRating.isNotBlank()) stringResource(R.string.stats_average_rating, averageRating) else null
-    val favDisStr = if (showFavDis) stringResource(R.string.stats_favorites_disliked, favoriteCount, dislikedCount) else null
-    val totalTinsStr = stringResource(R.string.stats_total_tins, totalQuantity)
-    val estWeightStr = stringResource(R.string.stats_estimated_weight, estimatedWeight).rtlIsolate()
-    val outOfStockStr = stringResource(R.string.stats_out_of_stock, totalZeroQuantity)
-    val openedStr = totalOpened?.let { stringResource(R.string.stats_opened, it) }
+    val blendsBrands = stringResource(R.string.stats_blends_brands_v2, blendsCount, brandsCount)
+    val avgRatingStr = if (averageRating.isNotBlank()) stringResource(R.string.stats_average_rating_v2, averageRating) else null
+    val favDisStr = if (showFavDis) stringResource(R.string.stats_favorites_disliked_v2, favoriteCount, dislikedCount) else null
+    val totalTinsStr = stringResource(R.string.stats_total_tins_v2, totalQuantity)
+    val estWeightStr = stringResource(R.string.stats_estimated_weight_v2, estimatedWeight).rtlIsolate()
+    val outOfStockStr = stringResource(R.string.stats_out_of_stock_v2, totalZeroQuantity)
+    val openedStr = totalOpened?.let { stringResource(R.string.stats_opened_v2, it) }
 
     return remember(blendsCount, brandsCount, averageRating, favoriteCount, dislikedCount,
         totalQuantity, estimatedWeight, totalZeroQuantity, totalOpened) {
@@ -449,7 +449,7 @@ private fun StatSubSection(
                             ) {
                                 val bottom = with(LocalDensity.current) { 13.5.sp.toDp() }
                                 Text(
-                                    text = stringResource(R.string.nothing_found),
+                                    text = stringResource(R.string.nothing_found_v2),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .alpha(.6f)

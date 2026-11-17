@@ -66,7 +66,7 @@ fun FilterPane(
                                 .padding(bottom = 8.dp)
                         )
                         Text(
-                            text = stringResource(R.string.filter_search),
+                            text = stringResource(R.string.filter_search_v2),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = LocalContentColor.current.copy(alpha = .75f),

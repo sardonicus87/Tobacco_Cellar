@@ -164,7 +164,7 @@ private fun BrandFilterSearch(
                 Box(Modifier.weight(1f), boxAlignment) {
                     if (brandSearchText.isEmpty() && !focused) {
                         Text(
-                            text = stringResource(R.string.search_brands),
+                            text = stringResource(R.string.search_brands_v2),
                             color = LocalContentColor.current.copy(alpha = 0.5f),
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(12.sp, 16.sp)
@@ -200,14 +200,14 @@ private fun IncludeExcludeSwitch(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = stringResource(R.string.include),
+            text = stringResource(R.string.include_v2),
             modifier = Modifier.offset(y = 3.dp),
             color = if (!excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (!excluded()) FontWeight.SemiBold else FontWeight.Normal,
             fontSize = 14.sp
         )
         Text(
-            text = stringResource(R.string.exclude),
+            text = stringResource(R.string.exclude_v2),
             modifier = Modifier.offset(y = (-3).dp),
             color = if (excluded()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
             fontWeight = if (excluded()) FontWeight.SemiBold else FontWeight.Normal,
@@ -377,7 +377,7 @@ private fun SelectedBrandChipBox(
             Box {
                 val anySelected by remember { derivedStateOf { selectedBrands.isNotEmpty() } }
                 Text(
-                    text = if (anySelected) "" else if (excludeSwitch) stringResource(R.string.excluded_brands) else stringResource(R.string.included_brands),
+                    text = if (anySelected) "" else if (excludeSwitch) stringResource(R.string.excluded_brands_v2) else stringResource(R.string.included_brands_v2),
                     color = if (anySelected) Color.Transparent else if (excludeSwitch) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
@@ -514,7 +514,7 @@ private fun SelectedBrandOverflow(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (excludeSwitch()) stringResource(R.string.excluded_brands) else stringResource(R.string.included_brands),
+                text = if (excludeSwitch()) stringResource(R.string.excluded_brands_v2) else stringResource(R.string.included_brands_v2),
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
@@ -584,7 +584,7 @@ private fun SelectedBrandOverflow(
                                 .size(20.dp)
                         )
                         Text(
-                            text = stringResource(R.string.clear_all),
+                            text = stringResource(R.string.clear_all_v2),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -592,7 +592,7 @@ private fun SelectedBrandOverflow(
                 }
             }
         },
-        confirmButton = { Button(onDismiss) { Text(stringResource(R.string.close)) } },
+        confirmButton = { Button(onDismiss) { Text(stringResource(R.string.close_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,

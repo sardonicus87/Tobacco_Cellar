@@ -145,7 +145,7 @@ fun ItemMenu(
             if (!quickMenu) {
                 TextButton({ onEditClick(); onMenuDismiss() }) {
                     Text(
-                        text = stringResource(R.string.edit_item),
+                        text = stringResource(R.string.edit_item_v2),
                         modifier = Modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(alpha = .8f),
@@ -162,7 +162,7 @@ fun ItemMenu(
 
                 TextButton({ quickEdit = !quickEdit }) {
                     Text(
-                        text = stringResource(R.string.quick_edit),
+                        text = stringResource(R.string.quick_edit_v2),
                         modifier = Modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(alpha = .8f),
@@ -349,7 +349,7 @@ fun ItemMenu(
                     contentPadding = PaddingValues(4.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.save),
+                        text = stringResource(R.string.save_v2),
                         fontWeight = FontWeight.SemiBold,
                         lineHeight = 1.1.em,
                         maxLines = 1,
@@ -475,7 +475,7 @@ private fun EditRatingPop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = stringResource(R.string.rating),
+                text = stringResource(R.string.rating_v2),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -483,7 +483,7 @@ private fun EditRatingPop(
         text = {
             Column {
                 Text(
-                    text = stringResource(R.string.rating_dialog),
+                    text = stringResource(R.string.rating_dialog_v2),
                     fontSize = 15.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -545,7 +545,7 @@ private fun EditRatingPop(
                 onClick = { onRatingEdited(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.done)) }
+            ) { Text(stringResource(R.string.done_v2)) }
         },
         dismissButton = {
             TextButton(
@@ -553,7 +553,7 @@ private fun EditRatingPop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.undo)) }
+            ) { Text(stringResource(R.string.undo_v2)) }
         }
     )
 }
@@ -576,7 +576,7 @@ private fun EditNotePop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = stringResource(R.string.notes),
+                text = stringResource(R.string.notes_v2),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -626,7 +626,7 @@ private fun EditNotePop(
                 onClick = { onNoteEdited(textFieldState) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.done)) }
+            ) { Text(stringResource(R.string.done_v2)) }
         },
         dismissButton = {
             TextButton(
@@ -634,7 +634,7 @@ private fun EditNotePop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.undo)) }
+            ) { Text(stringResource(R.string.undo_v2)) }
         }
     )
 }
@@ -663,7 +663,7 @@ private fun EditQuantityPop(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = stringResource(R.string.no_of_tins),
+                text = stringResource(R.string.no_of_tins_v2),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -737,7 +737,7 @@ private fun EditQuantityPop(
                 onClick = { onQtyEdited(textFieldState.toIntOrNull() ?: 1) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.done)) }
+            ) { Text(stringResource(R.string.done_v2)) }
         },
         dismissButton = {
             TextButton(
@@ -745,7 +745,7 @@ private fun EditQuantityPop(
                 enabled = undoEnabled,
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.undo)) }
+            ) { Text(stringResource(R.string.undo_v2)) }
         }
     )
 }

@@ -205,10 +205,10 @@ class HomeViewModel(
 
         val emptyMessage =
             if (!emptyList) { "" }
-            else if (readyTins) { context.safeString(R.string.empty_tins) }
-            else if (searchPerformed) { context.safeString(R.string.empty_search, savedSearchText, context.safeString(searchSetting.resId)) }
-            else if (filteringApplied) { context.safeString(R.string.empty_filter) }
-            else if (emptyDatabase) { context.safeString(R.string.empty_db) }
+            else if (readyTins) { context.safeString(R.string.empty_tins_v2) }
+            else if (searchPerformed) { context.safeString(R.string.empty_search_v2, savedSearchText, context.safeString(searchSetting.resId)) }
+            else if (filteringApplied) { context.safeString(R.string.empty_filter_v2) }
+            else if (emptyDatabase) { context.safeString(R.string.empty_db_v2) }
             else { "" }
 
         val displayedMessage =
@@ -724,13 +724,13 @@ class HomeViewModel(
             val width = columnMinWidths[it]
             if (width == 0.dp) "" else {
                 when (it) {
-                    0 -> context.safeString(R.string.brand)
-                    1 -> context.safeString(R.string.blend)
-                    2 -> context.safeString(R.string.type)
-                    3 -> context.safeString(R.string.subgenre)
-                    6 -> context.safeString(R.string.note)
-                    7 -> context.safeString(R.string.qty)
-                    8 -> context.safeString(R.string.modified)
+                    0 -> context.safeString(R.string.brand_v2)
+                    1 -> context.safeString(R.string.blend_v2)
+                    2 -> context.safeString(R.string.type_v2)
+                    3 -> context.safeString(R.string.subgenre_v2)
+                    6 -> context.safeString(R.string.note_v2)
+                    7 -> context.safeString(R.string.qty_v2)
+                    8 -> context.safeString(R.string.modified_v2)
                     else -> "" // 4 and 5 are rating and "Fav/Dis"
                 }
             }
@@ -893,7 +893,7 @@ class HomeViewModel(
                 val context = getLocalizedContext(app)
                 app.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(csvData.toByteArray())
-                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export)))
+                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export_v2)))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -920,7 +920,7 @@ class HomeViewModel(
                 val context = getLocalizedContext(app)
                 app.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(tinCsvData.toByteArray())
-                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export)))
+                    EventBus.emit(ShowSnackbar(context.safeString(R.string.csv_export_v2)))
                 }
             } else {
                 val documentsDirectory = Environment
@@ -1026,7 +1026,7 @@ data class HomeUiState(
 data class ViewSelect(
     val isTableView: Boolean = false,
     val toggleContentDescription: Int =
-        if (isTableView) R.string.table_view_toggle else R.string.list_view_toggle,
+        if (isTableView) R.string.table_view_toggle_v2 else R.string.list_view_toggle_v2,
     val toggleIcon: Int =
         if (isTableView) R.drawable.table_view else R.drawable.list_view,
 )
@@ -1128,21 +1128,21 @@ data class ImportantAlertState(
 
 @Immutable
 enum class ListSortOption(@StringRes val resId: Int) {
-    DEFAULT(R.string.default_),
-    BLEND(R.string.blend),
-    BRAND(R.string.brand),
-    TYPE(R.string.type),
-    SUBGENRE(R.string.subgenre),
-    RATING(R.string.rating),
-    QUANTITY(R.string.quantity),
-    EDITED(R.string.modified)
+   DEFAULT(R.string.default__v2),
+   BLEND(R.string.blend_v2),
+   BRAND(R.string.brand_v2),
+   TYPE(R.string.type_v2),
+   SUBGENRE(R.string.subgenre_v2),
+   RATING(R.string.rating_v2),
+   QUANTITY(R.string.quantity_v2),
+   EDITED(R.string.modified_v2)
 }
 
 @Immutable
 enum class SearchSetting(@StringRes val resId: Int) {
-    Blend(R.string.blend),
-    Notes(R.string.notes),
-    TinLabel(R.string.tin_label)
+   Blend(R.string.blend_v2),
+   Notes(R.string.notes_v2),
+   TinLabel(R.string.tin_label_v2)
 }
 
 /** helper functions for quantity display **/
@@ -1200,23 +1200,23 @@ fun formatQuantity(quantity: Double, quantityOption: QuantityOption, tins: List<
     val context = getLocalizedContext(CellarApplication.instance)
 
     return when (quantityOption) {
-        QuantityOption.TINS -> context.safeString(R.string.quantity_tin , "${quantity.toInt()}")
+        QuantityOption.TINS -> context.safeString(R.string.quantity_tin_v2 , "${quantity.toInt()}")
         QuantityOption.OUNCES -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 16) { context.safeString(R.string.quantity_lbs, formatDecimal(quantity/16)) }
-                else { context.safeString(R.string.quantity_oz, formatDecimal(quantity)) }
+                if (quantity >= 16) { context.safeString(R.string.quantity_lbs_v2, formatDecimal(quantity/16)) }
+                else { context.safeString(R.string.quantity_oz_v2, formatDecimal(quantity)) }
             } else {
-                if (quantity >= 16) { context.safeString(R.string.quantity_lbs_estimate, formatDecimal(quantity/16)) }
-                else { context.safeString(R.string.quantity_oz_estimate, formatDecimal(quantity)) }
+                if (quantity >= 16) { context.safeString(R.string.quantity_lbs_estimate_v2, formatDecimal(quantity/16)) }
+                else { context.safeString(R.string.quantity_oz_estimate_v2, formatDecimal(quantity)) }
             }
         }
         QuantityOption.GRAMS -> {
             if (tins.isNotEmpty() && tins.all { it.unit.isNotBlank() }) {
-                if (quantity >= 1000) { context.safeString(R.string.quantity_kg, formatDecimal(quantity/1000)) }
-                else { context.safeString(R.string.quantity_g, formatDecimal(quantity)) }
+                if (quantity >= 1000) { context.safeString(R.string.quantity_kg_v2, formatDecimal(quantity/1000)) }
+                else { context.safeString(R.string.quantity_g_v2, formatDecimal(quantity)) }
             } else {
-                if (quantity >= 1000) { context.safeString(R.string.quantity_kg_estimate, formatDecimal(quantity/1000)) }
-                else { context.safeString(R.string.quantity_g_estimate, formatDecimal(quantity)) }
+                if (quantity >= 1000) { context.safeString(R.string.quantity_kg_estimate_v2, formatDecimal(quantity/1000)) }
+                else { context.safeString(R.string.quantity_g_estimate_v2, formatDecimal(quantity)) }
             }
         }
     }

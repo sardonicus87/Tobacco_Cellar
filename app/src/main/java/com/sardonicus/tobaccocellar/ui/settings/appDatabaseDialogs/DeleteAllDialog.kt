@@ -16,10 +16,10 @@ fun DeleteAllDialog(
 ) {
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.delete_all)) },
-        text = { Text(stringResource(R.string.delete_all_question), fontSize = 15.sp) },
-        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes)) } },
+        title = { Text(stringResource(R.string.delete_all_v2)) },
+        text = { Text(stringResource(R.string.delete_all_question_v2), fontSize = 15.sp) },
+        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel_v2)) } },
+        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

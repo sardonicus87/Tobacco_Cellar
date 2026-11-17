@@ -209,18 +209,18 @@ class SettingsViewModel(
         val parseLinks = it[4] as Boolean
 
         listOf(
-            SettingsDialog(R.string.theme_option, R.string.theme_description, theme.resId, DialogType.Theme),
-            SettingsDialog(R.string.ratings_option, R.string.ratings_description, showRatings.let { if (it) R.string.on else R.string.off }, DialogType.Ratings),
-            SettingsDialog(R.string.type_genre_option, R.string.type_genre_description, typeGenre.resId, DialogType.TypeGenre),
-            SettingsDialog(R.string.quantity_option, R.string.quantity_description, quantity.let {
+            SettingsDialog(R.string.theme_option_v2, R.string.theme_description_v2, theme.resId, DialogType.Theme),
+            SettingsDialog(R.string.ratings_option_v2, R.string.ratings_description_v2, showRatings.let { if (it) R.string.on_v2 else R.string.off_v2 }, DialogType.Ratings),
+            SettingsDialog(R.string.type_genre_option_v2, R.string.type_genre_description_v2, typeGenre.resId, DialogType.TypeGenre),
+            SettingsDialog(R.string.quantity_option_v2, R.string.quantity_description_v2, quantity.let {
                 when (it) {
-                    QuantityOption.TINS -> R.string.tins
-                    QuantityOption.OUNCES -> R.string.oz_lbs
-                    QuantityOption.GRAMS -> R.string.g_kg
+                    QuantityOption.TINS -> R.string.tins_v2
+                    QuantityOption.OUNCES -> R.string.oz_lbs_v2
+                    QuantityOption.GRAMS -> R.string.g_kg_v2
                 }
             }, DialogType.QuantityDisplay),
-            SettingsDialog(R.string.parse_links_option, R.string.parse_links_description, parseLinks.let { if (it) R.string.on else R.string.off }, DialogType.ParseLinks),
-            SettingsDialog(R.string.large_screen_option, R.string.large_screen_description, null, DialogType.LargeScreenOptions)
+            SettingsDialog(R.string.parse_links_option_v2, R.string.parse_links_description_v2, parseLinks.let { if (it) R.string.on_v2 else R.string.off_v2 }, DialogType.ParseLinks),
+            SettingsDialog(R.string.large_screen_option_v2, R.string.large_screen_description_v2, null, DialogType.LargeScreenOptions)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -249,26 +249,26 @@ class SettingsViewModel(
         val context = getLocalizedContext(app)
         val downloading = savedCode != code && savedCode != "system"
         val langDisplay =
-            if (downloading) { context.safeString(R.string.waiting_language, savedCode) }
+            if (downloading) { context.safeString(R.string.waiting_language_v2, savedCode) }
             else {
             if (code == "system") {
                 val localeCode = getSystemLanguage(app)
                 val systemCode = if (localeCode in SupportedLanguages.codes) localeCode else "en"
-                context.safeString(R.string.system_language, systemCode)
+                context.safeString(R.string.system_language_v2, systemCode)
             } else { SupportedLanguages.getDisplayString(code) ?: code }
         }
 
         listOf(
-            SettingsDialog(R.string.language_option, R.string.language_description, null, DialogType.Language, currentSettingRaw = langDisplay),
-            SettingsDialog(R.string.multi_device_sync, R.string.multi_device_sync_description, when {
-                !crossDeviceSync -> R.string.off; !connected -> R.string.disconnected; mobileData -> R.string.multi_device_on_mobile
-                else -> R.string.multi_device_on_wifi }, DialogType.DeviceSync),
-            SettingsDialog(R.string.tin_ready_option, R.string.tin_ready_description, tinNotifications.let { if (it) R.string.on else R.string.off }, DialogType.TinNotifications),
-            SettingsDialog(R.string.conversion_option, R.string.conversion_description, R.string.tin_conversion_rates, DialogType.TinRates, listOf(formatDecimal(ozRate), formatDecimal(gramsRate))),
-            SettingsDialog(R.string.default_sync_option, R.string.default_sync_description, defaultSync.let { if (it) R.string.on else R.string.off }, DialogType.TinSyncDefault),
-            SettingsDialog(R.string.backup_restore_option, R.string.backup_restore_description, null, DialogType.BackupRestore),
-            SettingsDialog(R.string.other_operations, R.string.other_operations_description, null, DialogType.DbOperations),
-            SettingsDialog(R.string.delete_db, R.string.delete_db_description, null, DialogType.DeleteAll)
+            SettingsDialog(R.string.language_option_v2, R.string.language_description_v2, null, DialogType.Language, currentSettingRaw = langDisplay),
+            SettingsDialog(R.string.multi_device_sync_v2, R.string.multi_device_sync_description_v2, when {
+                !crossDeviceSync -> R.string.off_v2; !connected -> R.string.disconnected_v2; mobileData -> R.string.multi_device_on_mobile_v2
+                else -> R.string.multi_device_on_wifi_v2 }, DialogType.DeviceSync),
+            SettingsDialog(R.string.tin_ready_option_v2, R.string.tin_ready_description_v2, tinNotifications.let { if (it) R.string.on_v2 else R.string.off_v2 }, DialogType.TinNotifications),
+            SettingsDialog(R.string.conversion_option_v2, R.string.conversion_description_v2, R.string.tin_conversion_rates_v2, DialogType.TinRates, listOf(formatDecimal(ozRate), formatDecimal(gramsRate))),
+            SettingsDialog(R.string.default_sync_option_v2, R.string.default_sync_description_v2, defaultSync.let { if (it) R.string.on_v2 else R.string.off_v2 }, DialogType.TinSyncDefault),
+            SettingsDialog(R.string.backup_restore_option_v2, R.string.backup_restore_description_v2, null, DialogType.BackupRestore),
+            SettingsDialog(R.string.other_operations_v2, R.string.other_operations_description_v2, null, DialogType.DbOperations),
+            SettingsDialog(R.string.delete_db_v2, R.string.delete_db_description_v2, null, DialogType.DeleteAll)
         )
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -362,14 +362,14 @@ class SettingsViewModel(
 
     fun manualSync() {
         app.applicationScope.launch {
-            if (isSyncing.first()) { showSnackbar(app.getString(R.string.sync_in_progress)); return@launch }
+            if (isSyncing.first()) { showSnackbar(app.getString(R.string.sync_in_progress_v2)); return@launch }
 
             preferencesRepo.signedInUserEmail.first() ?: return@launch
 
             if (!networkEnabled.value) {
-                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off)
-                    else app.getString(R.string.check_connection)
-                showSnackbar(app.getString(R.string.failed, message)); return@launch
+                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off_v2)
+                    else app.getString(R.string.check_connection_v2)
+                showSnackbar(app.getString(R.string.failed_v2, message)); return@launch
             }
 
             val workManager = WorkManager.getInstance(app)
@@ -396,7 +396,7 @@ class SettingsViewModel(
                 val workInfo = workManager.getWorkInfoById(workRequest.id).get()
                 if (workInfo?.state == WorkInfo.State.ENQUEUED) {
                     workManager.cancelWorkById(workRequest.id)
-                    showSnackbar(app.getString(R.string.connection_timeout))
+                    showSnackbar(app.getString(R.string.connection_timeout_v2))
                 }
             }
 
@@ -412,12 +412,12 @@ class SettingsViewModel(
                                 timeoutJob.cancel()
                                 val success = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
                                 val message = when (success) {
-                                    DownloadSyncWorker.SYNC_COMPLETE -> { app.getString(R.string.sync_complete) }
-                                    DownloadSyncWorker.REMOTE_EMPTY -> { app.getString(R.string.remote_not_found) }
-                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.lost_connection) }
-                                    DownloadSyncWorker.SKIPPED -> { app.getString(R.string.became_disabled) }
-                                    DownloadSyncWorker.UP_TO_DATE -> { app.getString(R.string.nothing_new) }
-                                    else -> app.getString(R.string.sync_complete)
+                                    DownloadSyncWorker.SYNC_COMPLETE -> { app.getString(R.string.sync_complete_v2) }
+                                    DownloadSyncWorker.REMOTE_EMPTY -> { app.getString(R.string.remote_not_found_v2) }
+                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.lost_connection_v2) }
+                                    DownloadSyncWorker.SKIPPED -> { app.getString(R.string.became_disabled_v2) }
+                                    DownloadSyncWorker.UP_TO_DATE -> { app.getString(R.string.nothing_new_v2) }
+                                    else -> app.getString(R.string.sync_complete_v2)
                                 }
                                 showSnackbar(message)
                             }
@@ -426,11 +426,11 @@ class SettingsViewModel(
                                 timeoutJob.cancel()
                                 val error = workInfo.outputData.getString(DownloadSyncWorker.RESULT_KEY)
                                 val message = when (error) {
-                                    DownloadSyncWorker.NO_ACCOUNT -> { app.getString(R.string.sync_failed_sign_in) }
-                                    DownloadSyncWorker.AUTH_ERROR -> { app.getString(R.string.authentication_error) }
-                                    DownloadSyncWorker.SERVER_ERROR -> { app.getString(R.string.remote_failed) }
-                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.failed_check_connection) }
-                                    else -> app.getString(R.string.failed_unknown)
+                                    DownloadSyncWorker.NO_ACCOUNT -> { app.getString(R.string.sync_failed_sign_in_v2) }
+                                    DownloadSyncWorker.AUTH_ERROR -> { app.getString(R.string.authentication_error_v2) }
+                                    DownloadSyncWorker.SERVER_ERROR -> { app.getString(R.string.remote_failed_v2) }
+                                    DownloadSyncWorker.NETWORK_ERROR -> { app.getString(R.string.failed_check_connection_v2) }
+                                    else -> app.getString(R.string.failed_unknown_v2)
                                 }
                                 showSnackbar(message)
                             }
@@ -447,17 +447,17 @@ class SettingsViewModel(
     fun clearRemoteData() {
         app.applicationScope.launch {
             if (isSyncing.first()) {
-                showSnackbar(app.getString(R.string.clear_remote_wait)); return@launch
+                showSnackbar(app.getString(R.string.clear_remote_wait_v2)); return@launch
             }
 
             if (!networkEnabled.value) {
-                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off)
-                    else app.getString(R.string.check_connection)
-                showSnackbar(app.getString(R.string.failed, message)); return@launch
+                val message = if (!networkMonitor.isWifi.first()) app.getString(R.string.allow_mobile_off_v2)
+                    else app.getString(R.string.check_connection_v2)
+                showSnackbar(app.getString(R.string.failed_v2, message)); return@launch
             }
 
             val email = preferencesRepo.signedInUserEmail.first()
-            if (email == null) { showSnackbar(app.getString(R.string.not_signed_in)); return@launch }
+            if (email == null) { showSnackbar(app.getString(R.string.not_signed_in_v2)); return@launch }
 
             SyncStateManager.started()
 
@@ -472,7 +472,7 @@ class SettingsViewModel(
                         .execute()
 
                     if (files.files.isNullOrEmpty()) {
-                        showSnackbar(app.getString(R.string.remote_not_found))
+                        showSnackbar(app.getString(R.string.remote_not_found_v2))
                         return@withContext
                     }
 
@@ -494,10 +494,10 @@ class SettingsViewModel(
                     }
 
                     batch.execute()
-                    showSnackbar(app.getString(R.string.remote_deleted))
+                    showSnackbar(app.getString(R.string.remote_deleted_v2))
 
                 }
-                catch (_: Exception) { showSnackbar(app.getString(R.string.remote_error)) }
+                catch (_: Exception) { showSnackbar(app.getString(R.string.remote_error_v2)) }
                 finally { SyncStateManager.finished() }
             }
         }
@@ -548,11 +548,11 @@ class SettingsViewModel(
                 }
 
                 message = if (ozConversion != null || gramsConversion != null) {
-                    app.getString(R.string.conversion_updated)
-                } else { app.getString(R.string.quantities_updated) }
+                    app.getString(R.string.conversion_updated_v2)
+                } else { app.getString(R.string.quantities_updated_v2) }
             } catch (_: Exception) {
                 SyncStateManager.schedulingPaused = false
-                message = app.getString(R.string.sync_tins_update_error)
+                message = app.getString(R.string.sync_tins_update_error_v2)
             } finally {
                 if (!runSilent) {
                     setLoadingState(false)
@@ -569,7 +569,7 @@ class SettingsViewModel(
             setLoadingState(true)
             itemsRepository.optimizeDatabase()
             setLoadingState(false)
-            showSnackbar(app.getString(R.string.optimize_complete))
+            showSnackbar(app.getString(R.string.optimize_complete_v2))
         }
     }
 
@@ -577,7 +577,7 @@ class SettingsViewModel(
         app.applicationScope.launch(Dispatchers.Default) {
             itemsRepository.deleteAllItems()
             saveTypeGenreOption(TypeGenreOption.TYPE)
-            showSnackbar(app.getString(R.string.db_deleted))
+            showSnackbar(app.getString(R.string.db_deleted_v2))
         }
     }
 
@@ -672,12 +672,12 @@ class SettingsViewModel(
                 settingsBytes.copyInto(combinedBytes, header.size + combinedDatabaseBytes.size)
 
                 writeBytesToFile(uri, combinedBytes, context)
-                message = app.getString(R.string.backup_complete)
+                message = app.getString(R.string.backup_complete_v2)
             } catch (_: Exception) {
                 try {
                     DocumentsContract.deleteDocument(context.contentResolver, uri)
                 } catch (_: Exception) { }
-                message = app.getString(R.string.backup_failed)
+                message = app.getString(R.string.backup_failed_v2)
             } finally {
                 loadingTimer.cancel()
                 deleteTempFile(tempDbZip)
@@ -713,18 +713,18 @@ class SettingsViewModel(
 
             try {
                 val bytes = readBytesFromFile(uri, context)
-                if (bytes == null) { message = app.getString(R.string.invalid_file); return@launch }
+                if (bytes == null) { message = app.getString(R.string.invalid_file_v2); return@launch }
 
                 val fileContentState = validateBackupFile(bytes)
                 val restoreState = _restoreState.value
                 val (databaseBytes, itemSyncStateBytes, settingsBytes) = parseBackup(bytes)
 
                 if (!fileContentState.magicNumberValid) {
-                    message = app.getString(R.string.invalid_file)
+                    message = app.getString(R.string.invalid_file_v2)
                 } else if (!fileContentState.versionValid) {
-                    message = app.getString(R.string.restore_failed_version)
+                    message = app.getString(R.string.restore_failed_version_v2)
                 } else if (!fileContentState.databasePresent && !fileContentState.settingsPresent) {
-                    message = app.getString(R.string.restore_failed_no_data)
+                    message = app.getString(R.string.restore_failed_no_data_v2)
                 } else {
 
                     if (restoreState.databaseChecked && fileContentState.databasePresent) {
@@ -744,25 +744,25 @@ class SettingsViewModel(
                     message = when {
                         restoreState.databaseChecked && restoreState.settingsChecked -> {
                             when {
-                                dbRestored && settingsRestored -> app.getString(R.string.db_settings_restored)
-                                dbRestored && settingsError -> app.getString(R.string.db_restored_settings_error)
-                                dbRestored -> app.getString(R.string.db_restored_no_settings)
-                                settingsRestored && dbError -> app.getString(R.string.settings_restored_db_error)
-                                settingsRestored -> app.getString(R.string.settings_restored_no_db)
-                                else -> app.getString(R.string.restore_failed)
+                                dbRestored && settingsRestored -> app.getString(R.string.db_settings_restored_v2)
+                                dbRestored && settingsError -> app.getString(R.string.db_restored_settings_error_v2)
+                                dbRestored -> app.getString(R.string.db_restored_no_settings_v2)
+                                settingsRestored && dbError -> app.getString(R.string.settings_restored_db_error_v2)
+                                settingsRestored -> app.getString(R.string.settings_restored_no_db_v2)
+                                else -> app.getString(R.string.restore_failed_v2)
                             }
                         }
                         restoreState.databaseChecked -> {
-                            if (dbRestored) app.getString(R.string.db_restored)
-                            else if (!fileContentState.databasePresent) app.getString(R.string.no_db_data)
-                            else app.getString(R.string.db_restore_error)
+                            if (dbRestored) app.getString(R.string.db_restored_v2)
+                            else if (!fileContentState.databasePresent) app.getString(R.string.no_db_data_v2)
+                            else app.getString(R.string.db_restore_error_v2)
                         }
                         restoreState.settingsChecked -> {
-                            if (settingsRestored) app.getString(R.string.settings_restored)
-                            else if (!fileContentState.settingsPresent) app.getString(R.string.no_settings_data)
-                            else app.getString(R.string.settings_restore_error)
+                            if (settingsRestored) app.getString(R.string.settings_restored_v2)
+                            else if (!fileContentState.settingsPresent) app.getString(R.string.no_settings_data_v2)
+                            else app.getString(R.string.settings_restore_error_v2)
                         }
-                        else -> app.getString(R.string.restore_failed)
+                        else -> app.getString(R.string.restore_failed_v2)
                     }
 
                     if (dbRestored || settingsRestored) {
@@ -804,7 +804,7 @@ class SettingsViewModel(
                     }
                 }
             } catch (e: Exception) {
-                message = app.getString(R.string.restore_failed_message, e.message)
+                message = app.getString(R.string.restore_failed_message_v2, e.message)
             } finally {
                 delay(500.milliseconds)
                 loadingTimer.cancel()
@@ -915,7 +915,7 @@ class SettingsViewModel(
                 copyMigratedDb(migratedDb, dbFile, walFile, shmFile)
                 migratedDb.close()
             }
-            else { throw Exception(app.getString(R.string.backup_db_invalid)) }
+            else { throw Exception(app.getString(R.string.backup_db_invalid_v2)) }
 
         } catch (e: Exception) {
             copyFile(backupDbFile, dbFile)
@@ -1045,23 +1045,23 @@ sealed class DialogType {
 }
 
 enum class ThemeSetting(@StringRes val resId: Int) {
-    LIGHT(R.string.light),
-    DARK(R.string.dark),
-    SYSTEM(R.string.system)
+   LIGHT(R.string.light_v2),
+   DARK(R.string.dark_v2),
+   SYSTEM(R.string.system_v2)
 }
 
 enum class QuantityOption(@StringRes val resId: Int) {
-    TINS(R.string.no_tins_default),
-    OUNCES(R.string.ounces_pounds),
-    GRAMS(R.string.qt_option_grams)
+   TINS(R.string.no_tins_default_v2),
+   OUNCES(R.string.ounces_pounds_v2),
+   GRAMS(R.string.qt_option_grams_v2)
 }
 
 enum class TypeGenreOption(@StringRes val resId: Int) {
-    TYPE(R.string.type),
-    SUBGENRE(R.string.subgenre),
-    BOTH(R.string.both),
-    TYPE_FALLBACK(R.string.type_fallback),
-    SUB_FALLBACK(R.string.sub_fallback)
+   TYPE(R.string.type_v2),
+   SUBGENRE(R.string.subgenre_v2),
+   BOTH(R.string.both_v2),
+   TYPE_FALLBACK(R.string.type_fallback_v2),
+   SUB_FALLBACK(R.string.sub_fallback_v2)
 }
 
 data class TinConversionRates(

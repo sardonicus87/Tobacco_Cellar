@@ -26,12 +26,12 @@ fun SubgenreSection(
     val available by filterViewModel.subgenreAvailable.collectAsState()
     val selected by filterViewModel.selectedSubgenres.collectAsState()
     val enabled by filterViewModel.subgenresEnabled.collectAsState()
-    val unassigned = stringResource(R.string.unassigned)
+    val unassigned = stringResource(R.string.unassigned_v2)
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != unassigned } } }
 
     OverflowFilterSection(
-        label = stringResource(R.string.subgenre),
-        nothingLabel = stringResource(R.string.no_subgenres),
+        label = stringResource(R.string.subgenre_v2),
+        nothingLabel = stringResource(R.string.no_subgenres_v2),
         available = { available },
         selected = { selected },
         enabled = { enabled },
@@ -55,12 +55,12 @@ fun CutSection(
     val available by filterViewModel.cutAvailable.collectAsState()
     val selected by filterViewModel.selectedCuts.collectAsState()
     val enabled by filterViewModel.cutsEnabled.collectAsState()
-    val unassigned = stringResource(R.string.unassigned)
+    val unassigned = stringResource(R.string.unassigned_v2)
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != unassigned } } }
 
     OverflowFilterSection(
-        label = stringResource(R.string.cut),
-        nothingLabel = stringResource(R.string.no_cuts),
+        label = stringResource(R.string.cut_v2),
+        nothingLabel = stringResource(R.string.no_cuts_v2),
         available = { available },
         selected = { selected },
         enabled = { enabled },
@@ -86,12 +86,12 @@ fun ComponentSection(
     val enabled by filterViewModel.componentsEnabled.collectAsState()
     val matching by filterViewModel.compMatching.collectAsState()
     val matchEnablement by filterViewModel.compMatchingEnabled.collectAsState()
-    val unassigned = stringResource(R.string.none_assigned)
+    val unassigned = stringResource(R.string.none_assigned_v2)
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != unassigned } } }
 
     OverflowFilterSection(
-        label = stringResource(R.string.component),
-        nothingLabel = stringResource(R.string.no_components),
+        label = stringResource(R.string.component_v2),
+        nothingLabel = stringResource(R.string.no_components_v2),
         available = { available },
         selected = { selected },
         enabled = { enabled },
@@ -120,12 +120,12 @@ fun FlavoringSection(
     val enabled by filterViewModel.flavoringsEnabled.collectAsState()
     val matching by filterViewModel.flavorMatching.collectAsState()
     val matchEnablement by filterViewModel.flavorMatchingEnabled.collectAsState()
-    val unassigned = stringResource(R.string.none_assigned)
+    val unassigned = stringResource(R.string.none_assigned_v2)
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != unassigned } } }
 
     OverflowFilterSection(
-        label = stringResource(R.string.flavoring),
-        nothingLabel = stringResource(R.string.no_flavorings),
+        label = stringResource(R.string.flavoring_v2),
+        nothingLabel = stringResource(R.string.no_flavorings_v2),
         available = { available },
         selected = { selected },
         enabled = { enabled },
@@ -153,14 +153,14 @@ fun ContainerFilterSection(
     val selected by filterViewModel.selectedContainer.collectAsState()
     val enabled by filterViewModel.containerEnabled.collectAsState()
     val tinsExist by filterViewModel.tinsExist.collectAsState()
-    val noContainers = stringResource(R.string.no_containers)
-    val noTins = stringResource(R.string.no_tins_containers)
+    val noContainers = stringResource(R.string.no_containers_v2)
+    val noTins = stringResource(R.string.no_tins_containers_v2)
     val nothingLabel by remember(tinsExist) { derivedStateOf { if (tinsExist) noContainers else noTins } }
-    val unassigned = stringResource(R.string.unassigned)
+    val unassigned = stringResource(R.string.unassigned_v2)
     val nothingAssigned by remember(available) { derivedStateOf { available.none { it != unassigned } } }
 
     OverflowFilterSection(
-        label = stringResource(R.string.tin_container),
+        label = stringResource(R.string.tin_container_v2),
         nothingLabel = nothingLabel,
         available = { available },
         selected = { selected },

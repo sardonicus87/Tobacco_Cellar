@@ -104,8 +104,8 @@ class FilterViewModel (
     val savedExpanded = MutableStateFlow(true)
     fun saveExpandedState(state: Boolean) { savedExpanded.value = state }
 
-    val unassignedLabel = getLocalizedContext(application).safeString(R.string.unassigned)
-    val noneAssignedLabel = getLocalizedContext(application).safeString(R.string.none_assigned)
+    val unassignedLabel = getLocalizedContext(application).safeString(R.string.unassigned_v2)
+    val noneAssignedLabel = getLocalizedContext(application).safeString(R.string.none_assigned_v2)
 
     /** Filter states **/
     val brandSearchText = MutableStateFlow("")
@@ -1241,7 +1241,7 @@ class FilterViewModel (
             SearchState(
                 searchPerformed = true,
                 isTinSearch = true,
-                searchText = context.safeString(R.string.ready_tins),
+                searchText = context.safeString(R.string.ready_tins_v2),
                 currentSetting = searchSetting,
                 settingsList = SearchSettingList(settingsList),
                 settingsEnabled = false,
@@ -1998,7 +1998,7 @@ enum class FilterCategory {
     NO_TINS, OPENED, UNOPENED, FINISHED, UNFINISHED, CONTAINER, PRODUCTION, OUT_OF_PRODUCTION,
 }
 
-enum class FlowMatchOption(@StringRes val value: Int) { ANY(R.string.any), ALL(R.string.all), ONLY(R.string.only) }
+enum class FlowMatchOption(@StringRes val value: Int) {ANY(R.string.any_v2),ALL(R.string.all_v2),ONLY(R.string.only_v2) }
 
 enum class ClearAll { SUBGENRE, CUT, COMPONENT, FLAVORING, CONTAINER }
 
@@ -2161,10 +2161,10 @@ private class EnablementCollector {
 }
 
 enum class BlendTypes (@StringRes val resId: Int) {
-    AROMATIC(R.string.aromatic),
-    ENGLISH(R.string.english),
-    BURLEY(R.string.burley),
-    VIRGINIA(R.string.virginia),
-    OTHER(R.string.other),
-    UNASSIGNED(R.string.unassigned)
+   AROMATIC(R.string.aromatic_v2),
+   ENGLISH(R.string.english_v2),
+   BURLEY(R.string.burley_v2),
+   VIRGINIA(R.string.virginia_v2),
+   OTHER(R.string.other_v2),
+   UNASSIGNED(R.string.unassigned_v2)
 }

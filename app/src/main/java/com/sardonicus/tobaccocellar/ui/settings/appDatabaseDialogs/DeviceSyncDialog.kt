@@ -135,7 +135,7 @@ fun DeviceSyncDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!acknowledgement) {
                     Text(
-                        text = stringResource(R.string.multi_device_acknowledge_title),
+                        text = stringResource(R.string.multi_device_acknowledge_title_v2),
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
@@ -146,18 +146,18 @@ fun DeviceSyncDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.scroll_to_accept),
+                            text = stringResource(R.string.scroll_to_accept_v2),
                             modifier = Modifier.align(Alignment.CenterHorizontally),
                             fontSize = 13.sp,
                             color = LocalContentColor.current
                         )
-                        Text(stringResource(R.string.multi_device_acknowledge_body1),
+                        Text(stringResource(R.string.multi_device_acknowledge_body1_v2),
                             fontSize = 14.sp, color = LocalContentColor.current)
-                        Text(stringResource(R.string.multi_device_acknowledge_body2),
+                        Text(stringResource(R.string.multi_device_acknowledge_body2_v2),
                             fontSize = 14.sp, color = LocalContentColor.current)
-                        Text(stringResource(R.string.multi_device_acknowledge_body3),
+                        Text(stringResource(R.string.multi_device_acknowledge_body3_v2),
                             fontSize = 14.sp, color = LocalContentColor.current)
-                        Text(stringResource(R.string.multi_device_acknowledge_body4),
+                        Text(stringResource(R.string.multi_device_acknowledge_body4_v2),
                             fontSize = 14.sp, color = LocalContentColor.current)
                     }
                 } else {
@@ -178,7 +178,7 @@ fun DeviceSyncDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.multi_device_sync_label),
+                                        text = stringResource(R.string.multi_device_sync_label_v2),
                                         maxLines = 1,
                                         autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                         fontWeight = FontWeight.Medium,
@@ -233,7 +233,7 @@ fun DeviceSyncDialog(
                                 }
                                 if ((deviceSync && !connectionEnabled) || disconnectFailure) {
                                     Text(
-                                        text = stringResource(R.string.multi_device_check_connection),
+                                        text = stringResource(R.string.multi_device_check_connection_v2),
                                         fontSize = 14.sp,
                                         textAlign = TextAlign.Center,
                                         lineHeight = 1.em,
@@ -258,7 +258,7 @@ fun DeviceSyncDialog(
                             ) {
                                 val alpha = if (!deviceSync || debouncedLoading) .38f else 1f
                                 Text(
-                                    text = stringResource(R.string.multi_device_allow_mobile),
+                                    text = stringResource(R.string.multi_device_allow_mobile_v2),
                                     maxLines = 1,
                                     autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                     fontWeight = FontWeight.Medium,
@@ -296,7 +296,7 @@ fun DeviceSyncDialog(
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.multi_device_manual_sync),
+                                            text = stringResource(R.string.multi_device_manual_sync_v2),
                                             maxLines = 1,
                                             autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp)
                                         )
@@ -310,7 +310,7 @@ fun DeviceSyncDialog(
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.multi_device_clear_remote),
+                                            text = stringResource(R.string.multi_device_clear_remote_v2),
                                             maxLines = 1,
                                             autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp)
                                         )
@@ -324,7 +324,7 @@ fun DeviceSyncDialog(
                                         modifier = Modifier.heightIn(28.dp, 28.dp)
                                     ) {
                                         Text(
-                                            text = stringResource(R.string.multi_device_sign_out),
+                                            text = stringResource(R.string.multi_device_sign_out_v2),
                                             maxLines = 1,
                                             autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                             modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
@@ -342,7 +342,7 @@ fun DeviceSyncDialog(
                                             modifier = Modifier.heightIn(28.dp, 28.dp)
                                         ) {
                                             Text(
-                                                text = stringResource(R.string.multi_device_enable_notification),
+                                                text = stringResource(R.string.multi_device_enable_notification_v2),
                                                 maxLines = 1,
                                                 autoSize = TextAutoSize.StepBased(13.sp, 15.sp, 0.1.sp),
                                                 modifier = Modifier.alpha(if (accountLinked) 1f else 0f)
@@ -360,12 +360,12 @@ fun DeviceSyncDialog(
         },
         confirmButton = {
             if (!acknowledgement) {
-                TextButton({ confirmAcknowledgement() }, enabled = atBottom) { Text(stringResource(R.string.agree)) }
+                TextButton({ confirmAcknowledgement() }, enabled = atBottom) { Text(stringResource(R.string.agree_v2)) }
             }
-            else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done)) } }
+            else { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done_v2)) } }
         },
         dismissButton =
-            if (!acknowledgement) { { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } } }
+            if (!acknowledgement) { { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel_v2)) } } }
             else null,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,

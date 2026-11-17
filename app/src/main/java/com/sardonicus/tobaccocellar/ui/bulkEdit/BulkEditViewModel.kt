@@ -235,7 +235,7 @@ class BulkEditViewModel (
             itemsRepository.triggerUploadWorker()
             resetEditingState()
             val context = getLocalizedContext(app)
-            EventBus.emit(ShowSnackbar(context.safeString(R.string.batch_edit_saved)))
+            EventBus.emit(ShowSnackbar(context.safeString(R.string.batch_edit_saved_v2)))
         }
     }
 }

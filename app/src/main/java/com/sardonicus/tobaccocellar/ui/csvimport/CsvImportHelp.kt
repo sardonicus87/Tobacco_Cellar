@@ -45,7 +45,7 @@ fun CsvHelpScreen (
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.import_help),
+                title = stringResource(R.string.import_help_v2),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
@@ -82,19 +82,19 @@ fun CsvHelpBody(
         HorizontalDivider(Modifier.padding(bottom = 12.dp))
         // Verifying data integrity
         Text(
-            text = stringResource(R.string.verify_before_import),
+            text = stringResource(R.string.verify_before_import_v2),
             modifier = modifier.align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp
         )
-        Text(stringResource(R.string.csv_help1), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help2), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help3), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help1_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help2_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help3_v2), modifier, softWrap = true)
 
 
         // Import options //
         Text(
-            text = stringResource(R.string.import_options),
+            text = stringResource(R.string.import_options_v2),
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 12.dp),
@@ -102,20 +102,20 @@ fun CsvHelpBody(
             fontSize = 16.sp,
         )
 
-        Text(stringResource(R.string.csv_help4), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help5), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help6), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help4_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help5_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help6_v2), modifier, softWrap = true)
 
         // Existing entries options
         Text(
-            text = stringResource(R.string.existing_entries_option),
+            text = stringResource(R.string.existing_entries_option_v2),
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 12.dp),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
-        Text(stringResource(R.string.csv_help7), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help7_v2), modifier, softWrap = true)
         Column(Modifier.fillMaxWidth().padding(start = 16.dp), Arrangement.spacedBy(0.dp, Alignment.Top)) {
             Row {
                 Column(Modifier.width(IntrinsicSize.Max)) {
@@ -127,7 +127,7 @@ fun CsvHelpBody(
                     )
                 }
                 Column {
-                    Text(stringResource(R.string.csv_help8), modifier, softWrap = true)
+                    Text(stringResource(R.string.csv_help8_v2), modifier, softWrap = true)
                 }
             }
             Row(Modifier.fillMaxWidth()) {
@@ -140,7 +140,7 @@ fun CsvHelpBody(
                     )
                 }
                 Column {
-                    Text(stringResource(R.string.csv_help9), modifier, softWrap = true)
+                    Text(stringResource(R.string.csv_help9_v2), modifier, softWrap = true)
                 }
             }
             Row(
@@ -157,44 +157,44 @@ fun CsvHelpBody(
                     )
                 }
                 Column {
-                    Text(stringResource(R.string.csv_help10), modifier, softWrap = true)
+                    Text(stringResource(R.string.csv_help10_v2), modifier, softWrap = true)
                 }
             }
         }
 
-        Text(stringResource(R.string.csv_help11), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help11_v2), modifier, softWrap = true)
 
 
         // Import mapping //
         Text(
-            text = stringResource(R.string.import_mapping),
+            text = stringResource(R.string.import_mapping_v2),
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 12.dp),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
-        Text(stringResource(R.string.csv_help12), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help13), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help14), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help15), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help12_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help13_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help14_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help15_v2), modifier, softWrap = true)
 
         // Tins mapping //
         Text(
-            text = stringResource(R.string.tins_mapping),
+            text = stringResource(R.string.tins_mapping_v2),
             modifier = modifier
                 .align(Alignment.CenterHorizontally)
                 .padding(top = 12.dp),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
-        Text(stringResource(R.string.csv_help16), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help17), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help18), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help19), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help20), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help21), modifier, softWrap = true)
-        Text(stringResource(R.string.csv_help22), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help16_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help17_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help18_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help19_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help20_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help21_v2), modifier, softWrap = true)
+        Text(stringResource(R.string.csv_help22_v2), modifier, softWrap = true)
 
         Spacer(Modifier.height(24.dp))
     }

@@ -145,7 +145,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                                 } else {
                                     AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(LanguageState.code))
                                 }
-                                EventBus.emit(ShowToast(getLocalizedContext(this@CellarApplication).safeString(R.string.language_failed)))
+                                EventBus.emit(ShowToast(getLocalizedContext(this@CellarApplication).safeString(R.string.language_failed_v2)))
                             }
                         }
                     }
@@ -324,7 +324,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
 
         val workManager = WorkManager.getInstance(this@CellarApplication)
         workManager.cancelUniqueWork("download_sync_work")
-        EventBus.emit(ShowToast(getLocalizedContext(this).safeString(R.string.sync_disabled)))
+        EventBus.emit(ShowToast(getLocalizedContext(this).safeString(R.string.sync_disabled_v2)))
     }
 
     private fun createNotificationChannel() {
@@ -334,16 +334,16 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         if (existingSyncChannel != null && existingSyncChannel.importance == NotificationManager.IMPORTANCE_DEFAULT) {
             notificationManager.deleteNotificationChannel(SYNC_NOTIFICATION) }
 
-        val syncDescription = getLocalizedContext(this).safeString(R.string.sync_channel_description)
-        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, getLocalizedContext(this).safeString(R.string.sync_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+        val syncDescription = getLocalizedContext(this).safeString(R.string.sync_channel_description_v2)
+        val syncChannel = NotificationChannel(SYNC_NOTIFICATION, getLocalizedContext(this).safeString(R.string.sync_channel_name_v2), NotificationManager.IMPORTANCE_LOW).apply {
             description = syncDescription
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)
             enableLights(false)
         }
-        val tinDescription = getLocalizedContext(this).safeString(R.string.tin_channel_description)
-        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, getLocalizedContext(this).safeString(R.string.tin_channel_name), NotificationManager.IMPORTANCE_DEFAULT).apply {
+        val tinDescription = getLocalizedContext(this).safeString(R.string.tin_channel_description_v2)
+        val tinReadyChannel = NotificationChannel(TIN_NOTIFICATION, getLocalizedContext(this).safeString(R.string.tin_channel_name_v2), NotificationManager.IMPORTANCE_DEFAULT).apply {
             description = tinDescription
             setShowBadge(true)
             enableVibration(true)

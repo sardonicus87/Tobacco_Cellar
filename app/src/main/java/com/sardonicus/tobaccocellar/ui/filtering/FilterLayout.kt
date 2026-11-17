@@ -125,7 +125,7 @@ private fun FilterHeader(
         ) {
             Spacer(Modifier.weight(1f))
             Text(
-                text = stringResource(R.string.select_filters),
+                text = stringResource(R.string.select_filters_v2),
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
                 fontSize = 18.sp,
@@ -163,7 +163,7 @@ private fun FilterHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.select_filters),
+                text = stringResource(R.string.select_filters_v2),
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 20.sp,
                 maxLines = 1,
@@ -194,7 +194,7 @@ private fun FilterFooter(
                 .size(20.dp)
         )
         Text(
-            text = stringResource(R.string.clear_all),
+            text = stringResource(R.string.clear_all_v2),
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
         )

@@ -58,8 +58,8 @@ class DatesViewModel(
             val context = getLocalizedContext(app)
 
             val agingData = agingDue(allItems, now)
-            val weekSection = AgingSection(context.safeString(R.string.week_section), context.safeString(R.string.week_empty), agingData.first)
-            val monthSection = AgingSection(context.safeString(R.string.month_section), context.safeString(R.string.month_empty), agingData.second)
+            val weekSection = AgingSection(context.safeString(R.string.week_section_v2), context.safeString(R.string.week_empty_v2), agingData.first)
+            val monthSection = AgingSection(context.safeString(R.string.month_section_v2), context.safeString(R.string.month_empty_v2), agingData.second)
 
             val filteredItemTins = datedTins.map { it.second }
             val averageManuf = calculateAverageDate(filteredItemTins, DatePeriod.PAST, now) { it.manufactureDate }
@@ -80,22 +80,22 @@ class DatesViewModel(
                 agingSection = listOf(weekSection, monthSection),
                 agingExists = agingData.first.isNotEmpty() || agingData.second.isNotEmpty(),
                 averageAgeSection = listOf(
-                    AverageAgeSection(context.safeString(R.string.average_manuf), averageManuf),
-                    AverageAgeSection(context.safeString(R.string.average_cellar), averageCellar),
-                    AverageAgeSection(context.safeString(R.string.average_open), averageOpen),
-                    AverageAgeSection(context.safeString(R.string.average_wait), averageWait)
+                    AverageAgeSection(context.safeString(R.string.average_manuf_v2), averageManuf),
+                    AverageAgeSection(context.safeString(R.string.average_cellar_v2), averageCellar),
+                    AverageAgeSection(context.safeString(R.string.average_open_v2), averageOpen),
+                    AverageAgeSection(context.safeString(R.string.average_wait_v2), averageWait)
                 ),
                 averageAgeExists = averageManuf.isNotBlank() || averageCellar.isNotBlank() || averageOpen.isNotBlank() || averageWait.isNotBlank(),
                 oldestTinsSection = listOf(
-                    OldestTinsSection(context.safeString(R.string.manufacture_date), pastManu),
-                    OldestTinsSection(context.safeString(R.string.cellared_date), pastCellar),
-                    OldestTinsSection(context.safeString(R.string.opened_date), pastOpened)
+                    OldestTinsSection(context.safeString(R.string.manufacture_date_v2), pastManu),
+                    OldestTinsSection(context.safeString(R.string.cellared_date_v2), pastCellar),
+                    OldestTinsSection(context.safeString(R.string.opened_date_v2), pastOpened)
                 ),
                 oldestTinsExists = pastManu.isNotEmpty() || pastCellar.isNotEmpty() || pastOpened.isNotEmpty(),
                 futureTinsSection = listOf(
-                    FutureTinsSection(context.safeString(R.string.manufacture_date), futureManu),
-                    FutureTinsSection(context.safeString(R.string.cellared_date), futureCellar),
-                    FutureTinsSection(context.safeString(R.string.opened_date), futureOpen)
+                    FutureTinsSection(context.safeString(R.string.manufacture_date_v2), futureManu),
+                    FutureTinsSection(context.safeString(R.string.cellared_date_v2), futureCellar),
+                    FutureTinsSection(context.safeString(R.string.opened_date_v2), futureOpen)
                 ),
                 futureTinsExists = futureManu.isNotEmpty() || futureCellar.isNotEmpty() || futureOpen.isNotEmpty(),
                 loading = false,
@@ -205,11 +205,11 @@ class DatesViewModel(
 
         val parts = mutableListOf<String>()
 
-        if (years > 0) { parts.add(context.safeQuantityString(R.plurals.years, years, years)) }
-        if (months > 0) { parts.add(context.safeQuantityString(R.plurals.months, months, months)) }
+        if (years > 0) { parts.add(context.safeQuantityString(R.plurals.years_v2, years, years)) }
+        if (months > 0) { parts.add(context.safeQuantityString(R.plurals.months_v2, months, months)) }
         if (days > 0.06) {
             val quantity = getPluralsForDouble(days)
-            parts.add(context.safeQuantityString(R.plurals.days, quantity, dayString))
+            parts.add(context.safeQuantityString(R.plurals.days_v2, quantity, dayString))
         }
 
         return formatLocalizedList(parts)

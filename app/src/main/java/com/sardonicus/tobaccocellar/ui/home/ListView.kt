@@ -387,7 +387,7 @@ private fun TinList(
                     }
 
                     Text(
-                        text = stringResource(R.string.parenthetical, tinInfo),
+                        text = stringResource(R.string.parenthetical_v2, tinInfo),
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(start = 5.dp)
@@ -395,7 +395,7 @@ private fun TinList(
                 }
                 if (it.finished) {
                     Text(
-                        text = stringResource(R.string.finished_parentheses),
+                        text = stringResource(R.string.finished_parentheses_v2),
                         fontWeight = FontWeight.Normal,
                         fontSize = 13.sp,
                         fontStyle = Italic,

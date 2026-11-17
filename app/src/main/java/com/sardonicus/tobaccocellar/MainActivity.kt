@@ -170,7 +170,7 @@ class MainActivity : AppCompatActivity() {
                     if (backPressedOnce) { finish(); return }
 
                     backPressedOnce = true
-                    Toast.makeText(this@MainActivity, application.getString(R.string.exit), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, application.getString(R.string.exit_v2), Toast.LENGTH_SHORT).show()
 
                     lifecycleScope.launch { delay(2000.milliseconds); backPressedOnce = false }
                 }
@@ -193,10 +193,10 @@ class MainActivity : AppCompatActivity() {
                     if (userEmail != null) {
                         preferencesRepo.saveLoginState(userEmail, true)
                         preferencesRepo.saveCrossDeviceSync(true)
-                        Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled_v2), Toast.LENGTH_SHORT).show()
                     }
                 }
-            } else { Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied), Toast.LENGTH_SHORT).show() }
+            } else { Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied_v2), Toast.LENGTH_SHORT).show() }
         }
 
 
@@ -410,28 +410,28 @@ class MainActivity : AppCompatActivity() {
                         AlertDialog(
                             onDismissRequest = {
                                 _noAccountsDialog.value = false
-                                Toast.makeText(this@MainActivity, getString(R.string.no_accounts), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, getString(R.string.no_accounts_v2), Toast.LENGTH_SHORT).show()
                             },
                             properties = DialogProperties(
                                 dismissOnBackPress = false,
                                 dismissOnClickOutside = false
                             ),
-                            title = { Text(stringResource(R.string.add_account_device), fontSize = 18.sp) },
+                            title = { Text(stringResource(R.string.add_account_device_v2), fontSize = 18.sp) },
                             text = {
-                                Text(stringResource(R.string.add_account_body), fontSize = 15.sp)
+                                Text(stringResource(R.string.add_account_body_v2), fontSize = 15.sp)
                             },
                             confirmButton = {
                                 TextButton(
                                     onClick = { _noAccountsDialog.value = false; signIn(true) }
-                                ) { Text(stringResource(R.string.add_account)) }
+                                ) { Text(stringResource(R.string.add_account_v2)) }
                             },
                             dismissButton = {
                                 TextButton(
                                     onClick = {
                                         _noAccountsDialog.value = false; EventBus.tryEmit(SignInCancelled)
-                                        Toast.makeText(this@MainActivity, getString(R.string.no_accounts), Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(this@MainActivity, getString(R.string.no_accounts_v2), Toast.LENGTH_SHORT).show()
                                     }
-                                ) { Text(stringResource(R.string.cancel)) }
+                                ) { Text(stringResource(R.string.cancel_v2)) }
                             },
                             containerColor = MaterialTheme.colorScheme.background,
                             textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -527,8 +527,8 @@ class MainActivity : AppCompatActivity() {
         if (e is NoCredentialException) { _noAccountsDialog.value = true }
         else {
             val message = when (e) {
-                is GetCredentialCancellationException -> application.getString(R.string.sign_in_canceled)
-                else -> application.getString(R.string.sign_in_failed)
+                is GetCredentialCancellationException -> application.getString(R.string.sign_in_canceled_v2)
+                else -> application.getString(R.string.sign_in_failed_v2)
             }
             EventBus.emit(SignInCancelled)
             Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
@@ -542,10 +542,10 @@ class MainActivity : AppCompatActivity() {
                 preferencesRepo.saveCrossDeviceSync(false)
                 preferencesRepo.clearLogin()
                 (application as CellarApplication).cancelPeriodicSync()
-                Toast.makeText(this@MainActivity, application.getString(R.string.logged_out), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, application.getString(R.string.logged_out_v2), Toast.LENGTH_SHORT).show()
             }
             catch (_: Exception) {
-                Toast.makeText(this@MainActivity, application.getString(R.string.sign_out_failed), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, application.getString(R.string.sign_out_failed_v2), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -570,7 +570,7 @@ class MainActivity : AppCompatActivity() {
                             preferencesRepo.saveLoginState(userEmail, true)
                             preferencesRepo.saveCrossDeviceSync(true)
                             (application as CellarApplication).periodicDownloadSetup()
-                            Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@MainActivity, application.getString(R.string.sync_enabled_v2), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -579,7 +579,7 @@ class MainActivity : AppCompatActivity() {
                 lifecycleScope.launch {
                     preferencesRepo.saveCrossDeviceSync(false)
                     preferencesRepo.clearLogin()
-                    Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, application.getString(R.string.drive_denied_v2), Toast.LENGTH_SHORT).show()
                 }
             }
     }

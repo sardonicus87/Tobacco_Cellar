@@ -87,7 +87,7 @@ fun HelpScreen(
             .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.help_faq_title),
+                title = stringResource(R.string.help_faq_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = onNavigateUp,
@@ -117,15 +117,15 @@ private fun HelpBody(
     val delayMillis = 210.milliseconds
 
     val sections: List<Pair<String, @Composable () -> Unit>> = listOf(
-        stringResource(R.string.cellar_screen) to { CellarScreen() },
-        stringResource(R.string.stats_screen) to { StatsPage() },
-        stringResource(R.string.dates_screen) to { DatesPage() },
-        stringResource(R.string.filtering) to { Filtering() },
-        stringResource(R.string.adding_entries) to { AddingItems() },
-        stringResource(R.string.editing_entries) to { EditingItems() },
-        stringResource(R.string.adding_tins) to { AddingTins() },
-        stringResource(R.string.settings_title) to { Settings() },
-        stringResource(R.string.multi_device_sync) to { MultiSync() },
+        stringResource(R.string.cellar_screen_v2) to { CellarScreen() },
+        stringResource(R.string.stats_screen_v2) to { StatsPage() },
+        stringResource(R.string.dates_screen_v2) to { DatesPage() },
+        stringResource(R.string.filtering_v2) to { Filtering() },
+        stringResource(R.string.adding_entries_v2) to { AddingItems() },
+        stringResource(R.string.editing_entries_v2) to { EditingItems() },
+        stringResource(R.string.adding_tins_v2) to { AddingTins() },
+        stringResource(R.string.settings_title_v2) to { Settings() },
+        stringResource(R.string.multi_device_sync_v2) to { MultiSync() },
     )
 
     LazyColumn(
@@ -136,14 +136,14 @@ private fun HelpBody(
     ) {
         item {
             Text(
-                text = stringResource(R.string.help_body1),
+                text = stringResource(R.string.help_body1_v2),
                 modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp, top = 12.dp),
                 softWrap = true
             )
         }
         item {
             Text(
-                text = stringResource(R.string.help_body2),
+                text = stringResource(R.string.help_body2_v2),
                 modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
                 softWrap = true
             )
@@ -152,7 +152,7 @@ private fun HelpBody(
         // Help sections
         item {
             Text(
-                text = stringResource(R.string.help),
+                text = stringResource(R.string.help_v2),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                 softWrap = true,
                 fontWeight = FontWeight.Bold,
@@ -190,11 +190,11 @@ private fun CellarScreen(
         modifier = modifier
     ) {
         Text(
-            text = stringResource(R.string.help_cellar1),
+            text = stringResource(R.string.help_cellar1_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_cellar2),
+            text = stringResource(R.string.help_cellar2_v2),
             modifier = Modifier
                 .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
@@ -202,32 +202,32 @@ private fun CellarScreen(
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_cellar3),
+            text = stringResource(R.string.help_cellar3_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_cellar4),
+            text = stringResource(R.string.help_cellar4_v2),
             softWrap = true
         )
 
         // View Mode
         Text(
-            text = stringResource(R.string.help_cellar5),
+            text = stringResource(R.string.help_cellar5_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_cellar6),
+            text = stringResource(R.string.help_cellar6_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_cellar7),
+            text = stringResource(R.string.help_cellar7_v2),
             softWrap = true
         )
 
         Text(
-            text = stringResource(R.string.help_cellar8),
+            text = stringResource(R.string.help_cellar8_v2),
             softWrap = true
         )
     }
@@ -243,7 +243,7 @@ private fun StatsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_stats),
+            text = stringResource(R.string.help_stats_v2),
             softWrap = true
         )
     }
@@ -259,7 +259,7 @@ private fun DatesPage(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_dates1),
+            text = stringResource(R.string.help_dates1_v2),
             softWrap = true
         )
 
@@ -271,35 +271,35 @@ private fun DatesPage(
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_dates2),
+            text = stringResource(R.string.help_dates2_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_dates3),
+            text = stringResource(R.string.help_dates3_v2),
             softWrap = true
         )
 
         // Quick Stats
         Text(
-            text = stringResource(R.string.help_dates4),
+            text = stringResource(R.string.help_dates4_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_dates5),
+            text = stringResource(R.string.help_dates5_v2),
             softWrap = true
         )
 
         // Oldest/Future Tins
         Text(
-            text = stringResource(R.string.help_dates6),
+            text = stringResource(R.string.help_dates6_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_dates7),
+            text = stringResource(R.string.help_dates7_v2),
             softWrap = true
         )
     }
@@ -315,71 +315,71 @@ private fun Filtering(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_filtering1),
+            text = stringResource(R.string.help_filtering1_v2),
             softWrap = true
         )
 
         // Basic Use
         Text(
-            text = stringResource(R.string.help_filtering2),
+            text = stringResource(R.string.help_filtering2_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_filtering3),
+            text = stringResource(R.string.help_filtering3_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering4),
+            text = stringResource(R.string.help_filtering4_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering5),
+            text = stringResource(R.string.help_filtering5_v2),
             softWrap = true
         )
 
         // Filtering
         Text(
-            text = stringResource(R.string.help_filtering6),
+            text = stringResource(R.string.help_filtering6_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_filtering7),
+            text = stringResource(R.string.help_filtering7_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering8),
+            text = stringResource(R.string.help_filtering8_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering9),
+            text = stringResource(R.string.help_filtering9_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering10),
+            text = stringResource(R.string.help_filtering10_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering11),
+            text = stringResource(R.string.help_filtering11_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering12),
+            text = stringResource(R.string.help_filtering12_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering13),
+            text = stringResource(R.string.help_filtering13_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering14),
+            text = stringResource(R.string.help_filtering14_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_filtering15),
+            text = stringResource(R.string.help_filtering15_v2),
             softWrap = true
         )
     }
@@ -395,33 +395,33 @@ private fun AddingItems(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_adding1),
+            text = stringResource(R.string.help_adding1_v2),
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = stringResource(R.string.help_adding2),
+            text = stringResource(R.string.help_adding2_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_adding3),
+            text = stringResource(R.string.help_adding3_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_adding4),
+            text = stringResource(R.string.help_adding4_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_adding5),
+            text = stringResource(R.string.help_adding5_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_adding6),
+            text = stringResource(R.string.help_adding6_v2),
             softWrap = true
         )
 
         Text(
-            text = stringResource(R.string.help_adding7),
+            text = stringResource(R.string.help_adding7_v2),
             softWrap = true
         )
     }
@@ -437,25 +437,25 @@ private fun EditingItems(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_editing1),
+            text = stringResource(R.string.help_editing1_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_editing2),
+            text = stringResource(R.string.help_editing2_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_editing3),
+            text = stringResource(R.string.help_editing3_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_editing4),
+            text = stringResource(R.string.help_editing4_v2),
             modifier = Modifier.padding(horizontal = 12.dp),
             color = MaterialTheme.colorScheme.error,
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_editing5),
+            text = stringResource(R.string.help_editing5_v2),
             softWrap = true
         )
     }
@@ -472,37 +472,37 @@ private fun AddingTins(
     ) {
         // Basic use
         Text(
-            text = stringResource(R.string.help_add_tin1),
+            text = stringResource(R.string.help_add_tin1_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin2),
+            text = stringResource(R.string.help_add_tin2_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin3),
+            text = stringResource(R.string.help_add_tin3_v2),
             softWrap = true
         )
 
         // Quantity
         Text(
-            text = stringResource(R.string.quantity),
+            text = stringResource(R.string.quantity_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_add_tin4),
+            text = stringResource(R.string.help_add_tin4_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin5),
+            text = stringResource(R.string.help_add_tin5_v2),
             softWrap = true
         )
 
         // Dates
         Text(
-            text = stringResource(R.string.dates_title),
+            text = stringResource(R.string.dates_title_v2),
             modifier = Modifier
                 .padding(top = 12.dp)
                 .align(Alignment.CenterHorizontally),
@@ -510,19 +510,19 @@ private fun AddingTins(
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_add_tin6),
+            text = stringResource(R.string.help_add_tin6_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin7),
+            text = stringResource(R.string.help_add_tin7_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin8),
+            text = stringResource(R.string.help_add_tin8_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_add_tin9),
+            text = stringResource(R.string.help_add_tin9_v2),
             softWrap = true
         )
     }
@@ -538,69 +538,69 @@ private fun Settings(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_settings1),
+            text = stringResource(R.string.help_settings1_v2),
             softWrap = true
         )
 
         // Multi-Device Sync
         Text(
-            text = stringResource(R.string.multi_device_sync),
+            text = stringResource(R.string.multi_device_sync_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
         )
         Text(
-            text = stringResource(R.string.help_settings2),
+            text = stringResource(R.string.help_settings2_v2),
             softWrap = true
         )
 
         // Backup/restore
         Text(
-            text = stringResource(R.string.backup_restore),
+            text = stringResource(R.string.backup_restore_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_settings3),
+            text = stringResource(R.string.help_settings3_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_settings4),
+            text = stringResource(R.string.help_settings4_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_settings5),
+            text = stringResource(R.string.help_settings5_v2),
             modifier = Modifier,
             softWrap = true,
         )
         Text(
-            text = stringResource(R.string.help_settings6),
+            text = stringResource(R.string.help_settings6_v2),
             modifier = Modifier,
             softWrap = true,
         )
 
         // Conversion Rates
         Text(
-            text = stringResource(R.string.conversion_option),
+            text = stringResource(R.string.conversion_option_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_settings7),
+            text = stringResource(R.string.help_settings7_v2),
             softWrap = true
         )
 
         // Other Db operations
         Text(
-            text = stringResource(R.string.other_operations),
+            text = stringResource(R.string.other_operations_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_settings8),
+            text = stringResource(R.string.help_settings8_v2),
             softWrap = true
         )
     }
@@ -616,37 +616,37 @@ private fun MultiSync(
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top)
     ) {
         Text(
-            text = stringResource(R.string.help_multi1),
+            text = stringResource(R.string.help_multi1_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi2),
+            text = stringResource(R.string.help_multi2_v2),
             softWrap = true
         )
 
         // Explanation of account link/data safety
         Text(
-            text = stringResource(R.string.help_multi3),
+            text = stringResource(R.string.help_multi3_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_multi4),
+            text = stringResource(R.string.help_multi4_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi5),
+            text = stringResource(R.string.help_multi5_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi6),
+            text = stringResource(R.string.help_multi6_v2),
             softWrap = true
         )
 
-        val privacy = stringResource(R.string.privacy_policy)
-        val data = stringResource(R.string.manage_data)
-        val text = stringResource(R.string.help_multi7, privacy, data)
+        val privacy = stringResource(R.string.privacy_policy_v2)
+        val data = stringResource(R.string.manage_data_v2)
+        val text = stringResource(R.string.help_multi7_v2, privacy, data)
 
         val uriHandler = LocalUriHandler.current
         val hapticFeedback = LocalHapticFeedback.current
@@ -755,7 +755,7 @@ private fun MultiSync(
                     val context = LocalContext.current
                     val coroutineScope = rememberCoroutineScope()
                     val clipboard = LocalClipboard.current
-                    val clipboardText = stringResource(R.string.copied_clipboard)
+                    val clipboardText = stringResource(R.string.copied_clipboard_v2)
 
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -795,25 +795,25 @@ private fun MultiSync(
 
         // How it Works
         Text(
-            text = stringResource(R.string.help_multi8),
+            text = stringResource(R.string.help_multi8_v2),
             modifier = Modifier.padding(top = 12.dp).align(Alignment.CenterHorizontally),
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp,
         )
         Text(
-            text = stringResource(R.string.help_multi9),
+            text = stringResource(R.string.help_multi9_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi10),
+            text = stringResource(R.string.help_multi10_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi11),
+            text = stringResource(R.string.help_multi11_v2),
             softWrap = true
         )
         Text(
-            text = stringResource(R.string.help_multi12),
+            text = stringResource(R.string.help_multi12_v2),
             softWrap = true
         )
     }

@@ -70,7 +70,7 @@ fun ReleaseNotesDialog(
             title = {
                 Column {
                     Text(
-                        text = stringResource(R.string.what_new),
+                        text = stringResource(R.string.what_new_v2),
                         textAlign = TextAlign.Start,
                         fontWeight = FontWeight.Bold,
                         autoSize = TextAutoSize.StepBased(16.sp, 18.sp),
@@ -91,11 +91,7 @@ fun ReleaseNotesDialog(
                         releaseNotesState.changelogData.forEachIndexed { index, log ->
                             val alpha = if (index == 0) 1f else 0.8f
                             Text(
-                                text = stringResource(
-                                    R.string.release_info,
-                                    log.versionNumber,
-                                    log.buildDate
-                                ),
+                                text = stringResource(R.string.release_info_v2, log.versionNumber, log.buildDate),
                                 modifier = Modifier.padding(bottom = 6.dp),
                                 fontSize = if (index == 0) 16.sp else 15.sp,
                                 fontWeight = if (index == 0) FontWeight.ExtraBold else FontWeight.Medium,
@@ -124,14 +120,14 @@ fun ReleaseNotesDialog(
                     onClick = viewModel::saveReleaseNotesSeen,
                     contentPadding = PaddingValues(12.dp, 4.dp),
                     modifier = Modifier.heightIn(32.dp, 32.dp)
-                ) { Text(stringResource(R.string.ok)) }
+                ) { Text(stringResource(R.string.ok_v2)) }
             },
             dismissButton = {
                 TextButton(
                     onClick = { viewModel.saveReleaseNotesSeen(); onNavigateToChangelog(toLog) },
                     contentPadding = PaddingValues(12.dp, 4.dp),
                     modifier = Modifier.heightIn(32.dp, 32.dp)
-                ) { Text(stringResource(R.string.full_change)) }
+                ) { Text(stringResource(R.string.full_change_v2)) }
             }
         )
     }

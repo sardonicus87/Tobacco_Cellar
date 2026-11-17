@@ -105,7 +105,7 @@ fun TinNotificationsDialog (
                 verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Top),
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(stringResource(R.string.tin_notification_dialog), Modifier.padding(bottom = 12.dp), fontSize = 15.sp)
+                Text(stringResource(R.string.tin_notification_dialog_v2), Modifier.padding(bottom = 12.dp), fontSize = 15.sp)
                 Row(
                     modifier = Modifier
                         .height(28.dp)
@@ -114,7 +114,7 @@ fun TinNotificationsDialog (
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(stringResource(R.string.tin_notification_option), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.tin_notification_option_v2), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 20.dp) {
                         Switch(
                             checked = tinNotifications,
@@ -144,9 +144,9 @@ fun TinNotificationsDialog (
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     val formattedTime = formatTime(notificationTime, context)
-                    Text(stringResource(R.string.tin_notification_time), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.tin_notification_time_v2), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        text = formattedTime.ifBlank { stringResource(R.string.tin_notification_set) },
+                        text = formattedTime.ifBlank { stringResource(R.string.tin_notification_set_v2) },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier
@@ -176,7 +176,7 @@ fun TinNotificationsDialog (
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.done)) } },
+        confirmButton = { TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.done_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large
@@ -320,7 +320,7 @@ private fun CustomTimePickerDialog(
                             onClick = { onDismiss() },
                             contentPadding = PaddingValues(12.dp, 4.dp),
                             modifier = Modifier.heightIn(32.dp, 32.dp)
-                        ) { Text(stringResource(R.string.cancel)) }
+                        ) { Text(stringResource(R.string.cancel_v2)) }
                         TextButton(
                             onClick = {
                                 onTimeChange((pickerState.hour * 60) + pickerState.minute)
@@ -328,7 +328,7 @@ private fun CustomTimePickerDialog(
                             },
                             contentPadding = PaddingValues(12.dp, 4.dp),
                             modifier = Modifier.heightIn(32.dp, 32.dp)
-                        ) { Text(stringResource(R.string.ok)) }
+                        ) { Text(stringResource(R.string.ok_v2)) }
                     }
                 }
             }

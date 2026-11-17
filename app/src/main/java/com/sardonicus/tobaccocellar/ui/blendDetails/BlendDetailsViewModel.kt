@@ -83,38 +83,38 @@ class BlendDetailsViewModel(
             blend = item.items.blend,
             favDisIcon = if (item.items.favorite) R.drawable.heart_filled_24 else if (item.items.disliked) R.drawable.heartbroken_filled_24 else null,
             itemDetails = setOfNotNull(
-                buildDetailsString(context.safeString(R.string.type_label), getLocalizedType(item.items.type), lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.subgenre_label), item.items.subGenre, lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.cut_label), item.items.cut, lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.components_label), formatLocalizedList(components), lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.flavors_label), formatLocalizedList(flavors), lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.production_status_label), if (item.items.inProduction) context.safeString(R.string.in_production) else context.safeString(R.string.discontinued), lineHeight = 1.2.em),
-                buildDetailsString(context.safeString(R.string.no_of_tins_label), item.items.quantity.toString(), lineHeight = 1.2.em)
+                buildDetailsString(context.safeString(R.string.type_label_v2), getLocalizedType(item.items.type), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.subgenre_label_v2), item.items.subGenre, lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.cut_label_v2), item.items.cut, lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.components_label_v2), formatLocalizedList(components), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.flavors_label_v2), formatLocalizedList(flavors), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.production_status_label_v2), if (item.items.inProduction) context.safeString(R.string.in_production_v2) else context.safeString(R.string.discontinued_v2), lineHeight = 1.2.em),
+                buildDetailsString(context.safeString(R.string.no_of_tins_label_v2), item.items.quantity.toString(), lineHeight = 1.2.em)
             ),
             rating = item.items.rating,
             notes = item.items.notes,
             tinsDetails = item.tins.sortedBy { it.tinId }.associateWith { tin ->
                 buildSet {
-                    buildDetailsString(context.safeString(R.string.container_label), tin.container)?.let { add(DetailLine(it)) }
-                    buildDetailsString(context.safeString(R.string.quantity_label), tinDetailsQuantity(tin.unit, tin.tinQuantity, context))?.let { add(DetailLine(it)) }
-                    buildDetailsString(context.safeString(R.string.manufacture_date_label), formatMediumDate(tin.manufactureDate))?.let {
-                        val secondary = buildDetailsString("", context.safeString(R.string.parenthetical, calculateAge(tin.manufactureDate, DateField.MANUFACTURE)), 12.sp)
+                    buildDetailsString(context.safeString(R.string.container_label_v2), tin.container)?.let { add(DetailLine(it)) }
+                    buildDetailsString(context.safeString(R.string.quantity_label_v2), tinDetailsQuantity(tin.unit, tin.tinQuantity, context))?.let { add(DetailLine(it)) }
+                    buildDetailsString(context.safeString(R.string.manufacture_date_label_v2), formatMediumDate(tin.manufactureDate))?.let {
+                        val secondary = buildDetailsString("", context.safeString(R.string.parenthetical_v2, calculateAge(tin.manufactureDate, DateField.MANUFACTURE)), 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString(context.safeString(R.string.cellar_date_label), formatMediumDate(tin.cellarDate))?.let {
-                        val secondary = buildDetailsString("", context.safeString(R.string.parenthetical, calculateAge(tin.cellarDate, DateField.CELLAR)), 12.sp)
+                    buildDetailsString(context.safeString(R.string.cellar_date_label_v2), formatMediumDate(tin.cellarDate))?.let {
+                        val secondary = buildDetailsString("", context.safeString(R.string.parenthetical_v2, calculateAge(tin.cellarDate, DateField.CELLAR)), 12.sp)
                         add(DetailLine(it, secondary))
                     }
-                    buildDetailsString(context.safeString(R.string.open_date_label), formatMediumDate(tin.openDate))?.let {
+                    buildDetailsString(context.safeString(R.string.open_date_label_v2), formatMediumDate(tin.openDate))?.let {
                         val secondary =
-                            if (!tin.finished) { buildDetailsString("", context.safeString(R.string.parenthetical, calculateAge(tin.openDate, DateField.OPEN)), 12.sp) }
-                            else { buildDetailsString("", context.safeString(R.string.finished_lower), 12.sp) }
+                            if (!tin.finished) { buildDetailsString("", context.safeString(R.string.parenthetical_v2, calculateAge(tin.openDate, DateField.OPEN)), 12.sp) }
+                            else { buildDetailsString("", context.safeString(R.string.finished_lower_v2), 12.sp) }
                         add(DetailLine(it, secondary))
                     }
                 }
             },
             tinsTotal = calculateTotal(item.tins.filter { !it.finished }, quantityRemap, context),
-            lastModified = item.items.lastModified.let { if (it == 0L) context.safeString(R.string.not_applicable) else formatMediumDate(it, true) },
+            lastModified = item.items.lastModified.let { if (it == 0L) context.safeString(R.string.not_applicable_v2) else formatMediumDate(it, true) },
         )
     }
         .stateIn(
@@ -139,10 +139,10 @@ class BlendDetailsViewModel(
         return if (unit.isBlank()) ""
         else {
             val resource = when (unit) {
-                "oz" -> R.string.quantity_oz
-                "lbs" -> R.string.quantity_lbs
-                "g" -> R.string.quantity_g
-                else -> R.string.quantity_kg
+                "oz" -> R.string.quantity_oz_v2
+                "lbs" -> R.string.quantity_lbs_v2
+                "g" -> R.string.quantity_g_v2
+                else -> R.string.quantity_kg_v2
             }
             context.safeString(resource, formatDecimal(quantity))
         }
@@ -160,15 +160,15 @@ class BlendDetailsViewModel(
             QuantityOption.OUNCES -> {
                 if (sum != null) {
                     if (sum >= 16.00) {
-                        if (sum == 16.00) context.safeString(R.string.quantity_lb, formatDecimal((sum/16)))
-                        else context.safeString(R.string.quantity_lbs, formatDecimal((sum/16))) }
-                    else { context.safeString(R.string.quantity_oz, formatDecimal(sum)) }
+                        if (sum == 16.00) context.safeString(R.string.quantity_lb_v2, formatDecimal((sum/16)))
+                        else context.safeString(R.string.quantity_lbs_v2, formatDecimal((sum/16))) }
+                    else { context.safeString(R.string.quantity_oz_v2, formatDecimal(sum)) }
                 } else { null }
             }
             QuantityOption.GRAMS -> {
                 if (sum != null) {
-                    if (sum >= 1000) { context.safeString(R.string.quantity_kg, formatDecimal((sum/1000))) }
-                    else { context.safeString(R.string.quantity_g, formatDecimal(sum)) }
+                    if (sum >= 1000) { context.safeString(R.string.quantity_kg_v2, formatDecimal((sum/1000))) }
+                    else { context.safeString(R.string.quantity_g_v2, formatDecimal(sum)) }
                 } else { null }
             }
             else -> { null }
@@ -264,19 +264,19 @@ fun calculateAge(date: Long?, field: DateField? = null): String {
     val period = if (then < now) { Period.between(then, now) } else { Period.between(now, then) }
 
     val parts = listOfNotNull(
-        if (period.years > 0) { context.safeQuantityString(R.plurals.years, period.years, period.years) } else null,
-        if (period.months > 0) { context.safeQuantityString(R.plurals.months, period.months, period.months) } else null,
-        if (period.days > 0) { context.safeQuantityString(R.plurals.days, period.days, period.days) } else null
+        if (period.years > 0) { context.safeQuantityString(R.plurals.years_v2, period.years, period.years) } else null,
+        if (period.months > 0) { context.safeQuantityString(R.plurals.months_v2, period.months, period.months) } else null,
+        if (period.days > 0) { context.safeQuantityString(R.plurals.days_v2, period.days, period.days) } else null
     )
 
-    if (parts.isEmpty()) { return context.safeString(R.string.today_lower) }
+    if (parts.isEmpty()) { return context.safeString(R.string.today_lower_v2) }
 
     val ageString = formatLocalizedList(parts)
     val resource = when (field) {
-        DateField.MANUFACTURE -> if (then < now) R.string.age_manuf_past else R.string.age_cellar_manuf_future
-        DateField.CELLAR -> if (then < now) R.string.age_cellar_past else R.string.age_cellar_manuf_future
-        DateField.OPEN -> if (then < now) R.string.age_open_past else R.string.age_open_future
-        else -> R.string.age_default
+        DateField.MANUFACTURE -> if (then < now) R.string.age_manuf_past_v2 else R.string.age_cellar_manuf_future_v2
+        DateField.CELLAR -> if (then < now) R.string.age_cellar_past_v2 else R.string.age_cellar_manuf_future_v2
+        DateField.OPEN -> if (then < now) R.string.age_open_past_v2 else R.string.age_open_future_v2
+        else -> R.string.age_default_v2
     }
 
     return context.safeString(resource, ageString)

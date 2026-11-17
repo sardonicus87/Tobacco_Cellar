@@ -82,12 +82,12 @@ fun TinsFilterSection(
                 val baseStyle = LocalTextStyle.current.copy(fontSize = 15.sp, fontWeight = FontWeight.Normal)
                 val pad = with(LocalDensity.current) { 42.dp.toPx() }
 
-                val hasText = stringResource(R.string.has_tins)
-                val noText = stringResource(R.string.no_tins)
-                val openText = stringResource(R.string.opened)
-                val unopenText = stringResource(R.string.unopened)
-                val finishedText = stringResource(R.string.finished)
-                val unfinishedText = stringResource(R.string.Unfinished)
+                val hasText = stringResource(R.string.has_tins_v2)
+                val noText = stringResource(R.string.no_tins_v2)
+                val openText = stringResource(R.string.opened_v2)
+                val unopenText = stringResource(R.string.unopened_v2)
+                val finishedText = stringResource(R.string.finished_v2)
+                val unfinishedText = stringResource(R.string.Unfinished_v2)
 
                 val hasColumn = remember(hasText, noText) {
                     maxOf(
@@ -130,7 +130,7 @@ fun TinsFilterSection(
                             allowResize = true
                         )
                         CheckboxWithLabel(
-                            text = stringResource(R.string.has_tins),
+                            text = stringResource(R.string.has_tins_v2),
                             checked = hasTins,
                             onCheckedChange = filterViewModel::updateSelectedHasTins,
                             modifier = Modifier,
@@ -140,7 +140,7 @@ fun TinsFilterSection(
                         )
                     }
                     CheckboxWithLabel(
-                        text = stringResource(R.string.no_tins),
+                        text = stringResource(R.string.no_tins_v2),
                         checked = noTins,
                         onCheckedChange = filterViewModel::updateSelectedNoTins,
                         modifier = Modifier,
@@ -153,7 +153,7 @@ fun TinsFilterSection(
                 // Opened
                 Column(Modifier.weight(openWeight)) {
                     CheckboxWithLabel(
-                        text = stringResource(R.string.opened),
+                        text = stringResource(R.string.opened_v2),
                         checked = opened,
                         onCheckedChange = filterViewModel::updateSelectedOpened,
                         modifier = Modifier,
@@ -162,7 +162,7 @@ fun TinsFilterSection(
                         allowResize = true
                     )
                     CheckboxWithLabel(
-                        text = stringResource(R.string.unopened),
+                        text = stringResource(R.string.unopened_v2),
                         checked = unopened,
                         onCheckedChange = filterViewModel::updateSelectedUnopened,
                         modifier = Modifier,
@@ -175,7 +175,7 @@ fun TinsFilterSection(
                 // Finished
                 Column(Modifier.weight(finishedWeight)) {
                     CheckboxWithLabel(
-                        text = stringResource(R.string.finished),
+                        text = stringResource(R.string.finished_v2),
                         checked = finished,
                         onCheckedChange = filterViewModel::updateSelectedFinished,
                         modifier = Modifier,
@@ -184,7 +184,7 @@ fun TinsFilterSection(
                         allowResize = true
                     )
                     CheckboxWithLabel(
-                        text = stringResource(R.string.Unfinished),
+                        text = stringResource(R.string.Unfinished_v2),
                         checked = unfinished,
                         onCheckedChange = filterViewModel::updateSelectedUnfinished,
                         modifier = Modifier,
@@ -217,7 +217,7 @@ fun TinsFilterSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.no_tins_containers),
+                            text = stringResource(R.string.no_tins_containers_v2),
                             autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
                             maxLines = 1,
                             fontWeight = FontWeight.Normal,

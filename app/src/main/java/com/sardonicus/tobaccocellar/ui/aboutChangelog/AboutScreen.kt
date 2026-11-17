@@ -99,7 +99,7 @@ fun AboutScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.about_title),
+                title = stringResource(R.string.about_title_v2),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
@@ -154,13 +154,13 @@ fun AboutScreen(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.Top)
                 ) {
-                    Text(stringResource(R.string.about_body, "Sardonicus", "Kotlin", "Jetpack Compose", "Apache Commons CSV"),
+                    Text(stringResource(R.string.about_body_v2, "Sardonicus", "Kotlin", "Jetpack Compose", "Apache Commons CSV"),
                         fontSize = 15.sp, lineHeight = 1.5.em)
                     FlowRow(
                         modifier = Modifier,
                         horizontalArrangement = Arrangement.Start,
                     ) {
-                        Text(stringResource(R.string.contact_me), fontSize = 15.sp, lineHeight = 1.5.em)
+                        Text(stringResource(R.string.contact_me_v2), fontSize = 15.sp, lineHeight = 1.5.em)
                         key(selectionKey) { SelectionContainer(
                             Modifier.onFocusChanged { selectionFocused = it.isFocused }) {
                                 Text(
@@ -193,7 +193,7 @@ fun AboutScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Row {
                             Text(
-                                text = stringResource(R.string.app_version),
+                                text = stringResource(R.string.app_version_v2),
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -207,7 +207,7 @@ fun AboutScreen(
                         }
                         Row {
                             Text(
-                                text = stringResource(R.string.db_version),
+                                text = stringResource(R.string.db_version_v2),
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onBackground
@@ -239,7 +239,7 @@ fun AboutScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.changelog_title),
+                            text = stringResource(R.string.changelog_title_v2),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
                                 .clickable(
@@ -252,7 +252,7 @@ fun AboutScreen(
                             lineHeight = 1.em,
                             color = MaterialTheme.colorScheme.primary
                         )
-                        ExternalLink(stringResource(R.string.website), "http://www.tobacco-cellar.com")
+                        ExternalLink(stringResource(R.string.website_v2), "http://www.tobacco-cellar.com")
                         ExternalLink("Play Store", "https://play.google.com/store/apps/details?id=com.sardonicus.tobaccocellar")
                     }
                     Row(
@@ -261,8 +261,8 @@ fun AboutScreen(
                         horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ExternalLink(stringResource(R.string.privacy_policy), "http://www.tobacco-cellar.com/privacy-policy")
-                        ExternalLink(stringResource(R.string.manage_data), "http://www.tobacco-cellar.com/managing-data")
+                        ExternalLink(stringResource(R.string.privacy_policy_v2), "http://www.tobacco-cellar.com/privacy-policy")
+                        ExternalLink(stringResource(R.string.manage_data_v2), "http://www.tobacco-cellar.com/managing-data")
                     }
                 }
 

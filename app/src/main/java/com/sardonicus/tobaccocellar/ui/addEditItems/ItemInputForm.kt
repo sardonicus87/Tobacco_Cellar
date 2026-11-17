@@ -314,7 +314,7 @@ private fun AdaptiveTabRow(
     anythingFocused: Boolean,
     updateSelectedTab: (Int) -> Unit,
 ) {
-    val titles = listOf(stringResource(R.string.details), stringResource(R.string.notes), stringResource(R.string.tins))
+    val titles = listOf(stringResource(R.string.details_v2), stringResource(R.string.notes_v2), stringResource(R.string.tins_v2))
     var showAdditional by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTabIndex) {

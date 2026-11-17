@@ -463,7 +463,7 @@ private fun TableTinsList(
                             }
                         }
                         Text(
-                            text = stringResource(R.string.parenthetical, tinInfo),
+                            text = stringResource(R.string.parenthetical_v2, tinInfo),
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp,
                             modifier = Modifier.padding(start = 5.dp)
@@ -471,7 +471,7 @@ private fun TableTinsList(
                     }
                     if (it.finished) {
                         Text(
-                            text = stringResource(R.string.finished_parentheses),
+                            text = stringResource(R.string.finished_parentheses_v2),
                             fontWeight = FontWeight.Normal,
                             fontSize = 13.sp,
                             fontStyle = Italic,
@@ -491,13 +491,13 @@ private fun TableTinsList(
 }
 
 enum class TableColumn(val title: Int) {
-    BRAND(R.string.brand),
-    BLEND(R.string.blend),
-    TYPE(R.string.type),
-    SUBGENRE(R.string.subgenre),
-    RATING(R.string.rating),
-    FAV_DIS(R.string.fav_dis),
-    NOTE(R.string.notes),
-    QTY(R.string.quantity),
-    EDITED(R.string.l_modified);
+   BRAND(R.string.brand_v2),
+   BLEND(R.string.blend_v2),
+   TYPE(R.string.type_v2),
+   SUBGENRE(R.string.subgenre_v2),
+   RATING(R.string.rating_v2),
+   FAV_DIS(R.string.fav_dis_v2),
+   NOTE(R.string.notes_v2),
+   QTY(R.string.quantity_v2),
+   EDITED(R.string.l_modified_v2);
 }

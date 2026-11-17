@@ -94,7 +94,7 @@ fun HomeScreen(
             .clickable(null, null) { focusManager.clearFocus(); viewModel.onDismissMenu() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.home_title),
+                title = stringResource(R.string.home_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = false,
                 navigateToBulkEdit = navigateToBulkEdit,

@@ -41,14 +41,14 @@ fun ProductionFilterSection(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
     ) {
         CheckboxWithLabel(
-            text = stringResource(R.string.in_production),
+            text = stringResource(R.string.in_production_v2),
             checked = production,
             onCheckedChange = filterViewModel::updateSelectedProduction,
             enabled = productionEnabled || production,
             allowResize = true
         )
         CheckboxWithLabel(
-            text = stringResource(R.string.discontinued),
+            text = stringResource(R.string.discontinued_v2),
             checked = outOfProduction,
             onCheckedChange = filterViewModel::updateSelectedOutOfProduction,
             enabled = outOfProductionEnabled || outOfProduction,

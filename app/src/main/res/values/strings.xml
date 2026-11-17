@@ -1,1067 +1,1067 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
 
-    <string name="app_name" translatable="false">Tobacco Cellar</string>
+    <string name="app_name_v2" translatable="false">Tobacco Cellar</string>
 
     <!-- Page Titles -->
-    <string name="home_title">Cellar</string>
-    <string name="stats_title">Stats</string>
-    <string name="dates_title">Dates</string>
-    <string name="add_entry_title">Add Entry</string>
-    <string name="edit_entry_title">Edit Entry</string>
-    <string name="csv_import_title">CSV Import Wizard</string>
-    <string name="import_results_title">CSV Import Results</string>
-    <string name="import_help">CSV Import Help</string>
-    <string name="settings_title">Settings</string>
-    <string name="about_title">About</string>
-    <string name="about_settings">About/Settings</string>
-    <string name="changelog_title">Changelog</string>
-    <string name="help_faq_title">Help/FAQ</string>
-    <string name="blend_details_title">Blend Details</string>
-    <string name="batch_edit_title">Batch Edit</string>
-    <string name="plaintext">Plaintext</string>
-    <string name="plaintext_title">Plaintext Export</string>
+    <string name="home_title_v2">Cellar</string>
+    <string name="stats_title_v2">Stats</string>
+    <string name="dates_title_v2">Dates</string>
+    <string name="add_entry_title_v2">Add Entry</string>
+    <string name="edit_entry_title_v2">Edit Entry</string>
+    <string name="csv_import_title_v2">CSV Import Wizard</string>
+    <string name="import_results_title_v2">CSV Import Results</string>
+    <string name="import_help_v2">CSV Import Help</string>
+    <string name="settings_title_v2">Settings</string>
+    <string name="about_title_v2">About</string>
+    <string name="about_settings_v2">About/Settings</string>
+    <string name="changelog_title_v2">Changelog</string>
+    <string name="help_faq_title_v2">Help/FAQ</string>
+    <string name="blend_details_title_v2">Blend Details</string>
+    <string name="batch_edit_title_v2">Batch Edit</string>
+    <string name="plaintext_v2">Plaintext</string>
+    <string name="plaintext_title_v2">Plaintext Export</string>
 
     <!-- Button and Top/Bottom App Bar Texts -->
-    <string name="filter">Filter</string>
-    <string name="add">Add</string>
-    <string name="save">Save</string>
-    <string name="load">Load</string>
-    <string name="delete">Delete</string>
-    <string name="delete_all">Clear Database</string>
-    <string name="cancel">Cancel</string>
-    <string name="yes">Yes</string>
-    <string name="agree">Agree</string>
-    <string name="delete_entry">Delete Entry</string>
-    <string name="update">Update</string>
-    <string name="ok">OK</string>
-    <string name="done">Done</string>
-    <string name="undo">Undo</string>
-    <string name="confirm">Confirm</string>
-    <string name="close">Close</string>
-    <string name="required">Required</string>
-    <string name="blank">(Blank)</string>
-    <string name="n_a">n/a</string>
+    <string name="filter_v2">Filter</string>
+    <string name="add_v2">Add</string>
+    <string name="save_v2">Save</string>
+    <string name="load_v2">Load</string>
+    <string name="delete_v2">Delete</string>
+    <string name="delete_all_v2">Clear Database</string>
+    <string name="cancel_v2">Cancel</string>
+    <string name="yes_v2">Yes</string>
+    <string name="agree_v2">Agree</string>
+    <string name="delete_entry_v2">Delete Entry</string>
+    <string name="update_v2">Update</string>
+    <string name="ok_v2">OK</string>
+    <string name="done_v2">Done</string>
+    <string name="undo_v2">Undo</string>
+    <string name="confirm_v2">Confirm</string>
+    <string name="close_v2">Close</string>
+    <string name="required_v2">Required</string>
+    <string name="blank_v2">(Blank)</string>
+    <string name="n_a_v2">n/a</string>
 
-    <string name="import_csv">Import CSV</string>
-    <string name="export_csv">Export CSV</string>
-    <string name="help_faq">Help/FAQ</string>
+    <string name="import_csv_v2">Import CSV</string>
+    <string name="export_csv_v2">Export CSV</string>
+    <string name="help_faq_v2">Help/FAQ</string>
 
-    <string name="select_csv">Select CSV</string>
+    <string name="select_csv_v2">Select CSV</string>
 
-    <string name="normal">Normal</string>
-    <string name="as_tins">As Tins</string>
-    <string name="export_csv_options">Export CSV Options</string>
-    <string name="export_csv_dialog">Choose which entries to export (all or currently filtered) and
+    <string name="normal_v2">Normal</string>
+    <string name="as_tins_v2">As Tins</string>
+    <string name="export_csv_options_v2">Export CSV Options</string>
+    <string name="export_csv_dialog_v2">Choose which entries to export (all or currently filtered) and
         scaling options for ratings.</string>
-    <string name="filtered">Filtered</string>
-    <string name="max_rating_label">Max Rating:</string>
-    <string name="decimal_places">Decimal Places:</string>
+    <string name="filtered_v2">Filtered</string>
+    <string name="max_rating_label_v2">Max Rating:</string>
+    <string name="decimal_places_v2">Decimal Places:</string>
 
 
     <!-- Instructions -->
-    <string name="attention">Attention:</string>
-    <string name="delete_question">Are you sure?</string>
-    <string name="delete_all_question">Are you sure you want to delete all entries in the database?
+    <string name="attention_v2">Attention:</string>
+    <string name="delete_question_v2">Are you sure?</string>
+    <string name="delete_all_question_v2">Are you sure you want to delete all entries in the database?
         This cannot be undone.</string>
-    <string name="item_exists">This item already exists, would you like to edit it instead?</string>
-    <string name="item_exists_edit">An entry already exists with this combination of Brand and Blend
+    <string name="item_exists_v2">This item already exists, would you like to edit it instead?</string>
+    <string name="item_exists_edit_v2">An entry already exists with this combination of Brand and Blend
         (the combination of Brand and Blend must be unique for each entry).</string>
 
 
     <!-- Notification Strings -->
-    <string name="tin_notification_title">Tobacco Cellar found tins ready to open</string>
-    <string name="tin_notification_extended">\u000A… (and %s more)></string>
-    <string name="tin_notification_summary_single">"%s ready to open.</string>
-    <string name="tin_notification_summary_plural">"%s tins ready to open.</string>
+    <string name="tin_notification_title_v2">Tobacco Cellar found tins ready to open</string>
+    <string name="tin_notification_extended_v2">\u000A… (and %s more)></string>
+    <string name="tin_notification_summary_single_v2">"%s ready to open.</string>
+    <string name="tin_notification_summary_plural_v2">"%s tins ready to open.</string>
 
-    <string name="sync_notification_title_periodic">%s periodic sync check</string>
-    <string name="sync_notification_title_regular">%s sync check</string>
+    <string name="sync_notification_title_periodic_v2">%s periodic sync check</string>
+    <string name="sync_notification_title_regular_v2">%s sync check</string>
 
 
     <!-- Global and Special Strings -->
-    <string name="default_">Default</string>
-    <string name="ready_tins">Ready Tins</string>
+    <string name="default__v2">Default</string>
+    <string name="ready_tins_v2">Ready Tins</string>
 
-    <string name="brand">Brand</string>
-    <string name="brand_label">Brand:\u0020</string>
-    <string name="blend">Blend</string>
-    <string name="blend_label">Blend:\u0020</string>
-    <string name="type">Type</string>
-    <string name="type_label">Type:\u0020</string>
-    <string name="subgenre">Subgenre</string>
-    <string name="subgenre_label">Subgenre:\u0020</string>
-    <string name="cut">Cut</string>
-    <string name="cut_label">Cut:\u0020</string>
-    <string name="component">Component</string>
-    <string name="components">Components</string>
-    <string name="components_label">Components:\u0020</string>
-    <string name="flavoring">Flavoring</string>
-    <string name="flavoring_label">Flavoring:\u0020</string>
-    <string name="flavors_label">Flavors:\u0020</string>
-    <string name="note">Note</string>
-    <string name="notes">Notes</string>
-    <string name="notes_label">Notes:\u0020</string>
-    <string name="rating">Rating</string>
-    <string name="rating_label">Rating:\u0020</string>
-    <string name="no_of_tins_label">No. of Tins:\u0020</string>
-    <string name="unrated">Unrated</string>
-    <string name="favorite">Favorite</string>
-    <string name="favorite_label">Favorite:\u0020</string>
-    <string name="disliked">Disliked</string>
-    <string name="disliked_label">Disliked:\u0020</string>
-    <string name="fav_dis">Fav/Dis</string>
-    <string name="fav_dis_label">Fav/Dis:\u0020</string>
-    <string name="neutral">Neutral</string>
-    <string name="quantity">Quantity</string>
-    <string name="quantity_label">Quantity:\u0020</string>
-    <string name="production_label">Production:\u0020</string>
-    <string name="qty">Qty</string>
-    <string name="modified">Modified</string>
-    <string name="l_modified">Last Modified</string>
-    <string name="entries">Entries</string>
-    <string name="tins">Tins</string>
-    <string name="container">Container</string>
-    <string name="container_label">Container:\u0020</string>
+    <string name="brand_v2">Brand</string>
+    <string name="brand_label_v2">Brand:\u0020</string>
+    <string name="blend_v2">Blend</string>
+    <string name="blend_label_v2">Blend:\u0020</string>
+    <string name="type_v2">Type</string>
+    <string name="type_label_v2">Type:\u0020</string>
+    <string name="subgenre_v2">Subgenre</string>
+    <string name="subgenre_label_v2">Subgenre:\u0020</string>
+    <string name="cut_v2">Cut</string>
+    <string name="cut_label_v2">Cut:\u0020</string>
+    <string name="component_v2">Component</string>
+    <string name="components_v2">Components</string>
+    <string name="components_label_v2">Components:\u0020</string>
+    <string name="flavoring_v2">Flavoring</string>
+    <string name="flavoring_label_v2">Flavoring:\u0020</string>
+    <string name="flavors_label_v2">Flavors:\u0020</string>
+    <string name="note_v2">Note</string>
+    <string name="notes_v2">Notes</string>
+    <string name="notes_label_v2">Notes:\u0020</string>
+    <string name="rating_v2">Rating</string>
+    <string name="rating_label_v2">Rating:\u0020</string>
+    <string name="no_of_tins_label_v2">No. of Tins:\u0020</string>
+    <string name="unrated_v2">Unrated</string>
+    <string name="favorite_v2">Favorite</string>
+    <string name="favorite_label_v2">Favorite:\u0020</string>
+    <string name="disliked_v2">Disliked</string>
+    <string name="disliked_label_v2">Disliked:\u0020</string>
+    <string name="fav_dis_v2">Fav/Dis</string>
+    <string name="fav_dis_label_v2">Fav/Dis:\u0020</string>
+    <string name="neutral_v2">Neutral</string>
+    <string name="quantity_v2">Quantity</string>
+    <string name="quantity_label_v2">Quantity:\u0020</string>
+    <string name="production_label_v2">Production:\u0020</string>
+    <string name="qty_v2">Qty</string>
+    <string name="modified_v2">Modified</string>
+    <string name="l_modified_v2">Last Modified</string>
+    <string name="entries_v2">Entries</string>
+    <string name="tins_v2">Tins</string>
+    <string name="container_v2">Container</string>
+    <string name="container_label_v2">Container:\u0020</string>
 
-    <string name="details">Details</string>
+    <string name="details_v2">Details</string>
 
-    <string name="aromatic">Aromatic</string>
-    <string name="english">English</string>
-    <string name="burley">Burley</string>
-    <string name="virginia">Virginia</string>
-    <string name="other">Other</string>
-    <string name="unassigned">(Unassigned)</string>
-    <string name="none_assigned">(None Assigned)</string>
+    <string name="aromatic_v2">Aromatic</string>
+    <string name="english_v2">English</string>
+    <string name="burley_v2">Burley</string>
+    <string name="virginia_v2">Virginia</string>
+    <string name="other_v2">Other</string>
+    <string name="unassigned_v2">(Unassigned)</string>
+    <string name="none_assigned_v2">(None Assigned)</string>
 
-    <string name="copied_clipboard">Copied to clipboard</string>
-    <string name="off">Off</string>
-    <string name="on">On</string>
+    <string name="copied_clipboard_v2">Copied to clipboard</string>
+    <string name="off_v2">Off</string>
+    <string name="on_v2">On</string>
 
-    <string name="privacy_policy">Privacy Policy</string>
-    <string name="manage_data">Managing Data</string>
+    <string name="privacy_policy_v2">Privacy Policy</string>
+    <string name="manage_data_v2">Managing Data</string>
 
-    <string name="no_of_tins">No. of Tins</string>
-    <string name="backup_restore">Backup/Restore</string>
+    <string name="no_of_tins_v2">No. of Tins</string>
+    <string name="backup_restore_v2">Backup/Restore</string>
 
-    <string name="oz_lbs">oz/lbs</string>
-    <string name="g_kg">g/kg</string>
-    <string name="quantity_tin">\u00D7%s</string>
-    <string name="quantity_oz">%s oz</string>
-    <string name="quantity_oz_estimate">*%s oz</string>
-    <string name="quantity_lbs">%s lbs</string>
-    <string name="quantity_lbs_estimate">*%s lbs</string>
-    <string name="quantity_g">%s g</string>
-    <string name="quantity_g_estimate">*%s g</string>
-    <string name="quantity_kg">%s kg</string>
-    <string name="quantity_kg_estimate">*%s kg</string>
-    <string name="quantity_lb">%s lb</string>
+    <string name="oz_lbs_v2">oz/lbs</string>
+    <string name="g_kg_v2">g/kg</string>
+    <string name="quantity_tin_v2">\u00D7%s</string>
+    <string name="quantity_oz_v2">%s oz</string>
+    <string name="quantity_oz_estimate_v2">*%s oz</string>
+    <string name="quantity_lbs_v2">%s lbs</string>
+    <string name="quantity_lbs_estimate_v2">*%s lbs</string>
+    <string name="quantity_g_v2">%s g</string>
+    <string name="quantity_g_estimate_v2">*%s g</string>
+    <string name="quantity_kg_v2">%s kg</string>
+    <string name="quantity_kg_estimate_v2">*%s kg</string>
+    <string name="quantity_lb_v2">%s lb</string>
 
-    <string name="manufacture">Manufacture</string>
-    <string name="manuf">Manuf</string>
-    <string name="cellared">Cellared</string>
-    <string name="open">Open</string>
-    <string name="opened">Opened</string>
-    <string name="unopened">Unopened</string>
-    <string name="finished">Finished</string>
-    <string name="finished_parentheses">(Finished)</string>
-    <string name="finished_label">Finished:\u0020</string>
-    <string name="Unfinished">Unfinished</string>
+    <string name="manufacture_v2">Manufacture</string>
+    <string name="manuf_v2">Manuf</string>
+    <string name="cellared_v2">Cellared</string>
+    <string name="open_v2">Open</string>
+    <string name="opened_v2">Opened</string>
+    <string name="unopened_v2">Unopened</string>
+    <string name="finished_v2">Finished</string>
+    <string name="finished_parentheses_v2">(Finished)</string>
+    <string name="finished_label_v2">Finished:\u0020</string>
+    <string name="Unfinished_v2">Unfinished</string>
 
-    <string name="clear_all">Clear All</string>
-    <string name="select_all">Select All</string>
+    <string name="clear_all_v2">Clear All</string>
+    <string name="select_all_v2">Select All</string>
 
-    <string name="filter_search">(Filtering is disabled during search)</string>
-    <string name="parenthetical">(%s)</string>
-    <string name="not_applicable">n/a</string>
+    <string name="filter_search_v2">(Filtering is disabled during search)</string>
+    <string name="parenthetical_v2">(%s)</string>
+    <string name="not_applicable_v2">n/a</string>
 
 
     <!-- About and Changelog Strings -->
-    <string name="app_version">App Version:\u0020</string>
-    <string name="db_version">Database Version:\u0020</string>
-    <string name="about_body">Cobbled together by %1$s using %2$s and %3$s. Uses %4$s for reading and
+    <string name="app_version_v2">App Version:\u0020</string>
+    <string name="db_version_v2">Database Version:\u0020</string>
+    <string name="about_body_v2">Cobbled together by %1$s using %2$s and %3$s. Uses %4$s for reading and
         writing CSV files.</string>
-    <string name="contact_me">Contact me if you experience any bugs:\u0020</string>
-    <string name="changelog_version">Version: %1$s\u0020\u0020\u0020(%2$s)</string>
-    <string name="cl_changes">Changes:</string>
-    <string name="cl_improvements">Improvements:</string>
-    <string name="cl_bug_fix">Bug Fixes:</string>
-    <string name="website">Website</string>
+    <string name="contact_me_v2">Contact me if you experience any bugs:\u0020</string>
+    <string name="changelog_version_v2">Version: %1$s\u0020\u0020\u0020(%2$s)</string>
+    <string name="cl_changes_v2">Changes:</string>
+    <string name="cl_improvements_v2">Improvements:</string>
+    <string name="cl_bug_fix_v2">Bug Fixes:</string>
+    <string name="website_v2">Website</string>
 
 
     <!-- Add/Edit Entry strings -->
-    <string name="separate_comma">(Separate with commas)</string>
-    <string name="sync_tooltip">Synchronize the \"No. of Tins\" field with the total quantities of
+    <string name="separate_comma_v2">(Separate with commas)</string>
+    <string name="sync_tooltip_v2">Synchronize the \"No. of Tins\" field with the total quantities of
         unfinished tins in the Tins tab.</string>
-    <string name="sync_q" translatable="false">Sync?</string>
-    <string name="rating_desc">Set a rating (maximum 5). To make an item unrated, make the field blank.
+    <string name="sync_q_v2" translatable="false">Sync?</string>
+    <string name="rating_desc_v2">Set a rating (maximum 5). To make an item unrated, make the field blank.
         Supports fractional ratings (up to two decimal places).</string>
-    <string name="add_tin">Add Tin</string>
-    <string name="label_required">Label (Required)</string>
-    <string name="tin_label_error">Label must be unique within each entry.</string>
-    <string name="amount_label">Amount:\u0020</string>
-    <string name="unit">Unit</string>
-    <string name="expand_ellipsis">Expand…</string>
-    <string name="select_date">Select a date</string>
-    <string name="clear_date">Clear Date</string>
+    <string name="add_tin_v2">Add Tin</string>
+    <string name="label_required_v2">Label (Required)</string>
+    <string name="tin_label_error_v2">Label must be unique within each entry.</string>
+    <string name="amount_label_v2">Amount:\u0020</string>
+    <string name="unit_v2">Unit</string>
+    <string name="expand_ellipsis_v2">Expand…</string>
+    <string name="select_date_v2">Select a date</string>
+    <string name="clear_date_v2">Clear Date</string>
 
 
     <!-- Batch Edit strings -->
-    <string name="select_entries">Select Entries</string>
-    <string name="edit">Edit</string>
-    <string name="production_status_label">Production Status:\u0020</string>
-    <string name="sync_entry_tin_q">Sync entry/tin quantity:\u0020</string>
-    <string name="are_sure_q">Are you sure?</string>
-    <string name="are_sure_long">Are you sure you want to edit these items?</string>
-    <string name="batch_edit_saved">Batch edits saved.</string>
+    <string name="select_entries_v2">Select Entries</string>
+    <string name="edit_v2">Edit</string>
+    <string name="production_status_label_v2">Production Status:\u0020</string>
+    <string name="sync_entry_tin_q_v2">Sync entry/tin quantity:\u0020</string>
+    <string name="are_sure_q_v2">Are you sure?</string>
+    <string name="are_sure_long_v2">Are you sure you want to edit these items?</string>
+    <string name="batch_edit_saved_v2">Batch edits saved.</string>
 
 
     <!-- Blend Details -->
-    <string name="by">by\u0020</string>
-    <string name="production_status">Production Status</string>
-    <string name="manufacture_date_label">Manufacture Date:\u0020</string>
-    <string name="cellar_date_label">Cellar Date:\u0020</string>
-    <string name="open_date_label">Open Date:\u0020</string>
-    <string name="finished_lower">finished</string>
-    <string name="today_lower">today</string>
-    <string name="age_manuf_past">%s old</string>
-    <string name="age_cellar_past">%s in cellar</string>
-    <string name="age_open_past">%s open</string>
-    <string name="age_cellar_manuf_future">%s until available</string>
-    <string name="age_open_future">%s until opening</string>
-    <string name="age_default">%s</string>
+    <string name="by_v2">by\u0020</string>
+    <string name="production_status_v2">Production Status</string>
+    <string name="manufacture_date_label_v2">Manufacture Date:\u0020</string>
+    <string name="cellar_date_label_v2">Cellar Date:\u0020</string>
+    <string name="open_date_label_v2">Open Date:\u0020</string>
+    <string name="finished_lower_v2">finished</string>
+    <string name="today_lower_v2">today</string>
+    <string name="age_manuf_past_v2">%s old</string>
+    <string name="age_cellar_past_v2">%s in cellar</string>
+    <string name="age_open_past_v2">%s open</string>
+    <string name="age_cellar_manuf_future_v2">%s until available</string>
+    <string name="age_open_future_v2">%s until opening</string>
+    <string name="age_default_v2">%s</string>
 
 
     <!-- CSV Import strings -->
-    <string name="csv_empty">CSV appears empty.</string>
-    <string name="to_see_help">* To see help, select a CSV file to start\u000A(import isn’t automatic)</string>
-    <string name="help_button">Help\u0020</string>
-    <string name="parse_error">(Parse error)</string>
-    <string name="has_header">Has header?</string>
-    <string name="collate_tins">Collate tins?</string>
-    <string name="sync_tins_q">Sync tins?</string>
-    <string name="record_count">Record count: %s</string>
-    <string name="overwrite_warning">Warning: Overwrite will erase existing tins.</string>
-    <string name="existing_entries">Existing entries:</string>
-    <string name="skip">Skip</string>
-    <string name="overwrite">Overwrite</string>
-    <string name="db_field">Database Field</string>
-    <string name="csv_column">CSV Column</string>
-    <string name="overwrite_allowed">Overwrite Allowed</string>
-    <string name="tins_mapping">Tins Mapping</string>
-    <string name="csv_date_format">CSV Date Format:</string>
-    <string name="csv_manuf_label">Manufacture Date:</string>
-    <string name="must_date_format">(must select date format)</string>
-    <string name="or">or</string>
-    <string name="confirm_import">Confirm and Import</string>
-    <string name="reported_error">Reported error message:</string>
-    <string name="csv_try_again">Please try again or return to cellar.</string>
-    <string name="error_for_reporting">Error for reporting:</string>
-    <string name="error_cause">Exception: %1$s\u000ACause: %2$s</string>
-    <string name="reset_form">Reset Form</string>
-    <string name="go_back_cellar">Go back to Cellar</string>
-    <string name="csv_max_rating">Max Possible CSV Rating:</string>
-    <string name="required_scaling">Required for scaling</string>
-    <string name="lot_label">Lot: %s</string>
-    <string name="possible_header">Possible header:\u0020</string>
-    <string name="possible_record">Record parse test:\u0020</string>
-    <string name="csv_import_error">Error importing CSV file. File is possibly empty, corrupted, or
+    <string name="csv_empty_v2">CSV appears empty.</string>
+    <string name="to_see_help_v2">* To see help, select a CSV file to start\u000A(import isn’t automatic)</string>
+    <string name="help_button_v2">Help\u0020</string>
+    <string name="parse_error_v2">(Parse error)</string>
+    <string name="has_header_v2">Has header?</string>
+    <string name="collate_tins_v2">Collate tins?</string>
+    <string name="sync_tins_q_v2">Sync tins?</string>
+    <string name="record_count_v2">Record count: %s</string>
+    <string name="overwrite_warning_v2">Warning: Overwrite will erase existing tins.</string>
+    <string name="existing_entries_v2">Existing entries:</string>
+    <string name="skip_v2">Skip</string>
+    <string name="overwrite_v2">Overwrite</string>
+    <string name="db_field_v2">Database Field</string>
+    <string name="csv_column_v2">CSV Column</string>
+    <string name="overwrite_allowed_v2">Overwrite Allowed</string>
+    <string name="tins_mapping_v2">Tins Mapping</string>
+    <string name="csv_date_format_v2">CSV Date Format:</string>
+    <string name="csv_manuf_label_v2">Manufacture Date:</string>
+    <string name="must_date_format_v2">(must select date format)</string>
+    <string name="or_v2">or</string>
+    <string name="confirm_import_v2">Confirm and Import</string>
+    <string name="reported_error_v2">Reported error message:</string>
+    <string name="csv_try_again_v2">Please try again or return to cellar.</string>
+    <string name="error_for_reporting_v2">Error for reporting:</string>
+    <string name="error_cause_v2">Exception: %1$s\u000ACause: %2$s</string>
+    <string name="reset_form_v2">Reset Form</string>
+    <string name="go_back_cellar_v2">Go back to Cellar</string>
+    <string name="csv_max_rating_v2">Max Possible CSV Rating:</string>
+    <string name="required_scaling_v2">Required for scaling</string>
+    <string name="lot_label_v2">Lot: %s</string>
+    <string name="possible_header_v2">Possible header:\u0020</string>
+    <string name="possible_record_v2">Record parse test:\u0020</string>
+    <string name="csv_import_error_v2">Error importing CSV file. File is possibly empty, corrupted, or
         incorrect format.</string>
 
-    <string name="total_found">Total records found:\u0020</string>
-    <string name="successful_conversions">Successful conversions:\u0020</string>
-    <string name="total_imported">Total entries imported:\u0020</string>
-    <string name="total_updated">Total entries updated:\u0020</string>
-    <string name="total_tins_change">Total tins changed:\u0020</string>
-    <string name="back_to_cellar">Back to Cellar</string>
+    <string name="total_found_v2">Total records found:\u0020</string>
+    <string name="successful_conversions_v2">Successful conversions:\u0020</string>
+    <string name="total_imported_v2">Total entries imported:\u0020</string>
+    <string name="total_updated_v2">Total entries updated:\u0020</string>
+    <string name="total_tins_change_v2">Total tins changed:\u0020</string>
+    <string name="back_to_cellar_v2">Back to Cellar</string>
 
-    <string name="verify_before_import">Verifying Data before Import</string>
-    <string name="csv_help1">After selecting a file, a box at the top will show you the first line
+    <string name="verify_before_import_v2">Verifying Data before Import</string>
+    <string name="csv_help1_v2">After selecting a file, a box at the top will show you the first line
         file and label it \"Possible header\" (if there is a header, it is always the first line),
         followed by another line labeled \"Record parse test\". This is a preview of the file being
         read, use it to determine if there is a header or not and that the records are being read correctly.</string>
-    <string name="csv_help2">If there is no header, \"Possible header\" will look like a record. If
+    <string name="csv_help2_v2">If there is no header, \"Possible header\" will look like a record. If
         the record parse test looks wrong, try reformatting your CSV file to RFC 4180 formatting
         to ensure a successful read.</string>
-    <string name="csv_help3">In the import options section, there is also a \"Record count\" that
+    <string name="csv_help3_v2">In the import options section, there is also a \"Record count\" that
         shows the number of lines (records) in the file. If you know roughly how many there should be,
         this can also confirm the file is being read correctly.</string>
-    <string name="import_options">Import Options</string>
-    <string name="csv_help4">Use the \"Has header?\" checkbox to skip the first line if it is a header.
+    <string name="import_options_v2">Import Options</string>
+    <string name="csv_help4_v2">Use the \"Has header?\" checkbox to skip the first line if it is a header.
         The record count on the right will decrease by 1 if the \"Has header?\" option is chosen.</string>
-    <string name="csv_help5">Use the \"Collate tins?\" option to attempt to parse the individual records
+    <string name="csv_help5_v2">Use the \"Collate tins?\" option to attempt to parse the individual records
         as tins if your CSV has a separate line for each tin (individual tins are handled separately
         in the database and attached to entries). Each line for any given Brand/Blend combination will
         generate a tin for that entry.</string>
-    <string name="csv_help6">Use the \"Sync tins?\" option to synchronize the \"No. of Tins\" field
+    <string name="csv_help6_v2">Use the \"Sync tins?\" option to synchronize the \"No. of Tins\" field
         with the quantities of the imported tins (if you wish the \"No of Tins\" to be reflective of
         quantity for stats). This will be determined by adding up the total quantities of the tins and
         dividing by the tin conversion rates set on the settings screen (default is 1 tin = 1.75 oz
         or 50 grams).</string>
-    <string name="existing_entries_option">Existing Entries Options</string>
-    <string name="csv_help7">These options are for how to handle records in the CSV file that already
+    <string name="existing_entries_option_v2">Existing Entries Options</string>
+    <string name="csv_help7_v2">These options are for how to handle records in the CSV file that already
         exist in the app database. Each entry in the database must be a unique combination of Brand +
         Blend. For all options, any new entries will always be imported, these are only for entries
         that already exist. The options are:</string>
-    <string name="csv_help8">Skip: Skips importing the records that match existing entries (based
+    <string name="csv_help8_v2">Skip: Skips importing the records that match existing entries (based
         solely on Brand + Blend).</string>
-    <string name="csv_help9">Update: Updates only the blank fields in the database with values in the CSV.</string>
-    <string name="csv_help10">Overwrite: replaces only the selected fields (checkbox on the end)with
+    <string name="csv_help9_v2">Update: Updates only the blank fields in the database with values in the CSV.</string>
+    <string name="csv_help10_v2">Overwrite: replaces only the selected fields (checkbox on the end)with
         the values in the CSV file, including overwriting entry data with blank/empty values.</string>
-    <string name="csv_help11">WARNING: Using \"Overwrite\" with \"Collate tins\" will always delete
+    <string name="csv_help11_v2">WARNING: Using \"Overwrite\" with \"Collate tins\" will always delete
         all existing tins and replace them with tins generated from CSV records. If you wish to update
         entries while maintaining your existing tins, do not use Collate with Overwrite.</string>
-    <string name="import_mapping">Import Mapping</string>
-    <string name="csv_help12">The labels on the left represent the fields in the database. Use the
+    <string name="import_mapping_v2">Import Mapping</string>
+    <string name="csv_help12_v2">The labels on the left represent the fields in the database. Use the
         dropdown boxes to select which CSV column to map to which field. All fields other than \"Brand\"
         and \"Blend\" are optional.</string>
-    <string name="csv_help13">The checkboxes to the right are for the \"Overwrite\" option. Only those
+    <string name="csv_help13_v2">The checkboxes to the right are for the \"Overwrite\" option. Only those
         fields that are checked will be allowed to be overwritten.</string>
-    <string name="csv_help14">If you select the tin collation option, the \"No. of Tins\" field can
+    <string name="csv_help14_v2">If you select the tin collation option, the \"No. of Tins\" field can
         take a different value than the tin quantity field if you wish to keep the number of tins
         separate (only whole numbers will map). This field will be disabled if you select the \"Sync
         Tins?\" option.</string>
-    <string name="csv_help15">For the rating, select the column that contains the rating and in the
+    <string name="csv_help15_v2">For the rating, select the column that contains the rating and in the
         \"Max Value\" field, enter the highest possible rating you could give (used for re-scaling
         your rating system to the one used in the app).</string>
-    <string name="csv_help16">\"Tins\" here represents any container, it doesn’t have to actually be
+    <string name="csv_help16_v2">\"Tins\" here represents any container, it doesn’t have to actually be
         in a tin.</string>
-    <string name="csv_help17">The tins mapping fields are enabled by selecting the \"collate tins\"
+    <string name="csv_help17_v2">The tins mapping fields are enabled by selecting the \"collate tins\"
         option. When collating, the CSV is iterated through and 1 tin is added per each line that
         contains the same Brand + Blend (a tin label will be automatically generated). Upon import,
         the tins will be linked to their parent Brand + Blend entries.</string>
-    <string name="csv_help18">Tin collation will only work properly if each individual tin has its own
+    <string name="csv_help18_v2">Tin collation will only work properly if each individual tin has its own
         line in the CSV. The \"Skip\" option with tin collation will only create tins for new entries.
         The \"Update\" option will only create tins for entries that have no attached tins, and the
         \"Overwrite\" option will erase all existing tins and will create new tins for all items
         (regardless of whether they had tins before).</string>
-    <string name="csv_help19">The quantity field will attempt to separate the numerical quantity from
+    <string name="csv_help19_v2">The quantity field will attempt to separate the numerical quantity from
         the unit and map them to the respective tin fields of \"quantity\" and \"unit\". For instance,
         if the column containing your tin quantities has a value of \"12 oz\", the tin quantity field
         will be \"12\" and the unit field will be \"oz\".</string>
-    <string name="csv_help20">Date mapping is not guaranteed. Select the date format that was used in
+    <string name="csv_help20_v2">Date mapping is not guaranteed. Select the date format that was used in
         the CSV column that contains the date. Several date formats are currently supported. Date
         formats will work regardless of month/day/year delimiter (/, -, .), or if days have leading
         0’s. The date format applies to all three fields.</string>
-    <string name="csv_help21">Only map dates if your manufacture, cellar or open date values each have
+    <string name="csv_help21_v2">Only map dates if your manufacture, cellar or open date values each have
         their own columns and that the date parts themselves are in one column (month/day/year in same
         column)—date parsing where day/month/years are split across different columns is not supported.</string>
-    <string name="csv_help22">For dates that have two digit years, all years are presumed to be after
+    <string name="csv_help22_v2">For dates that have two digit years, all years are presumed to be after
         1900 and before the current year. If the two digit year value is greater than the current year,
         it’s presumed to be 19__; if it is less than or equal to the current year, it is presumed to
         be 20__.</string>
 
 
     <!-- Dates Strings -->
-    <string name="dates_disclaimer">*Excluding \"Aging Tracker\", all date information on this screen
+    <string name="dates_disclaimer_v2">*Excluding \"Aging Tracker\", all date information on this screen
         is filter-reactive.</string>
-    <string name="aging_tracker">Aging Tracker</string>
-    <string name="aging_brand">• %s\u0020</string>
-    <string name="aging_entry_part">- %s\u0020</string>
-    <string name="quick_date_stats">Quick Date Stats</string>
-    <string name="oldest_tins">Oldest Tins</string>
-    <string name="future_tins">Future Tins</string>
-    <string name="no_aging_found">No tins coming of age this week or month.</string>
-    <string name="dates_no_info_found">No date information found within filtered entries.</string>
-    <string name="dates_no_stats">No relevant date stats found in entries.</string>
-    <string name="dates_no_past">No past tin dates found.</string>
-    <string name="dates_no_future">No future tin dates found.</string>
-    <string name="week_section">Tins ready in the next 7 days:</string>
-    <string name="week_empty">No tins ready this week.</string>
-    <string name="month_section">Other tins ready this month:</string>
-    <string name="month_empty">No more tins ready this month.</string>
-    <string name="average_manuf">Average age (manuf):\u0020</string>
-    <string name="average_cellar">Average time in cellar:\u0020</string>
-    <string name="average_open">Average opened time:\u0020</string>
-    <string name="average_wait">Average wait (open):\u0020</string>
-    <string name="date_age">%1$s (%2$s)</string>
-    <string name="no_section_found">No %s dates found.</string>
+    <string name="aging_tracker_v2">Aging Tracker</string>
+    <string name="aging_brand_v2">• %s\u0020</string>
+    <string name="aging_entry_part_v2">- %s\u0020</string>
+    <string name="quick_date_stats_v2">Quick Date Stats</string>
+    <string name="oldest_tins_v2">Oldest Tins</string>
+    <string name="future_tins_v2">Future Tins</string>
+    <string name="no_aging_found_v2">No tins coming of age this week or month.</string>
+    <string name="dates_no_info_found_v2">No date information found within filtered entries.</string>
+    <string name="dates_no_stats_v2">No relevant date stats found in entries.</string>
+    <string name="dates_no_past_v2">No past tin dates found.</string>
+    <string name="dates_no_future_v2">No future tin dates found.</string>
+    <string name="week_section_v2">Tins ready in the next 7 days:</string>
+    <string name="week_empty_v2">No tins ready this week.</string>
+    <string name="month_section_v2">Other tins ready this month:</string>
+    <string name="month_empty_v2">No more tins ready this month.</string>
+    <string name="average_manuf_v2">Average age (manuf):\u0020</string>
+    <string name="average_cellar_v2">Average time in cellar:\u0020</string>
+    <string name="average_open_v2">Average opened time:\u0020</string>
+    <string name="average_wait_v2">Average wait (open):\u0020</string>
+    <string name="date_age_v2">%1$s (%2$s)</string>
+    <string name="no_section_found_v2">No %s dates found.</string>
 
-    <plurals name="years">
+    <plurals name="years_v2">
         <item quantity="one">%d year</item>
         <item quantity="other">%d years</item>
     </plurals>
-    <plurals name="months">
+    <plurals name="months_v2">
         <item quantity="one">%d month</item>
         <item quantity="other">%d months</item>
     </plurals>
-    <plurals name="days">
+    <plurals name="days_v2">
         <item quantity="one">%s day</item>
         <item quantity="other">%s days</item>
     </plurals>
 
 
     <!-- Filter Pane/Sheet Strings -->
-    <string name="select_filters">Select Filters</string>
-    <string name="search_brands">Search Brands</string>
-    <string name="include">Include</string>
-    <string name="exclude">Exclude</string>
-    <string name="included_brands">Included Brands</string>
-    <string name="excluded_brands">Excluded Brands</string>
-    <string name="no_types">No types assigned to any blends.</string>
-    <string name="no_ratings">No ratings assigned.</string>
-    <string name="no_subgenres">No subgenres assigned to any blends.</string>
-    <string name="no_cuts">No cuts assigned to any blends.</string>
-    <string name="no_components">No components assigned to any blends.</string>
-    <string name="no_flavorings">No flavorings assigned to any blends.</string>
-    <string name="no_containers">No containers assigned to any tins.</string>
-    <string name="no_tins_containers">No tins assigned to any blends.</string>
-    <string name="favorites">Favorites</string>
-    <string name="dislikes">Dislikes</string>
-    <string name="no_fav_dis">No favorites/dislikes assigned.</string>
-    <string name="rating_limits">(Limits: %1$s–%2$s)</string>
-    <string name="in_stock">In-stock</string>
-    <string name="out">Out</string>
-    <string name="has_tins">Has tins</string>
-    <string name="no_tins">No tins</string>
-    <string name="in_production">In Production</string>
-    <string name="discontinued">Discontinued</string>
+    <string name="select_filters_v2">Select Filters</string>
+    <string name="search_brands_v2">Search Brands</string>
+    <string name="include_v2">Include</string>
+    <string name="exclude_v2">Exclude</string>
+    <string name="included_brands_v2">Included Brands</string>
+    <string name="excluded_brands_v2">Excluded Brands</string>
+    <string name="no_types_v2">No types assigned to any blends.</string>
+    <string name="no_ratings_v2">No ratings assigned.</string>
+    <string name="no_subgenres_v2">No subgenres assigned to any blends.</string>
+    <string name="no_cuts_v2">No cuts assigned to any blends.</string>
+    <string name="no_components_v2">No components assigned to any blends.</string>
+    <string name="no_flavorings_v2">No flavorings assigned to any blends.</string>
+    <string name="no_containers_v2">No containers assigned to any tins.</string>
+    <string name="no_tins_containers_v2">No tins assigned to any blends.</string>
+    <string name="favorites_v2">Favorites</string>
+    <string name="dislikes_v2">Dislikes</string>
+    <string name="no_fav_dis_v2">No favorites/dislikes assigned.</string>
+    <string name="rating_limits_v2">(Limits: %1$s–%2$s)</string>
+    <string name="in_stock_v2">In-stock</string>
+    <string name="out_v2">Out</string>
+    <string name="has_tins_v2">Has tins</string>
+    <string name="no_tins_v2">No tins</string>
+    <string name="in_production_v2">In Production</string>
+    <string name="discontinued_v2">Discontinued</string>
 
-    <string name="match">Match:</string>
-    <string name="any">Any</string>
-    <string name="all">All</string>
-    <string name="only">Only</string>
+    <string name="match_v2">Match:</string>
+    <string name="any_v2">Any</string>
+    <string name="all_v2">All</string>
+    <string name="only_v2">Only</string>
 
 
     <!-- Home Screen strings -->
-    <string name="table_view_toggle">Table View</string>
-    <string name="list_view_toggle">List View</string>
-    <string name="view">View:</string>
-    <string name="list_sorting">list sorting</string>
-    <string name="t_col_vis">table column visibility</string>
+    <string name="table_view_toggle_v2">Table View</string>
+    <string name="list_view_toggle_v2">List View</string>
+    <string name="view_v2">View:</string>
+    <string name="list_sorting_v2">list sorting</string>
+    <string name="t_col_vis_v2">table column visibility</string>
 
-    <string name="edit_item">Edit Item</string>
-    <string name="quick_edit">Quick Edit</string>
-    <string name="rating_dialog">Set a rating (maximum 5). To make an item unrated, make the field
+    <string name="edit_item_v2">Edit Item</string>
+    <string name="quick_edit_v2">Quick Edit</string>
+    <string name="rating_dialog_v2">Set a rating (maximum 5). To make an item unrated, make the field
         blank. Supports fractional ratings (up to 2 decimal places).</string>
 
-    <string name="empty_tins">Error loading ready tins.</string>
-    <string name="empty_search">No entries found matching\u000A\"%1$s\" in %2$s.</string>
-    <string name="empty_filter">No entries found matching\u000Aselected filters.</string>
-    <string name="empty_db">No entries found in cellar.\u000AClick \"+\" to add items,\u000Aor use
+    <string name="empty_tins_v2">Error loading ready tins.</string>
+    <string name="empty_search_v2">No entries found matching\u000A\"%1$s\" in %2$s.</string>
+    <string name="empty_filter_v2">No entries found matching\u000Aselected filters.</string>
+    <string name="empty_db_v2">No entries found in cellar.\u000AClick \"+\" to add items,\u000Aor use
      options to import CSV.</string>
 
-    <string name="csv_export">CSV Exported</string>
-    <string name="tin_label">Tin Label</string>
+    <string name="csv_export_v2">CSV Exported</string>
+    <string name="tin_label_v2">Tin Label</string>
 
-    <string name="important_alert">Important Alert!</string>
-    <string name="one_time_alert">This is a one-time alert.</string>
-    <string name="missed_alert">Missed Alert:</string>
-    <string name="alert_info">%1$s\u000A(v %2$s)</string>
-    <string name="alert_scroll">You must scroll to the bottom to be able to acknowledge and dismiss
+    <string name="important_alert_v2">Important Alert!</string>
+    <string name="one_time_alert_v2">This is a one-time alert.</string>
+    <string name="missed_alert_v2">Missed Alert:</string>
+    <string name="alert_info_v2">%1$s\u000A(v %2$s)</string>
+    <string name="alert_scroll_v2">You must scroll to the bottom to be able to acknowledge and dismiss
         this dialog.</string>
-    <string name="next">Next</string>
+    <string name="next_v2">Next</string>
 
-    <string name="what_new">What’s New</string>
-    <string name="release_info">Version %1$s (%2$s)</string>
-    <string name="full_change">Full Changelog</string>
+    <string name="what_new_v2">What’s New</string>
+    <string name="release_info_v2">Version %1$s (%2$s)</string>
+    <string name="full_change_v2">Full Changelog</string>
 
 
     <!-- Main Activity, Toasts and Snackbars -->
-    <string name="exit">Tap again to exit</string>
-    <string name="sync_enabled">Sync successfully enabled.</string>
-    <string name="drive_denied">Could not get Drive permission.</string>
-    <string name="sign_in_canceled">Sign-in cancelled.</string>
-    <string name="no_accounts">No accounts on this device.</string>
-    <string name="sign_in_failed">Sign-in failed.</string>
-    <string name="logged_out">Logged out.</string>
-    <string name="sign_out_failed">Sign-out failed.</string>
-    <string name="sync_in_progress">Sync already in progress</string>
-    <string name="allow_mobile_off">allow mobile data is off</string>
-    <string name="check_connection">check connection</string>
-    <string name="failed">Failed: %s.</string>
-    <string name="connection_timeout">Sync failed (connection timeout).</string>
-    <string name="sync_disabled">Sync disabled, please sign in again.</string>
-    <string name="sync_channel_name">Background sync</string>
-    <string name="sync_channel_description">Quiet background notification indicating sync working in the background.</string>
-    <string name="tin_channel_name">Tins ready</string>
-    <string name="tin_channel_description">Show a notification when a tin is ready to open.</string>
-    <string name="sync_complete">Sync complete.</string>
-    <string name="remote_not_found">No remote files found.</string>
-    <string name="lost_connection">No or lost connection.</string>
-    <string name="became_disabled">Sync became disabled.</string>
-    <string name="nothing_new">No new data available.</string>
-    <string name="sync_failed_sign_in">Sync failed (not signed-in).</string>
-    <string name="authentication_error">Authentication error, try signing in again.</string>
-    <string name="remote_failed">Remote connection failed.</string>
-    <string name="failed_check_connection">Sync failed, please check connection.</string>
-    <string name="failed_unknown">Sync failed (unknown error).</string>
-    <string name="clear_remote_wait">Sync in progress, please wait for it to finish.</string>
-    <string name="not_signed_in">No user signed in.</string>
-    <string name="remote_deleted">Remote data deleted.</string>
-    <string name="remote_error">Error deleting remote data.</string>
-    <string name="conversion_updated">Conversion rates and synced quantities updated.</string>
-    <string name="quantities_updated">Synced quantities updated.</string>
-    <string name="sync_tins_update_error">Error updating synced quantities</string>
-    <string name="optimize_complete">Optimization complete.</string>
-    <string name="db_deleted">Database deleted!</string>
-    <string name="backup_complete">Backup complete.</string>
-    <string name="backup_failed">Backup failed.</string>
-    <string name="restore_failed">Restore failed.</string>
-    <string name="invalid_file">Invalid file.</string>
-    <string name="restore_failed_version">Restore failed: file for unsupported version.</string>
-    <string name="restore_failed_no_data">Restore failed: file contains no database or settings data.</string>
-    <string name="db_settings_restored">Database and settings restored.</string>
-    <string name="db_restored">Database restored.</string>
-    <string name="settings_restored">Settings restored.</string>
-    <string name="db_restored_no_settings">File missing settings data, database restored.</string>
-    <string name="db_restored_settings_error">Error restoring settings, database restored.</string>
-    <string name="settings_restored_no_db">File missing database data, settings restored.</string>
-    <string name="settings_restored_db_error">Error restoring database, settings restored.</string>
-    <string name="no_db_data">File does not contain database data.</string>
-    <string name="backup_db_invalid">Backup database version is invalid.</string>
-    <string name="no_settings_data">File does not contain settings data.</string>
-    <string name="db_restore_error">Error restoring database.</string>
-    <string name="settings_restore_error">Error restoring settings.</string>
-    <string name="restore_failed_message">Restore failed: %s</string>
-    <string name="add_account">Add Account</string>
-    <string name="add_account_device">Add Account to Device?</string>
-    <string name="add_account_body">In order to link the app to a Google account for Google Drive
+    <string name="exit_v2">Tap again to exit</string>
+    <string name="sync_enabled_v2">Sync successfully enabled.</string>
+    <string name="drive_denied_v2">Could not get Drive permission.</string>
+    <string name="sign_in_canceled_v2">Sign-in cancelled.</string>
+    <string name="no_accounts_v2">No accounts on this device.</string>
+    <string name="sign_in_failed_v2">Sign-in failed.</string>
+    <string name="logged_out_v2">Logged out.</string>
+    <string name="sign_out_failed_v2">Sign-out failed.</string>
+    <string name="sync_in_progress_v2">Sync already in progress</string>
+    <string name="allow_mobile_off_v2">allow mobile data is off</string>
+    <string name="check_connection_v2">check connection</string>
+    <string name="failed_v2">Failed: %s.</string>
+    <string name="connection_timeout_v2">Sync failed (connection timeout).</string>
+    <string name="sync_disabled_v2">Sync disabled, please sign in again.</string>
+    <string name="sync_channel_name_v2">Background sync</string>
+    <string name="sync_channel_description_v2">Quiet background notification indicating sync working in the background.</string>
+    <string name="tin_channel_name_v2">Tins ready</string>
+    <string name="tin_channel_description_v2">Show a notification when a tin is ready to open.</string>
+    <string name="sync_complete_v2">Sync complete.</string>
+    <string name="remote_not_found_v2">No remote files found.</string>
+    <string name="lost_connection_v2">No or lost connection.</string>
+    <string name="became_disabled_v2">Sync became disabled.</string>
+    <string name="nothing_new_v2">No new data available.</string>
+    <string name="sync_failed_sign_in_v2">Sync failed (not signed-in).</string>
+    <string name="authentication_error_v2">Authentication error, try signing in again.</string>
+    <string name="remote_failed_v2">Remote connection failed.</string>
+    <string name="failed_check_connection_v2">Sync failed, please check connection.</string>
+    <string name="failed_unknown_v2">Sync failed (unknown error).</string>
+    <string name="clear_remote_wait_v2">Sync in progress, please wait for it to finish.</string>
+    <string name="not_signed_in_v2">No user signed in.</string>
+    <string name="remote_deleted_v2">Remote data deleted.</string>
+    <string name="remote_error_v2">Error deleting remote data.</string>
+    <string name="conversion_updated_v2">Conversion rates and synced quantities updated.</string>
+    <string name="quantities_updated_v2">Synced quantities updated.</string>
+    <string name="sync_tins_update_error_v2">Error updating synced quantities</string>
+    <string name="optimize_complete_v2">Optimization complete.</string>
+    <string name="db_deleted_v2">Database deleted!</string>
+    <string name="backup_complete_v2">Backup complete.</string>
+    <string name="backup_failed_v2">Backup failed.</string>
+    <string name="restore_failed_v2">Restore failed.</string>
+    <string name="invalid_file_v2">Invalid file.</string>
+    <string name="restore_failed_version_v2">Restore failed: file for unsupported version.</string>
+    <string name="restore_failed_no_data_v2">Restore failed: file contains no database or settings data.</string>
+    <string name="db_settings_restored_v2">Database and settings restored.</string>
+    <string name="db_restored_v2">Database restored.</string>
+    <string name="settings_restored_v2">Settings restored.</string>
+    <string name="db_restored_no_settings_v2">File missing settings data, database restored.</string>
+    <string name="db_restored_settings_error_v2">Error restoring settings, database restored.</string>
+    <string name="settings_restored_no_db_v2">File missing database data, settings restored.</string>
+    <string name="settings_restored_db_error_v2">Error restoring database, settings restored.</string>
+    <string name="no_db_data_v2">File does not contain database data.</string>
+    <string name="backup_db_invalid_v2">Backup database version is invalid.</string>
+    <string name="no_settings_data_v2">File does not contain settings data.</string>
+    <string name="db_restore_error_v2">Error restoring database.</string>
+    <string name="settings_restore_error_v2">Error restoring settings.</string>
+    <string name="restore_failed_message_v2">Restore failed: %s</string>
+    <string name="add_account_v2">Add Account</string>
+    <string name="add_account_device_v2">Add Account to Device?</string>
+    <string name="add_account_body_v2">In order to link the app to a Google account for Google Drive
         access, an account must be added to the device. You can cancel and do this manually in
         device Settings > Google, or you can click \"Add Account\" below. This will add a Google
         account to your device and proceed with the linking option.</string>
 
 
     <!-- Plaintext Strings -->
-    <string name="item_default">Item Default</string>
-    <string name="tin_label_label">Tin Label:</string>
-    <string name="tin_default">Tin Default</string>
-    <string name="tin_container">Tin Container</string>
-    <string name="tin_container_label">Tin Container:</string>
-    <string name="tin_quantity">Tin Quantity</string>
-    <string name="tin_quantity_label">Tin Quantity:</string>
-    <string name="manufacture_date">Manufacture Date</string>
-    <string name="manufacture_label">Manufacture:</string>
-    <string name="cellar_date">Cellar Date</string>
-    <string name="cellared_date">Cellared Date</string>
-    <string name="open_date">Open Date</string>
-    <string name="opened_date">Opened Date</string>
+    <string name="item_default_v2">Item Default</string>
+    <string name="tin_label_label_v2">Tin Label:</string>
+    <string name="tin_default_v2">Tin Default</string>
+    <string name="tin_container_v2">Tin Container</string>
+    <string name="tin_container_label_v2">Tin Container:</string>
+    <string name="tin_quantity_v2">Tin Quantity</string>
+    <string name="tin_quantity_label_v2">Tin Quantity:</string>
+    <string name="manufacture_date_v2">Manufacture Date</string>
+    <string name="manufacture_label_v2">Manufacture:</string>
+    <string name="cellar_date_v2">Cellar Date</string>
+    <string name="cellared_date_v2">Cellared Date</string>
+    <string name="open_date_v2">Open Date</string>
+    <string name="opened_date_v2">Opened Date</string>
 
-    <string name="list">List</string>
-    <string name="format">Format</string>
-    <string name="no_format_set">Please set a format string.</string>
-    <string name="format_output">Format Output:</string>
-    <string name="pt_string">String:</string>
-    <string name="pt_delimiter">Delimiter:</string>
-    <string name="pt_list_as">List as:</string>
-    <string name="save_preset">Save Preset</string>
-    <string name="load_preset">Load Preset</string>
-    <string name="delete_preset">Delete Preset</string>
-    <string name="preview">Preview:</string>
-    <string name="formatting_placeholders">Formatting Placeholders</string>
-    <string name="formatting_help">Formatting Help</string>
-    <string name="click_for_help">Click for Formatting Help</string>
-    <string name="click_hide">Click to Hide</string>
-    <string name="new_line">New Line:</string>
-    <string name="number">Number:</string>
-    <string name="escape_char">Escape char.:</string>
-    <string name="conditional">Conditional:</string>
-    <string name="tin_sublist">Tin Sublist:</string>
-    <string name="sublist_delim">Sublist delim.:</string>
-    <string name="rtl_user_dialog">Right-to-left users please note, these text fields are LTR
+    <string name="list_v2">List</string>
+    <string name="format_v2">Format</string>
+    <string name="no_format_set_v2">Please set a format string.</string>
+    <string name="format_output_v2">Format Output:</string>
+    <string name="pt_string_v2">String:</string>
+    <string name="pt_delimiter_v2">Delimiter:</string>
+    <string name="pt_list_as_v2">List as:</string>
+    <string name="save_preset_v2">Save Preset</string>
+    <string name="load_preset_v2">Load Preset</string>
+    <string name="delete_preset_v2">Delete Preset</string>
+    <string name="preview_v2">Preview:</string>
+    <string name="formatting_placeholders_v2">Formatting Placeholders</string>
+    <string name="formatting_help_v2">Formatting Help</string>
+    <string name="click_for_help_v2">Click for Formatting Help</string>
+    <string name="click_hide_v2">Click to Hide</string>
+    <string name="new_line_v2">New Line:</string>
+    <string name="number_v2">Number:</string>
+    <string name="escape_char_v2">Escape char.:</string>
+    <string name="conditional_v2">Conditional:</string>
+    <string name="tin_sublist_v2">Tin Sublist:</string>
+    <string name="sublist_delim_v2">Sublist delim.:</string>
+    <string name="rtl_user_dialog_v2">Right-to-left users please note, these text fields are LTR
         (left-to-right) due to the placeholders. Placeholders entered from the left here will render
         in the list starting from the right. If you\'re entering non-placeholder native language text,
         type in place as you normally would, and it will render correctly in the field and in the list
         as RTL (just place blocks of native RTL in order from left-to-right as you\'d like them to
         appear between placeholders in RTL).</string>
 
-    <string name="print">Print</string>
-    <string name="print_settings">Print Settings</string>
-    <string name="print_dialog">Font size is standard point-font size. Margin value is a multiplier
+    <string name="print_v2">Print</string>
+    <string name="print_settings_v2">Print Settings</string>
+    <string name="print_dialog_v2">Font size is standard point-font size. Margin value is a multiplier
         of 1 inch (2.54 cm) with a range of 0-3 (including decimals, for example 0.5 would be 1/2
         inch or 1.27 cm).</string>
-    <string name="font_size">Font Size:</string>
-    <string name="margins">Margins:</string>
-    <string name="overwrite_q">Overwrite?</string>
-    <string name="delete_preset_dialog">Are you sure you want to delete the preset in Slot %s?</string>
-    <string name="sub_sorting">Sub-sorting</string>
-    <string name="brand_a">Brand A</string>
-    <string name="brand_b">Brand B</string>
-    <string name="blend_1">Blend 1</string>
-    <string name="blend_2">Blend 2</string>
-    <string name="ribbon">ribbon</string>
-    <string name="balkan">Balkan</string>
-    <string name="fake_note">note</string>
-    <string name="lot_1">Lot 1</string>
-    <string name="lot_2">Lot 2</string>
-    <string name="jar">jar</string>
-    <string name="original_tin">original tin</string>
-    <string name="vanilla">vanilla</string>
-    <string name="anise">anise</string>
-    <string name="virginia_lower">virginia</string>
-    <string name="perique">perique</string>
-    <string name="burley_lower">burley</string>
-    <string name="flake_cut">flake cut</string>
+    <string name="font_size_v2">Font Size:</string>
+    <string name="margins_v2">Margins:</string>
+    <string name="overwrite_q_v2">Overwrite?</string>
+    <string name="delete_preset_dialog_v2">Are you sure you want to delete the preset in Slot %s?</string>
+    <string name="sub_sorting_v2">Sub-sorting</string>
+    <string name="brand_a_v2">Brand A</string>
+    <string name="brand_b_v2">Brand B</string>
+    <string name="blend_1_v2">Blend 1</string>
+    <string name="blend_2_v2">Blend 2</string>
+    <string name="ribbon_v2">ribbon</string>
+    <string name="balkan_v2">Balkan</string>
+    <string name="fake_note_v2">note</string>
+    <string name="lot_1_v2">Lot 1</string>
+    <string name="lot_2_v2">Lot 2</string>
+    <string name="jar_v2">jar</string>
+    <string name="original_tin_v2">original tin</string>
+    <string name="vanilla_v2">vanilla</string>
+    <string name="anise_v2">anise</string>
+    <string name="virginia_lower_v2">virginia</string>
+    <string name="perique_v2">perique</string>
+    <string name="burley_lower_v2">burley</string>
+    <string name="flake_cut_v2">flake cut</string>
 
-    <string name="formatting_help1">Anything typed in the format string will show in the text. To
+    <string name="formatting_help1_v2">Anything typed in the format string will show in the text. To
         reference specific fields, use the placeholders above. Setting the \"List as\" to tins will
         explode the tins into individual entries in the text list. The delimiter separates entries and
         is automatically removed from the end.</string>
-    <string name="formatting_help2">Use the delimiter line for how to separate records in the
+    <string name="formatting_help2_v2">Use the delimiter line for how to separate records in the
         generated string. Anything typed here will show up in-between each record. So, to separate each
         record by a blank line, you would need to enter \"%1$s\". When tins are passed as a sublist,
         mark the start of the tins sublist delimiter with a tilde (%2$s) at the end of the tins-sublist
         formatting, inside the closing tins as sublist bracket (e.g. \"%3$s\" or \"%4$s\").</string>
-    <string name="formatting_help3">The \"%1$s\" tag is to be used in a specific way. The first
+    <string name="formatting_help3_v2">The \"%1$s\" tag is to be used in a specific way. The first
         zero should be replaced with the desired max rating (for scaling). The second \"%2$s\" is optional
         for the number of decimal places to be rounded to (max of two, enter \"%3$s\" to round to the nearest
         whole number). For example, to pass the rating on a scale of 1-4 with whole number rounding,
         enter \"%4$s\" into the formatting. More advanced examples might be:\u000A\"%5$s stars\" (9 stars)
         or \"%6$s\" (3.25/4).</string>
-    <string name="formatting_help4">\"Number\" is a special tag that counts each record in the given
+    <string name="formatting_help4_v2">\"Number\" is a special tag that counts each record in the given
         sort order (use multiple %1$s to include leading 0’s).</string>
-    <string name="formatting_help5">In order to output raw text rather than special characters, escape
+    <string name="formatting_help5_v2">In order to output raw text rather than special characters, escape
         the special character with the escape character. For example, to output \"%1$s\" in the string,
         enter: \"%2$s\". Likewise for example, to output brackets around a field, escape the first bracket
         (e.g. \"%3$s\"). The escape character itself doesn’t need to be escaped unless you’re trying to use
         it before an escapable character (e.g. to render: \"%4$s\" you would need to input \"%5$s\").</string>
-    <string name="formatting_help6">Use the square brackets ( %1$s ) when you conditionally want the text
+    <string name="formatting_help6_v2">Use the square brackets ( %1$s ) when you conditionally want the text
         within them to appear only if one or more placeholders (also inside the brackets) are found.
         For instance, if you want the type shown on a new line, but don’t want an extra line for a
         blank type, enter: \"%2$s\". These conditionals can also be nested (e.g. \"%3$s\" ).</string>
-    <string name="formatting_help7">When sorting by items, if you want the tins organized as a sublist
+    <string name="formatting_help7_v2">When sorting by items, if you want the tins organized as a sublist
         per each item, use the curly braces around the formatting you want for tins (e.g.
         \"%s\" ). Conditional brackets can also be used inside the curly braces.</string>
-    <string name="formatting_help8">To set a delimiter for tins as a sublist, at the very end of the
+    <string name="formatting_help8_v2">To set a delimiter for tins as a sublist, at the very end of the
         tin line formatting, still inside the tins as sublist brackets, place a tilde (%1$s) just before
         the desired delimiter, followed by delimiter. For example, to separate each tin in the sublist
         by a new line, enter: \"%2$s\".</string>
-    <string name="formatting_help9">A more advanced example might be to pass the list of tins only if
+    <string name="formatting_help9_v2">A more advanced example might be to pass the list of tins only if
         tins exist for that blend and passing the quantity in brackets. For example, entering…</string>
-    <string name="formatting_help10">… would result in:</string>
+    <string name="formatting_help10_v2">… would result in:</string>
 
 
     <!-- Settings Strings -->
-    <string name="display_settings">Display Settings</string>
-    <string name="app_db_settings">App &amp; Database Settings</string>
+    <string name="display_settings_v2">Display Settings</string>
+    <string name="app_db_settings_v2">App &amp; Database Settings</string>
 
-    <string name="theme_option">Theme</string>
-    <string name="theme_description">Change the theme of the app.</string>
-    <string name="light">Light</string>
-    <string name="dark">Dark</string>
-    <string name="system">System</string>
+    <string name="theme_option_v2">Theme</string>
+    <string name="theme_description_v2">Change the theme of the app.</string>
+    <string name="light_v2">Light</string>
+    <string name="dark_v2">Dark</string>
+    <string name="system_v2">System</string>
 
-    <string name="language_option">Language</string>
-    <string name="language_description">Set preferred app language. There may be a slight delay when
+    <string name="language_option_v2">Language</string>
+    <string name="language_description_v2">Set preferred app language. There may be a slight delay when
         changing the language if it needs to download.</string>
-    <string name="system_language">System (%s)</string>
-    <string name="waiting_language">… (%s)</string>
-    <string name="language_failed">Language download failed, try again later.</string>
+    <string name="system_language_v2">System (%s)</string>
+    <string name="waiting_language_v2">… (%s)</string>
+    <string name="language_failed_v2">Language download failed, try again later.</string>
 
-    <string name="ratings_option">Cellar Ratings Visibility</string>
-    <string name="ratings_description">Show/hide ratings in list view.</string>
-    <string name="ratings_dialog">Display ratings on cellar screen:</string>
+    <string name="ratings_option_v2">Cellar Ratings Visibility</string>
+    <string name="ratings_description_v2">Show/hide ratings in list view.</string>
+    <string name="ratings_dialog_v2">Display ratings on cellar screen:</string>
 
-    <string name="type_genre_option">Cellar Type/Genre Display</string>
-    <string name="type_genre_description">Set type/genre display for Cellar screen.</string>
-    <string name="type_genre_dialog">This option sets the display of Type, Subgenre or both on the
+    <string name="type_genre_option_v2">Cellar Type/Genre Display</string>
+    <string name="type_genre_description_v2">Set type/genre display for Cellar screen.</string>
+    <string name="type_genre_dialog_v2">This option sets the display of Type, Subgenre or both on the
         Cellar screen. Fallback options display the option and if it’s unused on an entry, fallback
         to the other (e.g. Subgenre (fallback) would display the subgenre but if an entry has no
         subgenre, will instead show the type value in parentheses). This also affects table view when
         only one or the other of Type or Subgenre columns are shown.</string>
-    <string name="both">Both</string>
-    <string name="type_fallback">Type (fallback)</string>
-    <string name="sub_fallback">Subgenre (fallback)</string>
+    <string name="both_v2">Both</string>
+    <string name="type_fallback_v2">Type (fallback)</string>
+    <string name="sub_fallback_v2">Subgenre (fallback)</string>
 
-    <string name="quantity_option">Cellar Quantity Option</string>
-    <string name="quantity_description">Set quantity display for Cellar screen.</string>
-    <string name="quantity_display_dialog">Displayed quantities for ounces and grams are based on the
+    <string name="quantity_option_v2">Cellar Quantity Option</string>
+    <string name="quantity_description_v2">Set quantity display for Cellar screen.</string>
+    <string name="quantity_display_dialog_v2">Displayed quantities for ounces and grams are based on the
         summed quantities of tins. If no tins are present, \"No. of Tins\" value will be converted and
         displayed with an asterisk.</string>
-    <string name="no_tins_default">\"No. of Tins\" (default)</string>
-    <string name="ounces_pounds">Ounces/Pounds</string>
-    <string name="qt_option_grams">Grams/Kilos</string>
+    <string name="no_tins_default_v2">\"No. of Tins\" (default)</string>
+    <string name="ounces_pounds_v2">Ounces/Pounds</string>
+    <string name="qt_option_grams_v2">Grams/Kilos</string>
 
-    <string name="parse_links_option">Parse Links in Notes</string>
-    <string name="parse_links_description">Enable/disable link parsing in notes.</string>
-    <string name="parse_links_dialog">Parse links in notes:</string>
+    <string name="parse_links_option_v2">Parse Links in Notes</string>
+    <string name="parse_links_description_v2">Enable/disable link parsing in notes.</string>
+    <string name="parse_links_dialog_v2">Parse links in notes:</string>
 
-    <string name="large_screen_option">Large Screen Options</string>
-    <string name="large_screen_description">Large screen adaptive layout options</string>
-    <string name="large_screen_dialog">Adaptive layout options for large screens. The dual-pane and
+    <string name="large_screen_option_v2">Large Screen Options</string>
+    <string name="large_screen_description_v2">Large screen adaptive layout options</string>
+    <string name="large_screen_dialog_v2">Adaptive layout options for large screens. The dual-pane and
         expand tabs are separate options (disabling one will not affect the other). \"Adapt in landscape
         only\" affects both. Foldable devices are considered landscape when the hinge is vertical.</string>
-    <string name="large_screen_dual">Dual pane layouts:</string>
-    <string name="large_screen_columns">Expand tabs to two columns:</string>
-    <string name="large_screen_landscape">Adapt in landscape only:</string>
+    <string name="large_screen_dual_v2">Dual pane layouts:</string>
+    <string name="large_screen_columns_v2">Expand tabs to two columns:</string>
+    <string name="large_screen_landscape_v2">Adapt in landscape only:</string>
 
-    <string name="multi_device_sync">Multi-Device Sync</string>
-    <string name="multi_device_sync_description">Enable/disable cross-device sync.</string>
-    <string name="disconnected">Disconnected</string>
-    <string name="multi_device_on_wifi">On (Wifi)</string>
-    <string name="multi_device_on_mobile">On (Mobile)</string>
-    <string name="multi_device_sync_label">Multi-Device Sync:</string>
-    <string name="multi_device_acknowledge_title">About Multi Device Sync</string>
-    <string name="scroll_to_accept">(You must scroll to the bottom to accept)</string>
-    <string name="multi_device_acknowledge_body1">To auto-synchronize collection changes across devices,
+    <string name="multi_device_sync_v2">Multi-Device Sync</string>
+    <string name="multi_device_sync_description_v2">Enable/disable cross-device sync.</string>
+    <string name="disconnected_v2">Disconnected</string>
+    <string name="multi_device_on_wifi_v2">On (Wifi)</string>
+    <string name="multi_device_on_mobile_v2">On (Mobile)</string>
+    <string name="multi_device_sync_label_v2">Multi-Device Sync:</string>
+    <string name="multi_device_acknowledge_title_v2">About Multi Device Sync</string>
+    <string name="scroll_to_accept_v2">(You must scroll to the bottom to accept)</string>
+    <string name="multi_device_acknowledge_body1_v2">To auto-synchronize collection changes across devices,
         you must enable this option and sign-in with the same Google account on each device you want
         synced. This will also authorize the app to have Google Drive access (you do not need the
         Google Drive app for this functionality to work). This feature also requires all synced devices
         to be running a version of the app with the same Database Version.</string>
-    <string name="multi_device_acknowledge_body2">Developer and/or any third parties will not have access
+    <string name="multi_device_acknowledge_body2_v2">Developer and/or any third parties will not have access
         to your login or drive. This authorization just allows the app to use your Google Drive as a
         cloud location for storing and retrieving data changes between devices. The app will create a
         hidden folder on your Google Drive, and this folder is the only part of your Drive that the app
         can access. Login and remote sync data can be cleared at any time in this setting dialog (clear
         remote data before clearing login). If you wish to revoke Drive authorization, this must be
         done in your Google Account settings (Services → Connected Apps).</string>
-    <string name="multi_device_acknowledge_body3">Sync data does not count toward your Google Drive
+    <string name="multi_device_acknowledge_body3_v2">Sync data does not count toward your Google Drive
         storage quota. Data is checked once at every app start (including \"warm starts\" if it has
         been at least one hour since initial app start), and cyclically once every 12 hours as long
         as the device is powered on and connected. All data checks respect your settings regarding
         mobile data or WIFI-only (will never use mobile data unless enabled).</string>
-    <string name="multi_device_acknowledge_body4">It is recommended to create a manual database backup
+    <string name="multi_device_acknowledge_body4_v2">It is recommended to create a manual database backup
         of the device with the most up-to-date information, then transfer to and restore on the other
         device(s) before enabling this setting.</string>
-    <string name="multi_device_check_connection">(Check Connection)</string>
-    <string name="multi_device_allow_mobile">Allow Mobile Data:</string>
-    <string name="multi_device_manual_sync">Manual Sync</string>
-    <string name="multi_device_clear_remote">Clear Remote Data</string>
-    <string name="multi_device_sign_out">Sign-Out</string>
-    <string name="multi_device_enable_notification">Enable sync notification?</string>
+    <string name="multi_device_check_connection_v2">(Check Connection)</string>
+    <string name="multi_device_allow_mobile_v2">Allow Mobile Data:</string>
+    <string name="multi_device_manual_sync_v2">Manual Sync</string>
+    <string name="multi_device_clear_remote_v2">Clear Remote Data</string>
+    <string name="multi_device_sign_out_v2">Sign-Out</string>
+    <string name="multi_device_enable_notification_v2">Enable sync notification?</string>
 
-    <string name="tin_ready_option">Tin Ready Notifications</string>
-    <string name="tin_ready_description">Enable/disable tin notifications.</string>
-    <string name="tin_notification_dialog">Show a notification whenever tins are ready. Notifications
+    <string name="tin_ready_option_v2">Tin Ready Notifications</string>
+    <string name="tin_ready_description_v2">Enable/disable tin notifications.</string>
+    <string name="tin_notification_dialog_v2">Show a notification whenever tins are ready. Notifications
         are local, they do not require internet access. Check that notifications for the app are enabled
         in your device settings.</string>
-    <string name="tin_notification_option">Notifications:</string>
-    <string name="tin_notification_time">Notification time:</string>
-    <string name="tin_notification_set">Set Time</string>
+    <string name="tin_notification_option_v2">Notifications:</string>
+    <string name="tin_notification_time_v2">Notification time:</string>
+    <string name="tin_notification_set_v2">Set Time</string>
 
-    <string name="conversion_option">Tin Conversion Rates</string>
-    <string name="conversion_description">Set tin conversion rates.</string>
-    <string name="tin_conversion_rates" translatable="false">%1$s oz/%2$s g</string>
-    <string name="tin_conversion_one_is">One Tin =\u0020</string>
+    <string name="conversion_option_v2">Tin Conversion Rates</string>
+    <string name="conversion_description_v2">Set tin conversion rates.</string>
+    <string name="tin_conversion_rates_v2" translatable="false">%1$s oz/%2$s g</string>
+    <string name="tin_conversion_one_is_v2">One Tin =\u0020</string>
 
     <!-- Note to translators: Keep the term "Sync?" in English, do not translate it. -->
-    <string name="default_sync_option">Default \"Sync?\" Option</string>
-    <string name="default_sync_description">Set default sync tins option.</string>
+    <string name="default_sync_option_v2">Default \"Sync?\" Option</string>
+    <string name="default_sync_description_v2">Set default sync tins option.</string>
     <!-- Note to translators: Keep the term "Sync?" in English, do not translate it. -->
-    <string name="default_sync_tin_dialog">Set \"Sync?\" option (synchronize \"No. of Tins\" with tin
+    <string name="default_sync_tin_dialog_v2">Set \"Sync?\" option (synchronize \"No. of Tins\" with tin
         quantities) to on or off by default when adding new entries.</string>
 
-    <string name="backup_restore_option">Backup/Restore</string>
-    <string name="backup_restore_description">Backup or restore database and/or settings.</string>
-    <string name="backup_restore_dialog">Would you like to Backup or Restore?</string>
-    <string name="backup">Backup</string>
-    <string name="restore">Restore</string>
-    <string name="backup_dialog">Select what to backup. If you check both boxes, a single file will
+    <string name="backup_restore_option_v2">Backup/Restore</string>
+    <string name="backup_restore_description_v2">Backup or restore database and/or settings.</string>
+    <string name="backup_restore_dialog_v2">Would you like to Backup or Restore?</string>
+    <string name="backup_v2">Backup</string>
+    <string name="restore_v2">Restore</string>
+    <string name="backup_dialog_v2">Select what to backup. If you check both boxes, a single file will
         be created that holds both. The restore function can optionally restore either the database
         or the settings from the joint backup file.</string>
-    <string name="restore_dialog">Select what to restore.\u000A\u000AWARNING: Restore will overwrite any existing
+    <string name="restore_dialog_v2">Select what to restore.\u000A\u000AWARNING: Restore will overwrite any existing
         settings and/or database data (depending on which is selected). Either or both can be restored
         from a joint database/settings backup file.</string>
-    <string name="database">Database</string>
+    <string name="database_v2">Database</string>
 
-    <string name="other_operations">Other Db Operations</string>
-    <string name="other_operations_description">Fix sync quantities and optimize database.</string>
-    <string name="other_operations_dialog">These options shouldn’t be necessary. \"Fix tin sync
+    <string name="other_operations_v2">Other Db Operations</string>
+    <string name="other_operations_description_v2">Fix sync quantities and optimize database.</string>
+    <string name="other_operations_dialog_v2">These options shouldn’t be necessary. \"Fix tin sync
         quantity\" corrects the \"No. of Tins\" for entries with quantity sync checked. \"Optimize
         database\" cleans up any potentially orphaned data.</string>
-    <string name="other_operations_fix">Fix/Update Tin Sync Quantity</string>
-    <string name="other_operations_clean">Clean and Optimize Database</string>
+    <string name="other_operations_fix_v2">Fix/Update Tin Sync Quantity</string>
+    <string name="other_operations_clean_v2">Clean and Optimize Database</string>
 
-    <string name="delete_db">Delete Database</string>
-    <string name="delete_db_description">"Delete all entries.</string>
+    <string name="delete_db_v2">Delete Database</string>
+    <string name="delete_db_description_v2">"Delete all entries.</string>
 
 
     <!-- Stats strings -->
-    <string name="quick_stats">Quick Stats</string>
-    <string name="raw_stats">Raw Stats</string>
-    <string name="filtered_stats">Filtered Stats</string>
-    <string name="stats_blends_brands">%1$s\u0020blends,\u0020%2$s\u0020brands</string>
-    <string name="stats_average_rating">%s\u0020average rating</string>
-    <string name="stats_favorites_disliked">%1$s\u0020favorites,\u0020%2$s\u0020disliked</string>
-    <string name="stats_total_tins">%s\u0020total\u0020\"No. of Tins\"</string>
-    <string name="stats_estimated_weight">%s\u0020(estimated)</string>
-    <string name="stats_out_of_stock">%s\u0020out\u0020of\u0020stock</string>
-    <string name="stats_opened">%s\u0020opened</string>
-    <string name="nothing_found">nothing found</string>
+    <string name="quick_stats_v2">Quick Stats</string>
+    <string name="raw_stats_v2">Raw Stats</string>
+    <string name="filtered_stats_v2">Filtered Stats</string>
+    <string name="stats_blends_brands_v2">%1$s\u0020blends,\u0020%2$s\u0020brands</string>
+    <string name="stats_average_rating_v2">%s\u0020average rating</string>
+    <string name="stats_favorites_disliked_v2">%1$s\u0020favorites,\u0020%2$s\u0020disliked</string>
+    <string name="stats_total_tins_v2">%s\u0020total\u0020\"No. of Tins\"</string>
+    <string name="stats_estimated_weight_v2">%s\u0020(estimated)</string>
+    <string name="stats_out_of_stock_v2">%s\u0020out\u0020of\u0020stock</string>
+    <string name="stats_opened_v2">%s\u0020opened</string>
+    <string name="nothing_found_v2">nothing found</string>
 
-    <string name="charts">Charts</string>
-    <string name="charts_disclaimer">*Charts are filter-reactive. Some charts may be redundant/irrelevant
+    <string name="charts_v2">Charts</string>
+    <string name="charts_disclaimer_v2">*Charts are filter-reactive. Some charts may be redundant/irrelevant
         depending on the chosen filters.</string>
-    <string name="brands_entries">Brands by Number of Entries</string>
-    <string name="brands_quantity">Brands by \"No. of Tins\"</string>
-    <string name="types_entries">Types by Entries</string>
-    <string name="types_quantity">Types by \"No. of Tins\"</string>
-    <string name="ratings_distribution">Ratings Distribution</string>
-    <string name="fav_dis_entries">Fav/Dislike by Entries</string>
-    <string name="sub_entries">Subgenres by Entries</string>
-    <string name="sub_quantity">Subgenres by \"No. of Tins\"</string>
-    <string name="cut_entries">Cuts by Entries</string>
-    <string name="cut_quantity">Cuts by \"No. of Tins\"</string>
-    <string name="brands_rating">Brands by Average Rating</string>
-    <string name="actual_count_weighted">(Actual - Count - Weighted)</string>
-    <string name="data_total_count">(Data Total: %s)</string>
-    <string name="data_total_count2">(Data Total: %1$s - %2$s)</string>
-    <string name="show_values">Show Values</string>
-    <string name="hide_values">Hide Values</string>
-    <string name="unrated_count">(Unrated: %s)</string>
-    <string name="frequency">Frequency</string>
-    <string name="rating_ranges">Rating (ranges)</string>
-    <string name="chart_other">(Other)</string>
+    <string name="brands_entries_v2">Brands by Number of Entries</string>
+    <string name="brands_quantity_v2">Brands by \"No. of Tins\"</string>
+    <string name="types_entries_v2">Types by Entries</string>
+    <string name="types_quantity_v2">Types by \"No. of Tins\"</string>
+    <string name="ratings_distribution_v2">Ratings Distribution</string>
+    <string name="fav_dis_entries_v2">Fav/Dislike by Entries</string>
+    <string name="sub_entries_v2">Subgenres by Entries</string>
+    <string name="sub_quantity_v2">Subgenres by \"No. of Tins\"</string>
+    <string name="cut_entries_v2">Cuts by Entries</string>
+    <string name="cut_quantity_v2">Cuts by \"No. of Tins\"</string>
+    <string name="brands_rating_v2">Brands by Average Rating</string>
+    <string name="actual_count_weighted_v2">(Actual - Count - Weighted)</string>
+    <string name="data_total_count_v2">(Data Total: %s)</string>
+    <string name="data_total_count2_v2">(Data Total: %1$s - %2$s)</string>
+    <string name="show_values_v2">Show Values</string>
+    <string name="hide_values_v2">Hide Values</string>
+    <string name="unrated_count_v2">(Unrated: %s)</string>
+    <string name="frequency_v2">Frequency</string>
+    <string name="rating_ranges_v2">Rating (ranges)</string>
+    <string name="chart_other_v2">(Other)</string>
 
 
     <!-- Help Screen strings -->
-    <string name="cellar_screen">Cellar Screen</string>
-    <string name="stats_screen">Stats Screen</string>,
-    <string name="dates_screen">Dates Screen</string>
-    <string name="filtering">Filtering</string>
-    <string name="adding_entries">Adding Entries</string>
-    <string name="editing_entries">Editing Entries</string>
-    <string name="adding_tins">Adding Tins</string>
+    <string name="cellar_screen_v2">Cellar Screen</string>
+    <string name="stats_screen_v2">Stats Screen</string>,
+    <string name="dates_screen_v2">Dates Screen</string>
+    <string name="filtering_v2">Filtering</string>
+    <string name="adding_entries_v2">Adding Entries</string>
+    <string name="editing_entries_v2">Editing Entries</string>
+    <string name="adding_tins_v2">Adding Tins</string>
 
-    <string name="help_body1">Tobacco Cellar was originally intended to be a basic inventory list
+    <string name="help_body1_v2">Tobacco Cellar was originally intended to be a basic inventory list
         and \"tobacco passport\" combined with the ease of searching and filtering, and interesting
         statics. This remains the primary goal, despite any additional features added since launch,
         or possible future features.</string>
-    <string name="help_body2">Please see the relevant sections for more detailed information.</string>
-    <string name="help">Help:</string>
+    <string name="help_body2_v2">Please see the relevant sections for more detailed information.</string>
+    <string name="help_v2">Help:</string>
 
-    <string name="help_cellar1">\"Cellar\" is the starting point of the app. Some view options are
+    <string name="help_cellar1_v2">\"Cellar\" is the starting point of the app. Some view options are
         available in the header, while others are in the settings.</string>
-    <string name="help_cellar2">Header</string>
-    <string name="help_cellar3">The header at the top of the screen contains a view mode switch for
+    <string name="help_cellar2_v2">Header</string>
+    <string name="help_cellar3_v2">The header at the top of the screen contains a view mode switch for
         changing between list and table modes, a \"Quick Search\" with a search field option, a
         button to change sorting (list view) or table column visibility (table view), and a count of
         the current entries based on chosen filtering or searching.</string>
-    <string name="help_cellar4">The search bar icon can be selected to change the field to search.
+    <string name="help_cellar4_v2">The search bar icon can be selected to change the field to search.
         Searching works independently of any chosen filters. To clear search results, tap the \"X\"
         icon, erase the search text, or use the system back navigation. Previously chosen filters
         will be re-applied.</string>
-    <string name="help_cellar5">List/Table Views</string>
-    <string name="help_cellar6">In either view mode, tapping an entry will navigate to the details
+    <string name="help_cellar5_v2">List/Table Views</string>
+    <string name="help_cellar6_v2">In either view mode, tapping an entry will navigate to the details
         screen for that entry, long-pressing will show a menu overlay with an option to edit or
         quick edit. Quick edit swaps the menu to allow editing a select few things without the need
         to navigate to the full Edit Entry screen. Clear the menu overlay by tapping outside of it
         or using the system back navigation.</string>
-    <string name="help_cellar7">Items can be sorted in list mode by tapping the sort button in the
+    <string name="help_cellar7_v2">Items can be sorted in list mode by tapping the sort button in the
         header. Tapping an option sorts ascending, tapping it again switches to descending. Tap
         the sort icon again to close the list view sorting menu. In Table view, sorting is done by
         tapping the \"Brand\", \"Blend\", \"Type\", \"Rating\", or \"Qty\" column headers. Default
         sorting is the order the entries were entered into the database. The first tap will sort the
         column ascending, the second descending, and the third returns to the default sort order.</string>
-    <string name="help_cellar8">The quantity displayed is the \"No. of Tins\" by default. There is
+    <string name="help_cellar8_v2">The quantity displayed is the \"No. of Tins\" by default. There is
         an option on the Settings screen to change this to oz/lbs or grams based on the sum of the
         quantities entered for each tin. If no tins are given for an entry, the \"No. of Tins\"
         field will be used (converted by the tin conversion rates set on the settings screen.</string>
 
-    <string name="help_stats">The \"Stats\" screen gives you an expandable \"Quick Stats\" section
+    <string name="help_stats_v2">The \"Stats\" screen gives you an expandable \"Quick Stats\" section
         (with raw stats on the left and stats based on your filters on the right) and a section of
         pie charts (which are filter reactive).</string>
 
-    <string name="help_dates1">The \"Dates\" screen contains various date-related information, all
+    <string name="help_dates1_v2">The \"Dates\" screen contains various date-related information, all
         of which is filter-reactive (except the \"Aging Tracker\", which is based on all un-filtered
         entries). The Dates navigation button will have an indicator dot if any aging tins will be
         ready within the next 7 days. Viewing the Dates screen will clear this indicator until any
         other new tins are ready.</string>
-    <string name="help_dates2">This section shows blends which are ready to be opened within the
+    <string name="help_dates2_v2">This section shows blends which are ready to be opened within the
         next week and month, based on any open dates that were previously set to a future date. See
         the Adding Tins section for more details.</string>
-    <string name="help_dates3">Tapping on any tin listed on this screen will take you to the details
+    <string name="help_dates3_v2">Tapping on any tin listed on this screen will take you to the details
         page for the blend that the tin belongs to.</string>
-    <string name="help_dates4">Quick Stats</string>
-    <string name="help_dates5">The \"Quick Stats\" are calculated based only on tins which have
+    <string name="help_dates4_v2">Quick Stats</string>
+    <string name="help_dates5_v2">The \"Quick Stats\" are calculated based only on tins which have
         relevant data added (tins without a date in that field aren’t counted). Average age is based
         on manufacturing date, time in cellar only on the cellar date, and time opened based on tins
         with open dates that aren’t marked as finished. These calculations also do not factor future
         tins. Average wait time is calculated based on all future set dates.</string>
-    <string name="help_dates6">Oldest/Future Tins</string>
-    <string name="help_dates7">The next two sections list the 5 tins per each date field of past
+    <string name="help_dates6_v2">Oldest/Future Tins</string>
+    <string name="help_dates7_v2">The next two sections list the 5 tins per each date field of past
         dates from oldest to youngest, and future dates from soonest to latest.</string>
 
-    <string name="help_filtering1">The \"Filter Sheet\" opens on top of the Cellar, Stats and Date
+    <string name="help_filtering1_v2">The \"Filter Sheet\" opens on top of the Cellar, Stats and Date
         screens. Any filters persist through navigation around the app and affect all screens allow
         filtering (Cellar, Stats, Dates, Bulk Edit, Plaintext), but have no effect on the Cellar
         screen quick search results. If any filters are applied, this icon will have an indicator dot.</string>
-    <string name="help_filtering2">Basic Use</string>
-    <string name="help_filtering3">Multiple filters can be combined and any filterable screen will
+    <string name="help_filtering2_v2">Basic Use</string>
+    <string name="help_filtering3_v2">Multiple filters can be combined and any filterable screen will
         react instantly to changes. Once you have selected filters, the sheet can be dismissed by
         tapping outside of it, tapping the close button, or swiping it down.</string>
-    <string name="help_filtering4">The \"Clear All\" button at the bottom will clear all chosen filters.</string>
-    <string name="help_filtering5">The filter sheet has three pages, swipe or flick left/right to
+    <string name="help_filtering4_v2">The \"Clear All\" button at the bottom will clear all chosen filters.</string>
+    <string name="help_filtering5_v2">The filter sheet has three pages, swipe or flick left/right to
         swap between pages, or tap the page indicator dot at the top to swap to that page.</string>
-    <string name="help_filtering6">Selecting Filters</string>
-    <string name="help_filtering7">Filter brands by tapping the name of a brand in the row of brands
+    <string name="help_filtering6_v2">Selecting Filters</string>
+    <string name="help_filtering7_v2">Filter brands by tapping the name of a brand in the row of brands
         (row scrolls horizontally). The \"Search Brands\" field is just a filter for this row of
         brands. Tap the include/exclude button to swap brand filter modes.</string>
-    <string name="help_filtering8">Selected brands are shown in the box below and can be removed by
+    <string name="help_filtering8_v2">Selected brands are shown in the box below and can be removed by
         tapping the close icon on each brand. Brands that exceed this space are placed in an
         overflow. To see the full list of selected brands, tap the overflow button. The \"Clear
         All\" button here only removes the selected brand filters.</string>
-    <string name="help_filtering9">To filter by type, tap one of the types to add it to the filtering,
+    <string name="help_filtering9_v2">To filter by type, tap one of the types to add it to the filtering,
         tap it again to remove it. The \"Unassigned\" button will filter for entries that have a
         blank blend type.</string>
-    <string name="help_filtering10">Filter \"Favorites\" or \"Dislikes\" by tapping the checkboxes.
+    <string name="help_filtering10_v2">Filter \"Favorites\" or \"Dislikes\" by tapping the checkboxes.
         The first tap will return only those marked as the chosen filter, tapping again will return
         all entries that are not in that category. Both boxes can be set to include/exclude to see
         only entries that are marked as being in one or the other, or only entries that aren’t
         marked as being in either.</string>
-    <string name="help_filtering11">Below this is the rating range filter, tapping the range display
+    <string name="help_filtering11_v2">Below this is the rating range filter, tapping the range display
         opens a popup for the range options. Unrated will return all entries that haven’t been
         rated. The left and right fields are for min/max rating, respectively. Use one or the other
         to return all entries that are rated at least/most as the chosen value, or use both to
         return all entries rated between the max/min. The rating range can also be combined with the
         unrated option (to see all items that are unrated and only those that are rated within the
         range).</string>
-    <string name="help_filtering12">Filtering by in-stock/out is based on the \"No. of Tins\" field
+    <string name="help_filtering12_v2">Filtering by in-stock/out is based on the \"No. of Tins\" field
         and returns those entries with a value greater than 0 (or 0 for out-of-stock).</string>
-    <string name="help_filtering13">Filters for subgenres, cuts, components and flavorings are on the
+    <string name="help_filtering13_v2">Filters for subgenres, cuts, components and flavorings are on the
         second page. Tap the overflow chip will to show a full list of available selections for that
         section.</string>
-    <string name="help_filtering14">There is an additional option in components and flavoring for
+    <string name="help_filtering14_v2">There is an additional option in components and flavoring for
         matching type. Selecting \"Any\" will return blends that contain any of the selections,
         \"All\" will return only those blends that contain all the selections, and \"Only\" will
         strictly return those blends that contain only the selections (and no others—exact matching).</string>
-    <string name="help_filtering15">Tin-related parameters are on the third page. Some tins filters
+    <string name="help_filtering15_v2">Tin-related parameters are on the third page. Some tins filters
         will also result in a filtered list of matching tins being shown for the relevant blends on
         the Cellar screen.</string>
 
-    <string name="help_adding1">Items can be added in one of two ways: by tapping the \"Add\" button
+    <string name="help_adding1_v2">Items can be added in one of two ways: by tapping the \"Add\" button
         in the navigation bar, or by importing a CSV file through the top bar overflow menu. For more
         information on adding items by CSV, please see the \"Help\" section on the CSV import screen.</string>
-    <string name="help_adding2">There are three tabs on the add entry screen that are self-explanatory.
+    <string name="help_adding2_v2">There are three tabs on the add entry screen that are self-explanatory.
         Please see the \"Adding Tins\" section for more details on the tins tab.</string>
-    <string name="help_adding3">All entries require a unique combination of \"Brand\" and \"Blend\".
+    <string name="help_adding3_v2">All entries require a unique combination of \"Brand\" and \"Blend\".
         Multiple entries can contain the same brand OR blend, but only one entry can contain the same
         brand AND blend. All other fields are optional.</string>
-    <string name="help_adding4">Most fields that are left blank will remain blank when clicking save,
+    <string name="help_adding4_v2">Most fields that are left blank will remain blank when clicking save,
         however leaving the \"No. of Tins\" field blank will presume the quantity to be 1; if you wish
         this quantity to be 0, you must enter 0. Next to this field, there are \"increase/decrease\"
         buttons for quickly updating the number of tins.</string>
     <!-- Note to translators: Keep the term "Sync?" in English, do not translate it. -->
-    <string name="help_adding5">The \"Sync?\" option check box allows you to synchronize the \"No. of Tins\"
+    <string name="help_adding5_v2">The \"Sync?\" option check box allows you to synchronize the \"No. of Tins\"
         field with the total quantities of individual tins/containers (not counting those tins marked
         as finished). The total tins are calculated based on the Tin Conversion Rates set in the
         settings screen (default is 1 tin is equal to 1.75 oz or 50g).</string>
-    <string name="help_adding6">Tapping the rating bar opens a popup with a text field for entering
+    <string name="help_adding6_v2">Tapping the rating bar opens a popup with a text field for entering
         a rating. The range is 0-5 and does allow fractional numbers (up to 2 decimal places). Clear
         the text field in order to leave an item unrated.</string>
-    <string name="help_adding7">When adding components or flavorings, please separate each with a
+    <string name="help_adding7_v2">When adding components or flavorings, please separate each with a
         comma. For example: \"virginia, burley, perique\".</string>
 
-    <string name="help_editing1">Entries can be edited by long-pressing the entry in the cellar
+    <string name="help_editing1_v2">Entries can be edited by long-pressing the entry in the cellar
         screen, using the batch edit option in the top bar menu, tapping edit on the details screen,
         or through a CSV import and selecting the \"Update\" or \"Overwrite\" option (see help on the
         CSV Import screen for more information).</string>
-    <string name="help_editing2">The edit entry screen is the same as the add entry screen and
+    <string name="help_editing2_v2">The edit entry screen is the same as the add entry screen and
         functions the same way, just with the existing data preloaded in all fields.</string>
-    <string name="help_editing3">Batch editing is limited to a select few fields. The screen contains
+    <string name="help_editing3_v2">Batch editing is limited to a select few fields. The screen contains
         two tabs, one to select items to edit and another to make the edits. Select the checkbox only
         for the fields you wish to edit.</string>
-    <string name="help_editing4">WARNING: Selecting a field and leaving it blank will result in
+    <string name="help_editing4_v2">WARNING: Selecting a field and leaving it blank will result in
         erasing that field for the selected entries (except for the components and flavoring fields)!</string>
-    <string name="help_editing5">Batch editing components/flavoring works the same as the Add/Edit
+    <string name="help_editing5_v2">Batch editing components/flavoring works the same as the Add/Edit
         screens in regard to entering values into the field (separate each with a comma).
         However, here, leaving these blank does not erase anything from entries when you hit save.
         Any entered components/flavorings will be added (or removed) from the existing values of the
         selected entries if they aren’t already present (or are present in the case of remove).
         Switch between add and remove by tapping the +/- icon at the end of the field.</string>
 
-    <string name="help_add_tin1">When adding or editing an entry, navigate to the Tins tab on the
+    <string name="help_add_tin1_v2">When adding or editing an entry, navigate to the Tins tab on the
         right and select the \"Add Tin\" button to add a tin. Add additional tins by tapping the
         \"+\" button below the last tin. To remove a tin, tap the \"-\" icon in the top right corner
         of the tin.</string>
-    <string name="help_add_tin2">Each \"tin\" within a given entry must have a unique label. The same
+    <string name="help_add_tin2_v2">Each \"tin\" within a given entry must have a unique label. The same
         label(s) can be reused under different entries. All other fields are optional.</string>
-    <string name="help_add_tin3">Expand/collapse the details of any given tin using the icon in the
+    <string name="help_add_tin3_v2">Expand/collapse the details of any given tin using the icon in the
         top left, or \"expand\" text at the bottom (if collapsed). The tin list will be scrollable
         if it exceeds the height of the given area.</string>
-    <string name="help_add_tin4">While amount and unit are optional, if you enter an amount, you must
+    <string name="help_add_tin4_v2">While amount and unit are optional, if you enter an amount, you must
         also enter a unit. Entering a unit without an amount will default the amount to 0. Do not use
         grouping separators for 1000 or more, only numbers and your locale-specific decimal separator
         are allowed.</string>
-    <string name="help_add_tin5">This value is used for the \"Cellar Quantity Display\" setting on the
+    <string name="help_add_tin5_v2">This value is used for the \"Cellar Quantity Display\" setting on the
         main Cellar screen, as well as the total quantity displayed on a Blend Details screen. When
         using \"Sync\" on the Add/Edit details tab, this quantity is also used with the \"Tin
         Conversion Rates\" setting to set the \"No. of Tins\" field.</string>
-    <string name="help_add_tin6">The date fields on this entry screen will show the chosen date as
+    <string name="help_add_tin6_v2">The date fields on this entry screen will show the chosen date as
         MM/YY if the field is not wide enough, otherwise will show the date in medium length format
         based on your locale settings. Regardless of how it displays here, the full selected day,
         month and year are saved.</string>
-    <string name="help_add_tin7">Date selection for any given field is limited by the other fields.
+    <string name="help_add_tin7_v2">Date selection for any given field is limited by the other fields.
         If no dates have been entered, then any past or future date can be selected. The first date
         field to be entered will then start limiting others. The limit schema: Manufacture must be
         on/before Cellar/Opened, Cellar must be on/between Manufacture and Opened, Opened must be
         on/after Cellar/Manufacture.</string>
-    <string name="help_add_tin8">Selecting the \"Finished\" check box will affect some of the stats
+    <string name="help_add_tin8_v2">Selecting the \"Finished\" check box will affect some of the stats
         and dates and the calculated total on Details screens. This checkbox allows you to keep the
         open date, but exclude the tin from being included in anything related to open dates.</string>
-    <string name="help_add_tin9">If you would like to keep track of aging, set the open date to a
+    <string name="help_add_tin9_v2">If you would like to keep track of aging, set the open date to a
         future date of when you’d like to open the tin. The dates screen will have a section for
         blends that will be ready to open in a given week/month, see the dates section for more details.</string>
 
-    <string name="help_settings1">Most settings are self-explanatory, but some may need further
+    <string name="help_settings1_v2">Most settings are self-explanatory, but some may need further
         clarification.</string>
-    <string name="help_settings2">This option allows you to synchronize changes to your database
+    <string name="help_settings2_v2">This option allows you to synchronize changes to your database
         across multiple devices if you have the app installed on more than one device. Please see
         the more detailed subsection for this option.</string>
-    <string name="help_settings3">Backup and Restore both give you two options, \"Database\" and
+    <string name="help_settings3_v2">Backup and Restore both give you two options, \"Database\" and
         \"Settings\". Selecting database will make a copy of the entire database, and settings will
         save the app settings (like display settings). One backup file is made regardless of whether
         you select one or both (both backups will be in one).</string>
-    <string name="help_settings4">This is an entirely optional process for creating a manual backup.
+    <string name="help_settings4_v2">This is an entirely optional process for creating a manual backup.
         The app does participate in the automatic Google services backup if you have it enabled in
         your device’s settings, and will save the database and settings. However, a Google backup
         might not represent the latest data, depending on when scheduled backup was last performed.</string>
-    <string name="help_settings5">These backups are saved as \".tcbu\" files, and are given a
+    <string name="help_settings5_v2">These backups are saved as \".tcbu\" files, and are given a
         suggested name (that you don’t have to use) depending on the selected options.</string>
-    <string name="help_settings6">When restoring, the same options are presented. You can restore
+    <string name="help_settings6_v2">When restoring, the same options are presented. You can restore
         the database, settings, or both from a backup file that contains both, but a database backup
         file will only restore the database, and a settings file will restore only the settings.</string>
-    <string name="help_settings7">Tin Conversion Rates allows you to set the value of what constitutes
+    <string name="help_settings7_v2">Tin Conversion Rates allows you to set the value of what constitutes
         one \"tin\". You can set the value for ounces and grams separately. This conversion rate is
         used when calculating the \"No. of Tins\" field when adding individual tins and using the sync
         option. It is also used on the Statistics screen. Changing the conversion rates will
         automatically update the \"No. of Tins\" field for all entries with synchronized tins.</string>
-    <string name="help_settings8">These settings should be unnecessary, but are provided nonetheless.
+    <string name="help_settings8_v2">These settings should be unnecessary, but are provided nonetheless.
         \"Clean and Optimize Database\" can clear orphaned data, but the database mostly keeps itself
         clean. The Fix/Update Tin Sync Quantity is provided in the event that these were out of sync
         for some reason (an older version of the app didn’t automatically update the \"No. of Tins\"
         field for entries with synchronized tins when tin conversion rates were changed for example,
         though this is automatically done now for all entries when changing rates).</string>
 
-    <string name="help_multi1">This option allows you to synchronize changes to your database across
+    <string name="help_multi1_v2">This option allows you to synchronize changes to your database across
         multiple devices if you have the app installed on more than one device. This sync is
         bidirectional, so changes on any device with the option on will be reflected on all other
         devices that also have the option turned on.</string>
-    <string name="help_multi2">For this option to work, each device must be running a version of the
+    <string name="help_multi2_v2">For this option to work, each device must be running a version of the
         app with the same Database Version (app version doesn’t matter). The app must also be linked
         to the same Google account on all devices (even if other devices use a different primary
         Google account).</string>
-    <string name="help_multi3">Data Safety</string>
-    <string name="help_multi4">Neither myself nor the app has any access to any of your personal data.
+    <string name="help_multi3_v2">Data Safety</string>
+    <string name="help_multi4_v2">Neither myself nor the app has any access to any of your personal data.
         Authorization just links the app to your Google Account and grants it access to the Google
         Drive associated with the account for the sole purpose of creating an app-specific folder.
         The app cannot see anything else in your Google Drive except this app-specific folder.</string>
-    <string name="help_multi5">To rescind this linking or drive permission, you must do so from your
+    <string name="help_multi5_v2">To rescind this linking or drive permission, you must do so from your
         Google Account settings. Logging out from the app just prevents transfer, but unlinking can
         ONLY be done from your Google Account settings (this is a Google requirement for safety).</string>
-    <string name="help_multi6">All data transfer is encrypted and no personal information is even
+    <string name="help_multi6_v2">All data transfer is encrypted and no personal information is even
         accessed, let alone shared. Database sync data is the only data transferred. Neither I nor
         any other third-parties cannot access any of your data. The app likewise has no access to any
         of your account or personal data, it has access only to its own app-specific folder.</string>
-    <string name="help_multi7">Please see the %1$s↗ and %2$s↗ for more details.</string>
-    <string name="help_multi8">How It Works</string>
-    <string name="help_multi9">All Google accounts have a Google Drive associated with them
+    <string name="help_multi7_v2">Please see the %1$s↗ and %2$s↗ for more details.</string>
+    <string name="help_multi8_v2">How It Works</string>
+    <string name="help_multi9_v2">All Google accounts have a Google Drive associated with them
         (regardless of whether you’ve ever used it). This device sync option will request access to
         Google Drive. You do not need the Google Drive app installed for it to work. Granting access
         allows the app to create an app-specific folder on your Google Drive as a cloud location to
         transfer between devices. This app-specific folder is the only folder the app will have access
         to, and this folder will not count toward your Google Drive storage space.</string>
-    <string name="help_multi10">When you make changes to entries, those changes include a timestamp.
+    <string name="help_multi10_v2">When you make changes to entries, those changes include a timestamp.
         The changes will be uploaded to the drive folder according to your data settings (it won’t
         use mobile data unless you turn that option on). If it is unable to upload, it will try again
         later when it can connect based on your settings.</string>
-    <string name="help_multi11">The app checks for sync data (if the option is on) whenever it is
+    <string name="help_multi11_v2">The app checks for sync data (if the option is on) whenever it is
         started, and additionally checks twice per day (12-hour interval). If conflicting data is
         found (the same entry was edited in both devices before either had a chance to sync), only the
         option with the latest timestamp will be used. The changes are considered per entry! So if on
         one device you write a note, then on the other you change a component, the note will be lost
         (as the timestamp for that note change is earlier than the component change). The timestamp
         is per entry, not per logged change!</string>
-    <string name="help_multi12">Remote data can only be cleared within the app. Please clear any data
+    <string name="help_multi12_v2">Remote data can only be cleared within the app. Please clear any data
         before logging out if you wish to stop using the sync function.</string>
 
 

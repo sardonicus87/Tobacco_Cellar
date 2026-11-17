@@ -203,7 +203,7 @@ fun PlaintextScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.plaintext_title),
+                title = stringResource(R.string.plaintext_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = {
@@ -385,7 +385,7 @@ private fun PlaintextBody(
             },
             divider = { HorizontalDivider(thickness = Dp.Hairline, color = DividerDefaults.color) }
         ) {
-            listOf(stringResource(R.string.list), stringResource(R.string.format)).forEachIndexed { index, title ->
+            listOf(stringResource(R.string.list_v2), stringResource(R.string.format_v2)).forEachIndexed { index, title ->
                 CompositionLocalProvider(LocalRippleConfiguration provides null) {
                     Tab(
                         selected = tabIndex == index,
@@ -537,7 +537,7 @@ private fun PlaintextList(
             ) {
                 if (formatString.isBlank()) {
                     Text(
-                        text = stringResource(R.string.no_format_set),
+                        text = stringResource(R.string.no_format_set_v2),
                         fontSize = 18.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -616,11 +616,11 @@ private fun PlaintextFormatting(
             properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
             confirmButton = {
                 TextButton(onClick = { viewModel.saveRtlDialogSeen(); showRtlDialog = false }) {
-                    Text(stringResource(R.string.ok))
+                    Text(stringResource(R.string.ok_v2))
                 }
             },
             title = { },
-            text = { Text(stringResource(R.string.rtl_user_dialog)) },
+            text = { Text(stringResource(R.string.rtl_user_dialog_v2)) },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
             textContentColor = MaterialTheme.colorScheme.onBackground
@@ -639,11 +639,11 @@ private fun PlaintextFormatting(
                     .height(52.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
-            ) { Text(stringResource(R.string.format_output), fontWeight = FontWeight.SemiBold) }
+            ) { Text(stringResource(R.string.format_output_v2), fontWeight = FontWeight.SemiBold) }
         } else {
             Spacer(Modifier.height(12.dp))
             Text(
-                text = stringResource(R.string.format_output),
+                text = stringResource(R.string.format_output_v2),
                 modifier = Modifier.padding(bottom = 8.dp),
                 fontWeight = FontWeight.SemiBold
             )
@@ -665,19 +665,19 @@ private fun PlaintextFormatting(
             }
         ) {
             Text(
-                text = stringResource(R.string.pt_string),
+                text = stringResource(R.string.pt_string_v2),
                 modifier = Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
-                text = stringResource(R.string.pt_delimiter),
+                text = stringResource(R.string.pt_delimiter_v2),
                 modifier = Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
             Text(
-                text = stringResource(R.string.pt_list_as),
+                text = stringResource(R.string.pt_list_as_v2),
                 modifier = Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart),
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
@@ -771,7 +771,7 @@ private fun PlaintextFormatting(
                     .padding(vertical = 8.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.entries),
+                    text = stringResource(R.string.entries_v2),
                     fontWeight = if (!listAs) FontWeight.Bold else FontWeight.Normal,
                     color = LocalContentColor.current.copy(alpha = if (!listAs) 1f else .5f),
                     fontSize = 14.sp,
@@ -784,7 +784,7 @@ private fun PlaintextFormatting(
                         .padding(8.dp, 4.dp)
                 )
                 Text(
-                    text = stringResource(R.string.tins),
+                    text = stringResource(R.string.tins_v2),
                     fontWeight = if (listAs) FontWeight.Bold else FontWeight.Normal,
                     color = LocalContentColor.current.copy(alpha = if (listAs) 1f else .5f),
                     fontSize = 14.sp,
@@ -812,19 +812,19 @@ private fun PlaintextFormatting(
                 enabled = formatString.isNotBlank(),
                 modifier = Modifier.heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(12.dp, 2.dp),
-            ) { Text(stringResource(R.string.save_preset)) }
+            ) { Text(stringResource(R.string.save_preset_v2)) }
             TextButton(
                 onClick = { loadDialog = true },
                 enabled = presets.any { it.formatString.isNotBlank() },
                 modifier = Modifier.heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(12.dp, 2.dp),
-            ) { Text(stringResource(R.string.load_preset)) }
+            ) { Text(stringResource(R.string.load_preset_v2)) }
         }
 
         // Preview
         if (!twoColumnTabs) {
             Text(
-                text = stringResource(R.string.preview),
+                text = stringResource(R.string.preview_v2),
                 modifier = Modifier.padding(bottom = 8.dp),
                 fontWeight = FontWeight.SemiBold
             )
@@ -854,7 +854,7 @@ private fun PlaintextFormatting(
 
         // Formatting Guide
         Text(
-            text = stringResource(R.string.formatting_placeholders),
+            text = stringResource(R.string.formatting_placeholders_v2),
             modifier = Modifier.padding(bottom = 8.dp),
             fontWeight = FontWeight.Bold
         )
@@ -875,7 +875,7 @@ private fun PlaintextFormatting(
         ) {
             Column {
                 Text(
-                    text = stringResource(R.string.formatting_help),
+                    text = stringResource(R.string.formatting_help_v2),
                     modifier = Modifier.padding(bottom = 8.dp, top = 24.dp),
                     fontWeight = FontWeight.Bold
                 )
@@ -893,7 +893,7 @@ private fun PlaintextFormatting(
         ) {
             HorizontalDivider(Modifier.weight(1f), 1.dp)
             Text(
-                text = if (!helpExpanded) stringResource(R.string.click_for_help) else stringResource(R.string.click_hide),
+                text = if (!helpExpanded) stringResource(R.string.click_for_help_v2) else stringResource(R.string.click_hide_v2),
                 fontSize = 14.sp,
                 color = LocalContentColor.current.copy(alpha = 0.5f),
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -930,29 +930,29 @@ private fun PlaintextFormatting(
 @Composable
 private fun PlaceholderGuide(modifier: Modifier = Modifier) {
     val formatGuide = mapOf(
-        stringResource(R.string.brand_label) to "@brand",
-        stringResource(R.string.blend_label) to "@blend",
-        stringResource(R.string.type_label) to "@type",
-        stringResource(R.string.subgenre_label) to "@subgenre",
-        stringResource(R.string.cut_label) to "@cut",
-        stringResource(R.string.components_label) to "@comps",
-        stringResource(R.string.flavoring_label) to "@flavors",
-        stringResource(R.string.quantity_label) to "@qty",
-        stringResource(R.string.rating_label) to "@rating_0_0",
-        stringResource(R.string.production_label) to "@prod",
-        stringResource(R.string.tin_label_label) to "@label",
-        stringResource(R.string.tin_container_label) to "@container",
-        stringResource(R.string.tin_quantity_label) to "@T_qty",
-        stringResource(R.string.manufacture_label) to "@manufacture",
-        stringResource(R.string.cellar_date_label) to "@cellar",
-        stringResource(R.string.open_date_label) to "@open",
-        stringResource(R.string.finished_label) to "@finished",
-        stringResource(R.string.new_line) to "_n_",
-        stringResource(R.string.number) to "#",
-        stringResource(R.string.escape_char) to "'",
-        stringResource(R.string.conditional) to "[...]",
-        stringResource(R.string.tin_sublist) to "{...}",
-        stringResource(R.string.sublist_delim) to "~"
+        stringResource(R.string.brand_label_v2) to "@brand",
+        stringResource(R.string.blend_label_v2) to "@blend",
+        stringResource(R.string.type_label_v2) to "@type",
+        stringResource(R.string.subgenre_label_v2) to "@subgenre",
+        stringResource(R.string.cut_label_v2) to "@cut",
+        stringResource(R.string.components_label_v2) to "@comps",
+        stringResource(R.string.flavoring_label_v2) to "@flavors",
+        stringResource(R.string.quantity_label_v2) to "@qty",
+        stringResource(R.string.rating_label_v2) to "@rating_0_0",
+        stringResource(R.string.production_label_v2) to "@prod",
+        stringResource(R.string.tin_label_label_v2) to "@label",
+        stringResource(R.string.tin_container_label_v2) to "@container",
+        stringResource(R.string.tin_quantity_label_v2) to "@T_qty",
+        stringResource(R.string.manufacture_label_v2) to "@manufacture",
+        stringResource(R.string.cellar_date_label_v2) to "@cellar",
+        stringResource(R.string.open_date_label_v2) to "@open",
+        stringResource(R.string.finished_label_v2) to "@finished",
+        stringResource(R.string.new_line_v2) to "_n_",
+        stringResource(R.string.number_v2) to "#",
+        stringResource(R.string.escape_char_v2) to "'",
+        stringResource(R.string.conditional_v2) to "[...]",
+        stringResource(R.string.tin_sublist_v2) to "{...}",
+        stringResource(R.string.sublist_delim_v2) to "~"
     )
 
     val density = LocalDensity.current
@@ -1085,17 +1085,17 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
-        Text(stringResource(R.string.formatting_help1))
-        Text(stringResource(R.string.formatting_help2, "_n_", "~", "{@label~, }", "{@label~_n_}"))
-        Text(stringResource(R.string.formatting_help3, "@rating_0_0", "_0", "0", "@rating_4_0", "@rating_10_0", "@rating_4_2/4"))
-        Text(stringResource(R.string.formatting_help4, "#"))
-        Text(stringResource(R.string.formatting_help5, "#", " '# ", " '[@type] ", " '01' ", " ''##' "))
-        Text(stringResource(R.string.formatting_help6, "[ ]", " [_n_@type] ", " [ @type[ - @subgenre]] "))
-        Text(stringResource(R.string.formatting_help7, " {@label (@T_qty)~, } "))
-        Text(stringResource(R.string.formatting_help8, "~", " {@label~_n_} "))
-        Text(stringResource(R.string.formatting_help9))
+        Text(stringResource(R.string.formatting_help1_v2))
+        Text(stringResource(R.string.formatting_help2_v2, "_n_", "~", "{@label~, }", "{@label~_n_}"))
+        Text(stringResource(R.string.formatting_help3_v2, "@rating_0_0", "_0", "0", "@rating_4_0", "@rating_10_0", "@rating_4_2/4"))
+        Text(stringResource(R.string.formatting_help4_v2, "#"))
+        Text(stringResource(R.string.formatting_help5_v2, "#", " '# ", " '[@type] ", " '01' ", " ''##' "))
+        Text(stringResource(R.string.formatting_help6_v2, "[ ]", " [_n_@type] ", " [ @type[ - @subgenre]] "))
+        Text(stringResource(R.string.formatting_help7_v2, " {@label (@T_qty)~, } "))
+        Text(stringResource(R.string.formatting_help8_v2, "~", " {@label~_n_} "))
+        Text(stringResource(R.string.formatting_help9_v2))
         Text("    @brand - \"@blend\"[_n_{    - @label '[@T_qty]~_n_}]", fontSize = 14.sp)
-        Text(stringResource(R.string.formatting_help10))
+        Text(stringResource(R.string.formatting_help10_v2))
         Box {
             Text("    Lane Limited - \"Very Cherry\"\n            - Lot 1 [2 oz]\n            - Lot 2 [50 grams]",
                 fontSize = 14.sp)
@@ -1124,9 +1124,9 @@ private fun PrintDialog(
 
     AlertDialog(
         onDismissRequest = { onPrintCancel(fontSize, margins) },
-        confirmButton = { TextButton({ onPrintConfirm(fontSize, margins) }) { Text(stringResource(R.string.print)) } },
-        dismissButton = { TextButton({ onPrintCancel(fontSize, margins) }) { Text(stringResource(R.string.cancel)) } },
-        title = { Text(stringResource(R.string.print_settings)) },
+        confirmButton = { TextButton({ onPrintConfirm(fontSize, margins) }) { Text(stringResource(R.string.print_v2)) } },
+        dismissButton = { TextButton({ onPrintCancel(fontSize, margins) }) { Text(stringResource(R.string.cancel_v2)) } },
+        title = { Text(stringResource(R.string.print_settings_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
@@ -1139,7 +1139,7 @@ private fun PrintDialog(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.Start
             ) {
-                Text(stringResource(R.string.print_dialog), Modifier.padding(bottom = 8.dp))
+                Text(stringResource(R.string.print_dialog_v2), Modifier.padding(bottom = 8.dp))
                 Row(
                     modifier = Modifier
                         .height(IntrinsicSize.Min)
@@ -1157,8 +1157,8 @@ private fun PrintDialog(
                         verticalArrangement = Arrangement.Top,
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text(stringResource(R.string.font_size)) }
-                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text(stringResource(R.string.margins)) }
+                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text(stringResource(R.string.font_size_v2)) }
+                        Box(Modifier.weight(1f), Alignment.CenterStart) { Text(stringResource(R.string.margins_v2)) }
                     }
 
                     // Text fields
@@ -1403,10 +1403,10 @@ private fun SaveDialog(
             TextButton(
                 onClick = { onSaveConfirm(selectedSlot, formatString, delimiter); onSaveCancel() },
                 enabled = selectedSlot != -1
-            ) { Text(stringResource(R.string.save)) }
+            ) { Text(stringResource(R.string.save_v2)) }
         },
-        dismissButton = { TextButton({ onSaveCancel() }) { Text(stringResource(R.string.cancel)) } },
-        title = { Text(stringResource(R.string.save_preset)) },
+        dismissButton = { TextButton({ onSaveCancel() }) { Text(stringResource(R.string.cancel_v2)) } },
+        title = { Text(stringResource(R.string.save_preset_v2)) },
         modifier = modifier
             .fillMaxWidth(.9f)
             .clickable(null, null) { selectedSlot = -1 },
@@ -1490,7 +1490,7 @@ private fun SaveDialog(
                                         thickness = 1.5.dp
                                     )
                                     Text(
-                                        text = preset.delimiter.ifBlank{ stringResource(R.string.n_a) },
+                                        text = preset.delimiter.ifBlank{ stringResource(R.string.n_a_v2) },
                                         modifier = Modifier
                                             .width(44.dp)
                                             .padding(start = 2.dp),
@@ -1503,7 +1503,7 @@ private fun SaveDialog(
                             }
                             if (isSelected && preset.formatString.isNotBlank()) {
                                 Text(
-                                    text = stringResource(R.string.overwrite_q),
+                                    text = stringResource(R.string.overwrite_q_v2),
                                     modifier = Modifier.matchParentSize(),
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.error,
@@ -1521,11 +1521,11 @@ private fun SaveDialog(
             onDismissRequest = { onConfirm(false) },
             confirmButton = {
                 TextButton({ onDeleteConfirm(selectedSlot); selectedSlot = -1; onConfirm(false) }
-                ) { Text(stringResource(R.string.delete)) }
+                ) { Text(stringResource(R.string.delete_v2)) }
             },
-            dismissButton = { TextButton({ onConfirm(false) }) { Text(stringResource(R.string.cancel)) } },
-            title = { Text(stringResource(R.string.delete_preset)) },
-            text = { Text(stringResource(R.string.delete_preset_dialog, "${selectedSlot + 1}")) },
+            dismissButton = { TextButton({ onConfirm(false) }) { Text(stringResource(R.string.cancel_v2)) } },
+            title = { Text(stringResource(R.string.delete_preset_v2)) },
+            text = { Text(stringResource(R.string.delete_preset_dialog_v2, "${selectedSlot + 1}")) },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
             textContentColor = MaterialTheme.colorScheme.onBackground
@@ -1556,10 +1556,10 @@ private fun LoadDialog(
                     onLoadConfirm(savedPresets[selectedSlot].formatString, savedPresets[selectedSlot].delimiter)
                     onLoadCancel() },
                 enabled = selectedSlot != -1
-            ) { Text(stringResource(R.string.load)) }
+            ) { Text(stringResource(R.string.load_v2)) }
         },
-        dismissButton = { TextButton({ onLoadCancel() }) { Text(stringResource(R.string.cancel)) } },
-        title = { Text(stringResource(R.string.load_preset)) },
+        dismissButton = { TextButton({ onLoadCancel() }) { Text(stringResource(R.string.cancel_v2)) } },
+        title = { Text(stringResource(R.string.load_preset_v2)) },
         modifier = modifier
             .fillMaxWidth(.9f)
             .clickable(null, null) { selectedSlot = -1 },
@@ -1630,7 +1630,7 @@ private fun LoadDialog(
                                 thickness = 1.5.dp
                             )
                             Text(
-                                text = preset.delimiter.ifBlank{ stringResource(R.string.n_a) },
+                                text = preset.delimiter.ifBlank{ stringResource(R.string.n_a_v2) },
                                 modifier = Modifier
                                     .width(44.dp)
                                     .padding(start = 2.dp),
@@ -1650,11 +1650,11 @@ private fun LoadDialog(
             onDismissRequest = { onConfirm(false) },
             confirmButton = {
                 TextButton({ onDeleteConfirm(selectedSlot); selectedSlot = -1; onConfirm(false) }) {
-                    Text(stringResource(R.string.delete)) }
+                    Text(stringResource(R.string.delete_v2)) }
             },
-            dismissButton = { TextButton({ onConfirm(false) }) { Text(stringResource(R.string.cancel)) } },
-            title = { Text(stringResource(R.string.delete_preset)) },
-            text = { Text(stringResource(R.string.delete_preset_dialog, "${selectedSlot + 1}")) },
+            dismissButton = { TextButton({ onConfirm(false) }) { Text(stringResource(R.string.cancel_v2)) } },
+            title = { Text(stringResource(R.string.delete_preset_v2)) },
+            text = { Text(stringResource(R.string.delete_preset_dialog_v2, "${selectedSlot + 1}")) },
             shape = MaterialTheme.shapes.small,
             containerColor = MaterialTheme.colorScheme.background,
             textContentColor = MaterialTheme.colorScheme.onBackground

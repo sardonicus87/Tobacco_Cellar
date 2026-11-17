@@ -75,7 +75,7 @@ fun RatingPopup(
         shape = MaterialTheme.shapes.small,
         title = {
             Text(
-                text = stringResource(R.string.rating),
+                text = stringResource(R.string.rating_v2),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp
             )
@@ -90,7 +90,7 @@ fun RatingPopup(
                     Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
                 }
                 Text(
-                    text = stringResource(R.string.rating_desc),
+                    text = stringResource(R.string.rating_desc_v2),
                     fontSize = 15.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -161,14 +161,14 @@ fun RatingPopup(
                 onClick = { onRatingSelected(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.done)) }
+            ) { Text(stringResource(R.string.done_v2)) }
         },
         dismissButton = {
             TextButton(
                 onClick = { onDismiss() },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.cancel)) }
+            ) { Text(stringResource(R.string.cancel_v2)) }
         }
     )
 }

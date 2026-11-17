@@ -149,7 +149,7 @@ fun BulkEditScreen(
             .clickable(indication = null, interactionSource = null) { focusManager.clearFocus() },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.batch_edit_title),
+                title = stringResource(R.string.batch_edit_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = canNavigateBack,
                 modifier = Modifier,
@@ -242,7 +242,7 @@ fun BulkEditBody(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        val titles = listOf(stringResource(R.string.select_entries), stringResource(R.string.batch_edit_title))
+        val titles = listOf(stringResource(R.string.select_entries_v2), stringResource(R.string.batch_edit_title_v2))
 
         Box {
             Column(
@@ -435,12 +435,12 @@ fun BulkSelections(
             TextButton(
                 onClick = { selectAll() },
                 modifier = Modifier,
-            ) { Text(stringResource(R.string.select_all)) }
+            ) { Text(stringResource(R.string.select_all_v2)) }
             TextButton(
                 onClick = { clearSelections() },
                 modifier = Modifier,
                 enabled = selectedItems.isNotEmpty(),
-            ) { Text(stringResource(R.string.clear_all)) }
+            ) { Text(stringResource(R.string.clear_all_v2)) }
             Box (contentAlignment = Alignment.Center) {
                 val filteringApplied by filterViewModel.isFilterApplied.collectAsState()
                 val borderColor = if (filteringApplied) MaterialTheme.colorScheme.primary else Color.Transparent
@@ -449,7 +449,7 @@ fun BulkSelections(
                 TextButton(
                     onClick = { filterViewModel.openBottomSheet() },
                     modifier = Modifier
-                ) { Text(stringResource(R.string.filter)) }
+                ) { Text(stringResource(R.string.filter_v2)) }
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
@@ -541,7 +541,7 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.edit),
+                            text = stringResource(R.string.edit_v2),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 15.sp,
                             modifier = Modifier
@@ -564,57 +564,57 @@ fun BulkEditing(
                         .padding(bottom = 16.dp)
                 ) {
                     RowLabel(
-                        text = stringResource(R.string.type_label),
+                        text = stringResource(R.string.type_label_v2),
                         checked = editingState.typeSelected,
                         onCheckedChange = { onValueChange(editingState.copy(typeSelected = it)) },
                         modifier = Modifier.gridItem(1, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.subgenre_label),
+                        text = stringResource(R.string.subgenre_label_v2),
                         checked = editingState.genreSelected,
                         onCheckedChange = { onValueChange(editingState.copy(genreSelected = it)) },
                         modifier = Modifier.gridItem(2, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.cut_label),
+                        text = stringResource(R.string.cut_label_v2),
                         checked = editingState.cutSelected,
                         onCheckedChange = { onValueChange(editingState.copy(cutSelected = it)) },
                         modifier = Modifier.gridItem(3, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.components_label),
+                        text = stringResource(R.string.components_label_v2),
                         checked = editingState.compsSelected,
                         onCheckedChange = { onValueChange(editingState.copy(compsSelected = it)) },
                         modifier = Modifier.gridItem(4, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.flavoring_label),
+                        text = stringResource(R.string.flavoring_label_v2),
                         checked = editingState.flavorSelected,
                         onCheckedChange = { onValueChange(editingState.copy(flavorSelected = it)) },
                         modifier = Modifier.gridItem(5, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.rating_label),
+                        text = stringResource(R.string.rating_label_v2),
                         checked = editingState.ratingSelected,
                         onCheckedChange = { onValueChange(editingState.copy(ratingSelected = it)) },
                         modifier = Modifier.gridItem(6, labelCol, 1, 1, Alignment.CenterStart)
                     )
                     RowLabel(
-                        text = stringResource(R.string.fav_dis_label),
+                        text = stringResource(R.string.fav_dis_label_v2),
                         checked = editingState.favoriteDisSelected,
                         onCheckedChange = { onValueChange(editingState.copy(favoriteDisSelected = it)) },
                         modifier = Modifier.gridItem(7, labelCol, 1, 1, Alignment.CenterStart),
                         maxLines = 2
                     )
                     RowLabel(
-                        text = stringResource(R.string.production_status_label),
+                        text = stringResource(R.string.production_status_label_v2),
                         checked = editingState.productionSelected,
                         onCheckedChange = { onValueChange(editingState.copy(productionSelected = it)) },
                         modifier = Modifier.gridItem(8, labelCol, 1, 1, Alignment.CenterStart),
                         maxLines = 2
                     )
                     RowLabel(
-                        text = stringResource(R.string.sync_entry_tin_q),
+                        text = stringResource(R.string.sync_entry_tin_q_v2),
                         checked = editingState.syncTinsSelected,
                         onCheckedChange = { onValueChange(editingState.copy(syncTinsSelected = it)) },
                         modifier = Modifier.gridItem(9, labelCol, 1, 1, Alignment.CenterStart),
@@ -742,7 +742,7 @@ fun BulkEditing(
                         placeholder = {
                             if (editingState.compsSelected) {
                                 Text(
-                                    text = stringResource(R.string.separate_comma),
+                                    text = stringResource(R.string.separate_comma_v2),
                                     autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                                     lineHeight = 1.em,
                                     maxLines = 1,
@@ -800,7 +800,7 @@ fun BulkEditing(
                         placeholder = {
                             if (editingState.flavorSelected) {
                                 Text(
-                                    text = stringResource(R.string.separate_comma),
+                                    text = stringResource(R.string.separate_comma_v2),
                                     autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                                     lineHeight = 1.em,
                                     maxLines = 1,
@@ -843,7 +843,7 @@ fun BulkEditing(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = stringResource(R.string.favorite),
+                                text = stringResource(R.string.favorite_v2),
                                 autoSize = TextAutoSize.StepBased(13.sp, 16.sp),
                                 maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
@@ -879,7 +879,7 @@ fun BulkEditing(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = stringResource(R.string.disliked),
+                                text = stringResource(R.string.disliked_v2),
                                 autoSize = TextAutoSize.StepBased(13.sp, 16.sp),
                                 maxLines = 1,
                                 modifier = Modifier.offset(x = 0.dp, y = 1.dp),
@@ -916,7 +916,7 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.in_production),
+                            text = stringResource(R.string.in_production_v2),
                             modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                             color =
                                 if (!editingState.productionSelected) LocalContentColor.current.copy(alpha = 0.50f)
@@ -939,7 +939,7 @@ fun BulkEditing(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.sync_q).toLtr(),
+                            text = stringResource(R.string.sync_q_v2).toLtr(),
                             modifier = Modifier.offset(x = 0.dp, y = 1.dp),
                             color = if (!editingState.syncTinsSelected) LocalContentColor.current.copy(alpha = 0.50f) else LocalContentColor.current
                         )
@@ -966,7 +966,7 @@ fun BulkEditing(
                 .align(Alignment.CenterHorizontally),
             enabled = enableSave,
             shape = MaterialTheme.shapes.small
-        ) { Text(stringResource(R.string.save)) }
+        ) { Text(stringResource(R.string.save_v2)) }
 
         val landscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -1034,13 +1034,13 @@ private fun ConfirmEditDialog(
 ) {
     AlertDialog(
         onDismissRequest = { /* Do nothing */ },
-        title = { Text(stringResource(R.string.are_sure_q)) },
-        text = { Text(stringResource(R.string.are_sure_long)) },
+        title = { Text(stringResource(R.string.are_sure_q_v2)) },
+        text = { Text(stringResource(R.string.are_sure_long_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
-        dismissButton = { TextButton(onEditCancel) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onEditConfirm) { Text(stringResource(R.string.yes)) } }
+        dismissButton = { TextButton(onEditCancel) { Text(stringResource(R.string.cancel_v2)) } },
+        confirmButton = { TextButton(onEditConfirm) { Text(stringResource(R.string.yes_v2)) } }
     )
 }
 

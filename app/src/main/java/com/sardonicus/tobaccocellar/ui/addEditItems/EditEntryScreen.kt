@@ -75,7 +75,7 @@ fun EditEntryScreen(
                 .graphicsLayer { translationY = topBarHeight.toPx() - 56.dp.toPx() }
             ) {
                 CellarTopAppBar(
-                    title = stringResource(R.string.edit_entry_title),
+                    title = stringResource(R.string.edit_entry_title_v2),
                     scrollBehavior = scrollBehavior,
                     canNavigateBack = canNavigateBack,
                     navigateUp = navigateBack,

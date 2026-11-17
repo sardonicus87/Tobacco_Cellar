@@ -38,8 +38,8 @@ class StatsViewModel(
     private val _showLoading = MutableStateFlow(true)
     val showLoading = _showLoading.asStateFlow()
     private fun updateLoading(state: Boolean) { _showLoading.value = state }
-    private val unassignedLabel = getLocalizedContext(app).safeString(R.string.unassigned)
-    private val noneAssignedLabel = getLocalizedContext(app).safeString(R.string.none_assigned)
+    private val unassignedLabel = getLocalizedContext(app).safeString(R.string.unassigned_v2)
+    private val noneAssignedLabel = getLocalizedContext(app).safeString(R.string.none_assigned_v2)
 
     /** Raw stats */
     @Suppress("UNCHECKED_CAST")
@@ -307,7 +307,7 @@ class StatsViewModel(
 
         val context = getLocalizedContext(app)
         val globalAvg = if (ratedCount > 0) ratingSum / ratedCount else 0.0
-        val other = context.safeString(R.string.chart_other)
+        val other = context.safeString(R.string.chart_other_v2)
 
         FilteredStats(
             blendsCount = filteredItems.size,
@@ -343,9 +343,9 @@ class StatsViewModel(
                 unratedCount = unratedCount
             ),
             favDisByEntries = mapOf(
-                context.safeString(R.string.favorite) to favoriteCount,
-                context.safeString(R.string.disliked) to dislikedCount,
-                context.safeString(R.string.neutral) to (filteredItems.size - favoriteCount - dislikedCount)
+                context.safeString(R.string.favorite_v2) to favoriteCount,
+                context.safeString(R.string.disliked_v2) to dislikedCount,
+                context.safeString(R.string.neutral_v2) to (filteredItems.size - favoriteCount - dislikedCount)
             ).filterValues { it > 0 }.sortByValue(),
             subgenresByEntries = subgenresByEntries.reduceToTen(other),
             subgenresByQuantity = subgenresByQuantity.reduceToTen(other),
@@ -379,11 +379,11 @@ class StatsViewModel(
                 flavoring = flavoring,
                 container = container,
                 available = listOfNotNull(
-                    if (subgenre) { Triple(context.safeString(R.string.subgenre), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
-                    if (cut) { Triple(context.safeString(R.string.cut), raw.totalByCut, filtered.totalByCut) } else null,
-                    if (component) { Triple(context.safeString(R.string.component), raw.totalByComponent, filtered.totalByComponent) } else null,
-                    if (flavoring) { Triple(context.safeString(R.string.flavoring), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
-                    if (container) { Triple(context.safeString(R.string.container), raw.totalByContainer, filtered.totalByContainer) } else null
+                    if (subgenre) { Triple(context.safeString(R.string.subgenre_v2), raw.totalBySubgenre, filtered.totalBySubgenre) } else null,
+                    if (cut) { Triple(context.safeString(R.string.cut_v2), raw.totalByCut, filtered.totalByCut) } else null,
+                    if (component) { Triple(context.safeString(R.string.component_v2), raw.totalByComponent, filtered.totalByComponent) } else null,
+                    if (flavoring) { Triple(context.safeString(R.string.flavoring_v2), raw.totalByFlavoring, filtered.totalByFlavoring) } else null,
+                    if (container) { Triple(context.safeString(R.string.container_v2), raw.totalByContainer, filtered.totalByContainer) } else null
                 )
             )
         }
@@ -546,12 +546,12 @@ private fun formatWeight(quantityOption: QuantityOption, totalWeight: Double, ap
     val context = getLocalizedContext(app)
     return when (quantityOption) {
         QuantityOption.OUNCES -> {
-            if (totalWeight >= 16.00) { context.safeString(R.string.quantity_lbs, formatDecimal(totalWeight/16)) }
-            else { context.safeString(R.string.quantity_oz, formatDecimal(totalWeight)) }
+            if (totalWeight >= 16.00) { context.safeString(R.string.quantity_lbs_v2, formatDecimal(totalWeight/16)) }
+            else { context.safeString(R.string.quantity_oz_v2, formatDecimal(totalWeight)) }
         }
         QuantityOption.GRAMS -> {
-            if (totalWeight >= 1000.00) { context.safeString(R.string.quantity_kg, formatDecimal(totalWeight/1000)) }
-            else { context.safeString(R.string.quantity_g_estimate, formatDecimal(totalWeight)) }
+            if (totalWeight >= 1000.00) { context.safeString(R.string.quantity_kg_v2, formatDecimal(totalWeight/1000)) }
+            else { context.safeString(R.string.quantity_g_estimate_v2, formatDecimal(totalWeight)) }
         }
         else -> null
     } ?: ""

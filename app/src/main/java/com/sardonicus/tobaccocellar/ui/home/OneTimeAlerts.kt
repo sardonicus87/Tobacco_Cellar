@@ -125,7 +125,7 @@ fun ImportantAlertDialog(
             containerColor = LocalCustomColors.current.darkNeutral,
             title = {
                 Text(
-                    text = stringResource(R.string.important_alert),
+                    text = stringResource(R.string.important_alert_v2),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
@@ -136,7 +136,7 @@ fun ImportantAlertDialog(
             text = {
                 Column {
                     Text(
-                        text = stringResource(R.string.one_time_alert),
+                        text = stringResource(R.string.one_time_alert_v2),
                         modifier = Modifier
                             .padding(bottom = 12.dp)
                             .fillMaxWidth(),
@@ -155,7 +155,7 @@ fun ImportantAlertDialog(
                             Column {
                                 if (!isCurrent) {
                                     Text(
-                                        text = stringResource(R.string.missed_alert),
+                                        text = stringResource(R.string.missed_alert_v2),
                                         modifier = Modifier,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 15.sp,
@@ -163,8 +163,7 @@ fun ImportantAlertDialog(
                                     )
                                 }
                                 Text(
-                                    text = stringResource(
-                                        R.string.alert_info,
+                                    text = stringResource(R.string.alert_info_v2,
                                         alert.date,
                                         alert.appVersion
                                     ),
@@ -173,7 +172,7 @@ fun ImportantAlertDialog(
                                 )
                                 if (canScroll) {
                                     Text(
-                                        text = stringResource(R.string.alert_scroll),
+                                        text = stringResource(R.string.alert_scroll_v2),
                                         modifier = Modifier.padding(bottom = 16.dp)
                                     )
                                 }
@@ -195,8 +194,8 @@ fun ImportantAlertDialog(
                 LaunchedEffect(isScrollable, atBottom, alert.id) {
                     if (isScrollable && atBottom) { enabled = true }
                 }
-                val nextString = stringResource(R.string.next)
-                val confirmString = stringResource(R.string.confirm)
+                val nextString = stringResource(R.string.next_v2)
+                val confirmString = stringResource(R.string.confirm_v2)
                 val buttonText = remember(isScrollable, enabled, countdown, isCurrent) {
                     if (!isCurrent) {
                         if (isScrollable) { nextString }
@@ -217,7 +216,7 @@ fun ImportantAlertDialog(
                     enabled = enabled
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.confirm), color = Color.Transparent)
+                        Text(stringResource(R.string.confirm_v2), color = Color.Transparent)
                         Text(buttonText)
                     }
                 }

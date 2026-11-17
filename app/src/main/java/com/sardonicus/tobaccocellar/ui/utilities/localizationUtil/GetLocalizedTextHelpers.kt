@@ -44,7 +44,7 @@ fun Context.safeQuantityString(@PluralsRes id: Int, quantity: Int, vararg format
 fun getLocalizedType(typeKey: String, showUnassigned: Boolean = true): String {
     val context = getLocalizedContext(CellarApplication.instance)
 
-    if (typeKey.isBlank()) { return if (showUnassigned) context.safeString(R.string.unassigned) else "" }
+    if (typeKey.isBlank()) { return if (showUnassigned) context.safeString(R.string.unassigned_v2) else "" }
     val blendType = runCatching { BlendTypes.valueOf(typeKey) }.getOrDefault(BlendTypes.UNASSIGNED)
     return context.safeString(blendType.resId)
 }

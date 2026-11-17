@@ -154,7 +154,7 @@ fun HistogramChart(
                 // null count
                 if (data.unratedCount > 0) {
                     Text(
-                        text = stringResource(R.string.unrated_count, "${data.unratedCount}"),
+                        text = stringResource(R.string.unrated_count_v2, "${data.unratedCount}"),
                         color = LocalContentColor.current,
                         fontSize = 12.sp,
                         modifier = Modifier
@@ -165,7 +165,7 @@ fun HistogramChart(
                 }
                 // count label
                 Text(
-                    text = stringResource(R.string.frequency),
+                    text = stringResource(R.string.frequency_v2),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier
@@ -251,7 +251,7 @@ fun HistogramChart(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = stringResource(R.string.rating_ranges),
+                    text = stringResource(R.string.rating_ranges_v2),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )

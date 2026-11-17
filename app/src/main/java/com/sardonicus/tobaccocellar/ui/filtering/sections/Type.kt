@@ -60,7 +60,7 @@ fun TypeFilterSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(id = R.string.no_types),
+                    text = stringResource(R.string.no_types_v2),
                     autoSize = TextAutoSize.StepBased(11.sp, 14.sp),
                     maxLines = 1,
                     fontWeight = FontWeight.Normal,

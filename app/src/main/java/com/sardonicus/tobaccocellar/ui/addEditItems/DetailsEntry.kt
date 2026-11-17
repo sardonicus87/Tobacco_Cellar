@@ -136,16 +136,16 @@ fun DetailsEntry(
                 gap(8.dp)
             },
         ) {
-            Text(stringResource(R.string.brand_label), Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.blend_label), Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.type_label), Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.subgenre_label), Modifier.gridItem(4, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.cut_label), Modifier.gridItem(5, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.components_label), Modifier.gridItem(6, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.flavoring_label), Modifier.gridItem(7, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
-            Text(stringResource(R.string.no_of_tins_label), Modifier.gridItem(8, label, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
+            Text(stringResource(R.string.brand_label_v2), Modifier.gridItem(1, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.blend_label_v2), Modifier.gridItem(2, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.type_label_v2), Modifier.gridItem(3, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.subgenre_label_v2), Modifier.gridItem(4, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.cut_label_v2), Modifier.gridItem(5, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.components_label_v2), Modifier.gridItem(6, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.flavoring_label_v2), Modifier.gridItem(7, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.no_of_tins_label_v2), Modifier.gridItem(8, label, 1, 1, Alignment.CenterStart), maxLines = 2, autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
                 style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))
-            Text(stringResource(R.string.rating_label), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
+            Text(stringResource(R.string.rating_label_v2), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
             AutoCompleteText(
                 value = itemDetails.brand,
@@ -158,7 +158,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.brand.isNotEmpty()) {
-                            stringResource(R.string.parenthetical, itemDetails.originalItem.brand) } else ""
+                            stringResource(R.string.parenthetical_v2, itemDetails.originalItem.brand) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -168,7 +168,7 @@ fun DetailsEntry(
                         )
                     } else {
                         Text(
-                            text = stringResource(R.string.required),
+                            text = stringResource(R.string.required_v2),
                             modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             lineHeight = 1.em,
@@ -211,7 +211,7 @@ fun DetailsEntry(
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
-                            stringResource(R.string.parenthetical, itemDetails.originalItem.blend) } else ""
+                            stringResource(R.string.parenthetical_v2, itemDetails.originalItem.blend) } else ""
                         Text(
                             text = text,
                             modifier = Modifier.alpha(0.66f),
@@ -221,7 +221,7 @@ fun DetailsEntry(
                         )
                     } else {
                         Text(
-                            text = stringResource(R.string.required),
+                            text = stringResource(R.string.required_v2),
                             modifier = Modifier.alpha(0.66f),
                             fontSize = 14.sp,
                             maxLines = 1,
@@ -367,7 +367,7 @@ fun DetailsEntry(
                 maxLines = 1,
                 placeholder = {
                     Text(
-                        text = stringResource(R.string.separate_comma),
+                        text = stringResource(R.string.separate_comma_v2),
                         autoSize = TextAutoSize.StepBased(11.sp, 13.sp, .1.sp),
                         lineHeight = 1.em,
                         maxLines = 1,
@@ -414,7 +414,7 @@ fun DetailsEntry(
                 maxLines = 1,
                 placeholder = {
                     Text(
-                        text = stringResource(R.string.separate_comma),
+                        text = stringResource(R.string.separate_comma_v2),
                         autoSize = TextAutoSize.StepBased(11.sp, 13.sp, .1.sp),
                         lineHeight = 1.em,
                         maxLines = 1,
@@ -569,7 +569,7 @@ fun DetailsEntry(
                                     ),
                                     modifier = Modifier
                                         .border(Dp.Hairline, MaterialTheme.colorScheme.outlineVariant, TooltipDefaults.richTooltipContainerShape)
-                                ) { Text(stringResource(R.string.sync_tooltip)) }
+                                ) { Text(stringResource(R.string.sync_tooltip_v2)) }
                             },
                             state = tooltipState
                         ) {
@@ -606,7 +606,7 @@ fun DetailsEntry(
                                         uncheckedIcon = R.drawable.check_box_outline_24
                                     )
                                     Text(
-                                        text = stringResource(R.string.sync_q).toLtr(),
+                                        text = stringResource(R.string.sync_q_v2).toLtr(),
                                         modifier = Modifier
                                             .offset(x = 0.dp, y = 1.dp)
                                             .widthIn(max = 40.dp),
@@ -616,7 +616,7 @@ fun DetailsEntry(
                                     )
                                 } else {
                                     Text(
-                                        text = stringResource(R.string.sync_q),
+                                        text = stringResource(R.string.sync_q_v2),
                                         modifier = Modifier
                                             .offset(x = 0.dp, y = 1.dp)
                                             .widthIn(max = 40.dp),
@@ -670,7 +670,7 @@ fun DetailsEntry(
                 )
                 if (itemDetails.rating != null) {
                     Text(
-                        text = stringResource(R.string.parenthetical, formatDecimal(itemDetails.rating)),
+                        text = stringResource(R.string.parenthetical_v2, formatDecimal(itemDetails.rating)),
                         fontSize = 13.sp,
                         modifier = Modifier.alpha(0.75f)
                     )
@@ -693,7 +693,7 @@ fun DetailsEntry(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.favorite),
+                    text = stringResource(R.string.favorite_v2),
                     modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
@@ -717,7 +717,7 @@ fun DetailsEntry(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.disliked),
+                    text = stringResource(R.string.disliked_v2),
                     modifier = Modifier.offset(x = 0.dp, y = 1.dp)
                 )
                 CustomCheckbox(
@@ -747,7 +747,7 @@ fun DetailsEntry(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.in_production),
+                text = stringResource(R.string.in_production_v2),
                 modifier = Modifier.offset(x = 0.dp, y = 1.dp)
             )
             CustomCheckbox(

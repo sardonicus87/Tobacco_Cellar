@@ -50,7 +50,7 @@ fun DbOperationsDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.other_operations_dialog),
+                        text = stringResource(R.string.other_operations_dialog_v2),
                         fontSize = 15.sp,
                         modifier = Modifier
                             .padding(horizontal = 10.dp)
@@ -62,19 +62,19 @@ fun DbOperationsDialog(
                         enabled = !debouncedLoading,
                         contentPadding = PaddingValues(8.dp, 3.dp),
                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                    ) { Text(stringResource(R.string.other_operations_fix), fontSize = 15.sp) }
+                    ) { Text(stringResource(R.string.other_operations_fix_v2), fontSize = 15.sp) }
 
                     TextButton(
                         onClick = { optimizeDatabase() },
                         enabled = !debouncedLoading,
                         contentPadding = PaddingValues(8.dp, 3.dp),
                         modifier = Modifier.heightIn(28.dp, 28.dp)
-                    ) { Text(stringResource(R.string.other_operations_clean), fontSize = 15.sp) }
+                    ) { Text(stringResource(R.string.other_operations_clean_v2), fontSize = 15.sp) }
                 }
                 if (debouncedLoading) { LoadingIndicator(center = true, modifier = Modifier.matchParentSize()) }
             }
         },
-        confirmButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done)) } },
+        confirmButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.done_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

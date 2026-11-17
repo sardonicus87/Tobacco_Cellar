@@ -182,7 +182,7 @@ fun PlaintextActionRow(
                 // Sorting
                 SortingButton(viewModel)
 
-                val copied = stringResource(R.string.copied_clipboard)
+                val copied = stringResource(R.string.copied_clipboard_v2)
                 // Copy
                 IconButton(
                     onClick = {
@@ -367,7 +367,7 @@ private fun SortingButton(
                 shadowElevation = 6.dp
             ) {
                 Text(
-                    text = stringResource(R.string.sub_sorting).rtlIsolate(),
+                    text = stringResource(R.string.sub_sorting_v2).rtlIsolate(),
                     autoSize = StepBased(12.sp, 14.sp),
                     lineHeight = 1.em,
                     maxLines = 1,

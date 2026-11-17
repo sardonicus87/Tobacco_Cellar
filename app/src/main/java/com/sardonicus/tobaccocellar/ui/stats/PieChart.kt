@@ -53,7 +53,7 @@ fun PieChart(
     val isLightTheme = LocalCustomColors.current.isLightTheme
     val background = colorScheme.background
 
-    val otherLabel = stringResource(R.string.chart_other)
+    val otherLabel = stringResource(R.string.chart_other_v2)
 
     Canvas(
         modifier = modifier

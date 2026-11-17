@@ -112,7 +112,7 @@ fun DatesScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.dates_title),
+                title = stringResource(R.string.dates_title_v2),
                 scrollBehavior = scrollBehavior,
                 showMenu = false,
                 canNavigateBack = false
@@ -168,7 +168,7 @@ fun DatesBody(
             // disclaimer
             item(key = "disclaimer") {
                 Text(
-                    text = stringResource(R.string.dates_disclaimer),
+                    text = stringResource(R.string.dates_disclaimer_v2),
                     modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(.9f),
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
@@ -178,7 +178,7 @@ fun DatesBody(
 
             // Aging Tracker
             item(key = "header_aging", contentType = "header") {
-                DateSectionHeader(stringResource(R.string.aging_tracker), separatorColor)
+                DateSectionHeader(stringResource(R.string.aging_tracker_v2), separatorColor)
             }
 
             item(key = "content_aging", contentType = "aging_list") {
@@ -220,7 +220,7 @@ fun DatesBody(
                         Spacer(Modifier.height(20.dp))
                     } else {
                         Text(
-                            text = stringResource(R.string.no_aging_found),
+                            text = stringResource(R.string.no_aging_found_v2),
                             modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                             textAlign = TextAlign.Center
                         )
@@ -231,7 +231,7 @@ fun DatesBody(
             if (datesUiState.datesExist) {
                 // Quick Stats
                 item(key = "header_stats", contentType = "header") {
-                    DateSectionHeader(stringResource(R.string.quick_date_stats), separatorColor)
+                    DateSectionHeader(stringResource(R.string.quick_date_stats_v2), separatorColor)
                 }
 
                 item(key = "content_stats", contentType = "stats") {
@@ -246,7 +246,7 @@ fun DatesBody(
 
                 // Oldest Tins
                 item(key = "header_oldest", contentType = "header") {
-                    DateSectionHeader(stringResource(R.string.oldest_tins), separatorColor)
+                    DateSectionHeader(stringResource(R.string.oldest_tins_v2), separatorColor)
                 }
 
                 item(key = "content_oldest", contentType = "date_info_list") {
@@ -260,7 +260,7 @@ fun DatesBody(
 
                 //  Future tins
                 item(key = "header_future", contentType = "header") {
-                    DateSectionHeader(stringResource(R.string.future_tins), separatorColor)
+                    DateSectionHeader(stringResource(R.string.future_tins_v2), separatorColor)
                 }
 
                 item(key = "content_future", contentType = "date_info_list") {
@@ -313,7 +313,7 @@ private fun EmptyState() {
         HorizontalDivider(Modifier.fillMaxWidth(), Dp.Hairline, colorScheme.secondary)
         Spacer(Modifier.weight(1f))
         Text(
-            text = stringResource(R.string.dates_no_info_found),
+            text = stringResource(R.string.dates_no_info_found_v2),
             modifier = Modifier.fillMaxWidth(.75f),
             textAlign = TextAlign.Center,
             fontSize = 24.sp
@@ -348,14 +348,14 @@ private fun AgingSection(
                             .padding(horizontal = 4.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.aging_brand, item.brand.rtlIsolate()),
+                            text = stringResource(R.string.aging_brand_v2, item.brand.rtlIsolate()),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             modifier = Modifier.width(IntrinsicSize.Max)
                         )
                         Text(
-                            text = stringResource(R.string.aging_entry_part, item.blend.rtlIsolate()),
+                            text = stringResource(R.string.aging_entry_part_v2, item.blend.rtlIsolate()),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Normal,
                             maxLines = 1,
@@ -363,7 +363,7 @@ private fun AgingSection(
                             modifier = Modifier.weight(1f, false)
                         )
                         Text(
-                            text = stringResource(R.string.aging_entry_part, item.tinLabel.rtlIsolate()),
+                            text = stringResource(R.string.aging_entry_part_v2, item.tinLabel.rtlIsolate()),
                             fontSize = 14.sp,
                             fontStyle = FontStyle.Italic,
                             maxLines = 1,
@@ -371,7 +371,7 @@ private fun AgingSection(
                         )
                         if (item.timeFrame.isNotBlank()) {
                             Text(
-                                text = stringResource(R.string.parenthetical, item.timeFrame),
+                                text = stringResource(R.string.parenthetical_v2, item.timeFrame),
                                 fontSize = 14.sp,
                                 modifier = Modifier.width(IntrinsicSize.Max)
                             )
@@ -442,7 +442,7 @@ private fun QuickStatsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = stringResource(R.string.dates_no_stats),
+                text = stringResource(R.string.dates_no_stats_v2),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center,
                 fontSize = 15.sp
@@ -477,7 +477,7 @@ private fun OldestTinsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = stringResource(R.string.dates_no_past),
+                text = stringResource(R.string.dates_no_past_v2),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center
             )
@@ -510,7 +510,7 @@ private fun FutureTinsSection(
             Spacer(Modifier.height(20.dp))
         } else {
             Text(
-                text = stringResource(R.string.dates_no_future),
+                text = stringResource(R.string.dates_no_future_v2),
                 modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
                 textAlign = TextAlign.Center
             )
@@ -579,14 +579,14 @@ fun DatesSection(
                                 modifier = Modifier
                             ) {
                                 Text(
-                                    text = stringResource(R.string.aging_brand, item.brand.rtlIsolate()),
+                                    text = stringResource(R.string.aging_brand_v2, item.brand.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     modifier = Modifier.width(IntrinsicSize.Max)
                                 )
                                 Text(
-                                    text = stringResource(R.string.aging_entry_part, item.blend.rtlIsolate()),
+                                    text = stringResource(R.string.aging_entry_part_v2, item.blend.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Normal,
                                     maxLines = 1,
@@ -594,7 +594,7 @@ fun DatesSection(
                                     modifier = Modifier.weight(1f, false)
                                 )
                                 Text(
-                                    text = stringResource(R.string.aging_entry_part, item.tinLabel.rtlIsolate()),
+                                    text = stringResource(R.string.aging_entry_part_v2, item.tinLabel.rtlIsolate()),
                                     fontSize = 14.sp,
                                     fontStyle = FontStyle.Italic,
                                     maxLines = 1,
@@ -602,7 +602,7 @@ fun DatesSection(
                                 )
                             }
                             Text(
-                                text = stringResource(R.string.date_age, item.date, item.timeFrame),
+                                text = stringResource(R.string.date_age_v2, item.date, item.timeFrame),
                                 fontSize = 14.sp,
                                 modifier = Modifier.padding(start = 16.dp)
                             )
@@ -612,7 +612,7 @@ fun DatesSection(
                 Spacer(Modifier.height(10.dp))
             } else {
                 Text(
-                    text = stringResource(R.string.no_section_found, label.lowercase()),
+                    text = stringResource(R.string.no_section_found_v2, label.lowercase()),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 6.dp, bottom = 10.dp),

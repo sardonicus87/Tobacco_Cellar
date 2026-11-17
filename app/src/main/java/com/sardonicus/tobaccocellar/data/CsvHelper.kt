@@ -54,13 +54,13 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                context.safeString(R.string.brand), context.safeString(R.string.blend),
-                context.safeString(R.string.type), context.safeString(R.string.subgenre),
-                context.safeString(R.string.cut), context.safeString(R.string.components),
-                context.safeString(R.string.flavoring), context.safeString(R.string.no_of_tins),
-                context.safeString(R.string.rating), context.safeString(R.string.favorite),
-                context.safeString(R.string.disliked), context.safeString(R.string.production_status),
-                context.safeString(R.string.notes)
+                context.safeString(R.string.brand_v2), context.safeString(R.string.blend_v2),
+                context.safeString(R.string.type_v2), context.safeString(R.string.subgenre_v2),
+                context.safeString(R.string.cut_v2), context.safeString(R.string.components_v2),
+                context.safeString(R.string.flavoring_v2), context.safeString(R.string.no_of_tins_v2),
+                context.safeString(R.string.rating_v2), context.safeString(R.string.favorite_v2),
+                context.safeString(R.string.disliked_v2), context.safeString(R.string.production_status_v2),
+                context.safeString(R.string.notes_v2)
             )
             .get()
 
@@ -99,16 +99,16 @@ class CsvHelper {
             .setQuoteMode(QuoteMode.ALL)
             .setEscape('"')
             .setHeader(
-                context.safeString(R.string.brand), context.safeString(R.string.blend),
-                context.safeString(R.string.type), context.safeString(R.string.subgenre),
-                context.safeString(R.string.cut), context.safeString(R.string.components),
-                context.safeString(R.string.flavoring), context.safeString(R.string.no_of_tins),
-                context.safeString(R.string.rating), context.safeString(R.string.favorite),
-                context.safeString(R.string.disliked), context.safeString(R.string.production_status),
-                context.safeString(R.string.notes), context.safeString(R.string.container),
-                context.safeString(R.string.quantity), context.safeString(R.string.manufacture_date),
-                context.safeString(R.string.cellar_date), context.safeString(R.string.open_date),
-                context.safeString(R.string.finished)
+                context.safeString(R.string.brand_v2), context.safeString(R.string.blend_v2),
+                context.safeString(R.string.type_v2), context.safeString(R.string.subgenre_v2),
+                context.safeString(R.string.cut_v2), context.safeString(R.string.components_v2),
+                context.safeString(R.string.flavoring_v2), context.safeString(R.string.no_of_tins_v2),
+                context.safeString(R.string.rating_v2), context.safeString(R.string.favorite_v2),
+                context.safeString(R.string.disliked_v2), context.safeString(R.string.production_status_v2),
+                context.safeString(R.string.notes_v2), context.safeString(R.string.container_v2),
+                context.safeString(R.string.quantity_v2), context.safeString(R.string.manufacture_date_v2),
+                context.safeString(R.string.cellar_date_v2), context.safeString(R.string.open_date_v2),
+                context.safeString(R.string.finished_v2)
             )
             .get()
 

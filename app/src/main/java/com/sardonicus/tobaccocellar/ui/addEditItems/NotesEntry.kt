@@ -42,7 +42,7 @@ fun NotesEntry(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = stringResource(R.string.notes),
+                text = stringResource(R.string.notes_v2),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             TextField(

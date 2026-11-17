@@ -266,7 +266,7 @@ private fun FlowFilterMatchOptions(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = stringResource(R.string.match),
+            text = stringResource(R.string.match_v2),
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.padding(start = 3.65.dp),
@@ -406,7 +406,7 @@ private fun FlowFilterOverflowPopup(
                             modifier = Modifier.padding(end = 3.dp).size(20.dp)
                         )
                         Text(
-                            text = stringResource(R.string.clear_all),
+                            text = stringResource(R.string.clear_all_v2),
                             modifier = Modifier,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
@@ -415,7 +415,7 @@ private fun FlowFilterOverflowPopup(
                 }
             }
         },
-        confirmButton = { Button({ onDismiss() }) { Text(stringResource(R.string.close)) } },
+        confirmButton = { Button({ onDismiss() }) { Text(stringResource(R.string.close_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         titleContentColor = MaterialTheme.colorScheme.onBackground,
         textContentColor = MaterialTheme.colorScheme.onBackground,

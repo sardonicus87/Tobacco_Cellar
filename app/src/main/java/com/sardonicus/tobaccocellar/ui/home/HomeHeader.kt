@@ -140,7 +140,7 @@ private fun ViewSelect(viewModel: HomeViewModel) {
         horizontalArrangement = Arrangement.Start,
     ) {
         Text(
-            text = stringResource(R.string.view),
+            text = stringResource(R.string.view_v2),
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Normal,
             softWrap = false,
@@ -276,7 +276,7 @@ private fun ListColumnMenu(
         if (!state.isTableView) {
             Icon(
                 painter = painterResource(R.drawable.sort_bars),
-                contentDescription = stringResource(R.string.list_sorting),
+                contentDescription = stringResource(R.string.list_sorting_v2),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .padding(start = 1.dp)
@@ -333,7 +333,7 @@ private fun ListColumnMenu(
         } else {
             Icon(
                 painter = painterResource(R.drawable.table_edit),
-                contentDescription = stringResource(R.string.t_col_vis),
+                contentDescription = stringResource(R.string.t_col_vis_v2),
                 tint = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier
                     .padding(start = 1.dp)

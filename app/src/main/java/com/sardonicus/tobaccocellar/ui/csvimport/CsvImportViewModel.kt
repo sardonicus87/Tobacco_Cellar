@@ -198,7 +198,7 @@ class CsvImportViewModel(
     // tin collation handling //
     private fun generateTinLabels(numTins: Int, startingLabelNumber: Int = 1): List<String> {
         val context = getLocalizedContext(app)
-        return (startingLabelNumber until startingLabelNumber + numTins).map { context.safeString(R.string.lot_label, "$it") }
+        return (startingLabelNumber until startingLabelNumber + numTins).map { context.safeString(R.string.lot_label_v2, "$it") }
     }
 
     private fun String.parseTinQuantity(): Pair<Double, String> {

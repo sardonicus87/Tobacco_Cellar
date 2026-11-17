@@ -128,7 +128,7 @@ fun SettingsScreen(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.settings_title),
+                title = stringResource(R.string.settings_title_v2),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = canNavigateBack,
@@ -171,7 +171,7 @@ private fun SettingsBody(
 
         item {
             Text(
-                text = stringResource(R.string.display_settings),
+                text = stringResource(R.string.display_settings_v2),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
                 fontSize = 17.sp,
@@ -192,7 +192,7 @@ private fun SettingsBody(
 
         item {
             Text(
-                text = stringResource(R.string.app_db_settings),
+                text = stringResource(R.string.app_db_settings_v2),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
                 fontSize = 17.sp,
@@ -345,7 +345,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.Ratings -> {
             ToggleDialog(
-                description = stringResource(R.string.ratings_dialog),
+                description = stringResource(R.string.ratings_dialog_v2),
                 onDismiss = viewModel::dismissDialog,
                 checked = showRatings,
                 onCheckedChange = viewModel::saveShowRatingOption
@@ -353,7 +353,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.TypeGenre -> {
             SelectionDialog(
-                description = stringResource(R.string.type_genre_dialog),
+                description = stringResource(R.string.type_genre_dialog_v2),
                 onDismiss = viewModel::dismissDialog,
                 options = TypeGenreOption.entries,
                 selectedOption = typeGenreOption,
@@ -364,7 +364,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.QuantityDisplay -> {
             SelectionDialog(
-                description = stringResource(R.string.quantity_display_dialog),
+                description = stringResource(R.string.quantity_display_dialog_v2),
                 onDismiss = viewModel::dismissDialog,
                 options = QuantityOption.entries,
                 selectedOption = quantityOption,
@@ -374,7 +374,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.ParseLinks -> {
             ToggleDialog(
-                description = stringResource(R.string.parse_links_dialog),
+                description = stringResource(R.string.parse_links_dialog_v2),
                 onDismiss = viewModel::dismissDialog,
                 checked = parseLinks,
                 onCheckedChange = viewModel::saveParseLinksOption
@@ -384,13 +384,13 @@ private fun DialogManager(viewModel: SettingsViewModel) {
             BaseSettingsDialog(viewModel::dismissDialog) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = stringResource(R.string.large_screen_dialog),
+                        text = stringResource(R.string.large_screen_dialog_v2),
                         modifier = Modifier.padding(bottom = 10.dp),
                         fontSize = 15.sp
                     )
-                    ToggleRow(stringResource(R.string.large_screen_dual), globalTwoPane, viewModel::saveGlobalTwoPane)
-                    ToggleRow(stringResource(R.string.large_screen_columns), twoColumnTabs, viewModel::saveTwoColumnTabs)
-                    ToggleRow(stringResource(R.string.large_screen_landscape), landscapeTwoPane, viewModel::saveLandscapeTwoPane, (globalTwoPane || twoColumnTabs))
+                    ToggleRow(stringResource(R.string.large_screen_dual_v2), globalTwoPane, viewModel::saveGlobalTwoPane)
+                    ToggleRow(stringResource(R.string.large_screen_columns_v2), twoColumnTabs, viewModel::saveTwoColumnTabs)
+                    ToggleRow(stringResource(R.string.large_screen_landscape_v2), landscapeTwoPane, viewModel::saveLandscapeTwoPane, (globalTwoPane || twoColumnTabs))
                 }
             }
         }
@@ -440,7 +440,7 @@ private fun DialogManager(viewModel: SettingsViewModel) {
         }
         DialogType.TinSyncDefault -> {
             ToggleDialog(
-                description = stringResource(R.string.default_sync_tin_dialog),
+                description = stringResource(R.string.default_sync_tin_dialog_v2),
                 onDismiss = viewModel::dismissDialog,
                 checked = defaultSyncOption,
                 onCheckedChange = viewModel::setDefaultSyncOption
@@ -563,7 +563,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
         val offAlpha = if (!checked) 1f else .5f
         val onAlpha = if (checked) 1f else .5f
         Text(
-            text = stringResource(R.string.off),
+            text = stringResource(R.string.off_v2),
             fontSize = 14.sp,
             fontWeight = if (!checked) FontWeight.SemiBold else FontWeight.Normal,
             color = LocalContentColor.current.copy(alpha = offAlpha)
@@ -578,7 +578,7 @@ private fun SwitchToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             )
         }
         Text(
-            text = stringResource(R.string.on),
+            text = stringResource(R.string.on_v2),
             fontSize = 14.sp,
             fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal,
             color = LocalContentColor.current.copy(alpha = onAlpha)

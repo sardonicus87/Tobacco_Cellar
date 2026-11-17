@@ -88,11 +88,11 @@ class PlaintextViewModel (
     private val previewItems = listOf(
         Items(
             id = 1,
-            brand = getLocalizedContext(app).safeString(R.string.brand_a),
-            blend = getLocalizedContext(app).safeString(R.string.blend_1),
+            brand = getLocalizedContext(app).safeString(R.string.brand_a_v2),
+            blend = getLocalizedContext(app).safeString(R.string.blend_1_v2),
             type = BlendTypes.VIRGINIA.name,
             subGenre = "VA/per",
-            cut = getLocalizedContext(app).safeString(R.string.flake_cut),
+            cut = getLocalizedContext(app).safeString(R.string.flake_cut_v2),
             inProduction = true,
             quantity = 2,
             favorite = false,
@@ -104,11 +104,11 @@ class PlaintextViewModel (
         ),
         Items(
             id = 2,
-            brand = getLocalizedContext(app).safeString(R.string.brand_a),
-            blend = getLocalizedContext(app).safeString(R.string.blend_2),
+            brand = getLocalizedContext(app).safeString(R.string.brand_a_v2),
+            blend = getLocalizedContext(app).safeString(R.string.blend_2_v2),
             type = BlendTypes.BURLEY.name,
             subGenre = "",
-            cut = getLocalizedContext(app).safeString(R.string.ribbon),
+            cut = getLocalizedContext(app).safeString(R.string.ribbon_v2),
             inProduction = true,
             quantity = 1,
             favorite = true,
@@ -120,17 +120,17 @@ class PlaintextViewModel (
         ),
         Items(
             id = 3,
-            brand = getLocalizedContext(app).safeString(R.string.brand_b),
-            blend = getLocalizedContext(app).safeString(R.string.blend_1),
+            brand = getLocalizedContext(app).safeString(R.string.brand_b_v2),
+            blend = getLocalizedContext(app).safeString(R.string.blend_1_v2),
             type = BlendTypes.ENGLISH.name,
-            subGenre = getLocalizedContext(app).safeString(R.string.balkan),
-            cut = getLocalizedContext(app).safeString(R.string.ribbon),
+            subGenre = getLocalizedContext(app).safeString(R.string.balkan_v2),
+            cut = getLocalizedContext(app).safeString(R.string.ribbon_v2),
             inProduction = false,
             quantity = 1,
             favorite = false,
             disliked = false,
             rating = 1.0,
-            notes = getLocalizedContext(app).safeString(R.string.fake_note),
+            notes = getLocalizedContext(app).safeString(R.string.fake_note_v2),
             syncTins = false,
             lastModified = -1L
         )
@@ -139,8 +139,8 @@ class PlaintextViewModel (
         Tins(
             tinId = 1,
             itemsId = 1,
-            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1),
-            container = getLocalizedContext(app).safeString(R.string.jar),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1_v2),
+            container = getLocalizedContext(app).safeString(R.string.jar_v2),
             tinQuantity = 1.75,
             unit = "oz",
             manufactureDate = 1704175200000,
@@ -152,8 +152,8 @@ class PlaintextViewModel (
         Tins(
             tinId = 2,
             itemsId = 1,
-            tinLabel = getLocalizedContext(app).safeString(R.string.lot_2),
-            container = getLocalizedContext(app).safeString(R.string.original_tin),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_2_v2),
+            container = getLocalizedContext(app).safeString(R.string.original_tin_v2),
             tinQuantity = 50.00,
             unit = "grams",
             manufactureDate = 1704175200000,
@@ -165,7 +165,7 @@ class PlaintextViewModel (
         Tins(
             tinId = 3,
             itemsId = 2,
-            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1),
+            tinLabel = getLocalizedContext(app).safeString(R.string.lot_1_v2),
             container = "",
             tinQuantity = 0.00,
             unit = "",
@@ -179,25 +179,25 @@ class PlaintextViewModel (
     private val previewComponents = listOf(
         Components(
             componentId = 1,
-            componentName = getLocalizedContext(app).safeString(R.string.virginia_lower)
+            componentName = getLocalizedContext(app).safeString(R.string.virginia_lower_v2)
         ),
         Components(
             componentId = 2,
-            componentName = getLocalizedContext(app).safeString(R.string.perique)
+            componentName = getLocalizedContext(app).safeString(R.string.perique_v2)
         ),
         Components(
             componentId = 3,
-            componentName = getLocalizedContext(app).safeString(R.string.burley_lower)
+            componentName = getLocalizedContext(app).safeString(R.string.burley_lower_v2)
         )
     )
     private val previewFlavoring = listOf(
         Flavoring(
             flavoringId = 1,
-            flavoringName = getLocalizedContext(app).safeString(R.string.vanilla)
+            flavoringName = getLocalizedContext(app).safeString(R.string.vanilla_v2)
         ),
         Flavoring(
             flavoringId = 2,
-            flavoringName = getLocalizedContext(app).safeString(R.string.anise)
+            flavoringName = getLocalizedContext(app).safeString(R.string.anise_v2)
         ),
     )
     private val previewComponentCrossRef = listOf(
@@ -708,7 +708,7 @@ class PlaintextViewModel (
                 "@comps" -> return formatLocalizedList(itemData.components.map { it.componentName.rtlIsolate() }.sortedWith(collator))
                 "@flavors" -> return formatLocalizedList(itemData.flavoring.map { it.flavoringName.rtlIsolate() }.sortedWith(collator))
                 "@qty" -> return formattedQuantities[itemData.items.id]?.rtlIsolate() ?: ""
-                "@prod" -> return if (itemData.items.inProduction) context.safeString(R.string.in_production).rtlIsolate() else context.safeString(R.string.discontinued).rtlIsolate()
+                "@prod" -> return if (itemData.items.inProduction) context.safeString(R.string.in_production_v2).rtlIsolate() else context.safeString(R.string.discontinued_v2).rtlIsolate()
             }
         }
         if (tinData != null) {
@@ -719,7 +719,7 @@ class PlaintextViewModel (
                 "@manufacture" -> return formatMediumDate(tinData.manufactureDate)
                 "@cellar" -> return formatMediumDate(tinData.cellarDate)
                 "@open" -> return formatMediumDate(tinData.openDate)
-                "@finished" -> return if (tinData.finished) context.safeString(R.string.finished_parentheses).rtlIsolate() else ""
+                "@finished" -> return if (tinData.finished) context.safeString(R.string.finished_parentheses_v2).rtlIsolate() else ""
             }
         }
         return placeholder
@@ -729,10 +729,10 @@ class PlaintextViewModel (
         return if (tin.unit.isBlank() || tin.finished) ""
         else {
             val resource = when (tin.unit) {
-                "oz" -> R.string.quantity_oz
-                "lbs" -> R.string.quantity_lbs
-                "g" -> R.string.quantity_g
-                else -> R.string.quantity_kg
+                "oz" -> R.string.quantity_oz_v2
+                "lbs" -> R.string.quantity_lbs_v2
+                "g" -> R.string.quantity_g_v2
+                else -> R.string.quantity_kg_v2
             }
             context.safeString(resource, formatDecimal(tin.tinQuantity))
         }
@@ -885,21 +885,21 @@ data class PrintOptions(
 
 @Immutable
 enum class PlaintextSortOption(@StringRes val resId: Int) {
-    DEFAULT(R.string.item_default),
-    BRAND(R.string.brand),
-    BLEND(R.string.blend),
-    TYPE(R.string.type),
-    SUBGENRE(R.string.subgenre),
-    CUT(R.string.cut),
-    QUANTITY(R.string.quantity),
-    RATING(R.string.rating),
-    TIN_DEFAULT(R.string.tin_default),
-    TIN_LABEL(R.string.tin_label),
-    TIN_CONTAINER(R.string.tin_container),
-    TIN_QUANTITY(R.string.tin_quantity),
-    TIN_MANUF(R.string.manufacture_date),
-    TIN_CELLAR(R.string.cellar_date),
-    TIN_OPEN(R.string.open_date)
+   DEFAULT(R.string.item_default_v2),
+   BRAND(R.string.brand_v2),
+   BLEND(R.string.blend_v2),
+   TYPE(R.string.type_v2),
+   SUBGENRE(R.string.subgenre_v2),
+   CUT(R.string.cut_v2),
+   QUANTITY(R.string.quantity_v2),
+   RATING(R.string.rating_v2),
+   TIN_DEFAULT(R.string.tin_default_v2),
+   TIN_LABEL(R.string.tin_label_v2),
+   TIN_CONTAINER(R.string.tin_container_v2),
+   TIN_QUANTITY(R.string.tin_quantity_v2),
+   TIN_MANUF(R.string.manufacture_date_v2),
+   TIN_CELLAR(R.string.cellar_date_v2),
+   TIN_OPEN(R.string.open_date_v2)
 }
 
 @Stable

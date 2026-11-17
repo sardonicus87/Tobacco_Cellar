@@ -79,7 +79,7 @@ fun LanguageDialog(
     val systemOverride = if (systemCode in SupportedLanguages.codes) systemCode else "en"
 
     val options = listOf(
-        LanguageOption(stringResource(R.string.system_language, systemOverride), "system")) +
+        LanguageOption(stringResource(R.string.system_language_v2, systemOverride), "system")) +
             (preferredOptions + remaining).map { LanguageOption(it.displayString, it.code) }
 
     val selected = options.find { it.code == currentCode } ?: options[0]
@@ -97,7 +97,7 @@ fun LanguageDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(stringResource(R.string.language_description))
+                Text(stringResource(R.string.language_description_v2))
 
                 Box(
                     modifier = Modifier
@@ -178,7 +178,7 @@ fun LanguageDialog(
                 }
             }
         },
-        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel)) } },
+        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.cancel_v2)) } },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large

@@ -119,7 +119,7 @@ fun BlendDetailsScreen(
             },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.blend_details_title),
+                title = stringResource(R.string.blend_details_title_v2),
                 scrollBehavior = scrollBehavior,
                 canNavigateBack = true,
                 navigateUp = {
@@ -222,7 +222,7 @@ private fun BlendDetailsBody(
                             Row(Modifier.padding(bottom = 12.dp)) {
                                 Text(
                                     text = buildAnnotatedString {
-                                        append(stringResource(R.string.by))
+                                        append(stringResource(R.string.by_v2))
                                         withStyle(style = SpanStyle(fontStyle = FontStyle.Italic)) { append(blendDetails.brand) }
                                     },
                                     lineHeight = 16.sp,
@@ -277,7 +277,7 @@ private fun BlendDetailsBody(
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = stringResource(R.string.details),
+                            text = stringResource(R.string.details_v2),
                             modifier = Modifier.padding(bottom = 4.dp),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
@@ -305,7 +305,7 @@ private fun BlendDetailsBody(
                                             modifier = Modifier.padding(bottom = 4.dp)
                                         ) {
                                             Text(
-                                                text = stringResource(R.string.rating_label),
+                                                text = stringResource(R.string.rating_label_v2),
                                                 fontWeight = FontWeight.Bold,
                                                 lineHeight = 1.1.em,
                                                 fontSize = 14.sp
@@ -315,7 +315,7 @@ private fun BlendDetailsBody(
                                                 starSize = 16.dp
                                             )
                                             Text(
-                                                text = stringResource(R.string.parenthetical, formatDecimal(blendDetails.rating)),
+                                                text = stringResource(R.string.parenthetical_v2, formatDecimal(blendDetails.rating)),
                                                 modifier = Modifier.padding(start = 6.dp),
                                                 fontSize = 12.sp,
                                                 lineHeight = 1.1.em
@@ -334,9 +334,9 @@ private fun BlendDetailsBody(
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             val context = getLocalizedContext(LocalCellarApplication.current)
-                            val na = context.safeString(R.string.not_applicable)
+                            val na = context.safeString(R.string.not_applicable_v2)
                             Text(
-                                text = stringResource(R.string.modified),
+                                text = stringResource(R.string.modified_v2),
                                 modifier = Modifier,
                                 fontSize = 12.sp,
                                 lineHeight = 1.em,
@@ -387,7 +387,7 @@ private fun BlendDetailsBody(
                         .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.notes),
+                        text = stringResource(R.string.notes_v2),
                         modifier = Modifier.padding(bottom = 6.dp),
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -431,7 +431,7 @@ private fun BlendDetailsBody(
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
-                            text = stringResource(R.string.tins),
+                            text = stringResource(R.string.tins_v2),
                             modifier = Modifier.padding(bottom = 6.dp),
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
@@ -445,7 +445,7 @@ private fun BlendDetailsBody(
                                 Modifier.onFocusChanged { selectionFocused(it.isFocused) }
                             ) {
                                 Text(
-                                    text = stringResource(R.string.parenthetical, blendDetails.tinsTotal),
+                                    text = stringResource(R.string.parenthetical_v2, blendDetails.tinsTotal),
                                     fontWeight = FontWeight.Normal,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onBackground

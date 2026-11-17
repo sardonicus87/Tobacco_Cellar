@@ -92,7 +92,7 @@ fun AddEntryScreen(
                 .graphicsLayer { translationY = topBarHeight.toPx() - 56.dp.toPx() }
             ) {
                 CellarTopAppBar(
-                    title = stringResource(R.string.add_entry_title),
+                    title = stringResource(R.string.add_entry_title_v2),
                     scrollBehavior = scrollBehavior,
                     canNavigateBack = canNavigateBack,
                     modifier = Modifier,
@@ -204,7 +204,7 @@ fun AddEntryBody(
                 modifier = Modifier
                     .fillMaxWidth(),
             ) {
-                Text(text = if (!isEditEntry) stringResource(R.string.save) else stringResource(R.string.update))
+                Text(text = if (!isEditEntry) stringResource(R.string.save_v2) else stringResource(R.string.update_v2))
             }
             if (isEditEntry) {
                 Button(
@@ -223,7 +223,7 @@ fun AddEntryBody(
                         painter = painterResource(id = R.drawable.delete_forever),
                         contentDescription = null
                     )
-                    Text(text = stringResource(R.string.delete))
+                    Text(text = stringResource(R.string.delete_v2))
                 }
                 if (deleteConfirm) {
                     DeleteConfirmationDialog(
@@ -254,14 +254,14 @@ fun ItemExistsDialog(
 ) {
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(stringResource(R.string.attention)) },
-        text = { Text(stringResource(R.string.item_exists)) },
+        title = { Text(stringResource(R.string.attention_v2)) },
+        text = { Text(stringResource(R.string.item_exists_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        dismissButton = { TextButton(onItemExistsCancel) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.yes)) } }
+        dismissButton = { TextButton(onItemExistsCancel) { Text(stringResource(R.string.cancel_v2)) } },
+        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.yes_v2)) } }
     )
 }
 
@@ -272,13 +272,13 @@ fun ItemExistsEditDialog(
 ) {
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(stringResource(R.string.attention)) },
-        text = { Text(stringResource(R.string.item_exists_edit)) },
+        title = { Text(stringResource(R.string.attention_v2)) },
+        text = { Text(stringResource(R.string.item_exists_edit_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.ok)) } }
+        confirmButton = { TextButton(onItemExistsConfirm) { Text(stringResource(R.string.ok_v2)) } }
     )
 }
 
@@ -290,13 +290,13 @@ private fun DeleteConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = { },
-        title = { Text(stringResource(R.string.delete_entry)) },
-        text = { Text(stringResource(R.string.delete_question)) },
+        title = { Text(stringResource(R.string.delete_entry_v2)) },
+        text = { Text(stringResource(R.string.delete_question_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel)) } },
-        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes)) } }
+        dismissButton = { TextButton(onDeleteCancel) { Text(stringResource(R.string.cancel_v2)) } },
+        confirmButton = { TextButton(onDeleteConfirm) { Text(stringResource(R.string.yes_v2)) } }
     )
 }

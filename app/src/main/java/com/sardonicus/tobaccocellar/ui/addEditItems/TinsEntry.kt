@@ -132,7 +132,7 @@ fun TinsEntry(
             Button(
                 onClick = { addTin() },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) { Text(stringResource(R.string.add_tin)) }
+            ) { Text(stringResource(R.string.add_tin_v2)) }
             Spacer(Modifier.height(6.dp))
         } else {
             tinDetailsList.forEachIndexed { index, tinDetails ->
@@ -251,7 +251,7 @@ private fun IndividualTin(
                         ),
                         placeholder = {
                             Text(
-                                text = stringResource(R.string.label_required),
+                                text = stringResource(R.string.label_required_v2),
                                 modifier = Modifier.alpha(0.66f),
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Medium,
@@ -291,7 +291,7 @@ private fun IndividualTin(
                     )
                     if (showError) {
                         Text(
-                            text = stringResource(R.string.tin_label_error),
+                            text = stringResource(R.string.tin_label_error_v2),
                             color = MaterialTheme.colorScheme.error,
                             autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
                             maxLines = 1,
@@ -307,7 +307,7 @@ private fun IndividualTin(
                         )
                     } else {
                         Text(
-                            text = stringResource(R.string.tin_label_error),
+                            text = stringResource(R.string.tin_label_error_v2),
                             color = Color.Transparent,
                             autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
                             maxLines = 1,
@@ -349,7 +349,7 @@ private fun IndividualTin(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.container_label),
+                        text = stringResource(R.string.container_label_v2),
                         modifier = Modifier.width(80.dp),
                         autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
                         maxLines = 1
@@ -393,7 +393,7 @@ private fun IndividualTin(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.amount_label),
+                        text = stringResource(R.string.amount_label_v2),
                         modifier = Modifier.width(80.dp),
                         autoSize = TextAutoSize.StepBased(12.sp, 16.sp),
                         maxLines = 1
@@ -458,7 +458,7 @@ private fun IndividualTin(
                         options = listOf("", "oz", "lbs", "g", "kg"),
                         placeholder = {
                             Text(
-                                text = stringResource(R.string.unit),
+                                text = stringResource(R.string.unit_v2),
                                 modifier = Modifier.alpha(0.66f),
                                 fontSize = 14.sp,
                             )
@@ -519,7 +519,7 @@ private fun IndividualTin(
                         singleLine = true,
                         interactionSource = interactionSource,
                         trailingIcon = {
-                            val label = stringResource(R.string.manufacture_date)
+                            val label = stringResource(R.string.manufacture_date_v2)
                             IconButton(
                                 onClick = {
                                     showPicker(label, "Manufacture")
@@ -539,8 +539,8 @@ private fun IndividualTin(
                         label = {
                             val density = LocalDensity.current
                             val max = if (dateFieldWidth > 0) with(density) { dateFieldWidth.toDp() } - 60.dp else 200.dp
-                            val long = stringResource(R.string.manufacture)
-                            val short = stringResource(R.string.manuf)
+                            val long = stringResource(R.string.manufacture_v2)
+                            val short = stringResource(R.string.manuf_v2)
                             var label by remember { mutableStateOf(long) }
                             var lastWidth by remember { mutableIntStateOf(0) }
                             if (dateFieldWidth > lastWidth) { lastWidth = dateFieldWidth; if (label != long) label = long }
@@ -592,7 +592,7 @@ private fun IndividualTin(
                         onValueChange = { },
                         label = {
                             Text(
-                                text = stringResource(R.string.cellared),
+                                text = stringResource(R.string.cellared_v2),
                                 fontSize = 12.sp
                             )
                         },
@@ -603,7 +603,7 @@ private fun IndividualTin(
                         readOnly = true,
                         singleLine = true,
                         trailingIcon = {
-                            val label = stringResource(R.string.cellared_date)
+                            val label = stringResource(R.string.cellared_date_v2)
                             IconButton(
                                 onClick = {
                                     showPicker(label, "Cellared")
@@ -657,7 +657,7 @@ private fun IndividualTin(
                         onValueChange = { },
                         label = {
                             Text(
-                                text = stringResource(R.string.opened),
+                                text = stringResource(R.string.opened_v2),
                                 fontSize = 12.sp
                             )
                         },
@@ -668,7 +668,7 @@ private fun IndividualTin(
                         readOnly = true,
                         singleLine = true,
                         trailingIcon = {
-                            val label = stringResource(R.string.opened_date)
+                            val label = stringResource(R.string.opened_date_v2)
                             IconButton(
                                 onClick = {
                                     showPicker(label, "Opened")
@@ -939,7 +939,7 @@ private fun IndividualTin(
                     ) {
 
                         Text(
-                            text = stringResource(R.string.finished),
+                            text = stringResource(R.string.finished_v2),
                             modifier = Modifier
                                 .offset(x = 0.dp, y = 1.dp)
                                 .alpha(if (disabled) 0.5f else 1f),
@@ -959,7 +959,7 @@ private fun IndividualTin(
             }
         } else {
             Text(
-                text = stringResource(R.string.expand_ellipsis),
+                text = stringResource(R.string.expand_ellipsis_v2),
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,
                 color = LocalContentColor.current.copy(alpha = 0.5f),
@@ -1026,7 +1026,7 @@ private fun CustomDatePickerDialog(
                         },
                         headline = {
                             Text(
-                                text = stringResource(R.string.select_date),
+                                text = stringResource(R.string.select_date_v2),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(start = 16.dp)
@@ -1056,7 +1056,7 @@ private fun CustomDatePickerDialog(
                             contentPadding = PaddingValues(12.dp, 4.dp),
                             modifier = Modifier
                                 .heightIn(32.dp, 32.dp)
-                        ) { Text(stringResource(R.string.clear_date)) }
+                        ) { Text(stringResource(R.string.clear_date_v2)) }
                     }
                 }
 
@@ -1073,7 +1073,7 @@ private fun CustomDatePickerDialog(
                         contentPadding = PaddingValues(12.dp, 4.dp),
                         modifier = Modifier
                             .heightIn(32.dp, 32.dp)
-                    ) { Text(stringResource(R.string.cancel)) }
+                    ) { Text(stringResource(R.string.cancel_v2)) }
                     TextButton(
                         onClick = {
                             val selectedDate = datePickerState.selectedDateMillis
@@ -1089,7 +1089,7 @@ private fun CustomDatePickerDialog(
                         },
                         contentPadding = PaddingValues(12.dp, 4.dp),
                         modifier = Modifier.heightIn(32.dp, 32.dp)
-                    ) { Text(stringResource(R.string.confirm)) }
+                    ) { Text(stringResource(R.string.confirm_v2)) }
                 }
             }
         }

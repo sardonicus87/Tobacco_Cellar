@@ -114,7 +114,7 @@ fun TinRatesDialog(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = stringResource(R.string.tin_conversion_one_is),
+                            text = stringResource(R.string.tin_conversion_one_is_v2),
                             modifier = Modifier.padding(end = 8.dp),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp
@@ -159,7 +159,7 @@ fun TinRatesDialog(
                                     contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
-                                            text = stringResource(R.string.parenthetical, formatDecimal(ozRate)),
+                                            text = stringResource(R.string.parenthetical_v2, formatDecimal(ozRate)),
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
@@ -209,7 +209,7 @@ fun TinRatesDialog(
                                     contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
-                                            text = stringResource(R.string.parenthetical, formatDecimal(gramsRate)),
+                                            text = stringResource(R.string.parenthetical_v2, formatDecimal(gramsRate)),
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
@@ -235,7 +235,7 @@ fun TinRatesDialog(
                 if (debouncedLoading) { LoadingIndicator(center = true, modifier = Modifier.matchParentSize()) }
             }
         },
-        dismissButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = { TextButton({ onDismiss() }, enabled = !debouncedLoading) { Text(stringResource(R.string.cancel_v2)) } },
         confirmButton = {
             TextButton(
                 onClick = {
@@ -243,7 +243,7 @@ fun TinRatesDialog(
                     saving = true
                 },
                 enabled = !debouncedLoading
-            ) { Text(stringResource(R.string.save)) }
+            ) { Text(stringResource(R.string.save_v2)) }
         },
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,

@@ -85,7 +85,7 @@ fun CustomDropDown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = it.ifBlank { stringResource(R.string.blank) },
+                            text = it.ifBlank { stringResource(R.string.blank_v2) },
                             color = if (it.isBlank()) LocalContentColor.current.copy(alpha = 0.5f) else LocalContentColor.current
                         )
                     },

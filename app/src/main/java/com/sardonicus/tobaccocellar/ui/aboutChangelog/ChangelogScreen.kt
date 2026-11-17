@@ -97,7 +97,7 @@ fun ChangelogScreen (
             .clickable(null, null) { selectionKey++ },
         topBar = {
             CellarTopAppBar(
-                title = stringResource(R.string.changelog_title),
+                title = stringResource(R.string.changelog_title_v2),
                 scrollBehavior = scrollBehavior,
                 navigateUp = onNavigateUp,
                 canNavigateBack = true,
@@ -160,7 +160,7 @@ fun ChangeLogEntryLayout(
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         Text(
-            text = stringResource(R.string.changelog_version, versionNumber, buildDate),
+            text = stringResource(R.string.changelog_version_v2, versionNumber, buildDate),
             fontSize = 16.sp,
             textAlign = TextAlign.Start,
             fontWeight = FontWeight.Black,
@@ -176,7 +176,7 @@ fun ChangeLogEntryLayout(
             verticalArrangement = Arrangement.Top
         ) {
             if (changes.isNotEmpty()) {
-                Text(stringResource(R.string.cl_changes), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.cl_changes_v2), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     changes.forEach {
                         Row {
@@ -187,7 +187,7 @@ fun ChangeLogEntryLayout(
                 }
             }
             if (improvements.isNotEmpty()) {
-                Text(stringResource(R.string.cl_improvements), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.cl_improvements_v2), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     improvements.forEach {
                         Row {
@@ -198,7 +198,7 @@ fun ChangeLogEntryLayout(
                 }
             }
             if (bugFixes.isNotEmpty()) {
-                Text(stringResource(R.string.cl_bug_fix), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.cl_bug_fix_v2), fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Column(Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 8.dp)) {
                     bugFixes.forEach {
                         Row {

@@ -304,6 +304,6 @@ private fun ColumnVisibilityPopup(
         containerColor = MaterialTheme.colorScheme.background,
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
-        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.done)) } }
+        confirmButton = { TextButton({ onDismiss() }) { Text(stringResource(R.string.done_v2)) } }
     )
 }

@@ -277,19 +277,19 @@ fun TopBarMenu(
         when (menuState.topMenuState) {
             TopMenuState.MAIN -> {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.batch_edit_title)) },
+                    text = { Text(stringResource(R.string.batch_edit_title_v2)) },
                     onClick = { filterViewModel.showMenu(false); navigateToBulkEdit() },
                     enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.import_csv)) },
+                    text = { Text(stringResource(R.string.import_csv_v2)) },
                     onClick = { filterViewModel.showMenu(false); navigateToCsvImport() },
                     enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.export_csv))
+                            Text(stringResource(R.string.export_csv_v2))
                             Icon(
                                 painterResource(R.drawable.arrow_right), "Export Options",
                                 Modifier.size(20.dp), LocalContentColor.current.copy(alpha = 0.75f))
@@ -300,21 +300,21 @@ fun TopBarMenu(
                     contentPadding = PaddingValues(12.dp, 0.dp)
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.plaintext)) },
+                    text = { Text(stringResource(R.string.plaintext_v2)) },
                     onClick = { filterViewModel.showMenu(false); navigateToPlaintext() },
                     enabled = currentDestination == HomeDestination
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.help_faq)) },
+                    text = { Text(stringResource(R.string.help_faq_v2)) },
                     onClick = { filterViewModel.showMenu(false); navigateToHelp() },
                 )
                 DropdownMenuItem(
-                    text = { Text(if (isTwoPane) stringResource(R.string.about_settings) else stringResource(R.string.about_title)) },
+                    text = { Text(if (isTwoPane) stringResource(R.string.about_settings_v2) else stringResource(R.string.about_title_v2)) },
                     onClick = { filterViewModel.showMenu(false); navigateToAbout() },
                 )
                 if (!isTwoPane) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.settings_title)) },
+                        text = { Text(stringResource(R.string.settings_title_v2)) },
                         onClick = { filterViewModel.showMenu(false); navigateToSettings() },
                     )
                 }
@@ -330,7 +330,7 @@ fun TopBarMenu(
                     onClick = { filterViewModel.changeMenuState(TopMenuState.MAIN) }
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.normal)) },
+                    text = { Text(stringResource(R.string.normal_v2)) },
                     onClick = {
                         filterViewModel.changeExportType(ExportType.ITEMS)
                         filterViewModel.showExportCsv(true)
@@ -340,7 +340,7 @@ fun TopBarMenu(
                     contentPadding = PaddingValues(12.dp, 0.dp)
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.as_tins)) },
+                    text = { Text(stringResource(R.string.as_tins_v2)) },
                     onClick = {
                         filterViewModel.showMenu(false)
                         filterViewModel.changeExportType(ExportType.TINS)
@@ -367,7 +367,7 @@ fun ExportCsvDialog(
         onDismissRequest = { showExportCsv() },
         title = {
             Text(
-                text = stringResource(R.string.export_csv_options),
+                text = stringResource(R.string.export_csv_options_v2),
                 maxLines = 1,
                 lineHeight = 1.em,
                 autoSize = TextAutoSize.StepBased(18.sp, 24.sp)
@@ -380,13 +380,13 @@ fun ExportCsvDialog(
                     .wrapContentHeight()
             ) {
                 // Items option //
-                Text(stringResource(R.string.export_csv_dialog), Modifier.padding(bottom = 8.dp))
+                Text(stringResource(R.string.export_csv_dialog_v2), Modifier.padding(bottom = 8.dp))
                 SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(bottom = 16.dp)
                 ) {
-                    listOf(stringResource(R.string.all), stringResource(R.string.filtered)).forEachIndexed { index, label ->
+                    listOf(stringResource(R.string.all_v2), stringResource(R.string.filtered_v2)).forEachIndexed { index, label ->
                         SegmentedButton(
                             selected = index == dialogState.selectedIndex,
                             onClick = { filterViewModel.selectAll(index == 0) },
@@ -414,7 +414,7 @@ fun ExportCsvDialog(
                 ) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = stringResource(R.string.max_rating_label),
+                            text = stringResource(R.string.max_rating_label_v2),
                             modifier = Modifier
                                 .width(95.dp)
                                 .padding(end = 8.dp),
@@ -457,7 +457,7 @@ fun ExportCsvDialog(
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Text(
-                            text = stringResource(R.string.decimal_places),
+                            text = stringResource(R.string.decimal_places_v2),
                             modifier = Modifier
                                 .width(95.dp)
                                 .padding(end = 8.dp),
@@ -482,12 +482,12 @@ fun ExportCsvDialog(
         textContentColor = MaterialTheme.colorScheme.onBackground,
         shape = MaterialTheme.shapes.large,
         dismissButton = {
-            TextButton({ showExportCsv() }) { Text(stringResource(R.string.cancel)) }
+            TextButton({ showExportCsv() }) { Text(stringResource(R.string.cancel_v2)) }
         },
         confirmButton = {
             TextButton(
                 { confirm(dialogState.exportRatingString.first, dialogState.exportRatingString.second) }
-            ) { Text(stringResource(R.string.confirm)) }
+            ) { Text(stringResource(R.string.confirm_v2)) }
         }
     )
 }
@@ -546,7 +546,7 @@ fun CellarBottomAppBar(
             ) {
                 // Home
                 BottomBarButton(
-                    title = { stringResource(R.string.home_title) },
+                    title = { stringResource(R.string.home_title_v2) },
                     icon = { R.drawable.table_view_old },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToHome() },
                     color = { if (currentDestination == HomeDestination && !clickToAdd) onPrimaryLight else navIcon },
@@ -555,7 +555,7 @@ fun CellarBottomAppBar(
 
                 // Stats
                 BottomBarButton(
-                    title = { stringResource(R.string.stats_title) },
+                    title = { stringResource(R.string.stats_title_v2) },
                     icon = { R.drawable.bar_chart },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToStats() },
                     enabled = { !databaseEmpty },
@@ -569,7 +569,7 @@ fun CellarBottomAppBar(
 
                 // 3. Dates
                 BottomBarButton(
-                    title = { stringResource(R.string.dates_title) },
+                    title = { stringResource(R.string.dates_title_v2) },
                     icon = { R.drawable.calendar_month },
                     onClick = { filterViewModel.getPositionTrigger(); navigateToDates() },
                     enabled = { datesExist },
@@ -597,7 +597,7 @@ fun CellarBottomAppBar(
                     }
 
                     BottomBarButton(
-                        title = { stringResource(R.string.filter) },
+                        title = { stringResource(R.string.filter_v2) },
                         icon = { if (currentDestination == HomeDestination && searchPerformed && filteringApplied) R.drawable.filter_search_disabled else R.drawable.filter_24 },
                         onClick = filterViewModel::openBottomSheet,
                         enabled = { filterEnabled },
@@ -628,7 +628,7 @@ fun CellarBottomAppBar(
 
                 // 5. Add
                 BottomBarButton(
-                    title = { stringResource(R.string.add) },
+                    title = { stringResource(R.string.add_v2) },
                     icon = { R.drawable.add_circle },
                     onClick = { clickToAdd = true; filterViewModel.getPositionTrigger(); navigateToAddEntry() },
                     color = { if (clickToAdd) onPrimaryLight else navIcon },
