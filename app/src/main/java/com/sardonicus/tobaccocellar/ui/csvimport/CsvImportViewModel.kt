@@ -122,7 +122,9 @@ class CsvImportViewModel(
     }
 
     fun updateCollateTinsOption(collateTins: Boolean) {
-        mappingOptions = mappingOptions.copy(collateTins = collateTins)
+        val syncOption = mappingOptions.syncTins
+        val syncUpdate = collateTins && syncOption
+        mappingOptions = mappingOptions.copy(collateTins = collateTins, syncTins = syncUpdate)
     }
 
     fun updateDateFormat(dateFormat: String) {
