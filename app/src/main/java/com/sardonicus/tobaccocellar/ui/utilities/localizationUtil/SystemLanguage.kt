@@ -31,6 +31,6 @@ fun getInstalledLanguages(context: Context): Set<String> {
 
     val splitNames = context.applicationInfo.splitNames ?: return emptySet()
     return splitNames.filter { it.startsWith("config.") }
-        .map { it.removePrefix("config.").lowercase() }
+        .map { updateLegacyLangCode(it.removePrefix("config.").lowercase()) }
         .toSet()
 }
