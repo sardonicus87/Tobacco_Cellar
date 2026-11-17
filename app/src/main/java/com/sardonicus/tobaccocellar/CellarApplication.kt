@@ -98,15 +98,16 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         csvHelper = CsvHelper()
         createNotificationChannel()
 
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
-            try {
-                val localeManager = getSystemService(LocaleManager::class.java)
-                val codes = SupportedLanguages.codes.joinToString(",")
-                localeManager.overrideLocaleConfig = LocaleConfig(LocaleList.forLanguageTags(codes))
-            } catch (_: Exception) { }
-        }
-
         applicationScope.launch(Dispatchers.Default) {
+            launch {
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
+                    try {
+                        val localeManager = getSystemService(LocaleManager::class.java)
+                        val codes = SupportedLanguages.codes.joinToString(",")
+                        localeManager.overrideLocaleConfig = LocaleConfig(LocaleList.forLanguageTags(codes))
+                    } catch (_: Exception) { }
+                }
+            }
             launch { delay(1.5.seconds); filterViewModel }
             launch { if (!preferencesRepo.syncSettingsMigrated.first()) { migrateSyncSettings() } }
             launch { if (!preferencesRepo.blendTypesMigrated.first()) { migrateBlendTypes() } }
