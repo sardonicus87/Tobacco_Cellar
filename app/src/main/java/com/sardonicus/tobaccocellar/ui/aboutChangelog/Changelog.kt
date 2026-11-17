@@ -14,7 +14,26 @@ val changelogEntries = listOf(
     ),
 
     ChangelogEntryData(
-        versionCode = 66,
+        versionCode = 69,
+        versionNumber = "6.0.1",
+        buildDate = "17 Nov, 2026",
+        improvements = listOf(
+            "Reduced app size (created specific list localization and plurals functions instead " +
+                    "of using a big localization package for those two minor/specific cases)."
+        ),
+        bugFixes = listOf(
+            "Language selection: fixed app string downloads incorrectly showing a failure message " +
+                    "when downloaded and added a longer delay for downloaded languages to apply " +
+                    "before releasing loading state.",
+            "Fixed some strings not line-breaking like they're supposed to and other special " +
+                    "characters getting messed up (potentially).",
+            "Settings screen, maybe fixed broken \"current setting\" display for tin conversion rates.",
+            "Fixed Hebrew, Yiddish and Indonesian failing to recognize as installed."
+        )
+    ),
+
+    ChangelogEntryData(
+        versionCode = 68,
         versionNumber = "6.0.0",
         buildDate = "16 Nov, 2026",
         changes = listOf(
