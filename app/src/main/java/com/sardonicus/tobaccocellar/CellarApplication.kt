@@ -119,28 +119,33 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                     if (code == "system" || code == "en" || code in installed) { LanguageState.code = code }
                     else {
                         var attempts = 0
+                        var success = false
                         while (attempts < 10) {
-                            val time = if (attempts < 6) 500.milliseconds else 1500.milliseconds
+                            val time = if (attempts < 6) 500.milliseconds else 2000.milliseconds
                             delay(time)
                             attempts++
 
-                            val installed = getInstalledLanguages(this@CellarApplication)
-                            if (code in installed) {
+                            val installCheck = getInstalledLanguages(this@CellarApplication)
+                            if (code in installCheck) {
+                                delay(750.milliseconds)
                                 EventBus.emit(DismissLoading); LanguageState.code = code
+                                success = true
                                 break
                             }
                             if (attempts == 3) { EventBus.emit(ShowLoading) }
                         }
 
-                        withContext(NonCancellable + Dispatchers.Main) {
-                            EventBus.emit(DismissLoading)
-                            preferencesRepo.saveAppLanguage(LanguageState.code)
-                            if (LanguageState.code == "system") {
-                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
-                            } else {
-                                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(LanguageState.code))
+                        if (!success) {
+                            withContext(NonCancellable + Dispatchers.Main) {
+                                EventBus.emit(DismissLoading)
+                                preferencesRepo.saveAppLanguage(LanguageState.code)
+                                if (LanguageState.code == "system") {
+                                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.getEmptyLocaleList())
+                                } else {
+                                    AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(LanguageState.code))
+                                }
+                                EventBus.emit(ShowToast(getLocalizedContext(this@CellarApplication).safeString(R.string.language_failed)))
                             }
-                            EventBus.emit(ShowToast(getLocalizedContext(this@CellarApplication).safeString(R.string.language_failed)))
                         }
                     }
                 }
