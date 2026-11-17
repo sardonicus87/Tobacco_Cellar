@@ -20,8 +20,8 @@ kotlin {
             applicationId = "com.sardonicus.tobaccocellar"
             minSdk = 26
             targetSdk = 37
-            versionCode = 66
-            versionName = "6.0.0"
+            versionCode = 69
+            versionName = "6.0.1"
 
             vectorDrawables { useSupportLibrary = true }
         }
@@ -30,12 +30,11 @@ kotlin {
             val variantName = name
             kotlin.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/kotlin").get().asFile.absolutePath)
             java.directories.add(layout.buildDirectory.dir("generated/ksp/$variantName/java").get().asFile.absolutePath)
+
+            if (name == "debug") { res.directories.add("src/debugTranslations/res") }
         }
 
-        androidResources {
-            generateLocaleConfig = true
-            localeFilters.add("en")
-        }
+        androidResources { generateLocaleConfig = true }
 
         buildFeatures {
             compose = true
@@ -109,7 +108,6 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.adaptive.layout)
-    implementation(libs.icu4j)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.ui.text.google.fonts)
