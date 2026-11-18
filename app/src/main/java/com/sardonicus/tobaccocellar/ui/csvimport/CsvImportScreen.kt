@@ -6,7 +6,9 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -292,7 +294,7 @@ fun CsvLoadedBody(
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start,
-    ) { // Screen after CSV loaded //
+    ) {
         Spacer(Modifier.height(12.dp))
         // Select CSV and Help buttons //
         Row(
@@ -480,11 +482,11 @@ fun CsvLoadedBody(
                     Text(
                         text = stringResource(R.string.existing_entries_v2),
                         maxLines = 1,
-                        modifier = Modifier.weight(.35f),
-                        autoSize = StepBased(13.sp, 16.sp)
+                        modifier = Modifier.weight(.33f),
+                        autoSize = StepBased(12.sp, 16.sp)
                     )
                     Row(
-                        modifier = Modifier.weight(.65f),
+                        modifier = Modifier.weight(.67f),
                         horizontalArrangement = Arrangement.spacedBy(0.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1081,7 +1083,12 @@ private fun MaxValueField(
                             text = stringResource(R.string.required_scaling_v2),
                             color = if (enabled) LocalContentColor.current else Color.Transparent,
                             maxLines = 1,
-                            autoSize = StepBased(11.sp, 16.sp)
+                            autoSize = StepBased(11.sp, 16.sp),
+                            modifier = Modifier.basicMarquee(
+                                iterations = Int.MAX_VALUE,
+                                repeatDelayMillis = 1500,
+                                spacing = MarqueeSpacing.fractionOfContainer(.33f)
+                            )
                         )
                     }
                 )
@@ -1155,7 +1162,17 @@ private fun MappingField(
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         placeholder = {
-                            Text(placeholder, maxLines = 1, autoSize = StepBased(11.sp, 16.sp))
+                            Text(
+                                text = placeholder,
+                                maxLines = 1,
+                                autoSize = StepBased(11.sp, 16.sp),
+                                modifier = Modifier
+                                    .basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        repeatDelayMillis = 1500,
+                                        spacing = MarqueeSpacing.fractionOfContainer(.33f)
+                                    )
+                            )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onBackground,
