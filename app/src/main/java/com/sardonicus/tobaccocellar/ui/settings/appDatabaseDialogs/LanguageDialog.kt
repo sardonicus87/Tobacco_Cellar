@@ -45,7 +45,7 @@ import com.sardonicus.tobaccocellar.data.LocalCellarApplication
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.SupportedLanguages
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledAppLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getSystemLanguage
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getSystemLocales
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.updateLegacyLangCode
@@ -60,7 +60,7 @@ fun LanguageDialog(
     val context = LocalCellarApplication.current
 
     val deviceLocales = getSystemLocales(context)
-    val installedLocales = getInstalledLanguages(context)
+    val installedAppLanguages = getInstalledAppLanguages(context)
     val currentAppLocale = AppCompatDelegate.getApplicationLocales()
     val rawCode = if (currentAppLocale.isEmpty) "system" else currentAppLocale[0]?.language?.lowercase() ?: "system"
     val currentCode = updateLegacyLangCode(rawCode)
@@ -68,7 +68,7 @@ fun LanguageDialog(
     val preferredCodes = buildSet {
         add(currentCode)
         for (locale in deviceLocales) { add(updateLegacyLangCode(locale.language.lowercase())) }
-        for (code in installedLocales) { add(updateLegacyLangCode(code)) }
+        for (code in installedAppLanguages) { add(code) }
     }.filter { it in SupportedLanguages.codes }.toSet()
 
     val preferredOptions = preferredCodes.mapNotNull { code ->

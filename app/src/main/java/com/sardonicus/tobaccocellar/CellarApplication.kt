@@ -43,10 +43,9 @@ import com.sardonicus.tobaccocellar.ui.utilities.ShowToast
 import com.sardonicus.tobaccocellar.ui.utilities.TinNotificationWorker
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.SupportedLanguages
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledLanguages
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getInstalledAppLanguages
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.updateLegacyLangCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -94,7 +93,6 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
         super.onCreate()
         instance = this
         registerActivityLifecycleCallbacks(this)
-        LanguageState.init()
         csvHelper = CsvHelper()
         createNotificationChannel()
 
@@ -114,9 +112,8 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
             launch { if (!preferencesRepo.tinGramsMigrated.first()) { migrateTinGrams() } }
             launch { EventBus.events.collect { if (it is DatabaseRestoreEvent) { migrateBlendTypes(); migrateTinGrams() } } }
             launch {
-                preferencesRepo.appLanguage.collectLatest { rawCode ->
-                    val code = updateLegacyLangCode(rawCode)
-                    val installed = getInstalledLanguages(this@CellarApplication)
+                preferencesRepo.appLanguage.collectLatest { code ->
+                    val installed = getInstalledAppLanguages(this@CellarApplication)
                     if (code == "system" || code == "en" || code in installed) { LanguageState.code = code }
                     else {
                         var attempts = 0
@@ -126,7 +123,7 @@ class CellarApplication : Application(), Application.ActivityLifecycleCallbacks 
                             delay(time)
                             attempts++
 
-                            val installCheck = getInstalledLanguages(this@CellarApplication)
+                            val installCheck = getInstalledAppLanguages(this@CellarApplication)
                             if (code in installCheck) {
                                 delay(750.milliseconds)
                                 EventBus.emit(DismissLoading); LanguageState.code = code

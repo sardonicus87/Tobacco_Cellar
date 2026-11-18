@@ -1,5 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.utilities.localizationUtil
 
+import android.content.Context
+import com.sardonicus.tobaccocellar.BuildConfig
 import com.sardonicus.tobaccocellar.ui.settings.appDatabaseDialogs.AppLanguage
 import java.util.Locale
 
@@ -31,4 +33,12 @@ fun updateLegacyLangCode(code: String): String {
         "ji" -> "yi" // Yiddish
         else -> code
     }
+}
+
+fun getInstalledAppLanguages(context: Context): Set<String> {
+    if (BuildConfig.DEBUG) { return setOf("en", "de", "he") }
+
+    val splitNames = context.applicationInfo.splitNames ?: return emptySet()
+    return splitNames.filter { it.startsWith("config.") }
+        .map { updateLegacyLangCode(it.removePrefix("config.").lowercase()) }.toSet()
 }
