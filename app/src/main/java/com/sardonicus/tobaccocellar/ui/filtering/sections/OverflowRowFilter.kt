@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -31,6 +32,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -260,24 +262,12 @@ private fun FlowFilterMatchOptions(
     onMatchOptionChange: (FlowMatchOption) -> Unit,
     modifier: Modifier = Modifier,
     arrangement: Arrangement.Horizontal = Arrangement.Center,
-    showMatchText: Boolean = false
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.height(IntrinsicSize.Min),
         horizontalArrangement = arrangement,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (showMatchText) {
-            Text(
-                text = stringResource(R.string.match_v2),
-                autoSize = TextAutoSize.StepBased(12.sp, 14.sp),
-                fontWeight = FontWeight.Normal,
-                modifier = Modifier.padding(start = 3.65.dp),
-                maxLines = 1,
-                color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.4f) else LocalContentColor.current
-            )
-        }
-
         FlowMatchOption.entries.forEachIndexed { index, it ->
             val enabled = !nothingAssigned && (matchOptionEnablement[it] ?: false) || matching == it
             Box(
@@ -301,18 +291,13 @@ private fun FlowFilterMatchOptions(
                     fontWeight = if (matching == it && !nothingAssigned) FontWeight.Medium else FontWeight.Normal,
                     color =
                         if (matching == it && !nothingAssigned) MaterialTheme.colorScheme.primary
-                        else if (enabled) LocalContentColor.current.copy(alpha = .6f)
+                        else if (enabled) LocalContentColor.current.copy(alpha = .65f)
                         else LocalContentColor.current.copy(alpha = .38f),
                     maxLines = 1
                 )
             }
             if (index != FlowMatchOption.entries.lastIndex) {
-                Text(
-                    text = "/",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = if (nothingAssigned) LocalContentColor.current.copy(alpha = 0.6f) else LocalContentColor.current
-                )
+                VerticalDivider(Modifier.padding(horizontal = 2.dp).fillMaxHeight(.65f), 1.dp, LocalContentColor.current.copy(alpha = .5f))
             }
         }
     }
@@ -373,8 +358,7 @@ private fun FlowFilterOverflowPopup(
                         if (enableMatchOption) {
                             FlowFilterMatchOptions(
                                 false, matching, matchOptionEnablement, { onMatchOptionChange(it) },
-                                Modifier.padding(bottom = 4.dp), Arrangement.Center, true
-                            )
+                                Modifier.padding(bottom = 4.dp), Arrangement.Center)
                         }
 
                         // Chips
