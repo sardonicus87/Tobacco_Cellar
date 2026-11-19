@@ -752,7 +752,7 @@ class HomeViewModel(
             TypeGenreOption.SUBGENRE -> item.subGenre
             TypeGenreOption.BOTH -> {
                 val middle = if (item.type.isNotEmpty() && item.subGenre.isNotEmpty()) " - " else ""
-                localized + middle + item.subGenre }
+                localized.rtlIsolate() + middle.rtlIsolate() + item.subGenre.rtlIsolate() }
             TypeGenreOption.TYPE_FALLBACK -> localized.ifBlank { "(${item.subGenre})" }
             TypeGenreOption.SUB_FALLBACK -> item.subGenre.ifBlank { localized }
         }
