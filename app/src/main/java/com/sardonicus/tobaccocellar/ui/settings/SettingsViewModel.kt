@@ -900,6 +900,7 @@ class SettingsViewModel(
                 copyFile(File(tempDir, "tobacco_database"), dbFile)
                 if (File(tempDir, "tobacco_database-shm").exists()) { copyFile(File(tempDir, "tobacco_database-shm"), shmFile) }
                 if (File(tempDir, "tobacco_database-wal").exists()) { copyFile(File(tempDir, "tobacco_database-wal"), walFile) }
+                copyFile(File(tempDir, "tobacco_database"), dbFile) // double tap, sometimes restore is incomplete or janky
             }
             else if (backupDbVersion < existingDbVersion) {
                 tcDb.clearAllTables()
@@ -955,6 +956,7 @@ class SettingsViewModel(
             copyFile(File(migratedPath!!), dbFile)
             if (migratedShmFile.exists()) { copyFile(migratedShmFile, shmFile) }
             if (migratedWalFile.exists()) { copyFile(migratedWalFile, walFile) }
+            copyFile(File(migratedPath), dbFile)
         } catch (e: Exception) { throw e }
     }
 
