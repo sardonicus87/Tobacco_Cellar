@@ -43,7 +43,6 @@ import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -102,7 +101,6 @@ import com.sardonicus.tobaccocellar.ui.navigation.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CsvImportScreen(
     navKey: CsvImportDestination,
@@ -921,7 +919,6 @@ private fun LabeledCheckbox(
 
 
 // Field mapping composables //
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateFormatField(
     selectedFormat: String,
@@ -1108,7 +1105,6 @@ private fun MaxValueField(
 }
 
 @SuppressLint("ConfigurationScreenWidthHeight")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MappingField(
     label: String,

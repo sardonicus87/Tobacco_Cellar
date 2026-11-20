@@ -16,7 +16,6 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,7 +46,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -127,7 +125,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedTy
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BulkEditScreen(
     modifier: Modifier = Modifier,
@@ -486,7 +483,6 @@ fun BulkSelections(
     }
 }
 
-@OptIn(ExperimentalGridApi::class)
 @Composable
 fun BulkEditing(
     isLargeScreen: Boolean,

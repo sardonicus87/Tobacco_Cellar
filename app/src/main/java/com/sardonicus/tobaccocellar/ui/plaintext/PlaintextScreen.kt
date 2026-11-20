@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -56,7 +55,6 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -146,7 +144,6 @@ import java.text.NumberFormat
 import java.text.ParseException
 import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaintextScreen(
     onNavigateUp: () -> Unit,
@@ -582,7 +579,6 @@ private fun PlaintextList(
 }
 
 
-@OptIn(ExperimentalGridApi::class)
 @Composable
 private fun PlaintextFormatting(
     viewModel: PlaintextViewModel,
@@ -926,7 +922,6 @@ private fun PlaintextFormatting(
     }
 }
 
-@OptIn(ExperimentalGridApi::class)
 @Composable
 private fun PlaceholderGuide(modifier: Modifier = Modifier) {
     val formatGuide = mapOf(

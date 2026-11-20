@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalGridApi
 import androidx.compose.foundation.layout.Grid
 import androidx.compose.foundation.layout.GridTrackSize
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -71,7 +70,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -104,7 +102,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalGridApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsEntry(
     itemDetails: ItemDetails,
@@ -450,7 +448,6 @@ fun DetailsEntry(
                         }
                     },
                     modifier = Modifier.width(54.dp),
-                    visualTransformation = VisualTransformation.None,
                     enabled = !itemDetails.syncTins,
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(

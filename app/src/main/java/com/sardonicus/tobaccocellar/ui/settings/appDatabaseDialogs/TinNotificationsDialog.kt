@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -65,7 +64,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TinNotificationsDialog (
     onDismiss: () -> Unit,
@@ -256,7 +254,6 @@ private fun formatTime(time: Int?, context: Context): String {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomTimePickerDialog(
     onDismiss: () -> Unit,

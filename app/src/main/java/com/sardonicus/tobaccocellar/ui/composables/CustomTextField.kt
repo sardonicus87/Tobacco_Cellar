@@ -99,5 +99,25 @@ fun CustomTextField(
                 supportingText = supportingText,
             )
         }
+
+//        BasicTextField(
+//            state = ,
+//            modifier = ,
+//            enabled = ,
+//            readOnly = ,
+//            inputTransformation = ,
+//            textStyle = ,
+//            keyboardOptions = ,
+//            onKeyboardAction = ,
+//            lineLimits = ,
+//            onTextLayout = ,
+//            interactionSource = ,
+//            cursorBrush = ,
+//            codepointTransformation = ,
+//            outputTransformation = ,
+//            decorator = ,
+//            scrollState = ,
+//            isPassword = ,
+//        )
     }
 }
