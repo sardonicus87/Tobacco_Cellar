@@ -23,6 +23,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 
 /** TextField with inner-padding access */
+@Suppress("DEPRECATION")
 @Composable
 fun CustomTextField(
     value: String,
@@ -51,17 +52,39 @@ fun CustomTextField(
 ) {
     val interactionSourceImp = interactionSource ?: remember { MutableInteractionSource() }
 
-    val textColor =
-        textStyle.color.takeOrElse {
-            val focused = interactionSourceImp.collectIsFocusedAsState().value
-            when {
-                !enabled -> colors.disabledTextColor
-                isError -> colors.errorTextColor
-                focused -> colors.focusedTextColor
-                else -> colors.unfocusedTextColor
-            }
+    val textColor = textStyle.color.takeOrElse {
+        val focused = interactionSourceImp.collectIsFocusedAsState().value
+        when {
+            !enabled -> colors.disabledTextColor
+            isError -> colors.errorTextColor
+            focused -> colors.focusedTextColor
+            else -> colors.unfocusedTextColor
         }
+    }
     val mergedTextStyle = textStyle.merge(TextStyle(color = textColor))
+
+//    val textFieldState = rememberTextFieldState(initialText = value)
+//
+//    LaunchedEffect(value) {
+//        if (textFieldState.text.toString() != value) {
+//            textFieldState.edit { replace(0, length, value) }
+//        }
+//    }
+//
+//    LaunchedEffect(textFieldState) {
+//        snapshotFlow { textFieldState.text.toString() }
+//            .collectLatest { if (it != value) onValueChange(it) }
+//    }
+
+//    val lineLimits =
+//        if (singleLine) { TextFieldLineLimits.SingleLine }
+//        else { TextFieldLineLimits.MultiLine(minHeightInLines = minLines, maxHeightInLines = maxLines) }
+//
+//    val actionScope = remember {
+//        object : KeyboardActionScope {
+//            override fun defaultKeyboardAction(imeAction: ImeAction) {}
+//        }
+//    }
 
     CompositionLocalProvider(LocalTextSelectionColors provides colors.textSelectionColors) {
         BasicTextField(
@@ -101,23 +124,49 @@ fun CustomTextField(
         }
 
 //        BasicTextField(
-//            state = ,
-//            modifier = ,
-//            enabled = ,
-//            readOnly = ,
-//            inputTransformation = ,
-//            textStyle = ,
-//            keyboardOptions = ,
-//            onKeyboardAction = ,
-//            lineLimits = ,
-//            onTextLayout = ,
-//            interactionSource = ,
-//            cursorBrush = ,
-//            codepointTransformation = ,
-//            outputTransformation = ,
-//            decorator = ,
-//            scrollState = ,
-//            isPassword = ,
+//            state = textFieldState,
+//            modifier = modifier,
+//            enabled = enabled,
+//            readOnly = readOnly,
+//            textStyle = mergedTextStyle,
+//            keyboardOptions = keyboardOptions,
+//            onKeyboardAction = { action ->
+//                action()
+//                when (keyboardOptions.imeAction) {
+//                    ImeAction.Done -> keyboardActions.onDone?.invoke(actionScope)
+//                    ImeAction.Next -> keyboardActions.onNext?.invoke(actionScope)
+//                    ImeAction.Search -> keyboardActions.onSearch?.invoke(actionScope)
+//                    ImeAction.Send -> keyboardActions.onSend?.invoke(actionScope)
+//                    ImeAction.Go -> keyboardActions.onGo?.invoke(actionScope)
+//                    ImeAction.Previous -> keyboardActions.onPrevious?.invoke(actionScope)
+//                    else -> {}
+//                }
+//            },
+//            lineLimits = lineLimits,
+//            interactionSource = interactionSource,
+//            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+//       //     outputTransformation = outputTransformation,
+//            decorator = { innerTextField ->
+//                TextFieldDefaults.DecorationBox(
+//                    value = value,
+//                    innerTextField = innerTextField,
+//                    enabled = enabled,
+//                    singleLine = singleLine,
+//                    visualTransformation = visualTransformation,
+//                    interactionSource = interactionSourceImp,
+//                    isError = isError,
+//                    label = {},
+//                    placeholder = placeholder,
+//                    leadingIcon = leadingIcon,
+//                    trailingIcon = trailingIcon,
+//                    prefix = prefix,
+//                    suffix = suffix,
+//                    supportingText = supportingText,
+//                    shape = shape,
+//                    colors = colors.copy(cursorColor = MaterialTheme.colorScheme.primary),
+//                    contentPadding = contentPadding
+//                )
+//            }
 //        )
     }
 }
