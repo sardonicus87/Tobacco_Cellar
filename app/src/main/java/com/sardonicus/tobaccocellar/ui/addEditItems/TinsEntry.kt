@@ -29,6 +29,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -50,6 +52,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -57,6 +60,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -91,6 +95,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
@@ -238,10 +243,17 @@ private fun IndividualTin(
                 // Label //
                 Column(Modifier.widthIn(max = textFieldMax), horizontalAlignment = Alignment.CenterHorizontally) {
                     var labelIsFocused by remember { mutableStateOf(false) }
+                    val labelState = rememberTextFieldState(tinDetails.tinLabel)
+                    LaunchedEffect(labelState) {
+                        snapshotFlow { labelState.text.toString() }.collectLatest {
+                            onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar()))
+                        }
+                    }
 
                     CustomTextField(
-                        value = tinDetails.tinLabel,
-                        onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar())) },
+//                        value = tinDetails.tinLabel,
+//                        onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar())) },
+                        state = labelState,
                         modifier = Modifier
                             .onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
@@ -283,9 +295,10 @@ private fun IndividualTin(
                                 else LocalContentColor.current
                         ),
                         contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
-                        singleLine = true,
-                        maxLines = 1,
-                        minLines = 1,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+//                        singleLine = true,
+//                        maxLines = 1,
+//                        minLines = 1,
                         interactionSource = fieldInteractionSource
                     )
                     if (showError) {

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
@@ -41,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import com.sardonicus.tobaccocellar.R
@@ -49,7 +52,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.parseLocalizedDouble
+import com.sardonicus.tobaccocellar.ui.utilities.toLocalizedDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
@@ -63,8 +66,8 @@ fun TinRatesDialog(
     gramsRate: Double,
     onSave: (Double, Double) -> Unit
 ) {
-    var tinOzRate by remember { mutableStateOf(formatDecimal(ozRate)) }
-    var tinGramsRate by remember { mutableStateOf(formatDecimal(gramsRate)) }
+    val ozState = rememberTextFieldState(formatDecimal(ozRate))
+    val gramsState = rememberTextFieldState(formatDecimal(gramsRate))
     val focusManager = LocalFocusManager.current
     var saving by remember { mutableStateOf(false) }
     var debouncedLoading by remember { mutableStateOf(false) }
@@ -131,9 +134,11 @@ fun TinRatesDialog(
                             }
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
-                                    value = tinOzRate,
-                                    onValueChange = {
-                                        if (it.matches(allowedPattern)) { tinOzRate = it }
+                                    state = ozState,
+                                    inputTransformation = {
+                                        if (!this.toString().matches(allowedPattern)) {
+                                            revertAllChanges()
+                                        }
                                     },
                                     modifier = Modifier.width(100.dp),
                                     textStyle = LocalTextStyle.current.copy(
@@ -155,7 +160,7 @@ fun TinRatesDialog(
                                         cursorColor = MaterialTheme.colorScheme.primary,
                                     ),
                                     enabled = !debouncedLoading,
-                                    maxLines = 1,
+                                    lineLimits = TextFieldLineLimits.SingleLine,
                                     contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
@@ -163,8 +168,8 @@ fun TinRatesDialog(
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
-                                                fontSize = 13.5.sp,
-                                                lineHeight = 20.sp,
+                                                fontSize = 14.sp,
+                                                lineHeight = 1.em,
                                                 color = LocalContentColor.current.copy(alpha = .38f),
                                             )
                                         )
@@ -181,9 +186,11 @@ fun TinRatesDialog(
                             }
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
-                                    value = tinGramsRate,
-                                    onValueChange = {
-                                        if (it.matches(allowedPattern)) { tinGramsRate = it }
+                                    state = gramsState,
+                                    inputTransformation = {
+                                        if (!this.toString().matches(allowedPattern)) {
+                                            revertAllChanges()
+                                        }
                                     },
                                     modifier = Modifier.width(100.dp),
                                     textStyle = LocalTextStyle.current.copy(
@@ -205,7 +212,7 @@ fun TinRatesDialog(
                                         cursorColor = MaterialTheme.colorScheme.primary,
                                     ),
                                     enabled = !debouncedLoading,
-                                    maxLines = 1,
+                                    lineLimits = TextFieldLineLimits.SingleLine,
                                     contentPadding = PaddingValues(12.dp, 6.dp),
                                     placeholder = {
                                         Text(
@@ -213,8 +220,8 @@ fun TinRatesDialog(
                                             modifier = Modifier.fillMaxWidth(),
                                             style = LocalTextStyle.current.copy(
                                                 textAlign = TextAlign.End,
-                                                fontSize = 13.5.sp,
-                                                lineHeight = 20.sp,
+                                                fontSize = 14.sp,
+                                                lineHeight = 1.em,
                                                 color = LocalContentColor.current.copy(alpha = .38f),
                                             )
                                         )
@@ -239,7 +246,7 @@ fun TinRatesDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(parseLocalizedDouble(tinOzRate) ?: ozRate, parseLocalizedDouble(tinGramsRate) ?: gramsRate)
+                    onSave(ozState.text.toString().toLocalizedDouble() ?: ozRate, gramsState.text.toString().toLocalizedDouble() ?: gramsRate)
                     saving = true
                 },
                 enabled = !debouncedLoading

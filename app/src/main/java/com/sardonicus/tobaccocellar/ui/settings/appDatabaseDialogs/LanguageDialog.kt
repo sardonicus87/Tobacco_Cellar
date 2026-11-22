@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -104,11 +106,10 @@ fun LanguageDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     CustomTextField(
-                        value = selected.label,
+                        state = rememberTextFieldState(selected.label),
                         modifier = Modifier.width(175.dp),
                         readOnly = true,
                         enabled = false,
-                        onValueChange = { },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) },
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
@@ -120,9 +121,9 @@ fun LanguageDialog(
                             unfocusedContainerColor = LocalCustomColors.current.textField,
                             disabledContainerColor = LocalCustomColors.current.textField,
                         ),
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         shape = MaterialTheme.shapes.extraSmall,
-                        contentPadding = PaddingValues(16.dp, 4.dp, 12.dp, 4.dp)
+                        contentPadding = PaddingValues(16.dp, 8.dp, 12.dp, 8.dp)
                     )
 
                     if (expanded) {

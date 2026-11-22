@@ -50,6 +50,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.CopyKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -137,11 +139,11 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.toLocalizedDouble
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.text.ParseException
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -481,12 +483,14 @@ private fun PlaintextBody(
         PrintDialog(
             savedFontSize = printOptions.font,
             savedMargin = printOptions.margin,
-            onPrintConfirm = { font, margin ->
-                val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
-                printManager?.print("Plaintext Output", PrintHelper("Plaintext Output", plainList, font, margin), null)
-                savePrintOptions(font, margin); printDialog = false
-            },
-            onPrintCancel = { font, margin -> savePrintOptions(font, margin); printDialog = false }
+            onPrint = { font, margin, confirm ->
+                savePrintOptions(font, margin)
+                if (confirm) {
+                    val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
+                    printManager?.print("Plaintext Output", PrintHelper("Plaintext Output", plainList, font, margin), null)
+                }
+                printDialog = false
+            }
         )
     }
 }
@@ -1103,14 +1107,12 @@ private fun FormattingHelp(modifier: Modifier = Modifier) {
 private fun PrintDialog(
     savedFontSize: Float,
     savedMargin: Double,
-    onPrintConfirm: (Float, Double) -> Unit,
-    onPrintCancel: (Float, Double) -> Unit,
+    onPrint: (Float, Double, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var fontSize by remember { mutableFloatStateOf(savedFontSize) }
     var margins by remember { mutableDoubleStateOf(savedMargin) }
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
     val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
 
@@ -1118,9 +1120,9 @@ private fun PrintDialog(
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
     AlertDialog(
-        onDismissRequest = { onPrintCancel(fontSize, margins) },
-        confirmButton = { TextButton({ onPrintConfirm(fontSize, margins) }) { Text(stringResource(R.string.print_v2)) } },
-        dismissButton = { TextButton({ onPrintCancel(fontSize, margins) }) { Text(stringResource(R.string.cancel_v2)) } },
+        onDismissRequest = { onPrint(fontSize, margins, false) },
+        confirmButton = { TextButton({ onPrint(fontSize, margins, true) }) { Text(stringResource(R.string.print_v2)) } },
+        dismissButton = { TextButton({ onPrint(fontSize, margins, false) }) { Text(stringResource(R.string.cancel_v2)) } },
         title = { Text(stringResource(R.string.print_settings_v2)) },
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
@@ -1167,8 +1169,6 @@ private fun PrintDialog(
                             val ds = Regex.escape(decimalSeparator)
                             Regex("^(\\s*|(\\d?)?($ds\\d{0,2})?)$")
                         }
-                        var fontSizeString by remember { mutableStateOf(fontSize.toInt().toString()) }
-                        var marginsString by remember { mutableStateOf(formatDecimal(margins)) }
 
                         // font
                         Row(
@@ -1178,18 +1178,20 @@ private fun PrintDialog(
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val fontState = rememberTextFieldState(savedFontSize.toInt().toString())
+                            LaunchedEffect(fontState) {
+                                snapshotFlow { fontState.text.toString() }.collectLatest {
+                                    fontSize = if (it.isNotBlank()) it.toFloatOrNull() ?: fontSize
+                                        else 12f
+                                }
+                            }
+
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
-                                    value = fontSizeString,
-                                    onValueChange = {
-                                        if (it.matches(fontPattern)) {
-                                            fontSizeString = it
-                                            fontSize =
-                                                if (it.isNotBlank()) {
-                                                    it.toFloatOrNull() ?: fontSize
-                                                } else {
-                                                    12f
-                                                }
+                                    state = fontState,
+                                    inputTransformation = {
+                                        if (!this.toString().matches(fontPattern)) {
+                                            revertAllChanges()
                                         }
                                     },
                                     suffix = {
@@ -1203,7 +1205,7 @@ private fun PrintDialog(
                                     modifier = Modifier
                                         .width(68.dp)
                                         .padding(vertical = 4.dp),
-                                    singleLine = true,
+                                    lineLimits = TextFieldLineLimits.SingleLine,
                                     textStyle = LocalTextStyle.current.copy(
                                         textDirection = TextDirection.Ltr,
                                         textAlign = TextAlign.End
@@ -1231,31 +1233,25 @@ private fun PrintDialog(
                             // increase/decrease font buttons
                             IncreaseDecrease(
                                 increaseClick = {
-                                    if (fontSizeString.isEmpty()) {
+                                    if (fontState.text.isEmpty()) {
+                                        fontState.edit { replace(0, length, "1") }
                                         fontSize = 1f
-                                        fontSizeString = "1"
                                     } else {
-                                        if (fontSize < 99f) {
-                                            fontSize += 1
-                                            fontSizeString = fontSize.toInt().toString()
-                                        } else {
-                                            fontSize = 99f
-                                            fontSizeString = "99"
-                                        }
+                                        val current = fontState.text.toString().toIntOrNull() ?: 1
+                                        val next = (current + 1).coerceAtMost(99)
+                                        fontState.edit { replace(0, length, next.toString()) }
+                                        fontSize = next.toFloat()
                                     }
                                 },
                                 decreaseClick = {
-                                    if (fontSizeString.isEmpty()) {
-                                        fontSize = 6f
-                                        fontSizeString = "6"
+                                    if (fontState.text.isEmpty()) {
+                                        fontState.edit { replace(0, length, "1") }
+                                        fontSize = 1f
                                     } else {
-                                        if (fontSize > 1f) {
-                                            fontSize -= 1
-                                            fontSizeString = fontSize.toInt().toString()
-                                        } else if (fontSize <= 1f) {
-                                            fontSize = 1f
-                                            fontSizeString = "1"
-                                        }
+                                        val current = fontState.text.toString().toIntOrNull() ?: 1
+                                        val next = (current - 1).coerceAtLeast(1)
+                                        fontState.edit { replace(0, length, next.toString()) }
+                                        fontSize = next.toFloat()
                                     }
                                 },
                                 modifier = Modifier.fillMaxHeight()
@@ -1270,40 +1266,30 @@ private fun PrintDialog(
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val marginState = rememberTextFieldState(formatDecimal(savedMargin))
+                            LaunchedEffect(marginState) {
+                                snapshotFlow { marginState.text.toString() }.collectLatest {
+                                    margins = it.toLocalizedDouble(1.0, max = 3.0)
+                                }
+                            }
+
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 CustomTextField(
-                                    value = marginsString,
-                                    onValueChange = {
-                                        if (it.matches(marginPattern)) {
-                                            marginsString = it
-                                            try {
-                                                var parsedDouble: Double?
-
-                                                if (it.isNotBlank()) {
-                                                    val preNumber =
-                                                        if (it.startsWith(decimalSeparator)) {
-                                                            "0$it"
-                                                        } else it
-                                                    val number = numberFormat.parse(preNumber)
-
-                                                    parsedDouble = number?.toDouble() ?: 1.0
-                                                } else {
-                                                    parsedDouble = 1.0
-                                                }
-
-                                                margins =
-                                                    if (parsedDouble <= 3.0) parsedDouble else 3.0
-                                            } catch (_: ParseException) {
-                                            }
+                                    state = marginState,
+                                    inputTransformation = {
+                                        if (!this.toString().matches(marginPattern)) {
+                                            revertAllChanges()
                                         }
                                     },
                                     modifier = Modifier
                                         .width(68.dp)
                                         .padding(vertical = 4.dp)
                                         .onFocusChanged {
-                                            if (!it.hasFocus) marginsString = formatDecimal(margins)
+                                            if (!it.hasFocus) {
+                                                marginState.edit { replace(0, length, formatDecimal(margins)) }
+                                            }
                                         },
-                                    singleLine = true,
+                                    lineLimits = TextFieldLineLimits.SingleLine,
                                     suffix = {
                                         Text(
                                             text = "×",
@@ -1339,31 +1325,25 @@ private fun PrintDialog(
                             // increase/decrease margin buttons
                             IncreaseDecrease(
                                 increaseClick = {
-                                    if (marginsString.isEmpty()) {
+                                    if (marginState.text.isEmpty()) {
                                         margins = 0.25
-                                        marginsString = "0.25"
+                                        marginState.edit { replace(0, length, "0.25") }
                                     } else {
-                                        if (margins < 3.0) {
-                                            margins += 0.25
-                                            marginsString = formatDecimal(margins)
-                                        } else {
-                                            margins = 3.0
-                                            marginsString = "3"
-                                        }
+                                        val current = marginState.text.toString().toLocalizedDouble(1.0, max = 3.0)
+                                        val next = (current + 0.25).coerceAtMost(3.0)
+                                        margins = next
+                                        marginState.edit { replace(0, length, formatDecimal(next)) }
                                     }
                                 },
                                 decreaseClick = {
-                                    if (marginsString.isEmpty()) {
+                                    if (marginState.text.isEmpty()) {
                                         margins = 0.0
-                                        marginsString = formatDecimal(margins)
+                                        marginState.edit { replace(0, length, "0") }
                                     } else {
-                                        if (margins > 0.25) {
-                                            margins -= 0.25
-                                            marginsString = formatDecimal(margins)
-                                        } else if (margins <= 0.0) {
-                                            margins = 0.0
-                                            marginsString = formatDecimal(margins)
-                                        }
+                                        val current = marginState.text.toString().toLocalizedDouble(1.0, max = 3.0)
+                                        val next = (current -0.25).coerceAtLeast(0.0)
+                                        margins = next
+                                        marginState.edit { replace(0, length, formatDecimal(next)) }
                                     }
                                 },
                                 modifier = Modifier.fillMaxHeight()
