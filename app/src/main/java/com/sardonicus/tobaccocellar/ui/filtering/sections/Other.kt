@@ -74,7 +74,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CheckboxWithLabel
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.parseLocalizedDouble
+import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.text.ParseException
@@ -469,8 +469,8 @@ private fun RatingRangePop(
                     )
 
                     // Selected Range Display //
-                    val lowField = parseLocalizedDouble(ratingLowString)?.coerceIn(0.0, compMax)
-                    val highField = parseLocalizedDouble(ratingHighString)?.coerceIn(compMin, 5.0)
+                    val lowField = ratingLowString.localizedToDouble()?.coerceIn(0.0, compMax)
+                    val highField = ratingHighString.localizedToDouble()?.coerceIn(compMin, 5.0)
 
                     val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
                     val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f

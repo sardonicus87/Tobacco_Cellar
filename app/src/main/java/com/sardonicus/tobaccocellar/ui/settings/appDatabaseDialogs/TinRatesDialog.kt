@@ -52,7 +52,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.toLocalizedDouble
+import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
@@ -246,7 +246,7 @@ fun TinRatesDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(ozState.text.toString().toLocalizedDouble() ?: ozRate, gramsState.text.toString().toLocalizedDouble() ?: gramsRate)
+                    onSave(ozState.text.toString().localizedToDouble() ?: ozRate, gramsState.text.toString().localizedToDouble() ?: gramsRate)
                     saving = true
                 },
                 enabled = !debouncedLoading

@@ -251,11 +251,8 @@ private fun IndividualTin(
                     }
 
                     CustomTextField(
-//                        value = tinDetails.tinLabel,
-//                        onValueChange = { onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar())) },
                         state = labelState,
-                        modifier = Modifier
-                            .onFocusChanged { labelIsFocused = it.isFocused },
+                        modifier = Modifier.onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
                             fontWeight = FontWeight.Medium
@@ -296,9 +293,6 @@ private fun IndividualTin(
                         ),
                         contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
                         lineLimits = TextFieldLineLimits.SingleLine,
-//                        singleLine = true,
-//                        maxLines = 1,
-//                        minLines = 1,
                         interactionSource = fieldInteractionSource
                     )
                     if (showError) {

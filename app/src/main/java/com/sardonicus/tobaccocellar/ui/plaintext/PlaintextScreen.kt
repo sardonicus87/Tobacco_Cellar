@@ -139,7 +139,7 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.toLocalizedDouble
+import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
@@ -1269,7 +1269,7 @@ private fun PrintDialog(
                             val marginState = rememberTextFieldState(formatDecimal(savedMargin))
                             LaunchedEffect(marginState) {
                                 snapshotFlow { marginState.text.toString() }.collectLatest {
-                                    margins = it.toLocalizedDouble(1.0, max = 3.0)
+                                    margins = it.localizedToDouble(1.0, max = 3.0)
                                 }
                             }
 
@@ -1329,7 +1329,7 @@ private fun PrintDialog(
                                         margins = 0.25
                                         marginState.edit { replace(0, length, "0.25") }
                                     } else {
-                                        val current = marginState.text.toString().toLocalizedDouble(1.0, max = 3.0)
+                                        val current = marginState.text.toString().localizedToDouble(1.0, max = 3.0)
                                         val next = (current + 0.25).coerceAtMost(3.0)
                                         margins = next
                                         marginState.edit { replace(0, length, formatDecimal(next)) }
@@ -1340,7 +1340,7 @@ private fun PrintDialog(
                                         margins = 0.0
                                         marginState.edit { replace(0, length, "0") }
                                     } else {
-                                        val current = marginState.text.toString().toLocalizedDouble(1.0, max = 3.0)
+                                        val current = marginState.text.toString().localizedToDouble(1.0, max = 3.0)
                                         val next = (current -0.25).coerceAtLeast(0.0)
                                         margins = next
                                         marginState.edit { replace(0, length, formatDecimal(next)) }

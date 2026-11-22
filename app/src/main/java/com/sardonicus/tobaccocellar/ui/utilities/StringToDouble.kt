@@ -4,7 +4,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import java.text.NumberFormat
 import java.text.ParseException
 
-fun String.toLocalizedDouble(
+fun String.localizedToDouble(
     fallback: Double,
     min: Double? = null,
     max: Double? = null
@@ -24,7 +24,7 @@ fun String.toLocalizedDouble(
 }
 
 
-fun String.toLocalizedDouble(
+fun String.localizedToDouble(
     min: Double? = null,
     max: Double? = null
 ): Double? {
