@@ -11,8 +11,6 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
 import java.text.Collator
 import java.text.Normalizer
-import java.text.NumberFormat
-import java.text.ParseException
 import java.util.Locale
 
 @SuppressLint("AppBundleLocaleChanges")
@@ -89,12 +87,4 @@ fun String.stripControlChar(): String {
 fun String.stripAccent(): String {
     val normalized = Normalizer.normalize(this, Normalizer.Form.NFD)
     return Regex("\\p{InCombiningDiacriticalMarks}+").replace(normalized, "")
-}
-
-fun parseLocalizedDouble(text: String, locale: Locale = LanguageState.locale): Double? {
-    if (text.isBlank()) return null
-    return try {
-        NumberFormat.getNumberInstance(locale).parse(text)?.toDouble()
-    } catch (_: ParseException) { text.replace(',', '.').toDoubleOrNull()
-    } catch (_: Exception) { null }
 }
