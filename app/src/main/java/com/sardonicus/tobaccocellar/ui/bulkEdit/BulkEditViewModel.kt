@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.bulkEdit
 
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +23,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.ShowSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -152,7 +154,7 @@ class BulkEditViewModel (
                 val resolvedCompIds = mutableMapOf<String, Int>()
                 if (editingState.compsSelected) {
                     val existingComps = bulkEditUiState.value.autoComps
-                    val compNames = editingState.compsString.split(Regex("[,،、]"))
+                    val compNames = editingState.compsString.toCleanString().split(Regex("[,،、]"))
                         .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
                             existingComps.find { it.equals(input, ignoreCase = true) } ?: input
                         }
@@ -169,7 +171,7 @@ class BulkEditViewModel (
                 val resolvedFlavorIds = mutableMapOf<String, Int>()
                 if (editingState.flavorSelected) {
                     val existingFlavors = bulkEditUiState.value.autoFlavor
-                    val flavorNames = editingState.flavorString.split(Regex("[,،、]"))
+                    val flavorNames = editingState.flavorString.toCleanString().split(Regex("[,،、]"))
                         .map { it.trim() }.filter { it.isNotBlank() }.map { input ->
                             existingFlavors.find { it.equals(input, ignoreCase = true) } ?: input
                         }
@@ -215,8 +217,8 @@ class BulkEditViewModel (
 
                     items.items.copy(
                         type = if (editingState.typeSelected) editingState.type else items.items.type,
-                        subGenre = if (editingState.genreSelected) editingState.subGenre else items.items.subGenre,
-                        cut = if (editingState.cutSelected) editingState.cut else items.items.cut,
+                        subGenre = if (editingState.genreSelected) editingState.subGenre.toCleanString() else items.items.subGenre,
+                        cut = if (editingState.cutSelected) editingState.cut.toCleanString() else items.items.cut,
                         rating = if (editingState.ratingSelected) editingState.rating else items.items.rating,
                         disliked = if (editingState.favoriteDisSelected) editingState.disliked else items.items.disliked,
                         favorite = if (editingState.favoriteDisSelected) editingState.favorite else items.items.favorite,
@@ -267,12 +269,12 @@ data class EditingState(
     val rating: Double? = null,
     val disliked: Boolean = false,
     val favorite: Boolean = false,
-    val subGenre: String = "",
-    val cut: String = "",
-    val compsString: String = "",
+    val subGenre: TextFieldState = TextFieldState(""),
+    val cut: TextFieldState = TextFieldState(""),
+    val compsString: TextFieldState = TextFieldState(""),
     val components: List<Components> = listOf(),
     val compsAdd: Boolean = true,
-    val flavorString: String = "",
+    val flavorString: TextFieldState = TextFieldState(""),
     val flavoring: List<Flavoring> = listOf(),
     val flavorAdd: Boolean = true,
     val inProduction: Boolean = true,

@@ -12,7 +12,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +40,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -123,7 +123,9 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
+import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
 
 @Composable
 fun BulkEditScreen(
@@ -216,8 +218,7 @@ fun BulkEditBody(
         isSaving = saveIndicator
     }
 
-    val fieldInteractionSource = remember { MutableInteractionSource() }
-    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
+    var unfocusedFieldScroll by remember { mutableStateOf(false) }
 
     var anythingFocused by remember { mutableStateOf(false) }
 
@@ -386,7 +387,7 @@ fun BulkEditBody(
                                         autoComps = autoComps,
                                         autoFlavor = autoFlavor,
                                         fieldFocused = { textFieldFocused = it },
-                                        fieldInteractionSource = fieldInteractionSource
+                                        isDragging = { unfocusedFieldScroll = it }
                                     )
 
                                 else ->
@@ -496,7 +497,7 @@ fun BulkEditing(
     autoFlavor: List<String>,
     fieldFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    fieldInteractionSource: MutableInteractionSource? = null,
+    isDragging: (Boolean) -> Unit = {},
 ) {
     var confirmEdit by remember { mutableStateOf(false) }
     var showRatingPop by remember { mutableStateOf(false) }
@@ -559,6 +560,14 @@ fun BulkEditing(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 ) {
+
+                    val subgenreSource = remember { MutableInteractionSource() }
+                    val cutSource = remember { MutableInteractionSource() }
+                    val compSource = remember { MutableInteractionSource() }
+                    val flavorSource = remember { MutableInteractionSource() }
+                    val anyDragging = rememberAnyDragged(subgenreSource, cutSource, compSource, flavorSource)
+                    isDragging(anyDragging)
+
                     RowLabel(
                         text = stringResource(R.string.type_label_v2),
                         checked = editingState.typeSelected,
@@ -633,21 +642,21 @@ fun BulkEditing(
                         enabled = editingState.typeSelected
                     )
                     AutoCompleteText(
-                        value = editingState.subGenre,
-                        onValueChange = { onValueChange(editingState.copy(subGenre = it)) },
-                        onOptionSelected = { onValueChange(editingState.copy(subGenre = it)) },
+                        state = editingState.subGenre,
+                        inputTransformation = { stripControlCharTransform },
+                        onOptionSelected = { onValueChange(editingState) },
                         allItems = autoGenres,
                         modifier = Modifier
                             .gridItem(2, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
-                            if (editingState.subGenre.length > 4) {
+                            if (editingState.subGenre.text.length > 4) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
                                         .clickable(null, LocalIndication.current) {
-                                            onValueChange(editingState.copy(subGenre = ""))
+                                            editingState.subGenre.edit { replace(0, length, "") }
                                         }
                                         .alpha(0.66f)
                                         .size(20.dp)
@@ -660,26 +669,27 @@ fun BulkEditing(
                             keyboardType = KeyboardType.Text,
                             imeAction = nextOrDone(enabledFields, 0)
                         ),
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         enabled = editingState.genreSelected,
-                        interactionSource = fieldInteractionSource
+                        interactionSource = subgenreSource
                     )
 
                     AutoCompleteText(
-                        value = editingState.cut,
-                        onValueChange = { onValueChange(editingState.copy(cut = it)) },
-                        onOptionSelected = { onValueChange(editingState.copy(cut = it)) },
+                        state = editingState.cut,
+                        inputTransformation = { stripControlCharTransform },
+                        onOptionSelected = { onValueChange(editingState) },
                         allItems = autoCuts,
                         modifier = Modifier
                             .gridItem(3, fieldCol, 1, 1, Alignment.CenterStart)
                             .fillMaxWidth(),
                         trailingIcon = {
-                            if (editingState.cut.length > 4) {
+                            if (editingState.cut.text.length > 4) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
                                         .clickable(null, LocalIndication.current) {
-                                            onValueChange(editingState.copy(cut = ""))
+                                            editingState.cut.edit { replace(0, length, "") }
                                         }
                                         .alpha(0.66f)
                                         .size(20.dp)
@@ -692,8 +702,9 @@ fun BulkEditing(
                             keyboardType = KeyboardType.Text,
                             imeAction = nextOrDone(enabledFields, 1)
                         ),
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         enabled = editingState.cutSelected,
-                        interactionSource = fieldInteractionSource
+                        interactionSource = cutSource
                     )
 
                     val compColor =
@@ -702,10 +713,10 @@ fun BulkEditing(
                     val compAlpha = if (editingState.compsSelected) 0.66f else .33f
 
                     AutoCompleteText(
-                        value = editingState.compsString,
-                        onValueChange = { onValueChange(editingState.copy(compsString = it)) },
+                        state = editingState.compsString,
+                        inputTransformation = { stripControlCharTransform },
                         componentField = true,
-                        onOptionSelected = { onValueChange(editingState.copy(compsString = it)) },
+                        onOptionSelected = { onValueChange(editingState) },
                         allItems = autoComps,
                         modifier = Modifier
                             .gridItem(4, fieldCol, 1, 1, Alignment.CenterStart)
@@ -734,7 +745,7 @@ fun BulkEditing(
                         ),
                         textStyle = LocalTextStyle.current.copy(color = compColor.copy(alpha = compAlpha)),
                         enabled = editingState.compsSelected,
-                        maxLines = 1,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         placeholder = {
                             if (editingState.compsSelected) {
                                 Text(
@@ -752,7 +763,7 @@ fun BulkEditing(
                                 )
                             }
                         },
-                        interactionSource = fieldInteractionSource
+                        interactionSource = compSource
                     )
 
                     val flavorColor =
@@ -760,10 +771,10 @@ fun BulkEditing(
                     val flavorAlpha = if (editingState.flavorSelected) 0.66f else .33f
 
                     AutoCompleteText(
-                        value = editingState.flavorString,
-                        onValueChange = { onValueChange(editingState.copy(flavorString = it)) },
+                        state = editingState.flavorString,
+                        inputTransformation = { stripControlCharTransform },
                         componentField = true,
-                        onOptionSelected = { onValueChange(editingState.copy(flavorString = it)) },
+                        onOptionSelected = { onValueChange(editingState) },
                         allItems = autoFlavor,
                         modifier = Modifier
                             .gridItem(5, fieldCol, 1, 1, Alignment.CenterStart)
@@ -792,7 +803,7 @@ fun BulkEditing(
                         ),
                         textStyle = LocalTextStyle.current.copy(color = flavorColor.copy(alpha = flavorAlpha)),
                         enabled = editingState.flavorSelected,
-                        maxLines = 1,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         placeholder = {
                             if (editingState.flavorSelected) {
                                 Text(
@@ -810,7 +821,7 @@ fun BulkEditing(
                                 )
                             }
                         },
-                        interactionSource = fieldInteractionSource
+                        interactionSource = flavorSource
                     )
                     RatingRow(
                         rating = editingState.rating,
