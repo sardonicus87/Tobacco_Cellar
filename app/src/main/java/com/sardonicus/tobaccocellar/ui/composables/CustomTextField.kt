@@ -29,7 +29,6 @@ import androidx.compose.material3.TextFieldDefaults.indicatorLine
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,12 +70,9 @@ fun CustomTextField(
     trailingIcon: @Composable (() -> Unit)? = null,
 //    supportingText: @Composable (() -> Unit)? = null,
 ) {
-    val internalInteraction = remember { MutableInteractionSource() }
-    LaunchedEffect(internalInteraction, interactionSource) {
-        internalInteraction.interactions.collect { interactionSource?.emit(it) }
-    }
+    val interactionSource = interactionSource ?: remember { MutableInteractionSource() }
 
-    val focused = enabled && !readOnly && internalInteraction.collectIsFocusedAsState().value
+    val focused = enabled && !readOnly && interactionSource.collectIsFocusedAsState().value
     val focusManager = LocalFocusManager.current
 
     val textColor = textStyle.color.takeOrElse {
@@ -118,7 +114,7 @@ fun CustomTextField(
             keyboardOptions = keyboardOptions,
             onKeyboardAction = onKeyboardAction,
             lineLimits = lineLimits,
-            interactionSource = internalInteraction,
+            interactionSource = interactionSource,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             outputTransformation = outputTransformation,
             decorator = { innerTextField ->
@@ -128,7 +124,7 @@ fun CustomTextField(
                         .indicatorLine(
                             enabled = enabled,
                             isError = isError,
-                            interactionSource = internalInteraction,
+                            interactionSource = interactionSource,
                             colors = colors,
                             textFieldShape = shape,
                             focusedIndicatorLineThickness = 2.dp,
