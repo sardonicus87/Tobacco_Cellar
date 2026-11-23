@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.text.input.InputTransformation
 import com.sardonicus.tobaccocellar.CellarApplication
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.BlendTypes
@@ -82,6 +83,12 @@ fun String.rtlIsolate(): String {
 
 fun String.stripControlChar(): String {
     return this.replace(Regex("[\u2067\u2068\u2069\u202A\u202C]"), "")
+}
+
+val stripControlCharTransform = InputTransformation {
+    val text = this.asCharSequence().toString()
+    val cleaned = text.stripControlChar()
+    if (text != cleaned) { replace(0, length, cleaned) }
 }
 
 fun String.stripAccent(): String {
