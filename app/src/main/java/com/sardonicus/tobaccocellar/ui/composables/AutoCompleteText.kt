@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.placeCursorAtEnd
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextFieldLabelPosition
+import androidx.compose.material3.TextFieldLabelScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +36,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -39,7 +47,6 @@ import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,24 +56,26 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedComma
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripAccent
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlin.time.Duration.Companion.milliseconds
 
 /** TextField with AutoComplete suggestions */
 @Composable
 fun AutoCompleteText(
-    value: String,
-    onValueChange: ((String) -> Unit)?,
+    state: TextFieldState,
     allItems: List<String>,
     onOptionSelected: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
     placeholder: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    label: @Composable (() -> Unit)? = null,
+    labelPosition: TextFieldLabelPosition = TextFieldLabelPosition.Inside(),
+    label: @Composable (TextFieldLabelScope.() -> Unit)? = null,
+    inputTransformation: InputTransformation? = null,
+    outputTransformation: OutputTransformation? = null,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    singleLine: Boolean = false,
-    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
-    minLines: Int = 1,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.Default,
     supportingText: @Composable (() -> Unit)? = null,
     enabled: Boolean = true,
     colors: TextFieldColors = TextFieldDefaults.colors(),
@@ -75,7 +84,6 @@ fun AutoCompleteText(
     componentField: Boolean = false,
 ) {
     var suggestionsState by remember { mutableStateOf<List<String>>(emptyList()) }
-    var textFieldValueState by remember { mutableStateOf(TextFieldValue(value)) }
     var override by remember { mutableStateOf(false) }
     var focusInteractionCount by remember { mutableIntStateOf(0) }
     var expandedState by remember { mutableStateOf(false) }
@@ -85,16 +93,22 @@ fun AutoCompleteText(
 
     var listCache by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    val input = remember(textFieldValueState.text, textFieldValueState.selection) {
+    val input = remember(state.text.toString(), state.selection) {
         getInput(
-            text = textFieldValueState.text,
-            cursorPosition = textFieldValueState.selection.start,
+            text = state.text.toString(),
+            cursorPosition = state.selection.start,
             componentField = componentField
         )
     }
 
+    LaunchedEffect(state, Dispatchers.Default) {
+        snapshotFlow { state.text.toString() }.collectLatest {
+            if (focusInteractionCount > 0) focusInteractionCount++
+        }
+    }
+
     SideEffect(input) {
-        val newSuggestions = getSuggestions(input, textFieldValueState.text, allItems, componentField)
+        val newSuggestions = getSuggestions(input, state.text.toString(), allItems, componentField)
         suggestionsState = newSuggestions
 
         if (expandedState && newSuggestions.isNotEmpty()) { listCache = newSuggestions }
@@ -104,8 +118,8 @@ fun AutoCompleteText(
         if (expandedState && suggestionsState.isNotEmpty()) { listCache = suggestionsState }
     }
 
-    SideEffect(input, suggestionsState, override, value, focusInteractionCount) {
-        expandedState = input.length >= 2 && focusInteractionCount > 2 && suggestionsState.isNotEmpty() && !override && value.isNotBlank()
+    SideEffect(input, suggestionsState, override, state.text.toString(), focusInteractionCount) {
+        expandedState = input.length >= 2 && focusInteractionCount > 2 && suggestionsState.isNotEmpty() && !override && state.text.toString().isNotBlank()
     }
 
     LaunchedEffect(override) {
@@ -119,28 +133,16 @@ fun AutoCompleteText(
     BackHandler(expandedState) { expandedState = false }
 
     val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) {
-        onDispose {
-            expandedState = false
-            focusManager.clearFocus()
-        }
-    }
+    DisposableEffect(Unit) { onDispose { expandedState = false; focusManager.clearFocus() } }
 
     Box(modifier = modifier) {
         TextField(
-            value = textFieldValueState.copy(text = value),
-            onValueChange = { textFieldValue ->
-                textFieldValueState = textFieldValue
-                onValueChange?.invoke(textFieldValue.text.stripControlChar())
-                if (focusInteractionCount > 0) focusInteractionCount++
-            },
+            state = state,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(0.dp)
                 .onFocusChanged {
-                    if (it.isFocused) {
-                        if (focusInteractionCount == 0) focusInteractionCount = 1
-                    }
+                    if (it.isFocused) { if (focusInteractionCount == 0) focusInteractionCount = 1 }
                     else { expandedState = false; focusInteractionCount = 0 }
                 }
                 .pointerInput(Unit) {
@@ -156,10 +158,14 @@ fun AutoCompleteText(
                 .onGloballyPositioned { fieldY = it.positionOnScreen().y },
             enabled = enabled,
             trailingIcon = trailingIcon,
-            singleLine = true,
+            lineLimits = lineLimits,
             placeholder = placeholder,
+            inputTransformation = inputTransformation,
+            outputTransformation = outputTransformation,
             keyboardOptions = keyboardOptions,
             textStyle = textStyle,
+            labelPosition = labelPosition,
+            label = label,
             colors = colors.copy(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
@@ -170,9 +176,6 @@ fun AutoCompleteText(
             ),
             interactionSource = interactionSource,
             shape = MaterialTheme.shapes.extraSmall,
-            label = label,
-            maxLines = maxLines,
-            minLines = minLines,
             supportingText = supportingText,
         )
 
@@ -204,8 +207,8 @@ fun AutoCompleteText(
                         )
                     },
                     onClick = {
-                        val currentText = textFieldValueState.text
-                        val cursorPosition = textFieldValueState.selection.start
+                        val currentText = state.text.toString()
+                        val cursorPosition = state.selection.start
 
                         val separator = when {
                             currentText.contains('،') -> "، "
@@ -214,45 +217,40 @@ fun AutoCompleteText(
                             else -> getLocalizedComma(LanguageState.locale)
                         }
 
-                        val newValue =
+                        state.edit {
                             if (componentField && currentText.contains(Regex("[,،、]\\s*"))) {
-                                val delimiterIndices = currentText.mapIndexedNotNull { index, char ->
-                                    when (char) {
-                                        ',', '،', '、', ' ' -> index
-                                        else -> null
-                                    }
-                                }.toMutableList().apply {
-                                    add(-1)
-                                    add(currentText.length)
-                                }.sorted()
+                                val delimiterIndices =
+                                    currentText.mapIndexedNotNull { index, char ->
+                                        when (char) {
+                                            ',', '،', '、', ' ' -> index
+                                            else -> null
+                                        }
+                                    }.toMutableList().apply {
+                                        add(-1)
+                                        add(currentText.length)
+                                    }.sorted()
                                 val startIndex = delimiterIndices.last { it < cursorPosition }
                                 val endIndex = delimiterIndices.first { it >= cursorPosition }
 
-                                val updatedText = currentText.replaceRange(startIndex + 1, endIndex, " $label$separator")
-                                    .trimStart().replace(Regex(" {2,}"), " ").replace(Regex("([,،、])\\s*\\1+"), "$1")
+                                replace(startIndex +1, endIndex, "$label$separator")
                                 val finalCursorPos =
                                     if (startIndex == -1) { label.length + separator.length }
-                                    else if (endIndex == currentText.length) { updatedText.length }
+                                    else if (endIndex == currentText.length) { length }
                                     else { (startIndex + 1) + label.length + 1 }
 
-                                TextFieldValue(
-                                    text = updatedText,
-                                    selection = TextRange(finalCursorPos.coerceIn(0, updatedText.length))
-                                )
-                            } else {
-                                val updatedText = if (componentField) { "$label$separator" } else { label }
-                                TextFieldValue(
-                                    text = updatedText,
-                                    selection = TextRange(updatedText.length)
-                                )
+                                selection = TextRange(finalCursorPos.coerceIn(0, length))
                             }
-
-                        textFieldValueState = newValue
+                            else {
+                                val replacement = if (componentField) "$label$separator" else label
+                                replace(0, length, replacement)
+                                placeCursorAtEnd()
+                            }
+                        }
 
                         override = true
                         expandedState = false
                         focusInteractionCount = if (componentField) focusInteractionCount else 1
-                        onOptionSelected?.invoke(newValue.text)
+                        onOptionSelected?.invoke(state.text.toString())
                     },
                     modifier = Modifier
                         .padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 2.dp)
