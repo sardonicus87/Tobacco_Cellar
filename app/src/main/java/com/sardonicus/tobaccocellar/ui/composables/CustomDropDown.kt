@@ -1,6 +1,8 @@
 package com.sardonicus.tobaccocellar.ui.composables
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -44,6 +46,7 @@ fun CustomDropDown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val onExpandChange = remember { { it: Boolean -> expanded = it } }
+    val state = rememberTextFieldState(selectedValue)
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -51,16 +54,17 @@ fun CustomDropDown(
         modifier = modifier
     ) {
         TextField(
+            state = state,
             readOnly = true,
-            value = selectedValue,
-            onValueChange = {},
+         //   onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-            singleLine = true,
+        //    singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
             colors = colors.copy(
                 focusedContainerColor =
@@ -90,6 +94,7 @@ fun CustomDropDown(
                     onClick = {
                         onExpandChange(false)
                         onValueChange(it)
+                        state.edit { replace(0, length, it) }
                     }
                 )
             }
