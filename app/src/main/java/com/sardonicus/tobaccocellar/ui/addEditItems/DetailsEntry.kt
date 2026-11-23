@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -52,6 +53,7 @@ import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvide
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -94,9 +96,14 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
+import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -111,7 +118,7 @@ fun DetailsEntry(
     onValueChange: (ItemDetails) -> Unit,
     showRatingPop: Boolean,
     onShowRatingPop: (Boolean) -> Unit,
-    fieldInteractionSource: MutableInteractionSource?,
+    fieldDragged: (Boolean) -> Unit,
     tooltipVisible: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -145,11 +152,37 @@ fun DetailsEntry(
                 style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))
             Text(stringResource(R.string.rating_label_v2), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
+            LaunchedEffect(itemDetails, Dispatchers.Default) {
+                combine(
+                    snapshotFlow { itemDetails.brand.text.toString() },
+                    snapshotFlow { itemDetails.blend.text.toString() },
+                    snapshotFlow { itemDetails.subGenre.text.toString() },
+                    snapshotFlow { itemDetails.cut.text.toString() },
+                    snapshotFlow { itemDetails.componentString.text.toString() },
+                    snapshotFlow { itemDetails.flavoringString.text.toString() },
+                    snapshotFlow { itemDetails.quantityString.text.toString() }
+                ) { itemDetails }.collectLatest {
+                    val quantity =
+                        if (!itemDetails.syncTins) itemDetails.quantityString.toCleanString().toIntOrNull() ?: 1
+                        else itemDetails.quantity
+                    onValueChange(it.copy(quantity = quantity))
+                }
+            }
+            val brandSource = remember { MutableInteractionSource() }
+            val blendSource = remember { MutableInteractionSource() }
+            val subgenreSource = remember { MutableInteractionSource() }
+            val cutSource = remember { MutableInteractionSource() }
+            val componentsSource = remember { MutableInteractionSource() }
+            val flavoringSource = remember { MutableInteractionSource() }
+
+            val anyDragging = rememberAnyDragged(brandSource, blendSource, subgenreSource, cutSource, componentsSource, flavoringSource)
+            fieldDragged(anyDragging)
+
             AutoCompleteText(
-                value = itemDetails.brand,
+                state = itemDetails.brand,
+                inputTransformation = { stripControlCharTransform },
                 allItems = autoComplete.brands,
-                onValueChange = { onValueChange(itemDetails.copy(brand = it)) },
-                onOptionSelected = { onValueChange(itemDetails.copy(brand = it)) },
+                onOptionSelected = { onValueChange(itemDetails) },
                 modifier = Modifier
                     .gridItem(1, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
@@ -176,14 +209,13 @@ fun DetailsEntry(
                     }
                 },
                 trailingIcon = {
-                    if (itemDetails.brand.length > 4) {
+                    if (itemDetails.brand.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(brand = ""))
-                                }
+                                    itemDetails.brand.edit { replace(0, length, "") } }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -195,17 +227,16 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
-                interactionSource = fieldInteractionSource
+                lineLimits = TextFieldLineLimits.SingleLine,
+                interactionSource = brandSource
             )
 
             TextField(
-                value = itemDetails.blend,
-                onValueChange = { onValueChange(itemDetails.copy(blend = it.stripControlChar())) },
+                state = itemDetails.blend,
+                inputTransformation = { stripControlCharTransform },
                 modifier = Modifier
                     .gridItem(2, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
-                enabled = true,
-                singleLine = true,
                 placeholder = {
                     if (isEditEntry) {
                         val text = if (itemDetails.originalItem.blend.isNotEmpty()) {
@@ -228,13 +259,13 @@ fun DetailsEntry(
                     }
                 },
                 trailingIcon = {
-                    if (itemDetails.blend.length > 4) {
+                    if (itemDetails.blend.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(blend = ""))
+                                    itemDetails.blend.edit { replace(0, length, "") }
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -247,6 +278,7 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
+                lineLimits = TextFieldLineLimits.SingleLine,
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
@@ -256,7 +288,7 @@ fun DetailsEntry(
                     disabledContainerColor = LocalCustomColors.current.textField,
                 ),
                 shape = MaterialTheme.shapes.extraSmall,
-                interactionSource = fieldInteractionSource
+                interactionSource = blendSource
             )
 
             val context = getLocalizedContext(LocalCellarApplication.current)
@@ -272,21 +304,21 @@ fun DetailsEntry(
             )
 
             AutoCompleteText(
-                value = itemDetails.subGenre,
-                onValueChange = { onValueChange(itemDetails.copy(subGenre = it)) },
+                state = itemDetails.subGenre,
+                inputTransformation = { stripControlCharTransform },
                 allItems = autoComplete.subgenres,
-                onOptionSelected = { onValueChange(itemDetails.copy(subGenre = it)) },
+                onOptionSelected = { onValueChange(itemDetails) },
                 modifier = Modifier
                     .gridItem(4, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (itemDetails.subGenre.length > 4) {
+                    if (itemDetails.subGenre.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(subGenre = ""))
+                                    itemDetails.subGenre.edit { replace(0, length, "") }
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -299,25 +331,26 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
-                interactionSource = fieldInteractionSource
+                lineLimits = TextFieldLineLimits.SingleLine,
+                interactionSource = subgenreSource
             )
 
             AutoCompleteText(
-                value = itemDetails.cut,
-                onValueChange = { onValueChange(itemDetails.copy(cut = it)) },
-                onOptionSelected = { onValueChange(itemDetails.copy(cut = it)) },
+                state = itemDetails.cut,
+                inputTransformation = { stripControlCharTransform },
                 allItems = autoComplete.cuts,
+                onOptionSelected = { onValueChange(itemDetails) },
                 modifier = Modifier
                     .gridItem(5, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (itemDetails.cut.length > 4) {
+                    if (itemDetails.cut.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(cut = ""))
+                                    itemDetails.cut.edit { replace(0, length, "") }
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -330,26 +363,27 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next,
                 ),
-                interactionSource = fieldInteractionSource
+                lineLimits = TextFieldLineLimits.SingleLine,
+                interactionSource = cutSource
             )
 
             AutoCompleteText(
-                value = itemDetails.componentString,
+                state = itemDetails.componentString,
+                inputTransformation = { stripControlCharTransform },
                 allItems = autoComplete.components,
-                onValueChange = { onValueChange(itemDetails.copy(componentString = it)) },
                 componentField = true,
-                onOptionSelected = { onValueChange(itemDetails.copy(componentString = it)) },
+                onOptionSelected = { onValueChange(itemDetails) },
                 modifier = Modifier
                     .gridItem(6, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (itemDetails.componentString.length > 4) {
+                    if (itemDetails.componentString.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(componentString = ""))
+                                    itemDetails.componentString.edit { replace(0, length, "") }
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -362,7 +396,7 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 ),
-                maxLines = 1,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 placeholder = {
                     Text(
                         text = stringResource(R.string.separate_comma_v2),
@@ -377,26 +411,26 @@ fun DetailsEntry(
                             )
                     )
                 },
-                interactionSource = fieldInteractionSource
+                interactionSource = componentsSource
             )
 
             AutoCompleteText(
-                value = itemDetails.flavoringString,
-                onValueChange = { onValueChange(itemDetails.copy(flavoringString = it)) },
-                componentField = true,
-                onOptionSelected = { onValueChange(itemDetails.copy(flavoringString = it)) },
+                state = itemDetails.flavoringString,
+                inputTransformation = { stripControlCharTransform },
                 allItems = autoComplete.flavorings,
+                componentField = true,
+                onOptionSelected = { onValueChange(itemDetails) },
                 modifier = Modifier
                     .gridItem(7, field, 1, 1, Alignment.CenterStart)
                     .fillMaxWidth(),
                 trailingIcon = {
-                    if (itemDetails.flavoringString.length > 4) {
+                    if (itemDetails.flavoringString.text.length > 4) {
                         Icon(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
                                 .clickable(null, LocalIndication.current) {
-                                    onValueChange(itemDetails.copy(flavoringString = ""))
+                                    itemDetails.flavoringString.edit { replace(0, length, "") }
                                 }
                                 .alpha(0.66f)
                                 .size(20.dp)
@@ -409,7 +443,7 @@ fun DetailsEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = if (itemDetails.syncTins) ImeAction.Done else ImeAction.Next,
                 ),
-                maxLines = 1,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 placeholder = {
                     Text(
                         text = stringResource(R.string.separate_comma_v2),
@@ -424,7 +458,7 @@ fun DetailsEntry(
                             )
                     )
                 },
-                interactionSource = fieldInteractionSource
+                interactionSource = flavoringSource
             )
 
             Row(
@@ -435,21 +469,24 @@ fun DetailsEntry(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val pattern = remember { Regex("^(\\s*|\\d+)$") }
+                SideEffect(itemDetails.syncTins, Dispatchers.Default) {
+                    if (itemDetails.syncTins) {
+                        itemDetails.quantityString.edit { replace(0, length, itemDetails.quantity.toString()) }
+                    }
+                }
 
                 TextField(
-                    value = itemDetails.quantityString,
-                    onValueChange = {
+                    state = itemDetails.quantityString,
+                    inputTransformation = {
                         if (!itemDetails.syncTins) {
-                            if (it.matches(pattern) && it.length <= 2) {
-                                onValueChange(
-                                    itemDetails.copy(quantityString = it, quantity = it.toIntOrNull() ?: 1)
-                                )
+                            stripControlCharTransform
+                            if (!this.toString().matches(pattern) || this.length > 2) {
+                                revertAllChanges()
                             }
                         }
                     },
                     modifier = Modifier.width(54.dp),
                     enabled = !itemDetails.syncTins,
-                    singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
                         textDirection = TextDirection.Ltr,
                         textAlign = TextAlign.End
@@ -458,6 +495,7 @@ fun DetailsEntry(
                         keyboardType = KeyboardType.Number,
                         imeAction = ImeAction.Done
                     ),
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
@@ -479,43 +517,25 @@ fun DetailsEntry(
                     // Increase/Decrease Buttons //
                     IncreaseDecrease(
                         increaseClick = {
-                            if (itemDetails.quantityString.isEmpty()) {
-                                onValueChange(
-                                    itemDetails.copy(quantityString = "1", quantity = 1)
-                                )
+                            if (itemDetails.quantityString.toCleanString().isEmpty()) {
+                                itemDetails.quantityString.edit { replace(0, length, "1") }
+                                onValueChange(itemDetails.copy(quantity = 1))
                             } else {
-                                if (itemDetails.quantityString.toInt() < 99) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            quantityString = (itemDetails.quantityString.toInt() + 1).toString(),
-                                            quantity = itemDetails.quantityString.toInt() + 1
-                                        )
-                                    )
-                                } else {
-                                    onValueChange(
-                                        itemDetails.copy(quantityString = "99", quantity = 99)
-                                    )
-                                }
+                                val current = itemDetails.quantityString.text.toString().toInt()
+                                val next = (current + 1).coerceAtMost(99)
+                                itemDetails.quantityString.edit { replace(0, length, next.toString()) }
+                                onValueChange(itemDetails.copy(quantity = next))
                             }
                         },
                         decreaseClick = {
-                            if (itemDetails.quantityString.isEmpty()) {
-                                onValueChange(
-                                    itemDetails.copy(quantityString = "0", quantity = 0)
-                                )
+                            if (itemDetails.quantityString.toCleanString().isEmpty()) {
+                                itemDetails.quantityString.edit { replace(0, length, "0") }
+                                onValueChange(itemDetails.copy(quantity = 0))
                             } else {
-                                if (itemDetails.quantityString.toInt() > 0) {
-                                    onValueChange(
-                                        itemDetails.copy(
-                                            quantityString = (itemDetails.quantityString.toInt() - 1).toString(),
-                                            quantity = itemDetails.quantity - 1
-                                        )
-                                    )
-                                } else if (itemDetails.quantityString.toInt() == 0) {
-                                    onValueChange(
-                                        itemDetails.copy(quantityString = "0", quantity = 0)
-                                    )
-                                }
+                                val current = itemDetails.quantityString.text.toString().toInt()
+                                val next = (current - 1).coerceAtLeast(0)
+                                itemDetails.quantityString.edit { replace(0, length, next.toString()) }
+                                onValueChange(itemDetails.copy(quantity = next))
                             }
                         },
                         increaseEnabled = !itemDetails.syncTins,
@@ -738,8 +758,7 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(null, null) {
-                    onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(null, null) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {

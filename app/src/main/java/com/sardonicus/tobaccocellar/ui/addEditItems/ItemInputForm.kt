@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,8 +92,7 @@ fun ItemInputForm(
     val narrowPagerState = rememberPagerState(initialPage = selectedTabIndex) { 3 }
     var isProgrammaticScroll by remember { mutableStateOf(false) }
 
-    val fieldInteractionSource = remember { MutableInteractionSource() }
-    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
+    var unfocusedFieldScroll by remember { mutableStateOf(false) }
 
     LaunchedEffect(twoColumn) {
         if (twoColumn) {
@@ -186,7 +184,7 @@ fun ItemInputForm(
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = { showRatingPop = it },
-                                    fieldInteractionSource = fieldInteractionSource,
+                                    fieldDragged = { unfocusedFieldScroll = it },
                                     tooltipVisible = { tooltipVisible = it }
                                 )
                             } else {
@@ -229,7 +227,8 @@ fun ItemInputForm(
                             onTinValueChange = onTinValueChange,
                             addTin = addTin,
                             removeTin = removeTin,
-                            autoComplete = autoComplete
+                            autoComplete = autoComplete,
+                            fieldDragged = { unfocusedFieldScroll = it }
                         )
                         Spacer(Modifier.weight(1f))
                     }
@@ -266,7 +265,7 @@ fun ItemInputForm(
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = { showRatingPop = it },
-                                    fieldInteractionSource = fieldInteractionSource,
+                                    fieldDragged = { unfocusedFieldScroll = it },
                                     tooltipVisible = { tooltipVisible = it }
                                 )
 
@@ -283,7 +282,7 @@ fun ItemInputForm(
                                     addTin = addTin,
                                     removeTin = removeTin,
                                     autoComplete = autoComplete,
-                                    fieldInteractionSource = fieldInteractionSource
+                                    fieldDragged = { unfocusedFieldScroll = it }
                                 )
 
                             else ->
@@ -294,7 +293,7 @@ fun ItemInputForm(
                                     onValueChange = onValueChange,
                                     showRatingPop = showRatingPop,
                                     onShowRatingPop = { showRatingPop = it },
-                                    fieldInteractionSource = fieldInteractionSource,
+                                    fieldDragged = { unfocusedFieldScroll = it },
                                     tooltipVisible = { tooltipVisible = it }
                                 )
                         }

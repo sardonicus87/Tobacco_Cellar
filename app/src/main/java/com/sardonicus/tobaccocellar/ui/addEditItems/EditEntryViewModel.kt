@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +18,8 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -103,8 +106,8 @@ class EditEntryViewModel(
             OriginalTin(
                 tinId = originalTin.tinId,
                 itemsId = originalTin.itemsId,
-                tinLabel = originalTin.tinLabel,
-                container = originalTin.container,
+                tinLabel = originalTin.tinLabel.toCleanString(),
+                container = originalTin.container.toCleanString(),
                 tinQuantity = originalTin.tinQuantity,
                 unit = originalTin.unit,
                 manufactureDate = originalTin.manufactureDate,
@@ -119,9 +122,7 @@ class EditEntryViewModel(
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
             val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
-            itemDetails.copy(
-                quantityString = syncedTins.toString(),
-                quantity = syncedTins)
+            itemDetails.copy(quantity = syncedTins)
         } else { itemDetails }
 
         itemUiState = ItemUiState(
@@ -133,9 +134,9 @@ class EditEntryViewModel(
     fun updateTinDetails(tinDetails: TinDetails) {
         val newList = itemUiState.itemDetails.tinDetailsList.map {
             if (it.tempTinId == tinDetails.tempTinId) {
-                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel, tinDetails.tempTinId))
+                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel.text.toString().stripControlChar(), tinDetails.tempTinId))
             } else {
-                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel, it.tempTinId))
+                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel.text.toString().stripControlChar(), it.tempTinId))
             }
         }
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
@@ -149,7 +150,7 @@ class EditEntryViewModel(
         var newTempId = if (tinDetailsList.isEmpty()) 1 else tinDetailsList.maxOf { it.tempTinId } + 1
         while (existingIds.contains(newTempId)) { newTempId++ }
 
-        val newTin = TinDetails(tempTinId = newTempId, tinLabel = "")
+        val newTin = TinDetails(tempTinId = newTempId, tinLabel = TextFieldState(""))
 
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = tinDetailsList + newTin))
     }
@@ -165,9 +166,10 @@ class EditEntryViewModel(
 
     suspend fun checkItemExistsOnUpdate() {
         val currentItem = itemUiState.itemDetails
-        if (itemUiState.itemDetails.brand == originalItem.value.brand && itemUiState.itemDetails.blend == originalItem.value.blend) {
+        if (itemUiState.itemDetails.brand.toCleanString() == originalItem.value.brand
+            && itemUiState.itemDetails.blend.toCleanString() == originalItem.value.blend) {
             existState.value = ExistState(false, 0) }
-        else { existState.value = ExistState(itemsRepository.exists(currentItem.brand, currentItem.blend), 0) }
+        else { existState.value = ExistState(itemsRepository.exists(currentItem.brand.toCleanString(), currentItem.blend.toCleanString()), 0) }
     }
 
     fun resetExistState() { existState.value = ExistState(false, 0) }
@@ -178,13 +180,13 @@ class EditEntryViewModel(
             SyncStateManager.schedulingPaused = true
 
             val previousCompsSet = originalComponentList.first().map { it.componentName.lowercase() }.toSet()
-            val editedComps = details.componentString.toComponents(autoCompleteData.components)
+            val editedComps = details.componentString.toCleanString().toComponents(autoCompleteData.components)
             val editedCompsSet = editedComps.map { it.componentName.lowercase() }.toSet()
             val compsToAdd = editedComps.filter { it.componentName.lowercase() !in previousCompsSet }
             val compsToRemove = originalComponentList.first().filter { it.componentName.lowercase() !in editedCompsSet }
 
             val previousFlavorsSet = originalFlavoringList.first().map { it.flavoringName.lowercase() }.toSet()
-            val editedFlavoring = details.flavoringString.toFlavoring(autoCompleteData.flavorings)
+            val editedFlavoring = details.flavoringString.toCleanString().toFlavoring(autoCompleteData.flavorings)
             val editedFlavoringSet = editedFlavoring.map { it.flavoringName.lowercase() }.toSet()
             val flavorToAdd = editedFlavoring.filter { it.flavoringName.lowercase() !in previousFlavorsSet }
             val flavorToRemove = originalFlavoringList.first().filter { it.flavoringName.lowercase() !in editedFlavoringSet }
@@ -197,7 +199,7 @@ class EditEntryViewModel(
             }
             val conflictingTins = previousTins.filter { tin ->
                 // check for label conflicts in the event of swapped tin labels
-                details.tinDetailsList.any { it.tinId != tin.tinId && it.tinLabel == tin.tinLabel }
+                details.tinDetailsList.any { it.tinId != tin.tinId && it.tinLabel.toCleanString() == tin.tinLabel }
             }
             val tinsToDelete = existingTinIds.filter { tinId -> !details.tinDetailsList.map { it.tinId }.contains(tinId) }
 
@@ -270,16 +272,16 @@ data class ItemUpdatedEvent(val updatedEvent: Boolean = true)
 fun ItemDetails.toOriginalItem(): OriginalItem {
     return OriginalItem(
         id = this.id,
-        brand = this.brand,
-        blend = this.blend,
+        brand = this.brand.toCleanString(),
+        blend = this.blend.toCleanString(),
         type = this.type,
         quantity = this.quantity,
         rating = this.rating,
         favorite = this.favorite,
         disliked = this.disliked,
-        notes = this.notes,
-        subGenre = this.subGenre,
-        cut = this.cut,
+        notes = this.notes.toCleanString(),
+        subGenre = this.subGenre.toCleanString(),
+        cut = this.cut.toCleanString(),
         inProduction = this.inProduction,
         syncTins = this.syncTins,
         lastModified = this.lastModified
@@ -290,8 +292,8 @@ fun TinDetails.toOriginalTin(): OriginalTin {
     return OriginalTin(
         tinId = this.tinId,
         itemsId = this.itemsId,
-        tinLabel = this.tinLabel,
-        container = this.container,
+        tinLabel = this.tinLabel.toCleanString(),
+        container = this.container.toCleanString(),
         tinQuantity = this.tinQuantity,
         unit = this.unit,
         manufactureDate = this.manufactureDate,

@@ -1,5 +1,6 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +13,8 @@ import com.sardonicus.tobaccocellar.data.PreferencesRepo
 import com.sardonicus.tobaccocellar.data.multiDeviceSync.SyncStateManager
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -33,7 +36,7 @@ class AddEntryViewModel(
     val tinConversion = mutableStateOf(TinConversion())
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.Default) {
             combine(
                 preferencesRepo.tinOzConversionRate,
                 preferencesRepo.tinGramsConversionRate,
@@ -54,11 +57,8 @@ class AddEntryViewModel(
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
             val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
-            itemDetails.copy(
-                quantityString = syncedTins.toString(),
-                quantity = syncedTins)
+            itemDetails.copy(quantity = syncedTins)
         } else { itemDetails }
-
 
         itemUiState = ItemUiState(
             itemDetails = updatedDetails,
@@ -69,9 +69,9 @@ class AddEntryViewModel(
     fun updateTinDetails(tinDetails: TinDetails) {
         val newList = itemUiState.itemDetails.tinDetailsList.map {
             if (it.tempTinId == tinDetails.tempTinId) {
-                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel, tinDetails.tempTinId))
+                tinDetails.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, tinDetails.tinLabel.toCleanString(), tinDetails.tempTinId))
             } else {
-                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel, it.tempTinId))
+                it.copy(labelIsValid = isTinLabelValid(itemUiState.itemDetails.tinDetailsList, it.tinLabel.toCleanString(), it.tempTinId))
             }
         }
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = newList))
@@ -82,7 +82,7 @@ class AddEntryViewModel(
     fun addTin() {
         val current = itemUiState.itemDetails.tinDetailsList
         val newTempId = if (current.isEmpty()) 1 else current.maxOf { it.tempTinId } + 1
-        val newTin = TinDetails(tempTinId = newTempId, tinLabel = "")
+        val newTin = TinDetails(tempTinId = newTempId, tinLabel = TextFieldState(""))
         updateUiState(itemUiState.itemDetails.copy(tinDetailsList = current + newTin))
     }
 
@@ -96,7 +96,7 @@ class AddEntryViewModel(
     val existState = mutableStateOf(ExistState())
 
     suspend fun checkItemExistsOnSave() {
-        val transferId = itemsRepository.getItemIdByIndex(itemUiState.itemDetails.brand, itemUiState.itemDetails.blend)
+        val transferId = itemsRepository.getItemIdByIndex(itemUiState.itemDetails.brand.toCleanString(), itemUiState.itemDetails.blend.toCleanString())
         existState.value =
             ExistState(
                 exists = transferId != null,
@@ -118,8 +118,8 @@ class AddEntryViewModel(
         if (validateInput(itemUiState.itemDetails, itemUiState.itemDetails.tinDetailsList) { }) {
             SyncStateManager.schedulingPaused = true
 
-            val components = itemUiState.itemDetails.componentString.toComponents(autoCompleteData.components)
-            val flavoring = itemUiState.itemDetails.flavoringString.toFlavoring(autoCompleteData.flavorings)
+            val components = itemUiState.itemDetails.componentString.toCleanString().toComponents(autoCompleteData.components)
+            val flavoring = itemUiState.itemDetails.flavoringString.toCleanString().toFlavoring(autoCompleteData.flavorings)
             val lastModified = System.currentTimeMillis()
             val itemDetails = itemUiState.itemDetails.copy(lastModified = lastModified)
 

@@ -5,12 +5,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun NotesEntry(
@@ -37,34 +44,42 @@ fun NotesEntry(
     ) {
         // Notes //
         Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = Alignment.Start
         ) {
+            LaunchedEffect(itemDetails.notes, Dispatchers.Default) {
+                snapshotFlow { itemDetails.notes.toCleanString() }.collectLatest {
+                    onValueChange(itemDetails)
+                }
+            }
+
             Text(
                 text = stringResource(R.string.notes_v2),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
+            var lastTime = remember { 0L }
             TextField(
-                value = itemDetails.notes,
-                onValueChange = {
-                    var updatedText = it.stripControlChar()
-                    if (it.contains("\n")) {
-                        val lines = it.lines()
+                state = itemDetails.notes,
+                inputTransformation = {
+                    val text = this.asCharSequence().toString()
+                    val currentTime = System.currentTimeMillis()
+
+                    if (currentTime - lastTime < 50L) {
+                        val lines = text.lines()
                         if (lines.size > 1) {
                             val lastLine = lines[lines.size - 2]
                             val currentLine = lines.last()
                             val lastWord = lastLine.substringAfterLast(" ")
-                            if (currentLine.startsWith(lastWord) && currentLine.length > 1) {
-                                updatedText = if (currentLine.length == lastWord.length + 1) {
-                                    it.dropLast(lastWord.length + 1)
-                                } else {
-                                    it.dropLast(lastWord.length)
-                                }
+
+                            if (currentLine.isNotEmpty() && currentLine == lastWord) {
+                                delete(length - lastWord.length, length)
                             }
                         }
                     }
-                    onValueChange(itemDetails.copy(notes = updatedText))
+                    lastTime = currentTime
                 },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(
@@ -72,6 +87,7 @@ fun NotesEntry(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.None,
                 ),
+                lineLimits = TextFieldLineLimits.MultiLine(8, 8),
                 textStyle = LocalTextStyle.current.copy(
                     textDirection = if (LanguageState.isRtl) TextDirection.Rtl else TextDirection.Ltr
                 ),
@@ -83,10 +99,7 @@ fun NotesEntry(
                     unfocusedContainerColor = LocalCustomColors.current.textField,
                     disabledContainerColor = LocalCustomColors.current.textField,
                 ),
-                shape = MaterialTheme.shapes.extraSmall,
-                singleLine = false,
-                maxLines = 8,
-                minLines = 8,
+                shape = MaterialTheme.shapes.extraSmall
             )
         }
     }

@@ -30,7 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -50,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,20 +93,21 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
+import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
+import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.text.ParseException
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -116,8 +117,8 @@ fun TinsEntry(
     autoComplete: AutoCompleteData,
     addTin: () -> Unit,
     removeTin: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    fieldInteractionSource: MutableInteractionSource? = null
+    fieldDragged: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Spacer(Modifier.height(7.dp))
     Column(
@@ -148,7 +149,7 @@ fun TinsEntry(
                     showError = !tinDetails.labelIsValid,
                     removeTin = { removeTin(index) },
                     autoComplete = autoComplete,
-                    fieldInteractionSource = fieldInteractionSource,
+                    fieldDragged = fieldDragged,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
                         .background(
@@ -182,12 +183,12 @@ private fun IndividualTin(
     showError: Boolean,
     removeTin: () -> Unit,
     autoComplete: AutoCompleteData,
-    fieldInteractionSource: MutableInteractionSource?,
+    fieldDragged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     SideEffect(tinDetailsList) {
         onTinValueChange(tinDetails
-            .copy(labelIsValid = isTinLabelValid(tinDetailsList, tinDetails.tinLabel, tempTinId))
+            .copy(labelIsValid = isTinLabelValid(tinDetailsList, tinDetails.tinLabel.toCleanString(), tempTinId))
         )
     }
 
@@ -202,6 +203,24 @@ private fun IndividualTin(
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
         horizontalAlignment = Alignment.Start
     ) {
+        val labelSource = remember { MutableInteractionSource() }
+        val containerSource = remember { MutableInteractionSource() }
+        val manufactureSource = remember { MutableInteractionSource() }
+        val cellarSource = remember { MutableInteractionSource() }
+        val openSource = remember { MutableInteractionSource() }
+
+        val anyDragged = rememberAnyDragged(labelSource, containerSource, manufactureSource, cellarSource, openSource)
+        fieldDragged(anyDragged)
+
+        LaunchedEffect(tinDetails, Dispatchers.Default) {
+            combine(
+                snapshotFlow { tinDetails.tinLabel.text.toString() },
+                snapshotFlow { tinDetails.container.text.toString() },
+                snapshotFlow { tinDetails.tinQuantityString.text.toString() }
+            ) { tinDetails }.collectLatest {
+                val quantity = tinDetails.tinQuantityString.toCleanString().localizedToDouble(0.0)
+                onTinValueChange(tinDetails.copy(tinQuantity = quantity)) }
+        }
 
         // Header Row //
         var headerWidth by remember { mutableStateOf(0.dp) }
@@ -243,15 +262,10 @@ private fun IndividualTin(
                 // Label //
                 Column(Modifier.widthIn(max = textFieldMax), horizontalAlignment = Alignment.CenterHorizontally) {
                     var labelIsFocused by remember { mutableStateOf(false) }
-                    val labelState = rememberTextFieldState(tinDetails.tinLabel)
-                    LaunchedEffect(labelState) {
-                        snapshotFlow { labelState.text.toString() }.collectLatest {
-                            onTinValueChange(tinDetails.copy(tinLabel = it.stripControlChar()))
-                        }
-                    }
 
                     CustomTextField(
-                        state = labelState,
+                        state = tinDetails.tinLabel,
+                        inputTransformation = { stripControlCharTransform },
                         modifier = Modifier.onFocusChanged { labelIsFocused = it.isFocused },
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = TextAlign.Center,
@@ -293,8 +307,9 @@ private fun IndividualTin(
                         ),
                         contentPadding = PaddingValues(vertical = 2.dp, horizontal = 0.dp),
                         lineLimits = TextFieldLineLimits.SingleLine,
-                        interactionSource = fieldInteractionSource
+                        interactionSource = labelSource
                     )
+
                     if (showError) {
                         Text(
                             text = stringResource(R.string.tin_label_error_v2),
@@ -362,21 +377,20 @@ private fun IndividualTin(
                     )
 
                     AutoCompleteText(
-                        value = tinDetails.container,
-                        onValueChange = { onTinValueChange(tinDetails.copy(container = it)) },
-                        onOptionSelected = { onTinValueChange(tinDetails.copy(container = it)) },
+                        state = tinDetails.container,
+                        inputTransformation = { stripControlCharTransform },
+                        onOptionSelected = { onTinValueChange(tinDetails) },
                         allItems = autoComplete.tinContainers,
                         modifier = Modifier.fillMaxWidth(),
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         trailingIcon = {
-                            if (tinDetails.container.length > 4) {
+                            if (tinDetails.container.text.length > 4) {
                                 Icon(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable(
-                                            null,
-                                            LocalIndication.current
-                                        ) { onTinValueChange(tinDetails.copy(container = "")) }
+                                        .clickable(null, LocalIndication.current) {
+                                            tinDetails.container.edit { replace(0, length, "") } }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -388,7 +402,7 @@ private fun IndividualTin(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next,
                         ),
-                        interactionSource = fieldInteractionSource
+                        interactionSource = containerSource
                     )
                 }
 
@@ -405,7 +419,6 @@ private fun IndividualTin(
                         maxLines = 1
                     )
 
-                    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
                     val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
                     val decimalSeparator = symbols.decimalSeparator.toString()
                     val allowedPattern = remember(decimalSeparator) {
@@ -413,33 +426,23 @@ private fun IndividualTin(
                         Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
                     }
 
+                    LaunchedEffect(tinDetails.tinQuantityString, Dispatchers.Default) {
+                        snapshotFlow { tinDetails.tinQuantityString.text.toString() }.collectLatest {
+                            onTinValueChange(tinDetails.copy(
+                                tinQuantity = tinDetails.tinQuantityString.text.toString().localizedToDouble(0.0)
+                            ))
+                        }
+                    }
+
                     TextField(
-                        value = tinDetails.tinQuantityString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                try {
-                                    var parsedDouble: Double?
-
-                                    if (it.isNotBlank()) {
-                                        val preNumber =
-                                            if (it.startsWith(decimalSeparator)) { "0$it" }
-                                            else it
-                                        val number = numberFormat.parse(preNumber)
-                                        parsedDouble = number?.toDouble() ?: 0.0
-                                    } else { parsedDouble = 0.0 }
-
-                                    onTinValueChange(
-                                        tinDetails.copy(
-                                            tinQuantityString = it,
-                                            tinQuantity = parsedDouble,
-                                        )
-                                    )
-                                } catch (_: ParseException) { }
+                        state = tinDetails.tinQuantityString,
+                        inputTransformation = {
+                            stripControlCharTransform
+                            if (!this.toString().matches(allowedPattern)) {
+                                tinDetails.tinQuantityString.edit { revertAllChanges() }
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        enabled = true,
-                        singleLine = true,
                         textStyle = LocalTextStyle.current.copy(
                             textAlign = if(LanguageState.isRtl) TextAlign.Start else TextAlign.End,
                             textDirection = TextDirection.Ltr
@@ -447,6 +450,7 @@ private fun IndividualTin(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done),
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -469,7 +473,7 @@ private fun IndividualTin(
                                 fontSize = 14.sp,
                             )
                         },
-                        isError = tinDetails.tinQuantityString.isNotBlank() && tinDetails.unit.isBlank(),
+                        isError = tinDetails.tinQuantityString.text.toString().isNotBlank() && tinDetails.unit.isBlank(),
                         modifier = Modifier.weight(2f),
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
@@ -501,7 +505,6 @@ private fun IndividualTin(
                     val manuFocusRequester = remember { FocusRequester() }
                     val cellaredFocusRequester = remember { FocusRequester() }
                     val openedFocusRequester = remember { FocusRequester() }
-                    val interactionSource = remember { MutableInteractionSource() }
 
                     var dateFieldWidth by remember { mutableIntStateOf(0) }
 
@@ -509,21 +512,17 @@ private fun IndividualTin(
 
                     // Manufacture //
                     OutlinedTextField(
-                        value =
-                            if (tinDetails.manufactureDateShort.isEmpty()) { " " }
-                            else {
-                                if (dateFieldWidth > 420) { tinDetails.manufactureDateLong }
-                                else { tinDetails.manufactureDateShort }
-                            },
-                        onValueChange = { },
+                        state =
+                            if (dateFieldWidth > 420) { tinDetails.manufactureDateLong }
+                            else { tinDetails.manufactureDateShort },
                         modifier = Modifier
                             .weight(1f)
                             .onGloballyPositioned { dateFieldWidth = it.size.width }
                             .focusRequester(manuFocusRequester),
                         enabled = true,
                         readOnly = true,
-                        singleLine = true,
-                        interactionSource = interactionSource,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        interactionSource = manufactureSource,
                         trailingIcon = {
                             val label = stringResource(R.string.manufacture_date_v2)
                             IconButton(
@@ -542,6 +541,7 @@ private fun IndividualTin(
                                 )
                             }
                         },
+                        labelPosition = TextFieldLabelPosition.Cutout(true),
                         label = {
                             val density = LocalDensity.current
                             val max = if (dateFieldWidth > 0) with(density) { dateFieldWidth.toDp() } - 60.dp else 200.dp
@@ -555,6 +555,7 @@ private fun IndividualTin(
                                 fontSize = 12.sp,
                                 modifier = Modifier.widthIn(max = max),
                                 softWrap = false,
+                                maxLines = 1,
                                 onTextLayout = {
                                     if (it.hasVisualOverflow && label == long) { label = short }
                                     else if (!it.hasVisualOverflow) { lastWidth = dateFieldWidth }
@@ -590,16 +591,15 @@ private fun IndividualTin(
 
                     // Cellar //
                     OutlinedTextField(
-                        value =
-                            if (tinDetails.cellarDateShort.isEmpty()) { " " } else {
-                                if (dateFieldWidth > 420) { tinDetails.cellarDateLong }
-                                else { tinDetails.cellarDateShort }
-                            },
-                        onValueChange = { },
+                        state =
+                            if (dateFieldWidth > 420) { tinDetails.cellarDateLong }
+                            else { tinDetails.cellarDateShort },
+                        labelPosition = TextFieldLabelPosition.Cutout(true),
                         label = {
                             Text(
                                 text = stringResource(R.string.cellared_v2),
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                maxLines = 1
                             )
                         },
                         modifier = Modifier
@@ -607,7 +607,7 @@ private fun IndividualTin(
                             .focusRequester(cellaredFocusRequester),
                         enabled = true,
                         readOnly = true,
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         trailingIcon = {
                             val label = stringResource(R.string.cellared_date_v2)
                             IconButton(
@@ -630,6 +630,7 @@ private fun IndividualTin(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Next,
                         ),
+                        interactionSource = cellarSource,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
                             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -655,16 +656,15 @@ private fun IndividualTin(
 
                     // Opened //
                     OutlinedTextField(
-                        value =
-                            if (tinDetails.openDateShort.isEmpty()) { " " } else {
-                                if (dateFieldWidth > 420) { tinDetails.openDateLong }
-                                else { tinDetails.openDateShort }
-                            },
-                        onValueChange = { },
+                        state =
+                            if (dateFieldWidth > 420) { tinDetails.openDateLong }
+                            else { tinDetails.openDateShort },
+                        labelPosition = TextFieldLabelPosition.Cutout(true),
                         label = {
                             Text(
                                 text = stringResource(R.string.opened_v2),
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                maxLines = 1
                             )
                         },
                         modifier = Modifier
@@ -672,7 +672,7 @@ private fun IndividualTin(
                             .focusRequester(openedFocusRequester),
                         enabled = true,
                         readOnly = true,
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         trailingIcon = {
                             val label = stringResource(R.string.opened_date_v2)
                             IconButton(
@@ -696,6 +696,7 @@ private fun IndividualTin(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Next,
                         ),
+                        interactionSource = openSource,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.background,
                             focusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
@@ -858,54 +859,21 @@ private fun IndividualTin(
                         CustomDatePickerDialog(
                             onDismiss = { showDatePicker = false },
                             onDateSelected = {
-                                val dateStringShort = if (it != null) {
-                                    val instant = Instant.ofEpochMilli(it)
-
-                                    val shortFormat =
-                                        DateTimeFormatter
-                                            .ofPattern("MM/yy")
-                                            .withZone(ZoneId.systemDefault())
-
-                                    shortFormat.format(instant)
-                                } else { "" }
-
-                                val dateStringLong = if (it != null) {
-                                    val instant = Instant.ofEpochMilli(it)
-
-                                    val longFormat =
-                                        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                                    val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-
-                                    longFormat.format(localDate)
-                                } else { "" }
-
                                 when (dateField) {
                                     "Manufacture" -> {
-                                        onTinValueChange(
-                                            tinDetails.copy(
-                                                manufactureDate = it,
-                                                manufactureDateShort = dateStringShort,
-                                                manufactureDateLong = dateStringLong
-                                            )
-                                        )
+                                        tinDetails.manufactureDateShort.edit { replace(0, length, formatShortDate(it)) }
+                                        tinDetails.manufactureDateLong.edit { replace(0, length, formatMediumDate(it)) }
+                                        onTinValueChange(tinDetails.copy(manufactureDate = it))
                                     }
                                     "Cellared" -> {
-                                        onTinValueChange(
-                                            tinDetails.copy(
-                                                cellarDate = it,
-                                                cellarDateShort = dateStringShort,
-                                                cellarDateLong = dateStringLong
-                                            )
-                                        )
+                                        tinDetails.cellarDateShort.edit { replace(0, length, formatShortDate(it)) }
+                                        tinDetails.cellarDateLong.edit { replace(0, length, formatMediumDate(it)) }
+                                        onTinValueChange(tinDetails.copy(cellarDate = it))
                                     }
                                     "Opened" -> {
-                                        onTinValueChange(
-                                            tinDetails.copy(
-                                                openDate = it,
-                                                openDateShort = dateStringShort,
-                                                openDateLong = dateStringLong,
-                                            )
-                                        )
+                                        tinDetails.openDateShort.edit { replace(0, length, formatShortDate(it)) }
+                                        tinDetails.openDateLong.edit { replace(0, length, formatMediumDate(it)) }
+                                        onTinValueChange(tinDetails.copy(openDate = it))
                                     }
                                 }
                             },

@@ -1,11 +1,13 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import android.text.format.DateFormat
+import androidx.compose.foundation.text.input.TextFieldState
 import com.sardonicus.tobaccocellar.data.Components
 import com.sardonicus.tobaccocellar.data.Flavoring
 import com.sardonicus.tobaccocellar.data.Items
 import com.sardonicus.tobaccocellar.data.Tins
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDateTime
@@ -22,14 +24,14 @@ fun validateInput(
     tins: List<TinDetails>,
     onTabErrorUpdate: (TabErrorState) -> Unit
 ): Boolean {
-    val validDetails = details.brand.isNotBlank() && details.blend.isNotBlank()
+    val validDetails = details.brand.toCleanString().isNotBlank() && details.blend.toCleanString().isNotBlank()
 
     val labels = tins.map { it.tinLabel }
     val validTins = tins.all { tin ->
         val (manuf, cellar, open) = validateDates(tin.manufactureDate, tin.cellarDate, tin.openDate)
-        tin.tinLabel.isNotBlank() &&
-                ((tin.tinQuantityString.isNotBlank() && tin.unit.isNotBlank()) ||
-                tin.tinQuantityString.isBlank()) &&
+        tin.tinLabel.toCleanString().isNotBlank() &&
+                ((tin.tinQuantityString.toCleanString().isNotBlank() && tin.unit.isNotBlank()) ||
+                tin.tinQuantityString.toCleanString().isBlank()) &&
                 manuf && cellar && open
     } && labels.size == labels.distinct().size
 
@@ -65,7 +67,7 @@ private fun normalizeDate(millis: Long?): Long? {
 
 
 fun isTinLabelValid(tins: List<TinDetails>, tinLabel: String, tempTinId: Int): Boolean {
-    return tinLabel.isBlank() || tins.filter { it.tempTinId != tempTinId }.none { it.tinLabel == tinLabel }
+    return tinLabel.isBlank() || tins.filter { it.tempTinId != tempTinId }.none { it.tinLabel.toCleanString() == tinLabel }
 }
 
 
@@ -95,19 +97,19 @@ data class ItemUiState(
 
 data class ItemDetails(
     val id: Int = 0,
-    val brand: String = "",
-    val blend: String = "",
+    val brand: TextFieldState = TextFieldState(""),
+    val blend: TextFieldState = TextFieldState(""),
     val type: String = "",
-    val subGenre: String = "",
-    val cut: String = "",
-    val componentString: String = "",
-    val flavoringString: String = "",
+    val subGenre: TextFieldState = TextFieldState(""),
+    val cut: TextFieldState = TextFieldState(""),
+    val componentString: TextFieldState = TextFieldState(""),
+    val flavoringString: TextFieldState = TextFieldState(""),
     val quantity: Int = 1,
-    val quantityString: String = "",
+    val quantityString: TextFieldState = TextFieldState(""),
     val disliked: Boolean = false,
     val favorite: Boolean = false,
     val rating: Double? = null,
-    val notes: String = "",
+    val notes: TextFieldState = TextFieldState(""),
     val inProduction: Boolean = true,
     val syncTins: Boolean = false,
     val lastModified: Long = System.currentTimeMillis(),
@@ -137,22 +139,22 @@ data class TinDetails(
     val tinId: Int = 0,
     val tempTinId: Int = 0,
     val itemsId: Int = 0,
-    val tinLabel: String = "",
-    val container: String = "",
+    val tinLabel: TextFieldState = TextFieldState(""),
+    val container: TextFieldState = TextFieldState(""),
     val tinQuantity: Double = 0.0,
-    val tinQuantityString: String = "",
+    val tinQuantityString: TextFieldState = TextFieldState(""),
     val unit: String = "",
     val manufactureDate: Long? = null,
     val cellarDate: Long? = null,
     val openDate: Long? = null,
     val finished: Boolean = false,
     val lastModified: Long = System.currentTimeMillis(),
-    val manufactureDateShort: String = "",
-    val cellarDateShort: String = "",
-    val openDateShort: String = "",
-    val manufactureDateLong: String = "",
-    val cellarDateLong: String = "",
-    val openDateLong: String = "",
+    val manufactureDateShort: TextFieldState = TextFieldState(""),
+    val cellarDateShort: TextFieldState = TextFieldState(""),
+    val openDateShort: TextFieldState = TextFieldState(""),
+    val manufactureDateLong: TextFieldState = TextFieldState(""),
+    val cellarDateLong: TextFieldState = TextFieldState(""),
+    val openDateLong: TextFieldState = TextFieldState(""),
     val detailsExpanded: Boolean = true,
     val labelIsValid: Boolean = true,
 )
@@ -192,17 +194,17 @@ data class ExistState(
 // data classes -> db table
 fun ItemDetails.toItem(): Items = Items(
     id = id,
-    brand = brand,
-    blend = blend,
+    brand = brand.toCleanString(),
+    blend = blend.toCleanString(),
     type = type,
     quantity = quantity,
     syncTins = syncTins,
     disliked = disliked,
     favorite = favorite,
     rating = rating,
-    notes = notes,
-    subGenre = subGenre,
-    cut = cut,
+    notes = notes.toCleanString(),
+    subGenre = subGenre.toCleanString(),
+    cut = cut.toCleanString(),
     inProduction = inProduction,
     lastModified = lastModified
 )
@@ -210,8 +212,8 @@ fun ItemDetails.toItem(): Items = Items(
 fun TinDetails.toTin(itemsId: Int): Tins = Tins(
     tinId = tinId,
     itemsId = itemsId,
-    tinLabel = tinLabel,
-    container = container,
+    tinLabel = tinLabel.toCleanString(),
+    container = container.toCleanString(),
     tinQuantity = tinQuantity,
     unit = unit,
     manufactureDate = manufactureDate,
@@ -254,20 +256,20 @@ fun String.toFlavoring(existingFlavors: List<String>): List<Flavoring> {
 // db tables -> data classes
 fun Items.toItemDetails(compString: String, flavorString: String): ItemDetails = ItemDetails(
     id = id,
-    brand = brand,
-    blend = blend,
+    brand = TextFieldState(brand),
+    blend = TextFieldState(blend),
     type = type,
-    subGenre = subGenre,
-    cut = cut,
-    componentString = compString,
-    flavoringString = flavorString,
+    subGenre = TextFieldState(subGenre),
+    cut = TextFieldState(cut),
+    componentString = TextFieldState(compString),
+    flavoringString = TextFieldState(flavorString),
     quantity = quantity,
-    quantityString = quantity.toString(),
+    quantityString = TextFieldState(quantity.toString()),
     syncTins = syncTins,
     rating = rating,
     disliked = disliked,
     favorite = favorite,
-    notes = notes,
+    notes = TextFieldState(notes),
     inProduction = inProduction,
     lastModified = lastModified
 )
@@ -285,22 +287,22 @@ fun Tins.toTinDetails(): TinDetails {
     return TinDetails(
         tinId = tinId,
         itemsId = itemsId,
-        tinLabel = tinLabel,
-        container = container,
+        tinLabel = TextFieldState(tinLabel),
+        container = TextFieldState(container),
         unit = unit,
         tinQuantity = tinQuantity,
-        tinQuantityString = quantityString,
+        tinQuantityString = TextFieldState(quantityString),
         manufactureDate = manufactureDate,
         cellarDate = cellarDate,
         openDate = openDate,
         finished = finished,
         lastModified = lastModified,
-        manufactureDateShort = formatShortDate(manufactureDate),
-        cellarDateShort = formatShortDate(cellarDate),
-        openDateShort = formatShortDate(openDate),
-        manufactureDateLong = formatMediumDate(manufactureDate),
-        cellarDateLong = formatMediumDate(cellarDate),
-        openDateLong = formatMediumDate(openDate),
+        manufactureDateShort = TextFieldState(formatShortDate(manufactureDate)),
+        cellarDateShort = TextFieldState(formatShortDate(cellarDate)),
+        openDateShort = TextFieldState(formatShortDate(openDate)),
+        manufactureDateLong = TextFieldState(formatMediumDate(manufactureDate)),
+        cellarDateLong = TextFieldState(formatMediumDate(cellarDate)),
+        openDateLong = TextFieldState(formatMediumDate(openDate)),
     )
 }
 
