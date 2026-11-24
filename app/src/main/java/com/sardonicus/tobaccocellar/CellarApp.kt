@@ -34,6 +34,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
@@ -56,6 +58,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
@@ -64,6 +67,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -101,6 +105,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.theme.onPrimaryLight
 import com.sardonicus.tobaccocellar.ui.utilities.DeviceCorners
 import com.sardonicus.tobaccocellar.ui.utilities.ExportCsvHandler
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
@@ -410,6 +415,13 @@ fun ExportCsvDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Top)
                 ) {
+                    val maxState = rememberTextFieldState(dialogState.exportRatingString.first)
+                    LaunchedEffect(maxState) {
+                        snapshotFlow { maxState.text.toString() }.collectLatest {
+                            filterViewModel.updateExportRating(it, dialogState.exportRatingString.second)
+                        }
+                    }
+
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = stringResource(R.string.max_rating_label_v2),
@@ -421,11 +433,9 @@ fun ExportCsvDialog(
                             maxLines = 2
                         )
                         TextField(
-                            value = dialogState.exportRatingString.first,
-                            onValueChange = {
-                                if (it.matches(allowedMax)) {
-                                    filterViewModel.updateExportRating(it, dialogState.exportRatingString.second)
-                                }
+                            state = maxState,
+                            inputTransformation = {
+                                if (!this.toString().matches(allowedMax)) { revertAllChanges() }
                             },
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
@@ -435,6 +445,7 @@ fun ExportCsvDialog(
                                 textDirection = TextDirection.Ltr,
                                 textAlign = TextAlign.End
                             ),
+                            lineLimits = TextFieldLineLimits.SingleLine,
                             modifier = Modifier.width(80.dp),
                             shape = MaterialTheme.shapes.extraSmall,
                             colors = TextFieldDefaults.colors(
@@ -468,8 +479,12 @@ fun ExportCsvDialog(
                             onValueChange = {
                                 filterViewModel.updateExportRating(dialogState.exportRatingString.first, it)
                             },
+                            textStyle = LocalTextStyle.current.copy(
+                                textDirection = TextDirection.Ltr,
+                                textAlign = TextAlign.End
+                            ),
                             options = listOf("0", "1", "2"),
-                            modifier = Modifier.width(80.dp),
+                            modifier = Modifier.width(80.dp)
                         )
                     }
                 }
