@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
@@ -24,10 +27,12 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -49,9 +54,10 @@ import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.text.ParseException
 
 @Composable
 fun RatingPopup(
@@ -60,8 +66,13 @@ fun RatingPopup(
     modifier: Modifier = Modifier,
     currentRating: Double? = null,
 ) {
-    var currentString by remember { mutableStateOf(formatDecimal(currentRating)) }
+    val currentString = rememberTextFieldState(formatDecimal(currentRating))
     var parsedDouble by remember { mutableStateOf<Double?>(null) }
+    LaunchedEffect(currentString, Dispatchers.Default) {
+        snapshotFlow { currentString.text.toString() }.collectLatest {
+            parsedDouble = currentString.text.toString().localizedToDouble(max = 5.0)
+        }
+    }
 
     val focusManager = LocalFocusManager.current
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
@@ -82,7 +93,6 @@ fun RatingPopup(
         },
         text = {
             Column {
-                val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
                 val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
                 val decimalSeparator = symbols.decimalSeparator.toString()
                 val allowedPattern = remember(decimalSeparator) {
@@ -101,28 +111,13 @@ fun RatingPopup(
                 ) {
                     Spacer(Modifier.width(6.dp))
                     TextField(
-                        value = currentString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                currentString = it
-
-                                try {
-                                    if (it.isNotBlank()) {
-                                        val preNumber =
-                                            if (it.startsWith(decimalSeparator)) { "0$it" }
-                                            else it
-                                        val number = numberFormat.parse(preNumber)
-                                        parsedDouble = number?.toDouble() ?: 0.0
-                                        if (parsedDouble!! > 5.0) { parsedDouble = 5.0 }
-                                    } else { parsedDouble = null }
-                                } catch (_: ParseException) { }
-                            }
-                        },
+                        state = currentString,
+                        inputTransformation = { if (!this.toString().matches(allowedPattern)) { revertAllChanges() } },
                         modifier = Modifier
                             .width(80.dp)
                             .padding(end = 8.dp),
                         enabled = true,
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
@@ -141,14 +136,14 @@ fun RatingPopup(
                         ),
                         shape = MaterialTheme.shapes.extraSmall
                     )
-                    val alpha = if (currentString.isNotBlank()) .75f else 0.38f
+                    val alpha = if (currentString.text.isNotBlank()) .75f else 0.38f
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(null, LocalIndication.current, currentString.isNotBlank()) {
-                                currentString = ""; parsedDouble = null }
+                            .clickable(null, LocalIndication.current, currentString.text.isNotBlank()) {
+                                currentString.clearText(); parsedDouble = null }
                             .padding(4.dp)
                             .size(20.dp)
                             .alpha(alpha)
