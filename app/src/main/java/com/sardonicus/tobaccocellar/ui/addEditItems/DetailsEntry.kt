@@ -3,8 +3,6 @@ package com.sardonicus.tobaccocellar.ui.addEditItems
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.MarqueeSpacing
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -35,6 +33,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -55,8 +54,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,6 +93,7 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.RatingPopup
 import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.autoSizeMarquee
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
@@ -176,7 +178,7 @@ fun DetailsEntry(
             val flavoringSource = remember { MutableInteractionSource() }
 
             val anyDragging = rememberAnyDragged(brandSource, blendSource, subgenreSource, cutSource, componentsSource, flavoringSource)
-            fieldDragged(anyDragging)
+            SideEffect(anyDragging, Dispatchers.Default) { fieldDragged(anyDragging) }
 
             AutoCompleteText(
                 state = itemDetails.brand,
@@ -214,8 +216,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.brand.edit { replace(0, length, "") } }
+                                .clickable(null, LocalIndication.current) { itemDetails.brand.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -264,9 +265,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.blend.edit { replace(0, length, "") }
-                                }
+                                .clickable(null, LocalIndication.current) { itemDetails.blend.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -317,9 +316,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.subGenre.edit { replace(0, length, "") }
-                                }
+                                .clickable(null, LocalIndication.current) { itemDetails.subGenre.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -349,9 +346,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.cut.edit { replace(0, length, "") }
-                                }
+                                .clickable(null, LocalIndication.current) { itemDetails.cut.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -382,9 +377,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.componentString.edit { replace(0, length, "") }
-                                }
+                                .clickable(null, LocalIndication.current) { itemDetails.componentString.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -398,17 +391,16 @@ fun DetailsEntry(
                 ),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 placeholder = {
+                    var over by remember { mutableStateOf(false) }
                     Text(
                         text = stringResource(R.string.separate_comma_v2),
                         autoSize = TextAutoSize.StepBased(11.sp, 13.sp, .1.sp),
                         lineHeight = 1.em,
                         maxLines = 1,
+                        onTextLayout = { over = it.hasVisualOverflow },
                         modifier = Modifier
                             .alpha(0.66f)
-                            .basicMarquee(
-                                repeatDelayMillis = 1500,
-                                spacing = MarqueeSpacing.fractionOfContainer(.5f)
-                            )
+                            .autoSizeMarquee(over)
                     )
                 },
                 interactionSource = componentsSource
@@ -429,9 +421,7 @@ fun DetailsEntry(
                             imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                             contentDescription = "Clear",
                             modifier = Modifier
-                                .clickable(null, LocalIndication.current) {
-                                    itemDetails.flavoringString.edit { replace(0, length, "") }
-                                }
+                                .clickable(null, LocalIndication.current) { itemDetails.flavoringString.clearText() }
                                 .alpha(0.66f)
                                 .size(20.dp)
                                 .focusable(false)
@@ -445,17 +435,16 @@ fun DetailsEntry(
                 ),
                 lineLimits = TextFieldLineLimits.SingleLine,
                 placeholder = {
+                    var over by remember { mutableStateOf(false) }
                     Text(
                         text = stringResource(R.string.separate_comma_v2),
                         autoSize = TextAutoSize.StepBased(11.sp, 13.sp, .1.sp),
                         lineHeight = 1.em,
                         maxLines = 1,
+                        onTextLayout = { over = it.hasVisualOverflow },
                         modifier = Modifier
                             .alpha(0.66f)
-                            .basicMarquee(
-                                repeatDelayMillis = 1500,
-                                spacing = MarqueeSpacing.fractionOfContainer(.5f)
-                            )
+                            .autoSizeMarquee(over)
                     )
                 },
                 interactionSource = flavoringSource
@@ -468,7 +457,7 @@ fun DetailsEntry(
                 horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.Start),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val pattern = remember { Regex("^(\\s*|\\d+)$") }
+                val pattern = remember { Regex("^(\\s*|\\d{0,2})$") }
                 SideEffect(itemDetails.syncTins, Dispatchers.Default) {
                     if (itemDetails.syncTins) {
                         itemDetails.quantityString.edit { replace(0, length, itemDetails.quantity.toString()) }
@@ -480,9 +469,7 @@ fun DetailsEntry(
                     inputTransformation = {
                         if (!itemDetails.syncTins) {
                             stripControlCharTransform
-                            if (!this.toString().matches(pattern) || this.length > 2) {
-                                revertAllChanges()
-                            }
+                            if (!this.toString().matches(pattern)) { revertAllChanges() }
                         }
                     },
                     modifier = Modifier.width(54.dp),
@@ -595,7 +582,10 @@ fun DetailsEntry(
                                 horizontalArrangement = spacedBy(2.dp, Alignment.CenterHorizontally),
                                 modifier = Modifier
                                     .hoverable(interactionSource)
-                                    .clickable(interactionSource, null) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
+                                    .clickable(
+                                        interactionSource,
+                                        null
+                                    ) { onValueChange(itemDetails.copy(syncTins = !itemDetails.syncTins)) }
                             ) {
                                 val coroutineScope = rememberCoroutineScope()
                                 if (LanguageState.isRtl) {
@@ -604,7 +594,10 @@ fun DetailsEntry(
                                         modifier = Modifier
                                             .fillMaxHeight()
                                             .width(40.dp)
-                                            .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
+                                            .clickable(
+                                                interactionSource,
+                                                null
+                                            ) { coroutineScope.launch { tooltipState.show() } }
                                     ) {
                                         Image(
                                             painter = painterResource(id = R.drawable.help_outline),
@@ -653,7 +646,10 @@ fun DetailsEntry(
                                         modifier = Modifier
                                             .fillMaxHeight()
                                             .width(40.dp)
-                                            .clickable(interactionSource, null) { coroutineScope.launch { tooltipState.show() } }
+                                            .clickable(
+                                                interactionSource,
+                                                null
+                                            ) { coroutineScope.launch { tooltipState.show() } }
                                     ) {
                                         Image(
                                             painter = painterResource(id = R.drawable.help_outline),
@@ -758,7 +754,10 @@ fun DetailsEntry(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp)
-                .clickable(null, null) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
+                .clickable(
+                    null,
+                    null
+                ) { onValueChange(itemDetails.copy(inProduction = !itemDetails.inProduction)) },
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically
         ) {
