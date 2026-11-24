@@ -180,7 +180,7 @@ class CsvImportViewModel(
         val decimalSeparator = symbols.decimalSeparator.toString()
         val ds = Regex.escape(decimalSeparator)
         val ratingRegex = Regex("(\\d*$ds?\\d+)")
-        val result = ratingRegex.find(rating)
+        val result = ratingRegex.find(rating.trim())
 
         return if (result != null && maxValue != null) {
             val (value) = result.destructured

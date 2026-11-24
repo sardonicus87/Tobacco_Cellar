@@ -6,9 +6,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,6 +31,9 @@ import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -66,6 +67,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -99,7 +101,13 @@ import com.sardonicus.tobaccocellar.data.CsvResult
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.navigation.CsvImportDestination
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.autoSizeMarquee
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.text.DecimalFormatSymbols
 
 @Composable
 fun CsvImportScreen(
@@ -429,7 +437,9 @@ fun CsvLoadedBody(
                     }
                 }
                 // Collate Tins option and warning //
-                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                Row(Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
@@ -505,12 +515,17 @@ fun CsvLoadedBody(
                         val updateWeight = updateWidth/total
                         val overwriteWeight = overwriteWidth/total
 
-                        Box(Modifier.weight(skipWeight).fillMaxHeight(), Alignment.CenterStart) {
+                        Box(Modifier
+                            .weight(skipWeight)
+                            .fillMaxHeight(), Alignment.CenterStart) {
                             Text(
                                 text = skipText,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(25))
-                                    .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.SKIP) }
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.SKIP) }
                                     .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.SKIP) MaterialTheme.colorScheme.primary
@@ -523,12 +538,17 @@ fun CsvLoadedBody(
                                 autoSize = StepBased(11.sp, 16.sp)
                             )
                         }
-                        Box(Modifier.weight(updateWeight).fillMaxHeight(), Alignment.Center) {
+                        Box(Modifier
+                            .weight(updateWeight)
+                            .fillMaxHeight(), Alignment.Center) {
                             Text(
                                 text = updateText,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(25))
-                                    .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.UPDATE) }
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.UPDATE) }
                                     .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.UPDATE) MaterialTheme.colorScheme.primary
@@ -541,12 +561,17 @@ fun CsvLoadedBody(
                                 autoSize = StepBased(11.sp, 16.sp)
                             )
                         }
-                        Box(Modifier.weight(overwriteWeight).fillMaxHeight(), Alignment.CenterEnd) {
+                        Box(Modifier
+                            .weight(overwriteWeight)
+                            .fillMaxHeight(), Alignment.CenterEnd) {
                             Text(
                                 text = overwriteText,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(25))
-                                    .clickable(null, LocalIndication.current) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
+                                    .clickable(
+                                        null,
+                                        LocalIndication.current
+                                    ) { viewModel.updateImportOption(ImportOption.OVERWRITE) }
                                     .padding(4.dp),
                                 color =
                                     if (importOption == ImportOption.OVERWRITE) MaterialTheme.colorScheme.primary
@@ -747,7 +772,10 @@ fun CsvLoadedBody(
                     if (mappingOptions.collateTins && !dateFormatSelected) {
                         Box(
                             modifier = Modifier
-                                .background(Color.Black.copy(alpha = 0.50f), RoundedCornerShape(8.dp))
+                                .background(
+                                    Color.Black.copy(alpha = 0.50f),
+                                    RoundedCornerShape(8.dp)
+                                )
                                 .matchParentSize(),
                             contentAlignment = Alignment.Center
                         ) {
@@ -943,6 +971,8 @@ private fun DateFormatField(
         "27 January, 2024 $or 27 Jan, 2024"
     )
 
+    val state = rememberTextFieldState(selectedFormat)
+
     Column(modifier.padding(vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
@@ -965,8 +995,7 @@ private fun DateFormatField(
             Box(Modifier.weight(1f)) {
                 ExposedDropdownMenuBox(expanded, { expanded = !expanded }) {
                     OutlinedTextField(
-                        value = selectedFormat.ifBlank { "" },
-                        onValueChange = { },
+                        state = state,
                         readOnly = true,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -980,7 +1009,7 @@ private fun DateFormatField(
                             unfocusedContainerColor = LocalCustomColors.current.textField,
                             disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.38f),
                         ),
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         enabled = enabled
                     )
                     DropdownMenu(
@@ -1000,7 +1029,10 @@ private fun DateFormatField(
                         formats.forEach { format ->
                             DropdownMenuItem(
                                 text = { Text(text = format, maxLines = 1) },
-                                onClick = { onFormatSelected(format); expanded = false }
+                                onClick = {
+                                    state.edit { replace(0, length, format) }
+                                    onFormatSelected(format); expanded = false
+                                }
                             )
                         }
                     }
@@ -1035,6 +1067,18 @@ private fun MaxValueField(
     importOption: ImportOption = ImportOption.SKIP,
 ) {
     Column(modifier.padding(vertical = 4.dp)) {
+        val state = rememberTextFieldState(maxValue)
+        LaunchedEffect(state, Dispatchers.Default) {
+            snapshotFlow { state.toCleanString() }.collectLatest { onMaxValueChange(it) }
+        }
+
+        val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
+        val decimalSeparator = symbols.decimalSeparator.toString()
+        val allowedPattern = remember(decimalSeparator) {
+            val ds = Regex.escape(decimalSeparator)
+            Regex("^(\\s*|(\\d*)?($ds\\d*)?)$")
+        }
+
         Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
@@ -1056,10 +1100,12 @@ private fun MaxValueField(
             }
             Box(Modifier.weight(1f)) {
                 OutlinedTextField(
-                    value = maxValue,
-                    onValueChange = onMaxValueChange,
+                    state = state,
+                    inputTransformation = {
+                        if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     enabled = enabled,
                     isError = error,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -1076,16 +1122,14 @@ private fun MaxValueField(
                         imeAction = ImeAction.Done
                     ),
                     placeholder = {
+                        var overflowing by remember { mutableStateOf(false) }
                         Text(
                             text = stringResource(R.string.required_scaling_v2),
                             color = if (enabled) LocalContentColor.current else Color.Transparent,
                             maxLines = 1,
                             autoSize = StepBased(11.sp, 16.sp),
-                            modifier = Modifier.basicMarquee(
-                                iterations = Int.MAX_VALUE,
-                                repeatDelayMillis = 1500,
-                                spacing = MarqueeSpacing.fractionOfContainer(.33f)
-                            )
+                            onTextLayout = { overflowing = it.hasVisualOverflow },
+                            modifier = Modifier.autoSizeMarquee(overflowing)
                         )
                     }
                 )
@@ -1124,6 +1168,8 @@ private fun MappingField(
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
     val maxHeight by remember { mutableStateOf(screenHeight * .67f) }
 
+    val state = rememberTextFieldState(selectedColumn)
+
     Column(modifier.padding(vertical = 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.Start, Alignment.CenterVertically) {
             Box(
@@ -1150,24 +1196,20 @@ private fun MappingField(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedColumn.ifBlank { "" },
-                        onValueChange = { },
+                        state = state,
                         readOnly = true,
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         placeholder = {
+                            var over by remember { mutableStateOf(false) }
                             Text(
                                 text = placeholder,
                                 maxLines = 1,
                                 autoSize = StepBased(11.sp, 16.sp),
-                                modifier = Modifier
-                                    .basicMarquee(
-                                        iterations = Int.MAX_VALUE,
-                                        repeatDelayMillis = 1500,
-                                        spacing = MarqueeSpacing.fractionOfContainer(.33f)
-                                    )
+                                onTextLayout = { over = it.hasVisualOverflow },
+                                modifier = Modifier.autoSizeMarquee(over)
                             )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
@@ -1178,7 +1220,7 @@ private fun MappingField(
                             unfocusedContainerColor = LocalCustomColors.current.textField,
                             disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.38f)
                         ),
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         enabled = enabled
                     )
                     DropdownMenu(
@@ -1194,12 +1236,18 @@ private fun MappingField(
                                     color = LocalContentColor.current.copy(alpha = 0.5f)
                                 )
                             },
-                            onClick = { onColumnSelected(""); expanded = false }
+                            onClick = {
+                                state.clearText()
+                                onColumnSelected(""); expanded = false
+                            }
                         )
                         csvColumns.forEach { column ->
                             DropdownMenuItem(
                                 text = { Text(text = column) },
-                                onClick = { onColumnSelected(column); expanded = false }
+                                onClick = {
+                                    state.edit { replace(0, length, column) }
+                                    onColumnSelected(column); expanded = false
+                                }
                             )
                         }
                     }
