@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 
@@ -41,6 +41,7 @@ fun CustomDropDown(
         unfocusedContainerColor = LocalCustomColors.current.textField,
         disabledContainerColor = LocalCustomColors.current.textField.copy(alpha = 0.50f)),
     placeholder: @Composable (() -> Unit)? = null,
+    textStyle: TextStyle = LocalTextStyle.current,
     isError: Boolean = false,
     enabled: Boolean = true,
 ) {
@@ -56,16 +57,14 @@ fun CustomDropDown(
         TextField(
             state = state,
             readOnly = true,
-         //   onValueChange = {},
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled),
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
-        //    singleLine = true,
             lineLimits = TextFieldLineLimits.SingleLine,
-            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Start),
+            textStyle = textStyle,
             colors = colors.copy(
                 focusedContainerColor =
                     if (expanded) LocalCustomColors.current.textField.copy(alpha = 0.75f)
