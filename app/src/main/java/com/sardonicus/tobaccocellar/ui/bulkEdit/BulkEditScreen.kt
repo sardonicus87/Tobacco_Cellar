@@ -3,9 +3,7 @@ package com.sardonicus.tobaccocellar.ui.bulkEdit
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -41,6 +39,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -119,6 +118,7 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.DismissSnackbar
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
+import com.sardonicus.tobaccocellar.ui.utilities.autoSizeMarquee
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
@@ -126,6 +126,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.toLtr
 import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
+import kotlinx.coroutines.Dispatchers
 
 @Composable
 fun BulkEditScreen(
@@ -566,7 +567,7 @@ fun BulkEditing(
                     val compSource = remember { MutableInteractionSource() }
                     val flavorSource = remember { MutableInteractionSource() }
                     val anyDragging = rememberAnyDragged(subgenreSource, cutSource, compSource, flavorSource)
-                    isDragging(anyDragging)
+                    SideEffect(anyDragging, Dispatchers.Default) { isDragging(anyDragging) }
 
                     RowLabel(
                         text = stringResource(R.string.type_label_v2),
@@ -655,9 +656,7 @@ fun BulkEditing(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable(null, LocalIndication.current) {
-                                            editingState.subGenre.edit { replace(0, length, "") }
-                                        }
+                                        .clickable(null, LocalIndication.current) { editingState.subGenre.clearText() }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -688,9 +687,7 @@ fun BulkEditing(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable(null, LocalIndication.current) {
-                                            editingState.cut.edit { replace(0, length, "") }
-                                        }
+                                        .clickable(null, LocalIndication.current) { editingState.cut.clearText() }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -748,18 +745,17 @@ fun BulkEditing(
                         lineLimits = TextFieldLineLimits.SingleLine,
                         placeholder = {
                             if (editingState.compsSelected) {
+                                var over by remember { mutableStateOf(false) }
                                 Text(
                                     text = stringResource(R.string.separate_comma_v2),
                                     autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                                     lineHeight = 1.em,
                                     maxLines = 1,
                                     overflow = TextOverflow.Visible,
+                                    onTextLayout = { over = it.hasVisualOverflow },
                                     modifier = Modifier
                                         .alpha(.66f)
-                                        .basicMarquee(
-                                            repeatDelayMillis = 1500,
-                                            spacing = MarqueeSpacing.fractionOfContainer(.5f)
-                                        )
+                                        .autoSizeMarquee(over)
                                 )
                             }
                         },
@@ -806,18 +802,17 @@ fun BulkEditing(
                         lineLimits = TextFieldLineLimits.SingleLine,
                         placeholder = {
                             if (editingState.flavorSelected) {
+                                var over by remember { mutableStateOf(false) }
                                 Text(
                                     text = stringResource(R.string.separate_comma_v2),
                                     autoSize = TextAutoSize.StepBased(11.sp, 13.sp),
                                     lineHeight = 1.em,
                                     maxLines = 1,
                                     overflow = TextOverflow.Visible,
+                                    onTextLayout = { over = it.hasVisualOverflow },
                                     modifier = Modifier
                                         .alpha(.66f)
-                                        .basicMarquee(
-                                            repeatDelayMillis = 1500,
-                                            spacing = MarqueeSpacing.fractionOfContainer(.5f)
-                                        )
+                                        .autoSizeMarquee(over)
                                 )
                             }
                         },
