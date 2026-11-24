@@ -1,9 +1,7 @@
 package com.sardonicus.tobaccocellar.ui.addEditItems
 
 import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -30,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -92,6 +91,7 @@ import com.sardonicus.tobaccocellar.ui.composables.CustomCheckbox
 import com.sardonicus.tobaccocellar.ui.composables.CustomDropDown
 import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
+import com.sardonicus.tobaccocellar.ui.utilities.autoSizeMarquee
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
 import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
@@ -127,7 +127,8 @@ fun TinsEntry(
             .padding(vertical = 6.dp, horizontal = 8.dp)
             .background(
                 color = if (tinDetailsList.isEmpty()) Color.Transparent else
-                    LocalCustomColors.current.textField, RoundedCornerShape(4.dp))
+                    LocalCustomColors.current.textField, RoundedCornerShape(4.dp)
+            )
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
     ) {
@@ -210,7 +211,7 @@ private fun IndividualTin(
         val openSource = remember { MutableInteractionSource() }
 
         val anyDragged = rememberAnyDragged(labelSource, containerSource, manufactureSource, cellarSource, openSource)
-        fieldDragged(anyDragged)
+        SideEffect(anyDragged) { fieldDragged(anyDragged) }
 
         LaunchedEffect(tinDetails, Dispatchers.Default) {
             combine(
@@ -310,32 +311,32 @@ private fun IndividualTin(
                         interactionSource = labelSource
                     )
 
-                    if (showError) {
-                        Text(
-                            text = stringResource(R.string.tin_label_error_v2),
-                            color = MaterialTheme.colorScheme.error,
-                            autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Visible,
-                            modifier = Modifier
-                                .padding(bottom = 4.dp, top = 1.dp)
-                                .widthIn(max = textFieldMax)
-                                .basicMarquee(
-                                    iterations = Int.MAX_VALUE,
-                                    repeatDelayMillis = 1500,
-                                    spacing = MarqueeSpacing.fractionOfContainer(.33f)
-                                )
-                        )
-                    } else {
+                    Box {
                         Text(
                             text = stringResource(R.string.tin_label_error_v2),
                             color = Color.Transparent,
-                            autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
+                            overflow = TextOverflow.Clip,
+                            fontSize = 12.sp,
                             maxLines = 1,
                             modifier = Modifier
                                 .padding(bottom = 4.dp, top = 1.dp)
                                 .widthIn(max = textFieldMax)
                         )
+                        if (showError) {
+                            var over by remember { mutableStateOf(false) }
+                            Text(
+                                text = stringResource(R.string.tin_label_error_v2),
+                                color = MaterialTheme.colorScheme.error,
+                                autoSize = TextAutoSize.StepBased(11.sp, 12.sp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Visible,
+                                onTextLayout = { over = it.hasVisualOverflow },
+                                modifier = Modifier
+                                    .padding(bottom = 4.dp, top = 1.dp)
+                                    .widthIn(max = textFieldMax)
+                                    .autoSizeMarquee(over, .33f)
+                            )
+                        }
                     }
                 }
 
@@ -389,8 +390,10 @@ private fun IndividualTin(
                                     imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                     contentDescription = "Clear",
                                     modifier = Modifier
-                                        .clickable(null, LocalIndication.current) {
-                                            tinDetails.container.edit { replace(0, length, "") } }
+                                        .clickable(
+                                            null,
+                                            LocalIndication.current
+                                        ) { tinDetails.container.clearText() }
                                         .alpha(0.66f)
                                         .size(20.dp)
                                         .focusable(false)
@@ -438,9 +441,7 @@ private fun IndividualTin(
                         state = tinDetails.tinQuantityString,
                         inputTransformation = {
                             stripControlCharTransform
-                            if (!this.toString().matches(allowedPattern)) {
-                                tinDetails.tinQuantityString.edit { revertAllChanges() }
-                            }
+                            if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
                         },
                         modifier = Modifier.weight(1f),
                         textStyle = LocalTextStyle.current.copy(
@@ -650,8 +651,7 @@ private fun IndividualTin(
                         shape = MaterialTheme.shapes.extraSmall,
                         isError = tinDetails.cellarDate != null && (
                                 (tinDetails.manufactureDate != null && !manufactureCellar) ||
-                                        (tinDetails.openDate != null && !cellarOpen)
-                                )
+                                        (tinDetails.openDate != null && !cellarOpen))
                     )
 
                     // Opened //
@@ -730,11 +730,9 @@ private fun IndividualTin(
                             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                                 return when (dateField) {
                                     "Manufacture" -> {
-                                        if (tinDetails.cellarDate != null) {
-                                            utcTimeMillis <= tinDetails.cellarDate
-                                        } else if (tinDetails.openDate != null) {
-                                            utcTimeMillis <= tinDetails.openDate
-                                        } else { true }
+                                        if (tinDetails.cellarDate != null) { utcTimeMillis <= tinDetails.cellarDate }
+                                        else if (tinDetails.openDate != null) { utcTimeMillis <= tinDetails.openDate }
+                                        else { true }
                                     }
                                     "Cellared" -> {
                                         val minDate =
