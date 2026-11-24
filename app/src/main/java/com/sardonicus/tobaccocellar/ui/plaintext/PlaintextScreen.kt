@@ -19,7 +19,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -51,6 +50,8 @@ import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.foundation.text.contextmenu.data.TextContextMenuKeys.CopyKey
 import androidx.compose.foundation.text.contextmenu.modifier.filterTextContextMenuComponents
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -139,9 +140,14 @@ import com.sardonicus.tobaccocellar.ui.composables.IncreaseDecrease
 import com.sardonicus.tobaccocellar.ui.composables.LoadingIndicator
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlCharTransform
 import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
+import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
 import kotlin.time.Duration.Companion.milliseconds
@@ -269,13 +275,10 @@ private fun PlaintextBody(
         if (pagerState.currentPage != tabIndex) { pagerState.animateScrollToPage(tabIndex) }
     }
 
-    val fieldInteractionSource = remember { MutableInteractionSource() }
-    val unfocusedFieldScroll by fieldInteractionSource.collectIsDraggedAsState()
+    var unfocusedFieldScroll by remember { mutableStateOf(false) }
 
     val plainList by viewModel.plainList.collectAsState()
     var actionRowExpanded by remember { mutableStateOf(false) }
-    val formatString by viewModel.formatStringEntry.collectAsState()
-    val delimiter by viewModel.delimiter.collectAsState()
     val listAs by viewModel.listAsTins.collectAsState()
 
     val context = LocalContext.current
@@ -323,7 +326,7 @@ private fun PlaintextBody(
                         actionRowExpanded = actionRowExpanded,
                         toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                         showPrintDialog = { printDialog = true },
-                        formatString = formatString,
+                        formatString = viewModel.formatStringState.toCleanString(),
                         selectionKey = selectionKey,
                         updateSelectionFocused = updateSelectionFocused
                     )
@@ -350,8 +353,8 @@ private fun PlaintextBody(
                     scrollState = formatScroll,
                     saveLoadBounds = saveLoadBounds,
                     twoColumnTabs = twoColumnTabs,
-                    formatString = formatString,
-                    delimiter = delimiter,
+                    formatString = viewModel.formatStringState,
+                    delimiter = viewModel.delimiterState,
                     listAs = listAs,
                     selectionKey = selectionKey,
                     updateSelectionFocused = updateSelectionFocused,
@@ -436,7 +439,7 @@ private fun PlaintextBody(
                             actionRowExpanded = actionRowExpanded,
                             toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                             showPrintDialog = { printDialog = true },
-                            formatString = formatString,
+                            formatString = viewModel.formatStringState.toCleanString(),
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
                             modifier = Modifier.fillMaxWidth()
@@ -447,14 +450,14 @@ private fun PlaintextBody(
                             scrollState = formatScroll,
                             saveLoadBounds = saveLoadBounds,
                             twoColumnTabs = twoColumnTabs,
-                            formatString = formatString,
-                            delimiter = delimiter,
+                            formatString = viewModel.formatStringState,
+                            delimiter = viewModel.delimiterState,
                             listAs = listAs,
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
                             helpExpanded = helpExpanded,
                             updateHelpExpanded = { helpExpanded = it },
-                            fieldInteractionSource = fieldInteractionSource,
+                            isDragged = { unfocusedFieldScroll = it },
                             modifier = Modifier.fillMaxWidth()
                         )
                     else ->
@@ -469,7 +472,7 @@ private fun PlaintextBody(
                             actionRowExpanded = actionRowExpanded,
                             toggleActionRow = { actionRowExpanded = !actionRowExpanded },
                             showPrintDialog = { printDialog = true },
-                            formatString = formatString,
+                            formatString = viewModel.formatStringState.toCleanString(),
                             selectionKey = selectionKey,
                             updateSelectionFocused = updateSelectionFocused,
                             modifier = Modifier.fillMaxWidth()
@@ -589,15 +592,15 @@ private fun PlaintextFormatting(
     scrollState: ScrollState,
     saveLoadBounds: (LayoutCoordinates) -> Unit,
     twoColumnTabs: Boolean,
-    formatString: String,
-    delimiter: String,
+    formatString: TextFieldState,
+    delimiter: TextFieldState,
     listAs: Boolean,
     selectionKey: Int,
     updateSelectionFocused: (Boolean) -> Unit,
     helpExpanded: Boolean,
     updateHelpExpanded: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    fieldInteractionSource: MutableInteractionSource? = null
+    isDragged: (Boolean) -> Unit = {}
 ) {
     val formatPreview by viewModel.formatPreview.collectAsState()
     val presets by viewModel.presets.collectAsState()
@@ -653,6 +656,11 @@ private fun PlaintextFormatting(
         val label = if (isRtl) 2 else 1
         val field = if (isRtl) 1 else 2
 
+        val formatSource = remember { MutableInteractionSource() }
+        val delimSource = remember { MutableInteractionSource() }
+        val anyDragging = rememberAnyDragged(formatSource, delimSource)
+        SideEffect(anyDragging, Dispatchers.Default) { isDragged(anyDragging) }
+
         Grid(
             modifier = Modifier
                 .fillMaxWidth()
@@ -683,28 +691,36 @@ private fun PlaintextFormatting(
                 maxLines = 1
             )
 
+            LaunchedEffect(formatString, delimiter, Dispatchers.Default) {
+                combine(
+                    snapshotFlow { formatString.text.toString() },
+                    snapshotFlow { delimiter.text.toString() }
+                ) { }.collectLatest {
+                    val formatString = formatString.toCleanString()
+                    val delimiter = delimiter.toCleanString()
+                    viewModel.saveFormatting(formatString, delimiter)
+                }
+            }
+
             // format string
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 TextField(
-                    value = formatString,
-                    onValueChange = { viewModel.saveFormatting(format = it) },
+                    state = formatString,
+                    inputTransformation = { stripControlCharTransform },
                     modifier = Modifier
                         .gridItem(1, field, 1, 1, Alignment.CenterStart)
                         .onFocusChanged {
                             if (isRtl && it.isFocused && !rtlDialogSeen) showRtlDialog = true
                         }
                         .fillMaxWidth(),
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     trailingIcon = {
-                        if (formatString.length > 4) {
+                        if (formatString.text.length > 4) {
                             Icon(
                                 imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                                 contentDescription = "Clear",
                                 modifier = Modifier
-                                    .clickable(
-                                        null,
-                                        LocalIndication.current
-                                    ) { viewModel.saveFormatting(format = "") }
+                                    .clickable(null, LocalIndication.current) { formatString.clearText() }
                                     .alpha(0.66f)
                                     .size(20.dp)
                                     .focusable(false)
@@ -726,22 +742,21 @@ private fun PlaintextFormatting(
                         disabledContainerColor = LocalCustomColors.current.textField
                     ),
                     shape = MaterialTheme.shapes.extraSmall,
-                    interactionSource = fieldInteractionSource
+                    interactionSource = formatSource
                 )
             }
 
             // Delimiter
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 TextField(
-                    value = delimiter,
-                    onValueChange = { viewModel.saveFormatting(delimiter = it) },
+                    state = delimiter,
                     modifier = Modifier
                         .gridItem(2, field, 1, 1, Alignment.CenterStart)
                         .onFocusChanged {
                             if (isRtl && it.isFocused && !rtlDialogSeen) showRtlDialog = true
                         }
                         .fillMaxWidth(),
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.None,
@@ -757,7 +772,7 @@ private fun PlaintextFormatting(
                         disabledContainerColor = LocalCustomColors.current.textField
                     ),
                     shape = MaterialTheme.shapes.extraSmall,
-                    interactionSource = fieldInteractionSource
+                    interactionSource = delimSource
                 )
             }
 
@@ -809,7 +824,7 @@ private fun PlaintextFormatting(
         ) {
             TextButton(
                 onClick = { saveDialog = true },
-                enabled = formatString.isNotBlank(),
+                enabled = formatString.text.isNotBlank(),
                 modifier = Modifier.heightIn(40.dp, 40.dp),
                 contentPadding = PaddingValues(12.dp, 2.dp),
             ) { Text(stringResource(R.string.save_preset_v2)) }
@@ -906,8 +921,8 @@ private fun PlaintextFormatting(
         if (saveDialog) {
             SaveDialog(
                 savedPresets = presets,
-                formatString = formatString,
-                delimiter = delimiter,
+                formatString = formatString.toCleanString(),
+                delimiter = delimiter.toCleanString(),
                 onSaveConfirm = { slot, string, delimiter -> viewModel.savePreset(slot, string, delimiter) },
                 onDeleteConfirm = { viewModel.savePreset(it, "", "") },
                 onSaveCancel = { saveDialog = false }
@@ -916,8 +931,8 @@ private fun PlaintextFormatting(
         if (loadDialog) {
             LoadDialog(
                 savedPresets = presets,
-                formatString = formatString,
-                delimiter = delimiter,
+                formatString = formatString.toCleanString(),
+                delimiter = delimiter.toCleanString(),
                 onLoadConfirm = { string, delimiter -> viewModel.saveFormatting(format = string, delimiter = delimiter) },
                 onDeleteConfirm = { viewModel.savePreset(it, "", "") },
                 onLoadCancel = { loadDialog = false }
@@ -1190,9 +1205,7 @@ private fun PrintDialog(
                                 CustomTextField(
                                     state = fontState,
                                     inputTransformation = {
-                                        if (!this.toString().matches(fontPattern)) {
-                                            revertAllChanges()
-                                        }
+                                        if (!this.toString().matches(fontPattern)) { revertAllChanges() }
                                     },
                                     suffix = {
                                         Text(
@@ -1277,16 +1290,20 @@ private fun PrintDialog(
                                 CustomTextField(
                                     state = marginState,
                                     inputTransformation = {
-                                        if (!this.toString().matches(marginPattern)) {
-                                            revertAllChanges()
-                                        }
+                                        if (!this.toString().matches(marginPattern)) { revertAllChanges() }
                                     },
                                     modifier = Modifier
                                         .width(68.dp)
                                         .padding(vertical = 4.dp)
                                         .onFocusChanged {
                                             if (!it.hasFocus) {
-                                                marginState.edit { replace(0, length, formatDecimal(margins)) }
+                                                marginState.edit {
+                                                    replace(
+                                                        0,
+                                                        length,
+                                                        formatDecimal(margins)
+                                                    )
+                                                }
                                             }
                                         },
                                     lineLimits = TextFieldLineLimits.SingleLine,

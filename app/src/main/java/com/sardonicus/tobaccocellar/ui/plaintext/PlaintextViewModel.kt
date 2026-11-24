@@ -2,8 +2,10 @@ package com.sardonicus.tobaccocellar.ui.plaintext
 
 import android.content.Context
 import androidx.annotation.StringRes
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.CellarApplication
@@ -30,6 +32,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedCo
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedType
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.rtlIsolate
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -56,11 +59,8 @@ class PlaintextViewModel (
 
     private val _isInitialized = MutableStateFlow(false)
 
-    private val _formatStringEntry = MutableStateFlow("")
-    val formatStringEntry: StateFlow<String> = _formatStringEntry
-
-    private val _delimiter = MutableStateFlow("")
-    val delimiter: StateFlow<String> = _delimiter
+    val formatStringState = TextFieldState()
+    val delimiterState = TextFieldState()
 
     private val _listAsTins = MutableStateFlow(false)
     val listAsTins: StateFlow<Boolean> = _listAsTins
@@ -272,8 +272,8 @@ class PlaintextViewModel (
                     Triple(format, delimiter, listAsTins)
                 }.first().let { (format, delimiter, listAsTins) ->
                     if (format.isNotBlank() || delimiter.isNotBlank()) {
-                        _formatStringEntry.value = format
-                        _delimiter.value = delimiter
+                        formatStringState.edit { replace(0, length, format) }
+                        delimiterState.edit { replace(0, length, delimiter) }
                         _listAsTins.value = listAsTins
                     }
                     delay(50.milliseconds)
@@ -284,8 +284,8 @@ class PlaintextViewModel (
             // Save latest format
             launch {
                 combine(
-                    _formatStringEntry,
-                    _delimiter,
+                    snapshotFlow { formatStringState.toCleanString() },
+                    snapshotFlow { delimiterState.toCleanString() },
                     _listAsTins
                 ) { format, delimiter, listAs ->
                     Triple(format, delimiter, listAs)
@@ -320,7 +320,7 @@ class PlaintextViewModel (
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortMenuState())
 
 
-    private val parsedTemplate: StateFlow<List<Template>> = _formatStringEntry
+    private val parsedTemplate: StateFlow<List<Template>> = snapshotFlow { formatStringState.toCleanString() }
         .map { try { parseTemplate(it) } catch (_: Throwable) { emptyList() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(50000), emptyList())
 
@@ -332,7 +332,7 @@ class PlaintextViewModel (
         preferencesRepo.tinOzConversionRate,
         preferencesRepo.tinGramsConversionRate,
         parsedTemplate,
-        _delimiter,
+        snapshotFlow { delimiterState.toCleanString() },
         _listAsTins,
         sortState
     ) { values ->
@@ -451,7 +451,7 @@ class PlaintextViewModel (
 
     val loading: StateFlow<Boolean> = combine(
         plainList,
-        _formatStringEntry,
+        snapshotFlow { formatStringState.toCleanString() },
         _isInitialized
     ) { list, formatString, initialized ->
         when {
@@ -465,7 +465,7 @@ class PlaintextViewModel (
 
     @Suppress("UNCHECKED_CAST")
     val sortOptions = combine(
-        _formatStringEntry,
+        snapshotFlow { formatStringState.toCleanString() },
         _listAsTins,
         filterViewModel.unifiedFilteredItems,
         filterViewModel.datesExist
@@ -576,7 +576,7 @@ class PlaintextViewModel (
         preferencesRepo.tinOzConversionRate,
         preferencesRepo.tinGramsConversionRate,
         parsedTemplate,
-        _delimiter
+        snapshotFlow { delimiterState.toCleanString() }
     ) { values ->
         val listAsTins = values[0] as Boolean
         val quantityOption = values[1] as QuantityOption
@@ -848,8 +848,8 @@ class PlaintextViewModel (
     fun saveFormatting(format: String? = null, delimiter: String? = null, listAsTins: Boolean? = null) {
         val currentListAsTins = _listAsTins.value
 
-        _formatStringEntry.value = format ?: _formatStringEntry.value
-        _delimiter.value = delimiter ?: _delimiter.value
+        if (format != null) formatStringState.edit { replace(0, length, format) }
+        if (delimiter != null) delimiterState.edit { replace(0, length, delimiter) }
         _listAsTins.value = listAsTins ?: _listAsTins.value
 
         if (listAsTins != null && currentListAsTins != listAsTins) {
