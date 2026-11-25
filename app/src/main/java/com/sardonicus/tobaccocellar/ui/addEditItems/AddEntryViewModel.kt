@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.ItemsComponentsCrossRef
@@ -15,6 +16,7 @@ import com.sardonicus.tobaccocellar.ui.FilterViewModel
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
 import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -37,18 +39,31 @@ class AddEntryViewModel(
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            combine(
-                preferencesRepo.tinOzConversionRate,
-                preferencesRepo.tinGramsConversionRate,
-                preferencesRepo.defaultSyncOption
-            ) { ozRate, gramsRate, defaultSync ->
-                Triple(ozRate, gramsRate, defaultSync)
-            }.first().let { (ozRate, gramsRate, defaultSync) ->
-                tinConversion.value = TinConversion(
-                    ozRate = ozRate,
-                    gramsRate = gramsRate,
-                )
-                if (defaultSync) updateUiState(itemUiState.itemDetails.copy(syncTins = true))
+            launch {
+                combine(
+                    preferencesRepo.tinOzConversionRate,
+                    preferencesRepo.tinGramsConversionRate,
+                    preferencesRepo.defaultSyncOption
+                ) { ozRate, gramsRate, defaultSync -> Triple(ozRate, gramsRate, defaultSync) }
+                    .first().let { (ozRate, gramsRate, defaultSync) ->
+                        tinConversion.value = TinConversion(ozRate = ozRate, gramsRate = gramsRate)
+                        if (defaultSync) updateUiState(itemUiState.itemDetails.copy(syncTins = true))
+                    }
+            }
+            launch {
+                snapshotFlow { itemUiState.itemDetails.quantityString.toCleanString() }
+                    .collectLatest {
+                        val quantity =
+                            if (!itemUiState.itemDetails.syncTins) it.toIntOrNull() ?: 1
+                            else itemUiState.itemDetails.quantity
+                        updateUiState(itemUiState.itemDetails.copy(quantity = quantity))
+                    }
+            }
+            launch {
+                combine(
+                    snapshotFlow { itemUiState.itemDetails.brand.toCleanString() },
+                    snapshotFlow { itemUiState.itemDetails.blend.toCleanString() }
+                ) { itemUiState.itemDetails }.collectLatest { updateUiState(itemUiState.itemDetails) }
             }
         }
     }
@@ -57,6 +72,7 @@ class AddEntryViewModel(
     fun updateUiState(itemDetails: ItemDetails) {
         val updatedDetails = if (itemDetails.syncTins) {
             val syncedTins = calculateSyncTinsDetails(itemDetails.tinDetailsList, tinConversion.value)
+            itemUiState.itemDetails.quantityString.edit { replace(0, length, "$syncedTins") }
             itemDetails.copy(quantity = syncedTins)
         } else { itemDetails }
 

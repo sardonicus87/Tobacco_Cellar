@@ -13,9 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,9 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
-import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun NotesEntry(
@@ -50,12 +45,6 @@ fun NotesEntry(
             verticalArrangement = Arrangement.spacedBy(2.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            LaunchedEffect(itemDetails.notes, Dispatchers.Default) {
-                snapshotFlow { itemDetails.notes.toCleanString() }.collectLatest {
-                    onValueChange(itemDetails)
-                }
-            }
-
             Text(
                 text = stringResource(R.string.notes_v2),
                 modifier = Modifier.padding(bottom = 4.dp)

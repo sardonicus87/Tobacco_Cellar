@@ -4,6 +4,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sardonicus.tobaccocellar.data.Components
@@ -20,8 +21,10 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.formatLocalizedList
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripControlChar
 import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -82,14 +85,29 @@ class EditEntryViewModel(
 
             loading.value = false
         }
-        viewModelScope.launch {
-            combine(
-                preferencesRepo.tinOzConversionRate,
-                preferencesRepo.tinGramsConversionRate,
-            ) { ozRate, gramsRate ->
-                ozRate to gramsRate
-            }.first().let { (ozRate, gramsRate) ->
-                tinConversion.value = TinConversion(ozRate = ozRate, gramsRate = gramsRate)
+        viewModelScope.launch(Dispatchers.Default) {
+            launch {
+                combine(
+                    preferencesRepo.tinOzConversionRate,
+                    preferencesRepo.tinGramsConversionRate,
+                ) { ozRate, gramsRate -> ozRate to gramsRate }.first().let { (ozRate, gramsRate) ->
+                    tinConversion.value = TinConversion(ozRate = ozRate, gramsRate = gramsRate)
+                }
+            }
+            launch {
+                snapshotFlow { itemUiState.itemDetails.quantityString.toCleanString() }
+                    .collectLatest {
+                        val quantity =
+                            if (!itemUiState.itemDetails.syncTins) it.toIntOrNull() ?: 1
+                            else itemUiState.itemDetails.quantity
+                        updateUiState(itemUiState.itemDetails.copy(quantity = quantity))
+                    }
+            }
+            launch {
+                combine(
+                    snapshotFlow { itemUiState.itemDetails.brand.toCleanString() },
+                    snapshotFlow { itemUiState.itemDetails.blend.toCleanString() }
+                ) { itemUiState.itemDetails }.collectLatest { updateUiState(itemUiState.itemDetails) }
             }
         }
     }

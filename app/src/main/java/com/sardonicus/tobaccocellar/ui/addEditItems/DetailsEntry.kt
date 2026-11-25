@@ -104,8 +104,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.rememberAnyDragged
 import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -154,22 +152,6 @@ fun DetailsEntry(
                 style = LocalTextStyle.current.copy(lineBreak = LineBreak.Paragraph))
             Text(stringResource(R.string.rating_label_v2), Modifier.gridItem(9, label, 1, 1, Alignment.CenterStart), maxLines = 1, autoSize = TextAutoSize.StepBased(12.sp, 16.sp))
 
-            LaunchedEffect(itemDetails, Dispatchers.Default) {
-                combine(
-                    snapshotFlow { itemDetails.brand.text.toString() },
-                    snapshotFlow { itemDetails.blend.text.toString() },
-                    snapshotFlow { itemDetails.subGenre.text.toString() },
-                    snapshotFlow { itemDetails.cut.text.toString() },
-                    snapshotFlow { itemDetails.componentString.text.toString() },
-                    snapshotFlow { itemDetails.flavoringString.text.toString() },
-                    snapshotFlow { itemDetails.quantityString.text.toString() }
-                ) { itemDetails }.collectLatest {
-                    val quantity =
-                        if (!itemDetails.syncTins) itemDetails.quantityString.toCleanString().toIntOrNull() ?: 1
-                        else itemDetails.quantity
-                    onValueChange(it.copy(quantity = quantity))
-                }
-            }
             val brandSource = remember { MutableInteractionSource() }
             val blendSource = remember { MutableInteractionSource() }
             val subgenreSource = remember { MutableInteractionSource() }

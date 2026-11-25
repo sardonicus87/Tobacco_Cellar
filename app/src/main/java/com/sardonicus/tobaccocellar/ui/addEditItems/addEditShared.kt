@@ -26,7 +26,7 @@ fun validateInput(
 ): Boolean {
     val validDetails = details.brand.toCleanString().isNotBlank() && details.blend.toCleanString().isNotBlank()
 
-    val labels = tins.map { it.tinLabel }
+    val labels = tins.map { it.tinLabel.toCleanString() }
     val validTins = tins.all { tin ->
         val (manuf, cellar, open) = validateDates(tin.manufactureDate, tin.cellarDate, tin.openDate)
         tin.tinLabel.toCleanString().isNotBlank() &&

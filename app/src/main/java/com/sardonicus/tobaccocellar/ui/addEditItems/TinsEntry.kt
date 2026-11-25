@@ -429,14 +429,6 @@ private fun IndividualTin(
                         Regex("^(\\s*|(\\d*)?($ds\\d{0,2})?)$")
                     }
 
-                    LaunchedEffect(tinDetails.tinQuantityString, Dispatchers.Default) {
-                        snapshotFlow { tinDetails.tinQuantityString.text.toString() }.collectLatest {
-                            onTinValueChange(tinDetails.copy(
-                                tinQuantity = tinDetails.tinQuantityString.text.toString().localizedToDouble(0.0)
-                            ))
-                        }
-                    }
-
                     TextField(
                         state = tinDetails.tinQuantityString,
                         inputTransformation = {
