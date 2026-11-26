@@ -27,12 +27,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -55,8 +50,6 @@ import com.sardonicus.tobaccocellar.ui.blendDetails.formatDecimal
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import java.text.DecimalFormatSymbols
 
 @Composable
@@ -67,13 +60,6 @@ fun RatingPopup(
     currentRating: Double? = null,
 ) {
     val currentString = rememberTextFieldState(formatDecimal(currentRating))
-    var parsedDouble by remember { mutableStateOf<Double?>(null) }
-    LaunchedEffect(currentString, Dispatchers.Default) {
-        snapshotFlow { currentString.text.toString() }.collectLatest {
-            parsedDouble = currentString.text.toString().localizedToDouble(max = 5.0)
-        }
-    }
-
     val focusManager = LocalFocusManager.current
     DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
 
@@ -143,7 +129,7 @@ fun RatingPopup(
                         modifier = Modifier
                             .clip(CircleShape)
                             .clickable(null, LocalIndication.current, currentString.text.isNotBlank()) {
-                                currentString.clearText(); parsedDouble = null }
+                                currentString.clearText() }
                             .padding(4.dp)
                             .size(20.dp)
                             .alpha(alpha)
@@ -153,7 +139,7 @@ fun RatingPopup(
         },
         confirmButton = {
             TextButton(
-                onClick = { onRatingSelected(parsedDouble) },
+                onClick = { onRatingSelected(currentString.text.toString().localizedToDouble(max = 5.0)) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
             ) { Text(stringResource(R.string.done_v2)) }

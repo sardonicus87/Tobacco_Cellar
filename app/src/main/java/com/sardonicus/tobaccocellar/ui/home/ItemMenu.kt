@@ -37,6 +37,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
@@ -59,7 +60,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -97,9 +97,7 @@ import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.exclusiveScroll
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import java.text.DecimalFormatSymbols
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -370,7 +368,6 @@ fun ItemMenu(
             EditRatingPop(
                 textFieldState = editRatingState,
                 undoEnabled = editRatingState.text.toString() != formatDecimal(originalState.rating),
-                updateTextField = { editRatingState.edit { replace(0, length, it) } },
                 onDismiss = { showRatingPop = false },
                 onCancel = {
                     editRatingState.edit { replace(0, length, formatDecimal(originalState.rating)) }
@@ -387,7 +384,6 @@ fun ItemMenu(
             EditNotePop(
                 textFieldState = editNoteState,
                 undoEnabled = editNoteState.text.toString() != originalState.notes,
-                updateTextField = { editNoteState.edit { replace(0, length, it) } },
                 onDismiss = { showNotePop = false },
                 onCancel = {
                     editNoteState.edit { replace(0, length, originalState.notes) }
@@ -403,7 +399,6 @@ fun ItemMenu(
             EditQuantityPop(
                 textFieldState = qtyState,
                 undoEnabled = qtyState.text.toString() != originalState.quantity.toString(),
-                updateTextField = { qtyState.edit { replace(0, length, it) } },
                 onDismiss = { showQtyPop = false },
                 onCancel = {
                     qtyState.edit { replace(0, length, originalState.quantity.toString()) }
@@ -439,19 +434,10 @@ private fun QuickOption(
 private fun EditRatingPop(
     textFieldState: TextFieldState,
     undoEnabled: Boolean,
-    updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
     onRatingEdited: (Double?) -> Unit
 ) {
-    var parsedDouble by remember { mutableStateOf<Double?>(null) }
-    LaunchedEffect(textFieldState, Dispatchers.Default) {
-        snapshotFlow { textFieldState.text.toString() }.collectLatest {
-            updateTextField(textFieldState.text.toString())
-            parsedDouble = textFieldState.text.toString().localizedToDouble(max = 5.0)
-        }
-    }
-
     val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
     val pattern = remember(decimalSeparator) {
@@ -517,13 +503,8 @@ private fun EditRatingPop(
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(
-                                null,
-                                LocalIndication.current,
-                                textFieldState.text.isNotBlank()
-                            ) {
-                                updateTextField("")
-                            }
+                            .clickable(null, LocalIndication.current,
+                                textFieldState.text.isNotBlank()) { textFieldState.clearText() }
                             .padding(4.dp)
                             .size(20.dp)
                             .alpha(alpha)
@@ -533,7 +514,7 @@ private fun EditRatingPop(
         },
         confirmButton = {
             TextButton(
-                onClick = { onRatingEdited(parsedDouble) },
+                onClick = { onRatingEdited(textFieldState.text.toString().localizedToDouble(max = 5.0)) },// { onRatingEdited(parsedDouble) },
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
             ) { Text(stringResource(R.string.done_v2)) }
@@ -553,17 +534,10 @@ private fun EditRatingPop(
 private fun EditNotePop(
     textFieldState: TextFieldState,
     undoEnabled: Boolean,
-    updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
     onNoteEdited: (String) -> Unit
 ) {
-    LaunchedEffect(textFieldState) {
-        snapshotFlow { textFieldState.text.toString() }.collectLatest {
-            updateTextField(textFieldState.text.toString())
-        }
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.wrapContentHeight(),
@@ -643,16 +617,10 @@ private fun EditNotePop(
 private fun EditQuantityPop(
     textFieldState: TextFieldState,
     undoEnabled: Boolean,
-    updateTextField: (String) -> Unit,
     onDismiss: () -> Unit,
     onCancel: () -> Unit,
     onQtyEdited: (Int) -> Unit
 ) {
-    LaunchedEffect(textFieldState, Dispatchers.Default) {
-        snapshotFlow { textFieldState.text.toString() }.collectLatest {
-            updateTextField(textFieldState.text.toString())
-        }
-    }
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier

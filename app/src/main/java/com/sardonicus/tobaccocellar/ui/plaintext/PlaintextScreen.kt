@@ -147,7 +147,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import java.text.DecimalFormatSymbols
 import kotlin.time.Duration.Companion.milliseconds
@@ -690,17 +689,6 @@ private fun PlaintextFormatting(
                 autoSize = StepBased(14.sp, 16.sp),
                 maxLines = 1
             )
-
-            LaunchedEffect(formatString, delimiter, Dispatchers.Default) {
-                combine(
-                    snapshotFlow { formatString.text.toString() },
-                    snapshotFlow { delimiter.text.toString() }
-                ) { }.collectLatest {
-                    val formatString = formatString.toCleanString()
-                    val delimiter = delimiter.toCleanString()
-                    viewModel.saveFormatting(formatString, delimiter)
-                }
-            }
 
             // format string
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
