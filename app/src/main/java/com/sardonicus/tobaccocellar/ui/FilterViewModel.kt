@@ -1,7 +1,10 @@
 package com.sardonicus.tobaccocellar.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,6 +32,7 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.collator
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.getLocalizedContext
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.safeString
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.stripAccent
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -59,7 +63,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class FilterViewModel (
     private val itemsRepository: ItemsRepository,
     private val preferencesRepo: PreferencesRepo,
-    private val application: CellarApplication
+    application: CellarApplication
 ): ViewModel() {
 
     /** BottomSheet State **/
@@ -75,8 +79,7 @@ class FilterViewModel (
         viewModelScope.launch(Dispatchers.Default) { preferencesRepo.setSearchSetting(setting) }
     }
 
-    private val _searchTextDisplay = MutableStateFlow("")
-    fun updateSearchText(text: String) { _searchTextDisplay.value = text }
+    val searchTextDisplay = TextFieldState("")
 
     val searchPerformed = MutableStateFlow(false)
     val searchValue = MutableStateFlow("")
@@ -94,7 +97,7 @@ class FilterViewModel (
     fun clearReadyTinsFilter() {
         _readyTins.value = false
         _readyTinIds.value = emptyList()
-        updateSearchText("")
+        searchTextDisplay.clearText()
         onSearch("")
         viewModelScope.launch { EventBus.emit(SearchClearedEvent) }
     }
@@ -108,8 +111,7 @@ class FilterViewModel (
     val noneAssignedLabel = getLocalizedContext(application).safeString(R.string.none_assigned_v2)
 
     /** Filter states **/
-    val brandSearchText = MutableStateFlow("")
-    fun updateBrandSearchText(text: String) { brandSearchText.value = text }
+    val brandSearchText = TextFieldState("")
 
     // inclusionary filter states //
     private val _selectedBrands = MutableStateFlow<List<String>>(emptyList())
@@ -1215,55 +1217,40 @@ class FilterViewModel (
 
     // HomeScreen stuff
     val searchState = combine(
-        searchPerformed, _isTinSearch, _searchTextDisplay, preferencesRepo.searchSetting,
+        searchPerformed, _isTinSearch, snapshotFlow { searchTextDisplay }, preferencesRepo.searchSetting,
         tinsExist, notesExist, emptyDatabase, _readyTins
     ) { it: Array<Any?> ->
         val searchPerformed = it[0] as Boolean
         val isTinSearch = it[1] as Boolean
-        val searchText = it[2] as String
         val searchSetting = it[3] as SearchSetting
         val tinsExist = it[4] as Boolean
         val notesExist = it[5] as Boolean
         val databaseEmpty = it[6] as Boolean
-        val isReadyTins = it[7] as Boolean
+        val readyTins = it[7] as Boolean
 
         val blendSearch = SearchSetting.Blend
         val notesSearch = if (notesExist) SearchSetting.Notes else null
         val tinsSearch = if (tinsExist) SearchSetting.TinLabel else null
         val settingsList = listOfNotNull(blendSearch, notesSearch, tinsSearch)
-        val settingsEnabled = settingsList.size > 1
+        val settingsEnabled = settingsList.size > 1 && !readyTins
 
         if (!settingsEnabled && searchSetting != SearchSetting.Blend) { saveSearchSetting(SearchSetting.Blend) }
 
-        val context = getLocalizedContext(application)
-
-        if (isReadyTins) {
-            SearchState(
-                searchPerformed = true,
-                isTinSearch = true,
-                searchText = context.safeString(R.string.ready_tins_v2),
-                currentSetting = searchSetting,
-                settingsList = SearchSettingList(settingsList),
-                settingsEnabled = false,
-                emptyDatabase = databaseEmpty
-            )
-        } else {
-            SearchState(
-                searchPerformed = searchPerformed,
-                isTinSearch = isTinSearch,
-                searchText = searchText,
-                currentSetting = searchSetting,
-                settingsList = SearchSettingList(settingsList),
-                settingsEnabled = settingsEnabled,
-                emptyDatabase = databaseEmpty
-            )
-        }
+        SearchState(
+            searchPerformed = searchPerformed || readyTins,
+            isTinSearch = isTinSearch || readyTins,
+            readyTins = readyTins,
+            currentSetting = searchSetting,
+            settingsList = SearchSettingList(settingsList),
+            settingsEnabled = settingsEnabled,
+            emptyDatabase = databaseEmpty
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), SearchState())
 
 
     // Final filter sections UI states //
     val filteredBrands = combine(
-        brandSearchText,
+        snapshotFlow { brandSearchText.toCleanString() },
         availableBrands
     ) { brandSearchText, available ->
         val allBrands = available.sortedWith(collator)
@@ -2090,7 +2077,7 @@ data class SearchSettingList(
 data class SearchState(
     val searchPerformed: Boolean = false,
     val isTinSearch: Boolean = false,
-    val searchText: String = "",
+    val readyTins: Boolean = false,
     val currentSetting: SearchSetting = SearchSetting.Blend,
     val settingsList: SearchSettingList = SearchSettingList(),
     val settingsEnabled: Boolean = false,

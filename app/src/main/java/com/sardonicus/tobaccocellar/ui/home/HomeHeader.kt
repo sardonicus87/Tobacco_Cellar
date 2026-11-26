@@ -7,9 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -20,10 +20,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -31,7 +31,9 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,9 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,9 +61,10 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.sardonicus.tobaccocellar.R
 import com.sardonicus.tobaccocellar.ui.FilterViewModel
+import com.sardonicus.tobaccocellar.ui.composables.CustomTextField
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.EventBus
-import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
+import com.sardonicus.tobaccocellar.ui.utilities.toCleanString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -102,7 +103,6 @@ fun HomeHeader(
         ) {
             SearchField(
                 filterViewModel = filterViewModel,
-                updateSearchText = filterViewModel::updateSearchText,
                 onSearch = onSearch,
                 updateSearchFocused = updateSearchFocused,
                 getPositionTrigger = getPositionTrigger,
@@ -163,40 +163,66 @@ private fun ViewSelect(viewModel: HomeViewModel) {
 @Composable
 private fun SearchField (
     filterViewModel: FilterViewModel,
-    updateSearchText: (String) -> Unit,
     onSearch: (String) -> Unit,
     updateSearchFocused: (Boolean) -> Unit,
     getPositionTrigger: () -> Unit,
     saveSearchSetting: (SearchSetting) -> Unit
 ) {
-    val state by filterViewModel.searchState.collectAsState()
+    val searchState by filterViewModel.searchState.collectAsState()
     val readyTins by filterViewModel.readyTins.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var searchMenuExpanded by remember { mutableStateOf(false) }
-    val iconOpacity = if (state.searchPerformed && !readyTins) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
+    val iconOpacity = if (searchState.searchPerformed && !readyTins) { 1f } else { if (searchMenuExpanded) 1f else 0.5f }
+    val ready = stringResource(R.string.ready_tins_v2)
 
-    CustomBlendSearch(
-        value = state.searchText,
-        onValueChange = { updateSearchText(it); if (it.isEmpty()) { onSearch(it) } },
+    val state = filterViewModel.searchTextDisplay
+    SideEffect(searchState.readyTins) {
+        if (searchState.readyTins) { state.edit { replace(0, length, ready) } }
+    }
+
+    CustomTextField(
+        state = state,
         modifier = Modifier
             .fillMaxWidth()
+            .height(30.dp)
             .onFocusChanged { updateSearchFocused(it.isFocused) },
-        onImeAction = {
+        onKeyboardAction = {
             coroutineScope.launch {
-                if (state.searchText.isNotBlank()) {
-                    if (!state.searchPerformed) { getPositionTrigger() }
+                if (state.text.isNotBlank()) {
+                    if (!searchState.searchPerformed) { getPositionTrigger() }
                     delay(15.milliseconds)
                     EventBus.emit(SearchPerformedEvent)
-                    onSearch(state.searchText)
+                    onSearch(state.toCleanString())
                 }
             }
         },
+        textStyle = LocalTextStyle.current.copy(
+            color = LocalContentColor.current,
+            fontSize = TextUnit.Unspecified,
+            lineHeight = 1.1.em
+        ),
+        shape = RoundedCornerShape(100f),
+        lineLimits = TextFieldLineLimits.SingleLine,
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+            focusedContainerColor = LocalCustomColors.current.textField,
+            unfocusedContainerColor = LocalCustomColors.current.textField,
+            disabledContainerColor = LocalCustomColors.current.textField
+        ),
+        keyboardOptions = KeyboardOptions(
+            capitalization = KeyboardCapitalization.None,
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Search,
+        ),
+        contentPadding = PaddingValues(8.dp, 0.dp),
         leadingIcon = {
             Box(
                 modifier = Modifier
-                    .padding(0.dp)
+                    .padding(end = 10.dp)
                     .clickable(
-                        null, null, state.settingsEnabled && !state.emptyDatabase,
+                        null, null, searchState.settingsEnabled && !searchState.emptyDatabase,
                     ) { searchMenuExpanded = !searchMenuExpanded }
             ) {
                 Icon(
@@ -215,7 +241,7 @@ private fun SearchField (
                         .offset(x = 7.dp, y = 0.dp)
                         .padding(0.dp)
                         .size(16.dp),
-                    tint = if (state.settingsEnabled && !state.emptyDatabase) LocalContentColor.current.copy(alpha = iconOpacity) else Color.Transparent
+                    tint = if (searchState.settingsEnabled && !searchState.emptyDatabase) LocalContentColor.current.copy(alpha = iconOpacity) else Color.Transparent
                 )
             }
             DropdownMenu(
@@ -225,7 +251,7 @@ private fun SearchField (
                 shadowElevation = 4.dp,
                 offset = DpOffset((-2).dp, 2.dp)
             ) {
-                state.settingsList.settings.forEach {
+                searchState.settingsList.settings.forEach {
                     DropdownMenuItem(
                         text = { Text(stringResource(it.resId)) },
                         onClick = { saveSearchSetting(it); searchMenuExpanded = false },
@@ -236,7 +262,7 @@ private fun SearchField (
             }
         },
         trailingIcon = {
-            if (state.searchText.isNotEmpty()) {
+            if (state.text.isNotEmpty()) {
                 Icon(
                     painter = painterResource(id = R.drawable.clear_24),
                     contentDescription = null,
@@ -246,8 +272,8 @@ private fun SearchField (
                             if (readyTins) {
                                 filterViewModel.clearReadyTinsFilter()
                             } else {
-                                updateSearchText(""); onSearch("")
-                                if (state.searchPerformed) {
+                                filterViewModel.searchTextDisplay.clearText(); onSearch("")
+                                if (searchState.searchPerformed) {
                                     coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
                                 }
                             }
@@ -255,7 +281,17 @@ private fun SearchField (
                 )
             }
         },
-        placeholder = "${stringResource(state.currentSetting.resId)} Search",
+        placeholder = {
+            Text(
+                text = stringResource(R.string.home_search, stringResource(searchState.currentSetting.resId)),
+                style = LocalTextStyle.current.copy(
+                    color = LocalContentColor.current.copy(alpha = 0.5f),
+                    lineHeight = 1.em
+                ),
+                softWrap = false,
+                autoSize = TextAutoSize.StepBased(11.sp, 15.sp)
+            )
+        },
         readOnly = readyTins
     )
 }
@@ -366,82 +402,3 @@ private fun TotalCount(
 
 data object SearchClearedEvent
 data object SearchPerformedEvent
-
-@Composable
-private fun CustomBlendSearch(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "Blend Search",
-    leadingIcon: @Composable () -> Unit = {},
-    trailingIcon: @Composable () -> Unit = {},
-    onImeAction: () -> Unit = {},
-    readOnly: Boolean = false
-) {
-    var hasFocus by remember { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier
-            .background(LocalCustomColors.current.textField, RoundedCornerShape(100f))
-            .height(30.dp)
-            .onFocusChanged { hasFocus = it.hasFocus }
-            .padding(horizontal = 8.dp),
-        textStyle = LocalTextStyle.current.copy(
-            color = LocalContentColor.current,
-            fontSize = TextUnit.Unspecified,
-            lineHeight = 16.sp
-        ),
-        keyboardOptions = KeyboardOptions(
-            capitalization = KeyboardCapitalization.None,
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.Search,
-        ),
-        keyboardActions = KeyboardActions(
-            onSearch = { onImeAction(); focusManager.clearFocus() }
-        ),
-        singleLine = true,
-        readOnly = readOnly,
-        cursorBrush = SolidColor(if (hasFocus) MaterialTheme.colorScheme.primary else Color.Unspecified),
-        decorationBox = { innerTextField ->
-            Row(
-                modifier = Modifier
-                    .padding(0.dp)
-                    .fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start,
-            ) {
-                leadingIcon()
-                Spacer(modifier = Modifier.width(12.dp))
-
-                val contentRtl = value.isNotEmpty() &&
-                        (value.first().code in 0x0590..0x05FF ||
-                                value.first().code in 0x0600..0x06FF)
-
-                val boxAlignment = when { // dynamic side-switch when input doesn't match layout direction
-                    value.isEmpty() -> Alignment.CenterStart
-                    LanguageState.isRtl == contentRtl -> Alignment.CenterStart
-                    else -> Alignment.CenterEnd
-                }
-
-                Box(Modifier.weight(1f), boxAlignment) {
-                    if (value.isEmpty() && !hasFocus) {
-                        Text(
-                            text = placeholder,
-                            style = LocalTextStyle.current.copy(
-                                color = LocalContentColor.current.copy(alpha = 0.5f),
-                                lineHeight = 1.em
-                            ),
-                            softWrap = false,
-                            autoSize = TextAutoSize.StepBased(11.sp, 15.sp)
-                        )
-                    }
-                    innerTextField()
-                }
-                trailingIcon()
-            }
-        }
-    )
-}

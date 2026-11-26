@@ -27,10 +27,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -52,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -102,7 +106,6 @@ fun BrandFilterSection(
             filterViewModel = filterViewModel,
             updateSelectedExcludedBrands = filterViewModel::updateSelectedExcludedBrands,
             updateSelectedBrands = filterViewModel::updateSelectedBrands,
-            updateBrandSearchText = filterViewModel::updateBrandSearchText,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -121,15 +124,14 @@ private fun BrandFilterSearch(
     filterViewModel: FilterViewModel,
     modifier: Modifier = Modifier
 ) {
-    val brandSearchText by filterViewModel.brandSearchText.collectAsState()
+    val state = filterViewModel.brandSearchText
 
     val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
     val showCursor by remember(focused) { mutableStateOf(focused) }
 
     BasicTextField(
-        value = brandSearchText,
-        onValueChange = filterViewModel::updateBrandSearchText,
+        state = state,
         modifier = modifier
             .background(color = LocalCustomColors.current.textField, RoundedCornerShape(6.dp))
             .height(48.dp)
@@ -145,24 +147,23 @@ private fun BrandFilterSearch(
             keyboardType = KeyboardType.Text,
             imeAction = ImeAction.Done
         ),
-        singleLine = true,
-        maxLines = 1,
+        lineLimits = TextFieldLineLimits.SingleLine,
         cursorBrush = if (showCursor) { SolidColor(MaterialTheme.colorScheme.primary) }
             else { SolidColor(Color.Transparent) },
-        decorationBox = { innerTextField ->
+        decorator = { innerTextField ->
             Row(Modifier.fillMaxSize(), Arrangement.Start, Alignment.CenterVertically) {
-                val contentRtl = brandSearchText.isNotEmpty() &&
-                        (brandSearchText.first().code in 0x0590..0x05FF ||
-                                brandSearchText.first().code in 0x0600..0x06FF)
+                val contentRtl = state.text.isNotEmpty() &&
+                        (state.text.first().code in 0x0590..0x05FF ||
+                                state.text.first().code in 0x0600..0x06FF)
 
                 val boxAlignment = when { // dynamic side-switch when input doesn't match layout direction
-                    brandSearchText.isEmpty() -> Alignment.CenterStart
+                    state.text.isEmpty() -> Alignment.CenterStart
                     LanguageState.isRtl == contentRtl -> Alignment.CenterStart
                     else -> Alignment.CenterEnd
                 }
 
                 Box(Modifier.weight(1f), boxAlignment) {
-                    if (brandSearchText.isEmpty() && !focused) {
+                    if (state.text.isEmpty() && !focused) {
                         Text(
                             text = stringResource(R.string.search_brands_v2),
                             color = LocalContentColor.current.copy(alpha = 0.5f),
@@ -171,6 +172,17 @@ private fun BrandFilterSearch(
                         )
                     }
                     innerTextField()
+                }
+                if (state.text.length > 3) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.clear_24),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .clickable(null, LocalIndication.current) { state.clearText() }
+                            .padding(4.dp)
+                            .size(20.dp)
+                    )
                 }
             }
         }
@@ -221,7 +233,6 @@ private fun SelectableBrandsRow(
     filterViewModel: FilterViewModel,
     updateSelectedExcludedBrands: (String, Boolean) -> Unit,
     updateSelectedBrands: (String, Boolean) -> Unit,
-    updateBrandSearchText: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val excludeSwitch by filterViewModel.excludeBrandSwitch.collectAsState()
@@ -229,12 +240,13 @@ private fun SelectableBrandsRow(
     val unselectedBrands by filterViewModel.unselectedBrands.collectAsState()
     val brandEnabled by filterViewModel.brandEnabled.collectAsState()
     val clearTrigger by filterViewModel.clearBrandTrigger.collectAsState()
+    val focusManager = LocalFocusManager.current
 
     val clickAction = remember {
         { brand: String ->
             if (excludeSwitch) { updateSelectedExcludedBrands(brand, true) }
             else { updateSelectedBrands(brand, true) }
-            updateBrandSearchText("")
+            filterViewModel.brandSearchText.clearText(); focusManager.clearFocus()
         }
     }
 

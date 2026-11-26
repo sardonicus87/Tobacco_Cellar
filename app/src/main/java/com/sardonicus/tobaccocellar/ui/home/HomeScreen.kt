@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -172,7 +173,7 @@ private fun HomeBackHandler(
         else {
             if (readyTins) { filterViewModel.clearReadyTinsFilter() }
             else {
-                filterViewModel.updateSearchText(""); filterViewModel.onSearch("")
+                filterViewModel.searchTextDisplay.clearText(); filterViewModel.onSearch("")
                 if (searchState.searchPerformed) {
                     coroutineScope.launch { EventBus.emit(SearchClearedEvent) }
                 }
