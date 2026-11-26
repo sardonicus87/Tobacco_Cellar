@@ -123,7 +123,7 @@ fun RatingPopup(
                             imeAction = ImeAction.Done,
                         ),
                         textStyle = LocalTextStyle.current.copy(
-                            textAlign = if (LanguageState.isRtl) TextAlign.End else TextAlign.Start,
+                            textAlign = TextAlign.End,
                             textDirection = TextDirection.Ltr
                         ),
                         colors = TextFieldDefaults.colors(
