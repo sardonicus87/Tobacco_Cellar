@@ -23,15 +23,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,11 +44,14 @@ import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -62,6 +68,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -75,9 +82,10 @@ import com.sardonicus.tobaccocellar.ui.composables.RatingRow
 import com.sardonicus.tobaccocellar.ui.theme.LocalCustomColors
 import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 import com.sardonicus.tobaccocellar.ui.utilities.localizedToDouble
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.text.ParseException
 
 @Composable
 fun OtherFiltersSection(
@@ -349,23 +357,37 @@ private fun RatingRangePop(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var ratingLowString by remember { mutableStateOf(formatDecimal(ratingLow())) }
+    val lowString = rememberTextFieldState(formatDecimal(ratingLow()))
     var selectedLow by remember { mutableStateOf(ratingLow()) }
     val minRating by remember { mutableStateOf(ratingLowEnabled()) }
 
-    var ratingHighString by remember { mutableStateOf(formatDecimal(ratingHigh())) }
+    val highString = rememberTextFieldState(formatDecimal(ratingHigh()))
     var selectedHigh by remember { mutableStateOf(ratingHigh()) }
     val maxRating by remember { mutableStateOf(ratingHighEnabled()) }
 
     val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
     val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
 
-    val numberFormat = remember { NumberFormat.getNumberInstance(LanguageState.locale) }
     val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
     val allowedPattern = remember(decimalSeparator) {
         val ds = Regex.escape(decimalSeparator)
         Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
+    }
+
+    SideEffect(ratingLow(), ratingHigh(), Dispatchers.Default) {
+        // TODO() Temporary fix for no return when nothing in range, remove when smarter enablement
+        if (ratingLow() == null && lowString.text.isNotBlank()) lowString.edit { replace(0, length, formatDecimal(minRating)) }
+        if (ratingHigh() == null && highString.text.isNotBlank()) highString.edit { replace(0, length, formatDecimal(maxRating)) }
+    }
+
+    LaunchedEffect(lowString, highString, Dispatchers.Default) {
+        combine(
+            snapshotFlow { lowString.text.toString().localizedToDouble(min = minRating ?: 0.0, max = compMax) },
+            snapshotFlow { highString.text.toString().localizedToDouble(min = compMin, max = maxRating ?: 5.0) }
+        ) { low, high -> low to high }.collectLatest { (low, high) ->
+            selectedLow = low; selectedHigh = high
+        }
     }
 
     val focusManager = LocalFocusManager.current
@@ -392,7 +414,7 @@ private fun RatingRangePop(
                     .fillMaxWidth()
                     .wrapContentHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top)
+                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
             ) {
                 CheckboxWithLabel(
                     text = stringResource(R.string.unrated_v2),
@@ -401,7 +423,7 @@ private fun RatingRangePop(
                         updateSelectedUnrated(it)
                         updateSelectedRatingRange(selectedLow, selectedHigh)
                     },
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier,
                     enabled = unratedEnabled() || unrated(),
                     fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
                 )
@@ -413,50 +435,30 @@ private fun RatingRangePop(
                 ) {
                     // Low Rating //
                     TextField(
-                        value = ratingLowString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                ratingLowString = it
-
-                                try {
-                                    if (it.isNotBlank()) {
-                                        val preNumber =
-                                            if (it.startsWith(decimalSeparator)) { "0$it" }
-                                            else it
-                                        val number = numberFormat.parse(preNumber)?.toDouble()
-
-                                        selectedLow = when {
-                                            number == null -> null
-                                            number < (minRating ?: 0.0) -> (minRating ?: 0.0)
-                                            number > compMax -> compMax
-                                            else -> number
-                                        }
-                                    } else { selectedLow = null }
-                                } catch (_: ParseException) { selectedLow = null }
-                            }
+                        state = lowString,
+                        inputTransformation = {
+                            if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
                         },
                         modifier = Modifier
                             .width(70.dp)
                             .padding(end = 8.dp)
                             .onFocusChanged {
                                 if (!it.isFocused) {
-                                    if (ratingLowString != formatDecimal(selectedLow))
-                                        ratingLowString = formatDecimal(selectedLow)
+                                    if ((selectedLow ?: 0.0) > compMax) selectedLow = compMax
+                                    lowString.edit { replace(0, length, formatDecimal(selectedLow)) }
                                     updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
                             },
-                        enabled = true,
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
                         ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                updateSelectedRatingRange(selectedLow, selectedHigh)
-                                this.defaultKeyboardAction(ImeAction.Done)
-                            }
+                        textStyle = LocalTextStyle.current.copy(
+                            textDirection = TextDirection.Ltr,
+                            textAlign = TextAlign.End
                         ),
+                        onKeyboardAction = { updateSelectedRatingRange(selectedLow, selectedHigh) },
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -469,11 +471,11 @@ private fun RatingRangePop(
                     )
 
                     // Selected Range Display //
-                    val lowField = ratingLowString.localizedToDouble()?.coerceIn(0.0, compMax)
-                    val highField = ratingHighString.localizedToDouble()?.coerceIn(compMin, 5.0)
+                    val lowField = lowString.text.toString().localizedToDouble()?.coerceIn(0.0, compMax)
+                    val highField = highString.text.toString().localizedToDouble()?.coerceIn(compMin, 5.0)
 
-                    val emptyColor = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
-                    val emptyAlpha = if (ratingLowString.isNotBlank() && ratingHighString.isBlank()) 1f else .5f
+                    val emptyColor = if (lowString.text.isNotBlank() && highString.text.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
+                    val emptyAlpha = if (lowString.text.isNotBlank() && highString.text.isBlank()) 1f else .5f
 
                     RatingRow(
                         range = Pair(lowField, highField),
@@ -490,50 +492,30 @@ private fun RatingRangePop(
 
                     // High Rating //
                     TextField(
-                        value = ratingHighString,
-                        onValueChange = {
-                            if (it.matches(allowedPattern)) {
-                                ratingHighString = it
-
-                                try {
-                                    if (it.isNotBlank()) {
-                                        val preNumber =
-                                            if (it.startsWith(decimalSeparator)) { "0$it" }
-                                            else it
-                                        val number = numberFormat.parse(preNumber)?.toDouble()
-
-                                        selectedHigh = when {
-                                            number == null -> null
-                                            number < compMin -> compMin
-                                            number > (maxRating ?: 5.0) -> (maxRating ?: 5.0)
-                                            else -> number
-                                        }
-                                    } else { selectedHigh = null }
-                                } catch (_: ParseException) { selectedHigh = null }
-                            }
+                        state = highString,
+                        inputTransformation = {
+                            if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
                         },
                         modifier = Modifier
                             .width(70.dp)
                             .padding(start = 8.dp)
                             .onFocusChanged {
                                 if (!it.isFocused) {
-                                    if (ratingHighString != formatDecimal(selectedHigh))
-                                        ratingHighString = formatDecimal(selectedHigh)
+                                    if ((selectedHigh ?: 5.0) < compMin) selectedHigh = compMin
+                                    highString.edit { replace (0, length, formatDecimal(selectedHigh)) }
                                     updateSelectedRatingRange(selectedLow, selectedHigh)
                                 }
                             },
-                        enabled = true,
-                        singleLine = true,
+                        lineLimits = TextFieldLineLimits.SingleLine,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
                         ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                updateSelectedRatingRange(selectedLow, selectedHigh)
-                                this.defaultKeyboardAction(ImeAction.Done)
-                            }
+                        textStyle = LocalTextStyle.current.copy(
+                            textDirection = TextDirection.Ltr,
+                            textAlign = TextAlign.End
                         ),
+                        onKeyboardAction = { updateSelectedRatingRange(selectedLow, selectedHigh) },
                         colors = TextFieldDefaults.colors(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
@@ -552,18 +534,18 @@ private fun RatingRangePop(
                         .fillMaxWidth()
                         .padding(horizontal = 29.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    val lowAlpha = if (ratingLowString.isNotBlank()) .75f else 0.38f
-                    val highAlpha = if (ratingHighString.isNotBlank()) .75f else 0.38f
+                    val lowAlpha = if (lowString.text.isNotBlank()) .75f else 0.38f
+                    val highAlpha = if (highString.text.isNotBlank()) .75f else 0.38f
 
                     Icon(
                         imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(null, LocalIndication.current, ratingLowString.isNotBlank()) {
-                                ratingLowString = ""; selectedLow = null
+                            .clickable(null, LocalIndication.current, lowString.text.isNotBlank()) {
+                                lowString.clearText(); selectedLow = null
                                 updateSelectedRatingRange(null, selectedHigh)
                             }
                             .padding(4.dp)
@@ -575,6 +557,7 @@ private fun RatingRangePop(
                         autoSize = TextAutoSize.StepBased(10.sp, 12.sp),
                         maxLines = 1,
                         fontWeight = FontWeight.Normal,
+                        modifier = Modifier.align(Alignment.Top),
                         color = LocalContentColor.current.copy(alpha = 0.5f)
                     )
                     Icon(
@@ -582,8 +565,8 @@ private fun RatingRangePop(
                         contentDescription = "Clear",
                         modifier = Modifier
                             .clip(CircleShape)
-                            .clickable(null, LocalIndication.current, ratingHighString.isNotBlank()) {
-                                ratingHighString = ""; selectedHigh = null
+                            .clickable(null, LocalIndication.current, highString.text.isNotBlank()) {
+                                highString.clearText(); selectedHigh = null
                                 updateSelectedRatingRange(selectedLow, null)
                             }
                             .padding(4.dp)
@@ -599,11 +582,11 @@ private fun RatingRangePop(
                 ) {
                     TextButton(
                         onClick = {
-                            ratingLowString = ""; selectedLow = null
-                            ratingHighString = ""; selectedHigh = null
+                            lowString.clearText(); selectedLow = null
+                            highString.clearText(); selectedHigh = null
                             updateSelectedUnrated(false); updateSelectedRatingRange(null, null)
                         },
-                        enabled = ratingLowString.isNotBlank() || ratingHighString.isNotBlank() || unrated(),
+                        enabled = lowString.text.isNotBlank() || highString.text.isNotBlank() || unrated(),
                         modifier = Modifier.offset(x = (-4).dp),
                     ) {
                         Icon(
