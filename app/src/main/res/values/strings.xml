@@ -427,6 +427,7 @@
     <string name="view_v2">View:</string>
     <string name="list_sorting_v2">list sorting</string>
     <string name="t_col_vis_v2">table column visibility</string>
+    <string name="home_search">%s Search</string>
 
     <string name="edit_item_v2">Edit Item</string>
     <string name="quick_edit_v2">Quick Edit</string>
