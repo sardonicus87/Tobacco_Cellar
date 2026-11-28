@@ -188,10 +188,7 @@ fun ItemInputForm(
                                     tooltipVisible = { tooltipVisible = it }
                                 )
                             } else {
-                                NotesEntry(
-                                    itemDetails = itemDetails,
-                                    onValueChange = onValueChange
-                                )
+                                NotesEntry(itemDetails = itemDetails)
                             }
                         }
                     }
@@ -270,10 +267,7 @@ fun ItemInputForm(
                                 )
 
                             1 ->
-                                NotesEntry(
-                                    itemDetails = itemDetails,
-                                    onValueChange = onValueChange
-                                )
+                                NotesEntry(itemDetails = itemDetails)
 
                             2 ->
                                 TinsEntry(

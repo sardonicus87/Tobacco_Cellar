@@ -30,7 +30,6 @@ import com.sardonicus.tobaccocellar.ui.utilities.localizationUtil.LanguageState
 @Composable
 fun NotesEntry(
     itemDetails: ItemDetails,
-    onValueChange: (ItemDetails) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
