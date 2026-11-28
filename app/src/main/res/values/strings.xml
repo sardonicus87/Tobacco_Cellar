@@ -410,9 +410,9 @@
     <string name="no_fav_dis_v2">No favorites/dislikes assigned.</string>
     <string name="rating_limits_v2">(Limits: %1$s–%2$s)</string>
     <string name="rating_range_extended_low">No entries found in entered range, low value dropped to
-        the next nearest rating.</string>
+        the next closest rating.</string>
     <string name="rating_range_extended_high">No entries found in entered range, high value raised to
-        the next nearest rating.</string>
+        the next closest rating.</string>
     <string name="in_stock_v2">In-stock</string>
     <string name="out_v2">Out</string>
     <string name="has_tins_v2">Has tins</string>
