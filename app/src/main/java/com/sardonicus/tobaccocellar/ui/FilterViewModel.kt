@@ -753,15 +753,16 @@ class FilterViewModel (
             types = collector.typesMap, favorites = collector.favorites,
             excludeFavorites = collector.excludeFaves, dislikeds = collector.dislikes,
             excludeDislikes = collector.excludeDis, unrated = collector.unrated,
-            ratingLow = collector.minR, ratingHigh = collector.maxR, inStock = collector.inStock,
-            outOfStock = collector.outOfStock, subgenres = collector.subgenresMap,
-            cuts = collector.cutsMap, components = collector.componentsMap,
-            compMatching = collector.compMatchingMap, flavorings = collector.flavoringsMap,
-            flavorMatching = collector.flavorMatchingMap, hasTins = collector.hasTins,
-            noTins = collector.noTins, opened = collector.opened, unopened = collector.unopened,
-            finished = collector.finished, unfinished = collector.unfinished,
-            container = collector.containersMap, production = collector.prod,
-            outOfProduction = collector.outOfProd
+            ratingLow = collector.minR, ratingLowLookahead = collector.minRLook,
+            ratingHigh = collector.maxR, ratingHighLookahead = collector.maxRLook,
+            inStock = collector.inStock, outOfStock = collector.outOfStock,
+            subgenres = collector.subgenresMap, cuts = collector.cutsMap,
+            components = collector.componentsMap, compMatching = collector.compMatchingMap,
+            flavorings = collector.flavoringsMap, flavorMatching = collector.flavorMatchingMap,
+            hasTins = collector.hasTins, noTins = collector.noTins, opened = collector.opened,
+            unopened = collector.unopened, finished = collector.finished,
+            unfinished = collector.unfinished, container = collector.containersMap,
+            production = collector.prod, outOfProduction = collector.outOfProd
         )
     }
 
@@ -875,6 +876,14 @@ class FilterViewModel (
             item.rating?.let { r ->
                 collector.minR = if (collector.minR == null) r else minOf(collector.minR!!, r)
                 collector.maxR = if (collector.maxR == null) r else maxOf(collector.maxR!!, r)
+
+                if (selections.ratingHigh != null && r <= selections.ratingHigh) {
+                    collector.minRLook = if (collector.minRLook == null) r else maxOf(collector.minRLook!!, r)
+                }
+
+                if (selections.ratingLow != null && r >= selections.ratingLow) {
+                    collector.maxRLook = if (collector.maxRLook == null) r else minOf(collector.maxRLook!!, r)
+                }
             }
         }
 
@@ -1004,7 +1013,9 @@ class FilterViewModel (
     val excludeDislikesEnabled = enablementState.map { it.excludeDislikes }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val unratedEnabled = enablementState.map { it.unrated }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val ratingLowEnabled = enablementState.map { it.ratingLow }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val lowLookahead = enablementState.map { it.ratingLowLookahead }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val ratingHighEnabled = enablementState.map { it.ratingHigh }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val highLookahead = enablementState.map { it.ratingHighLookahead }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     val inStockEnabled = enablementState.map { it.inStock }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val outOfStockEnabled = enablementState.map { it.outOfStock }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
     val subgenresEnabled = enablementState.map { it.subgenres }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -1088,6 +1099,7 @@ class FilterViewModel (
 
         removeFilter(category, value)
     }
+
     private fun isSelectionInvalid(category: FilterCategory, value: Any?, data: CellarMetaData): Boolean {
         return when (category) {
             FilterCategory.BRAND, FilterCategory.EXCLUDE_BRAND -> !data.availableBrands.contains(value as String)
@@ -2033,7 +2045,9 @@ data class EnablementState(
     val excludeDislikes: Boolean = false,
     val unrated: Boolean = false,
     val ratingLow: Double? = null,
+    val ratingLowLookahead: Double? = null,
     val ratingHigh: Double? = null,
+    val ratingHighLookahead: Double? = null,
     val inStock: Boolean = false,
     val outOfStock: Boolean = false,
     val subgenres: Map<String, Boolean> = emptyMap(),
@@ -2145,6 +2159,7 @@ private class EnablementCollector {
     var finished = false; var unfinished = false
     var prod = false; var outOfProd = false
     var minR: Double? = null; var maxR: Double? = null
+    var minRLook: Double? = null; var maxRLook: Double? = null
 }
 
 enum class BlendTypes (@StringRes val resId: Int) {

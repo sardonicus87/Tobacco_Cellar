@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
@@ -238,7 +239,9 @@ private fun StarRatingFilters(
     val unchosen by filterViewModel.rangeUnchosen.collectAsState()
     val unrated by filterViewModel.selectedUnrated.collectAsState()
     val ratingLow by filterViewModel.selectedRatingLow.collectAsState()
+    val lowLookahead by filterViewModel.lowLookahead.collectAsState()
     val ratingHigh by filterViewModel.selectedRatingHigh.collectAsState()
+    val highLookahead by filterViewModel.highLookahead.collectAsState()
 
     val lowText by filterViewModel.rangeLowText.collectAsState()
     val highText by filterViewModel.rangeHighText.collectAsState()
@@ -334,7 +337,9 @@ private fun StarRatingFilters(
             unratedEnabled = { unratedEnabled },
             ratingLow = { ratingLow },
             ratingLowEnabled = { ratingLowEnabled },
+            lowLookahead = { lowLookahead },
             ratingHigh = { ratingHigh },
+            highLookahead = { highLookahead },
             ratingHighEnabled = { ratingHighEnabled },
             updateSelectedUnrated = filterViewModel::updateSelectedUnrated,
             updateSelectedRatingRange = filterViewModel::updateSelectedRatingRange,
@@ -350,7 +355,9 @@ private fun RatingRangePop(
     unratedEnabled: () -> Boolean,
     ratingLow: () -> Double?,
     ratingLowEnabled: () -> Double?,
+    lowLookahead: () -> Double?,
     ratingHigh: () -> Double?,
+    highLookahead: () -> Double?,
     ratingHighEnabled: () -> Double?,
     updateSelectedUnrated: (Boolean) -> Unit,
     updateSelectedRatingRange: (Double?, Double?) -> Unit,
@@ -365,8 +372,8 @@ private fun RatingRangePop(
     var selectedHigh by remember { mutableStateOf(ratingHigh()) }
     val maxRating by remember { mutableStateOf(ratingHighEnabled()) }
 
-    val compMin = maxOf((selectedLow ?: 0.0), (minRating ?: 0.0))
-    val compMax = minOf((selectedHigh ?: 5.0), (maxRating ?: 5.0))
+    val compMin = maxOf((selectedLow ?: 0.0), (ratingLowEnabled() ?: 0.0))
+    val compMax = minOf((selectedHigh ?: 5.0), (ratingHighEnabled() ?: 5.0))
 
     val symbols = remember { DecimalFormatSymbols.getInstance(LanguageState.locale) }
     val decimalSeparator = symbols.decimalSeparator.toString()
@@ -375,10 +382,12 @@ private fun RatingRangePop(
         Regex("^(\\s*|(\\d)?($ds\\d{0,2})?)$")
     }
 
-    SideEffect(ratingLow(), ratingHigh(), Dispatchers.Default) {
-        // TODO() Temporary fix for no return when nothing in range, remove when smarter enablement
-        if (ratingLow() == null && lowString.text.isNotBlank()) lowString.edit { replace(0, length, formatDecimal(minRating)) }
-        if (ratingHigh() == null && highString.text.isNotBlank()) highString.edit { replace(0, length, formatDecimal(maxRating)) }
+    var extendedPop by remember { mutableStateOf(false) }
+    var extendedMessage by remember { mutableStateOf<Int?>(null) }
+
+    SideEffect(ratingLow(), ratingHigh()) {
+        if (ratingLow() == null && lowString.text.isNotBlank()) lowString.clearText()
+        if (ratingHigh() == null && highString.text.isNotBlank()) highString.clearText()
     }
 
     LaunchedEffect(lowString, highString, Dispatchers.Default) {
@@ -390,8 +399,31 @@ private fun RatingRangePop(
         }
     }
 
-    val focusManager = LocalFocusManager.current
-    DisposableEffect(Unit) { onDispose { focusManager.clearFocus() } }
+    val lowEdit = {
+        if ((selectedLow ?: 0.0) > compMax) selectedLow = compMax
+        if (selectedLow != null && lowLookahead() != null) {
+            val previousLow = selectedLow
+            selectedLow = minOf(selectedLow!!, lowLookahead()!!)
+            if (selectedLow != previousLow) {
+                extendedMessage = R.string.rating_range_extended_low; extendedPop = true
+            }
+        }
+        lowString.edit { replace(0, length, formatDecimal(selectedLow)) }
+        updateSelectedRatingRange(selectedLow, selectedHigh)
+    }
+
+    val highEdit = {
+        if ((selectedHigh ?: 5.0) < compMin) selectedHigh = compMin
+        if (selectedHigh != null && highLookahead() != null) {
+            val previousHigh = selectedHigh
+            selectedHigh = maxOf(selectedHigh!!, highLookahead()!!)
+            if (selectedHigh != previousHigh) {
+                extendedMessage = R.string.rating_range_extended_high; extendedPop = true
+            }
+        }
+        highString.edit { replace(0, length, formatDecimal(selectedHigh)) }
+        updateSelectedRatingRange(selectedLow, selectedHigh)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -409,199 +441,224 @@ private fun RatingRangePop(
             )
         },
         text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
-            ) {
-                CheckboxWithLabel(
-                    text = stringResource(R.string.unrated_v2),
-                    checked = unrated(),
-                    onCheckedChange = {
-                        updateSelectedUnrated(it)
-                        updateSelectedRatingRange(selectedLow, selectedHigh)
-                    },
-                    modifier = Modifier,
-                    enabled = unratedEnabled() || unrated(),
-                    fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
-                )
-                // Rating Range //
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Low Rating //
-                    TextField(
-                        state = lowString,
-                        inputTransformation = {
-                            if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
-                        },
-                        modifier = Modifier
-                            .width(70.dp)
-                            .padding(end = 8.dp)
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    if ((selectedLow ?: 0.0) > compMax) selectedLow = compMax
-                                    lowString.edit { replace(0, length, formatDecimal(selectedLow)) }
-                                    updateSelectedRatingRange(selectedLow, selectedHigh)
-                                }
-                            },
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                        ),
-                        textStyle = LocalTextStyle.current.copy(
-                            textDirection = TextDirection.Ltr,
-                            textAlign = TextAlign.End
-                        ),
-                        onKeyboardAction = { updateSelectedRatingRange(selectedLow, selectedHigh) },
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedContainerColor = LocalCustomColors.current.textField,
-                            unfocusedContainerColor = LocalCustomColors.current.textField,
-                            disabledContainerColor = LocalCustomColors.current.textField,
-                        ),
-                        shape = MaterialTheme.shapes.extraSmall
-                    )
+            val focusManager = LocalFocusManager.current
+            DisposableEffect(Unit) { onDispose { focusManager.clearFocus(); extendedPop = false } }
 
-                    // Selected Range Display //
-                    val lowField = lowString.text.toString().localizedToDouble()?.coerceIn(0.0, compMax)
-                    val highField = highString.text.toString().localizedToDouble()?.coerceIn(compMin, 5.0)
-
-                    val emptyColor = if (lowString.text.isNotBlank() && highString.text.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
-                    val emptyAlpha = if (lowString.text.isNotBlank() && highString.text.isBlank()) 1f else .5f
-
-                    RatingRow(
-                        range = Pair(lowField, highField),
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        starSize = 20.dp,
-                        showDivider = true,
-                        minColor = LocalContentColor.current,
-                        maxColor = LocalCustomColors.current.starRating,
-                        emptyColor = emptyColor,
-                        minAlpha = .5f,
-                        maxAlpha = 1f,
-                        emptyAlpha = emptyAlpha
-                    )
-
-                    // High Rating //
-                    TextField(
-                        state = highString,
-                        inputTransformation = {
-                            if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
-                        },
-                        modifier = Modifier
-                            .width(70.dp)
-                            .padding(start = 8.dp)
-                            .onFocusChanged {
-                                if (!it.isFocused) {
-                                    if ((selectedHigh ?: 5.0) < compMin) selectedHigh = compMin
-                                    highString.edit { replace (0, length, formatDecimal(selectedHigh)) }
-                                    updateSelectedRatingRange(selectedLow, selectedHigh)
-                                }
-                            },
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done,
-                        ),
-                        textStyle = LocalTextStyle.current.copy(
-                            textDirection = TextDirection.Ltr,
-                            textAlign = TextAlign.End
-                        ),
-                        onKeyboardAction = { updateSelectedRatingRange(selectedLow, selectedHigh) },
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            disabledIndicatorColor = Color.Transparent,
-                            focusedContainerColor = LocalCustomColors.current.textField,
-                            unfocusedContainerColor = LocalCustomColors.current.textField,
-                            disabledContainerColor = LocalCustomColors.current.textField,
-                        ),
-                        shape = MaterialTheme.shapes.extraSmall
-                    )
-                }
-
-                // Clear buttons and available range //
-                Row(
+            Box {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 29.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                        .wrapContentHeight()
+                        .clickable(null, null) { focusManager.clearFocus() },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top)
                 ) {
-                    val lowAlpha = if (lowString.text.isNotBlank()) .75f else 0.38f
-                    val highAlpha = if (highString.text.isNotBlank()) .75f else 0.38f
-
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                        contentDescription = "Clear",
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(null, LocalIndication.current, lowString.text.isNotBlank()) {
-                                lowString.clearText(); selectedLow = null
-                                updateSelectedRatingRange(null, selectedHigh)
-                            }
-                            .padding(4.dp)
-                            .requiredSize(20.dp)
-                            .alpha(lowAlpha)
-                    )
-                    Text(
-                        text = stringResource(R.string.rating_limits_v2, formatDecimal(minRating).ifBlank { "0.0" }, formatDecimal(maxRating).ifBlank { "5.0" }),
-                        autoSize = TextAutoSize.StepBased(10.sp, 12.sp),
-                        maxLines = 1,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.align(Alignment.Top),
-                        color = LocalContentColor.current.copy(alpha = 0.5f)
-                    )
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
-                        contentDescription = "Clear",
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .clickable(null, LocalIndication.current, highString.text.isNotBlank()) {
-                                highString.clearText(); selectedHigh = null
-                                updateSelectedRatingRange(selectedLow, null)
-                            }
-                            .padding(4.dp)
-                            .requiredSize(20.dp)
-                            .alpha(highAlpha)
-                    )
-                }
-
-                // Clear all button //
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    TextButton(
-                        onClick = {
-                            lowString.clearText(); selectedLow = null
-                            highString.clearText(); selectedHigh = null
-                            updateSelectedUnrated(false); updateSelectedRatingRange(null, null)
+                    CheckboxWithLabel(
+                        text = stringResource(R.string.unrated_v2),
+                        checked = unrated(),
+                        onCheckedChange = {
+                            updateSelectedUnrated(it)
+                            updateSelectedRatingRange(selectedLow, selectedHigh)
                         },
-                        enabled = lowString.text.isNotBlank() || highString.text.isNotBlank() || unrated(),
-                        modifier = Modifier.offset(x = (-4).dp),
+                        modifier = Modifier,
+                        enabled = unratedEnabled() || unrated(),
+                        fontColor = if (!unratedEnabled()) LocalContentColor.current.copy(alpha = 0.38f) else LocalContentColor.current,
+                    )
+                    // Rating Range //
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Low Rating //
+                        TextField(
+                            state = lowString,
+                            inputTransformation = {
+                                if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
+                            },
+                            modifier = Modifier
+                                .width(70.dp)
+                                .padding(end = 8.dp)
+                                .onFocusChanged { if (!it.isFocused) { lowEdit() } },
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                textDirection = TextDirection.Ltr,
+                                textAlign = TextAlign.End
+                            ),
+                            onKeyboardAction = { lowEdit(); focusManager.clearFocus() },
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField,
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall
+                        )
+
+                        // Selected Range Display //
+                        val lowField =
+                            lowString.text.toString().localizedToDouble()
+                                ?.coerceIn(0.0, compMax)
+                        val highField =
+                            highString.text.toString().localizedToDouble()
+                                ?.coerceIn(compMin, 5.0)
+
+                        val emptyColor =
+                            if (lowString.text.isNotBlank() && highString.text.isBlank()) LocalCustomColors.current.starRating else LocalContentColor.current
+                        val emptyAlpha =
+                            if (lowString.text.isNotBlank() && highString.text.isBlank()) 1f else .5f
+
+                        RatingRow(
+                            range = Pair(lowField, highField),
+                            modifier = Modifier.padding(horizontal = 4.dp),
+                            starSize = 20.dp,
+                            showDivider = true,
+                            minColor = LocalContentColor.current,
+                            maxColor = LocalCustomColors.current.starRating,
+                            emptyColor = emptyColor,
+                            minAlpha = .5f,
+                            maxAlpha = 1f,
+                            emptyAlpha = emptyAlpha
+                        )
+
+                        // High Rating //
+                        TextField(
+                            state = highString,
+                            inputTransformation = {
+                                if (!this.toString().matches(allowedPattern)) { revertAllChanges() }
+                            },
+                            modifier = Modifier
+                                .width(70.dp)
+                                .padding(start = 8.dp)
+                                .onFocusChanged { if (!it.isFocused) { highEdit() } },
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done,
+                            ),
+                            textStyle = LocalTextStyle.current.copy(
+                                textDirection = TextDirection.Ltr,
+                                textAlign = TextAlign.End
+                            ),
+                            onKeyboardAction = { highEdit(); focusManager.clearFocus() },
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                                focusedContainerColor = LocalCustomColors.current.textField,
+                                unfocusedContainerColor = LocalCustomColors.current.textField,
+                                disabledContainerColor = LocalCustomColors.current.textField,
+                            ),
+                            shape = MaterialTheme.shapes.extraSmall
+                        )
+                    }
+
+                    // Clear buttons and available range //
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 29.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.close),
-                            contentDescription = "",
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
                             modifier = Modifier
-                                .padding(end = 3.dp)
-                                .size(20.dp)
+                                .clip(CircleShape)
+                                .clickable(null, LocalIndication.current, lowString.text.isNotBlank()) {
+                                    lowString.clearText(); selectedLow = null
+                                    updateSelectedRatingRange(null, selectedHigh)
+                                }
+                                .padding(4.dp)
+                                .requiredSize(20.dp)
+                                .alpha(if (lowString.text.isNotBlank()) .75f else 0.38f)
                         )
                         Text(
-                            text = stringResource(R.string.clear_all_v2),
-                            modifier = Modifier,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold
+                            text = stringResource(
+                                R.string.rating_limits_v2,
+                                formatDecimal(minRating).ifBlank { "0.0" },
+                                formatDecimal(maxRating).ifBlank { "5.0" }),
+                            autoSize = TextAutoSize.StepBased(10.sp, 12.sp),
+                            maxLines = 1,
+                            fontWeight = FontWeight.Normal,
+                            modifier = Modifier.align(Alignment.Top),
+                            color = LocalContentColor.current.copy(alpha = 0.5f)
                         )
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .clickable(null, LocalIndication.current, highString.text.isNotBlank()) {
+                                    highString.clearText(); selectedHigh = null
+                                    updateSelectedRatingRange(selectedLow, null)
+                                }
+                                .padding(4.dp)
+                                .requiredSize(20.dp)
+                                .alpha(if (highString.text.isNotBlank()) .75f else 0.38f)
+                        )
+                    }
+
+                    // Clear all button //
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        TextButton(
+                            onClick = {
+                                lowString.clearText(); selectedLow = null
+                                highString.clearText(); selectedHigh = null
+                                updateSelectedUnrated(false); updateSelectedRatingRange(null, null)
+                            },
+                            enabled = lowString.text.isNotBlank() || highString.text.isNotBlank() || unrated(),
+                            modifier = Modifier.offset(x = (-4).dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.close),
+                                contentDescription = "",
+                                modifier = Modifier
+                                    .padding(end = 3.dp)
+                                    .size(20.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.clear_all_v2),
+                                modifier = Modifier,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+            if (extendedPop && extendedMessage != null) {
+                BasicAlertDialog(
+                    onDismissRequest = { extendedPop = false; extendedMessage = null },
+                    properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = false)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.extraSmall)
+                            .width(120.dp)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically)
+                    ) {
+                        Text(
+                            text = if (extendedMessage != null) { stringResource(extendedMessage!!) } else "",
+                            fontSize = 15.sp
+                        )
+                        TextButton(
+                            onClick = { updateSelectedRatingRange(selectedLow, selectedHigh); onDismiss() },
+                            contentPadding = PaddingValues(12.dp, 4.dp),
+                            modifier = Modifier.heightIn(32.dp, 32.dp).align(Alignment.End)
+                        ) { Text(stringResource(R.string.ok_v2)) }
                     }
                 }
             }
@@ -612,13 +669,6 @@ private fun RatingRangePop(
                 contentPadding = PaddingValues(12.dp, 4.dp),
                 modifier = Modifier.heightIn(32.dp, 32.dp)
             ) { Text(stringResource(R.string.done_v2)) }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = { onDismiss() },
-                contentPadding = PaddingValues(12.dp, 4.dp),
-                modifier = Modifier.heightIn(32.dp, 32.dp)
-            ) { Text(stringResource(R.string.cancel_v2)) }
         }
     )
 }
