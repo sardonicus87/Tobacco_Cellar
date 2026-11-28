@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.sardonicus.tobaccocellar.ui.utilities
 
 import androidx.compose.runtime.Composable
